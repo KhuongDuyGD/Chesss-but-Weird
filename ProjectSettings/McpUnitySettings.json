@@ -1,6 +1,6 @@
 {
-    "Port": 8060,
-    "RequestTimeoutSeconds": 10,
+    "Port": 8012,
+    "RequestTimeoutSeconds": 100,
     "AutoStartServer": true,
     "EnableInfoLogs": true,
     "NpmExecutablePath": "",

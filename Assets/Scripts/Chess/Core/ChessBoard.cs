@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -8,6 +9,7 @@ public class Chessboard : MonoBehaviour
     [SerializeField] private Material hoverMaterial;
     [SerializeField] private Color lightTileColor = new Color(0.72f, 0.64f, 0.50f, 1f);
     [SerializeField] private Color darkTileColor = new Color(0.24f, 0.28f, 0.30f, 1f);
+    [SerializeField] private Color legalMoveTileColor = new Color(0.15f, 0.85f, 0.45f, 0.35f);
     [Tooltip("Visible hover quad offset above the detected board surface.")]
     [SerializeField] private float hoverDisplayHeightOffset = 0.001f;
     [Tooltip("Invisible raycast collider offset above the detected board surface.")]
@@ -53,8 +55,10 @@ public class Chessboard : MonoBehaviour
     private Material[,] baseTileMaterials;
     private Material lightTileMaterial;
     private Material darkTileMaterial;
+    private Material legalMoveTileMaterial;
     private Camera currentCamera;
     private Vector2Int currentHover = -Vector2Int.one;
+    private bool[,] legalMoveHighlights;
     private int tileLayer;
     private int hoverLayer;
     private BoardLayout currentBoardLayout;
@@ -73,44 +77,43 @@ public class Chessboard : MonoBehaviour
     {
         DestroyRuntimeMaterial(lightTileMaterial);
         DestroyRuntimeMaterial(darkTileMaterial);
+        DestroyRuntimeMaterial(legalMoveTileMaterial);
     }
 
-    private void Update() {
-        if(!currentCamera)
+    private void Update()
+    {
+        if (!currentCamera)
         {
             currentCamera = Camera.main;
             return;
         }
 
         if (Mouse.current == null)
+        {
+            ClearCurrentHover();
             return;
+        }
 
-        RaycastHit info;
         Ray ray = currentCamera.ScreenPointToRay(Mouse.current.position.ReadValue());
-        if(Physics.Raycast(ray, out info, 100, LayerMask.GetMask("Tile", "Hover")))
+        if (Physics.Raycast(ray, out RaycastHit info, 100, LayerMask.GetMask("Tile", "Hover")))
         {
             Vector2Int hitPosition = LookupTileIndex(info.transform.gameObject);
-
-            if (currentHover == -Vector2Int.one)
+            if (!IsValidTilePosition(hitPosition))
             {
-                currentHover = hitPosition;
-                SetTileHover(hitPosition, true);
+                ClearCurrentHover();
+                return;
             }
 
-            if (currentHover != hitPosition)
-            {
-                SetTileHover(currentHover, false);
-                currentHover = hitPosition;
-                SetTileHover(hitPosition, true);
-            }
+            if (currentHover == hitPosition)
+                return;
+
+            ClearCurrentHover();
+            currentHover = hitPosition;
+            SetTileHover(hitPosition, true);
         }
         else
         {
-            if(currentHover != -Vector2Int.one)
-            {
-                SetTileHover(currentHover, false);
-                currentHover = -Vector2Int.one;
-            }
+            ClearCurrentHover();
         }
     }
 
@@ -119,6 +122,7 @@ public class Chessboard : MonoBehaviour
         tiles = new GameObject[tileCountX, tileCountY];
         tileRenderers = new MeshRenderer[tileCountX, tileCountY];
         baseTileMaterials = new Material[tileCountX, tileCountY];
+        legalMoveHighlights = new bool[tileCountX, tileCountY];
 
         for (int x = 0; x < tileCountX; x++)
             for (int y = 0; y < tileCountY; y++)
@@ -173,10 +177,67 @@ public class Chessboard : MonoBehaviour
             return;
 
         tiles[position.x, position.y].layer = isHovering ? hoverLayer : tileLayer;
-        tileRenderers[position.x, position.y].enabled = showGeneratedTiles || isHovering;
-        tileRenderers[position.x, position.y].sharedMaterial = isHovering && hoverMaterial
-            ? hoverMaterial
-            : baseTileMaterials[position.x, position.y];
+        RefreshTileVisual(position);
+    }
+
+    private void ClearCurrentHover()
+    {
+        if (currentHover == -Vector2Int.one)
+            return;
+
+        Vector2Int previousHover = currentHover;
+        currentHover = -Vector2Int.one;
+        SetTileHover(previousHover, false);
+    }
+
+    public void SetLegalMoveHighlights(IEnumerable<Vector2Int> positions)
+    {
+        ClearLegalMoveHighlights();
+
+        if (positions == null)
+            return;
+
+        foreach (Vector2Int position in positions)
+        {
+            if (!IsValidTilePosition(position))
+                continue;
+
+            legalMoveHighlights[position.x, position.y] = true;
+            RefreshTileVisual(position);
+        }
+    }
+
+    public void ClearLegalMoveHighlights()
+    {
+        if (legalMoveHighlights == null)
+            return;
+
+        for (int x = 0; x < legalMoveHighlights.GetLength(0); x++)
+            for (int y = 0; y < legalMoveHighlights.GetLength(1); y++)
+            {
+                if (!legalMoveHighlights[x, y])
+                    continue;
+
+                legalMoveHighlights[x, y] = false;
+                RefreshTileVisual(new Vector2Int(x, y));
+            }
+    }
+
+    private void RefreshTileVisual(Vector2Int position)
+    {
+        if (!IsValidTilePosition(position))
+            return;
+
+        bool isHovering = currentHover == position;
+        bool isLegalMove = legalMoveHighlights != null && legalMoveHighlights[position.x, position.y];
+        tileRenderers[position.x, position.y].enabled = showGeneratedTiles || isHovering || isLegalMove;
+
+        if (isHovering && hoverMaterial)
+            tileRenderers[position.x, position.y].sharedMaterial = hoverMaterial;
+        else if (isLegalMove && legalMoveTileMaterial)
+            tileRenderers[position.x, position.y].sharedMaterial = legalMoveTileMaterial;
+        else
+            tileRenderers[position.x, position.y].sharedMaterial = baseTileMaterials[position.x, position.y];
     }
 
     public Vector3 GetTileCenterWorld(Vector2Int tile)
@@ -225,6 +286,7 @@ public class Chessboard : MonoBehaviour
     {
         lightTileMaterial = CreateTileMaterial("Light Chess Tile", lightTileColor);
         darkTileMaterial = CreateTileMaterial("Dark Chess Tile", darkTileColor);
+        legalMoveTileMaterial = CreateTileMaterial("Legal Move Chess Tile", legalMoveTileColor, true);
     }
 
     private BoardLayout ResolveBoardLayout()
@@ -510,7 +572,7 @@ public class Chessboard : MonoBehaviour
         Gizmos.matrix = Matrix4x4.identity;
     }
 
-    private Material CreateTileMaterial(string materialName, Color color)
+    private Material CreateTileMaterial(string materialName, Color color, bool transparent = false)
     {
         Shader shader = tileMaterial ? tileMaterial.shader : Shader.Find("Universal Render Pipeline/Lit");
         if (!shader)
@@ -519,10 +581,16 @@ public class Chessboard : MonoBehaviour
         Material material = new Material(shader)
         {
             name = materialName,
-            renderQueue = -1
+            renderQueue = transparent
+                ? (int)UnityEngine.Rendering.RenderQueue.Transparent
+                : -1
         };
 
-        ConfigureOpaqueMaterial(material);
+        if (transparent)
+            ConfigureTransparentMaterial(material);
+        else
+            ConfigureOpaqueMaterial(material);
+
         SetMaterialColor(material, color);
         ClearBaseTexture(material);
 
@@ -545,6 +613,30 @@ public class Chessboard : MonoBehaviour
 
         material.SetOverrideTag("RenderType", "Opaque");
         material.DisableKeyword("_SURFACE_TYPE_TRANSPARENT");
+        material.DisableKeyword("_ALPHAPREMULTIPLY_ON");
+        material.DisableKeyword("_ALPHABLEND_ON");
+    }
+
+    private void ConfigureTransparentMaterial(Material material)
+    {
+        if (material.HasProperty("_Surface"))
+            material.SetFloat("_Surface", 1);
+
+        if (material.HasProperty("_Mode"))
+            material.SetFloat("_Mode", 3);
+
+        if (material.HasProperty("_ZWrite"))
+            material.SetFloat("_ZWrite", 0);
+
+        if (material.HasProperty("_SrcBlend"))
+            material.SetFloat("_SrcBlend", (float)UnityEngine.Rendering.BlendMode.SrcAlpha);
+
+        if (material.HasProperty("_DstBlend"))
+            material.SetFloat("_DstBlend", (float)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+
+        material.SetOverrideTag("RenderType", "Transparent");
+        material.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+        material.EnableKeyword("_ALPHABLEND_ON");
         material.DisableKeyword("_ALPHAPREMULTIPLY_ON");
     }
 
