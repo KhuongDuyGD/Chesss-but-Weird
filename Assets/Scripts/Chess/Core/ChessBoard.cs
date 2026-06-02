@@ -6,6 +6,8 @@ public class Chessboard : MonoBehaviour
     [Header("Art stuff")]
     [SerializeField] private Material tileMaterial;
     [SerializeField] private Material hoverMaterial;
+    [SerializeField] private Material validMoveMaterial;
+    [SerializeField] private Material captureMaterial;
     [SerializeField] private Color lightTileColor = new Color(0.72f, 0.64f, 0.50f, 1f);
     [SerializeField] private Color darkTileColor = new Color(0.24f, 0.28f, 0.30f, 1f);
     [Tooltip("Visible hover quad offset above the detected board surface.")]
@@ -55,9 +57,11 @@ public class Chessboard : MonoBehaviour
     private Material darkTileMaterial;
     private Camera currentCamera;
     private Vector2Int currentHover = -Vector2Int.one;
+    public Vector2Int HoveredTile => currentHover;
     private int tileLayer;
     private int hoverLayer;
     private BoardLayout currentBoardLayout;
+    private readonly System.Collections.Generic.HashSet<Vector2Int> highlightedTiles = new System.Collections.Generic.HashSet<Vector2Int>();
 
     private void Awake()
     {
@@ -172,11 +176,53 @@ public class Chessboard : MonoBehaviour
         if (!IsValidTilePosition(position))
             return;
 
+        // Do not override a highlight with just hover state
+        if (!isHovering && highlightedTiles.Contains(position))
+            return;
+
         tiles[position.x, position.y].layer = isHovering ? hoverLayer : tileLayer;
         tileRenderers[position.x, position.y].enabled = showGeneratedTiles || isHovering;
         tileRenderers[position.x, position.y].sharedMaterial = isHovering && hoverMaterial
             ? hoverMaterial
             : baseTileMaterials[position.x, position.y];
+    }
+
+    public void HighlightTiles(System.Collections.Generic.List<Vector2Int> moveTiles, System.Collections.Generic.List<Vector2Int> captureTiles)
+    {
+        ClearHighlights();
+
+        if (moveTiles != null && validMoveMaterial)
+        {
+            foreach (Vector2Int tile in moveTiles)
+            {
+                if (!IsValidTilePosition(tile)) continue;
+                tileRenderers[tile.x, tile.y].enabled = true;
+                tileRenderers[tile.x, tile.y].sharedMaterial = validMoveMaterial;
+                highlightedTiles.Add(tile);
+            }
+        }
+
+        if (captureTiles != null && captureMaterial)
+        {
+            foreach (Vector2Int tile in captureTiles)
+            {
+                if (!IsValidTilePosition(tile)) continue;
+                tileRenderers[tile.x, tile.y].enabled = true;
+                tileRenderers[tile.x, tile.y].sharedMaterial = captureMaterial;
+                highlightedTiles.Add(tile);
+            }
+        }
+    }
+
+    public void ClearHighlights()
+    {
+        foreach (Vector2Int tile in highlightedTiles)
+        {
+            if (!IsValidTilePosition(tile)) continue;
+            tileRenderers[tile.x, tile.y].enabled = showGeneratedTiles;
+            tileRenderers[tile.x, tile.y].sharedMaterial = baseTileMaterials[tile.x, tile.y];
+        }
+        highlightedTiles.Clear();
     }
 
     public Vector3 GetTileCenterWorld(Vector2Int tile)

@@ -105,3 +105,7 @@ InitTestScene*.unity*
 
 # Auto-generated scenes by play mode tests
 /[Aa]ssets/[Ii]nit[Tt]est[Ss]cene*.unity*
+ProjectSettings/Packages/com.unity.services.core/Settings.json
+ProjectSettings/ProjectSettings.asset
+ProjectSettings/ShaderGraphSettings 2.asset
+ProjectSettings/ProjectSettings.asset

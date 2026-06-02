@@ -20,27 +20,80 @@ public class ChessGame : MonoBehaviour
 
     private void Start()
     {
+        Debug.Log("Mouse Click0");
         RefreshPieceMap();
     }
 
-    public void RefreshPieceMap()
+    private void Update()
     {
-        ClearPieceMap();
-
-        Transform searchRoot = piecesRoot ? piecesRoot : chessboard ? chessboard.transform : transform;
-        ChessPiece[] scenePieces = searchRoot.GetComponentsInChildren<ChessPiece>(true);
-        for (int i = 0; i < scenePieces.Length; i++)
+        if (UnityEngine.InputSystem.Mouse.current == null) return;
+        
+        if (UnityEngine.InputSystem.Mouse.current.leftButton.wasPressedThisFrame)
         {
-            ChessPiece piece = scenePieces[i];
-            if (!chessboard || !chessboard.IsValidTile(piece.boardPosition))
-                continue;
-
-            pieces[piece.boardPosition.x, piece.boardPosition.y] = piece;
+            Debug.Log("Mouse Click1");
+            Vector2Int hoveredTile = chessboard.HoveredTile;
+            if (chessboard.IsValidTile(hoveredTile))
+            {
+                Debug.Log("Mouse Click2");
+                ChessPiece pieceAtTile = pieces[hoveredTile.x, hoveredTile.y];
+Debug.Log("Hover tile = " + hoveredTile + 
+          " | pieceAtTile = " + (pieceAtTile ? pieceAtTile.name : "NULL") +
+          " | currentTurn = " + currentTurn);
+                if (selectedPiece == null)
+                {
+                    Debug.Log("Mouse Click3");
+                    if (pieceAtTile != null && pieceAtTile.team == currentTurn)
+                    {
+                        Debug.Log("Mouse Click4");
+                        TrySelectPiece(pieceAtTile);
+                    }
+                }
+                else
+                {
+                    if (pieceAtTile != null && pieceAtTile.team == currentTurn)
+                    {
+                        TrySelectPiece(pieceAtTile);
+                    }
+                    else
+                    {
+                        if (!TryMoveSelectedPiece(hoveredTile))
+                        {
+                            ClearSelection();
+                        }
+                    }
+                }
+            }
+            else
+            {
+                ClearSelection();
+            }
         }
-
-        currentTurn = PieceTeam.White;
-        selectedPiece = null;
     }
+
+   public void RefreshPieceMap()
+{
+    ClearPieceMap();
+
+    Transform searchRoot = piecesRoot ? piecesRoot : chessboard ? chessboard.transform : transform;
+    ChessPiece[] scenePieces = searchRoot.GetComponentsInChildren<ChessPiece>(true);
+
+    Debug.Log("Found pieces: " + scenePieces.Length);
+
+    for (int i = 0; i < scenePieces.Length; i++)
+    {
+        ChessPiece piece = scenePieces[i];
+
+        Debug.Log(piece.name + " pos = " + piece.boardPosition + " team = " + piece.team);
+
+        if (!chessboard || !chessboard.IsValidTile(piece.boardPosition))
+            continue;
+
+        pieces[piece.boardPosition.x, piece.boardPosition.y] = piece;
+    }
+
+    currentTurn = PieceTeam.White;
+    selectedPiece = null;
+}
 
     public bool TrySelectPiece(ChessPiece piece)
     {
@@ -57,8 +110,15 @@ public class ChessGame : MonoBehaviour
             return false;
 
         Vector2Int from = selectedPiece.boardPosition;
-        if (!ChessMoveRules.IsLegalMove(selectedPiece.type, selectedPiece.team, from, destination, pieces))
+        
+        if (selectedPiece.MovementRule == null || !selectedPiece.MovementRule.IsLegalMove(selectedPiece, from, destination, pieces))
             return false;
+
+        ChessPiece targetPiece = pieces[destination.x, destination.y];
+        if (targetPiece != null)
+        {
+            Destroy(targetPiece.gameObject);
+        }
 
         pieces[from.x, from.y] = null;
         pieces[destination.x, destination.y] = selectedPiece;

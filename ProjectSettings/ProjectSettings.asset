@@ -924,11 +924,11 @@ PlayerSettings:
   activeInputHandler: 2
   windowsGamepadBackendHint: 0
   enableDirectStorage: 0
-  cloudProjectId: 383082ed-4d2f-4837-84f3-f76fc3c1f6dc
+  cloudProjectId: 4abeedd8-9d04-4109-95da-ada1b93b0ab8
   framebufferDepthMemorylessMode: 0
   qualitySettingsNames: []
-  projectName: Chesss but Weird
-  organizationId: saitohtedofu
+  projectName: ChessButWeird
+  organizationId: nguyentantai22032005
   cloudEnabled: 0
   legacyClampBlendShapeWeights: 0
   hmiLoadingImage: {fileID: 0}
