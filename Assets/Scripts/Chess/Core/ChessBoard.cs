@@ -59,6 +59,7 @@ public class Chessboard : MonoBehaviour
     private Camera currentCamera;
     private Vector2Int currentHover = -Vector2Int.one;
     private bool[,] legalMoveHighlights;
+    private bool interactionEnabled;
     private int tileLayer;
     private int hoverLayer;
     private BoardLayout currentBoardLayout;
@@ -82,6 +83,12 @@ public class Chessboard : MonoBehaviour
 
     private void Update()
     {
+        if (!interactionEnabled)
+        {
+            ClearCurrentHover();
+            return;
+        }
+
         if (!currentCamera)
         {
             currentCamera = Camera.main;
@@ -221,6 +228,16 @@ public class Chessboard : MonoBehaviour
                 legalMoveHighlights[x, y] = false;
                 RefreshTileVisual(new Vector2Int(x, y));
             }
+    }
+
+    public void SetInteractionEnabled(bool enabled)
+    {
+        interactionEnabled = enabled;
+        if (interactionEnabled)
+            return;
+
+        ClearCurrentHover();
+        ClearLegalMoveHighlights();
     }
 
     private void RefreshTileVisual(Vector2Int position)

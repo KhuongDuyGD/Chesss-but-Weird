@@ -15,6 +15,8 @@ public class ChessGame : MonoBehaviour
     [SerializeField] private float selectAnimationDuration = 0.12f;
     [SerializeField] private float moveAnimationDuration = 0.22f;
     [SerializeField] private float moveArcHeight = 0.2f;
+    [SerializeField] private float checkPulseScale = 1.14f;
+    [SerializeField] private float checkPulseDuration = 0.42f;
 
     private readonly ChessPiece[,] pieces = new ChessPiece[8, 8];
     private readonly Dictionary<ChessPiece, Coroutine> pieceAnimations = new Dictionary<ChessPiece, Coroutine>();
@@ -23,12 +25,19 @@ public class ChessGame : MonoBehaviour
     private ChessPiece selectedPiece;
     private Transform runtimePiecesRoot;
     private bool gameStarted;
+    private bool gameOver;
     private bool inputLocked;
+    private PieceTeam winningTeam;
+    private ChessPiece checkedKing;
+    private Coroutine checkPulseCoroutine;
+    private Vector3 checkedKingOriginalScale;
     private ChessTurnSelectionUI turnSelectionUI;
 
     public PieceTeam CurrentTurn => currentTurn;
     public ChessPiece SelectedPiece => selectedPiece;
     public bool GameStarted => gameStarted;
+    public bool GameOver => gameOver;
+    public PieceTeam WinningTeam => winningTeam;
 
     private void Awake()
     {
@@ -76,12 +85,15 @@ public class ChessGame : MonoBehaviour
     {
         currentTurn = firstTurn;
         selectedPiece = null;
+        gameOver = false;
         ArrangePiecesForFirstTurn(firstTurn);
         SetRuntimePiecesVisible(true);
         RefreshPieceMap();
         gameStarted = true;
+        chessboard?.SetInteractionEnabled(true);
         chessboard?.ClearLegalMoveHighlights();
         turnSelectionUI?.SetTurn(currentTurn);
+        UpdateCheckWarningForCurrentTurn();
     }
 
     public bool TrySelectPiece(ChessPiece piece)
@@ -97,22 +109,23 @@ public class ChessGame : MonoBehaviour
 
         DeselectCurrentPiece(true);
         selectedPiece = piece;
-        chessboard?.SetLegalMoveHighlights(selectedPiece.GetLegalMoves(pieces));
+        chessboard?.SetLegalMoveHighlights(GetSafeLegalMoves(selectedPiece));
         AnimatePieceToTile(selectedPiece, selectedPiece.BoardPosition, selectedPieceLiftHeight, selectAnimationDuration, 0f);
         return true;
     }
 
     public bool TryMoveSelectedPiece(Vector2Int destination)
     {
-        if (!gameStarted || inputLocked || !selectedPiece || !chessboard || !chessboard.IsValidTile(destination))
+        if (!gameStarted || gameOver || inputLocked || !selectedPiece || !chessboard || !chessboard.IsValidTile(destination))
             return false;
 
         Vector2Int from = selectedPiece.BoardPosition;
-        if (!ChessMoveRules.IsLegalMove(selectedPiece, from, destination, pieces))
+        if (!IsLegalMoveAfterKingSafety(selectedPiece, from, destination))
             return false;
 
         ChessPiece movingPiece = selectedPiece;
         ChessPiece capturedPiece = pieces[destination.x, destination.y];
+        PieceTeam opponentTeam = movingPiece.Team == PieceTeam.White ? PieceTeam.Black : PieceTeam.White;
 
         pieces[from.x, from.y] = null;
         pieces[destination.x, destination.y] = movingPiece;
@@ -125,8 +138,15 @@ public class ChessGame : MonoBehaviour
         if (capturedPiece)
             Destroy(capturedPiece.gameObject);
 
+        if (IsCheckmate(opponentTeam))
+        {
+            StartCoroutine(AnimateMoveAndFinishGame(movingPiece, destination, movingPiece.Team));
+            return true;
+        }
+
         currentTurn = currentTurn == PieceTeam.White ? PieceTeam.Black : PieceTeam.White;
         turnSelectionUI?.SetTurn(currentTurn);
+        UpdateCheckWarningForCurrentTurn();
         StartCoroutine(AnimateMoveAndUnlock(movingPiece, destination));
         return true;
     }
@@ -136,12 +156,44 @@ public class ChessGame : MonoBehaviour
         DeselectCurrentPiece(true);
     }
 
+    public void OpenTurnSelection()
+    {
+        if (gameStarted || gameOver)
+            return;
+
+        SetRuntimePiecesVisible(false);
+        chessboard?.SetInteractionEnabled(false);
+        turnSelectionUI?.ShowTurnSelection();
+    }
+
+    public void RestartToMainMenu()
+    {
+        PrepareGame();
+        turnSelectionUI?.ShowMainMenu();
+    }
+
     private void PrepareGame()
     {
-        runtimePiecesRoot = piecesRoot ? piecesRoot : CreateRuntimePiecesRoot();
+        StopCheckWarning();
+        StopAllCoroutines();
+        pieceAnimations.Clear();
 
-        if (clearRuntimePiecesOnStart && !piecesRoot)
-            ClearRuntimePiecesRoot();
+        if (piecesRoot)
+        {
+            runtimePiecesRoot = piecesRoot;
+
+            if (clearRuntimePiecesOnStart)
+                ClearRuntimePiecesRoot();
+        }
+        else if (clearRuntimePiecesOnStart)
+        {
+            DestroyRuntimePiecesRoots();
+            runtimePiecesRoot = CreateRuntimePiecesRoot();
+        }
+        else
+        {
+            runtimePiecesRoot = FindRuntimePiecesRoot() ?? CreateRuntimePiecesRoot();
+        }
 
         if (spawnDefaultPiecesOnStart && runtimePiecesRoot.GetComponentsInChildren<ChessPiece>(true).Length == 0)
             CreateRuntimePiecesFromVisualSet();
@@ -152,9 +204,11 @@ public class ChessGame : MonoBehaviour
         RefreshPieceMap();
         AlignAllPiecesToBoard();
         SetRuntimePiecesVisible(false);
+        chessboard?.SetInteractionEnabled(false);
 
         currentTurn = PieceTeam.White;
         gameStarted = false;
+        gameOver = false;
         inputLocked = false;
     }
 
@@ -165,10 +219,41 @@ public class ChessGame : MonoBehaviour
         return root.transform;
     }
 
+    private Transform FindRuntimePiecesRoot()
+    {
+        Transform[] children = GetComponentsInChildren<Transform>(true);
+        for (int i = 0; i < children.Length; i++)
+            if (children[i] != transform && children[i].name == "Runtime Chess Pieces")
+                return children[i];
+
+        return null;
+    }
+
+    private void DestroyRuntimePiecesRoots()
+    {
+        Transform[] children = GetComponentsInChildren<Transform>(true);
+        for (int i = children.Length - 1; i >= 0; i--)
+        {
+            Transform child = children[i];
+            if (!child || child == transform || child.name != "Runtime Chess Pieces")
+                continue;
+
+            DestroyRuntimeObject(child.gameObject);
+        }
+    }
+
     private void ClearRuntimePiecesRoot()
     {
         for (int i = runtimePiecesRoot.childCount - 1; i >= 0; i--)
-            Destroy(runtimePiecesRoot.GetChild(i).gameObject);
+            DestroyRuntimeObject(runtimePiecesRoot.GetChild(i).gameObject);
+    }
+
+    private void DestroyRuntimeObject(GameObject target)
+    {
+        if (!target)
+            return;
+
+        DestroyImmediate(target);
     }
 
     private void HandleBoardClick()
@@ -206,6 +291,181 @@ public class ChessGame : MonoBehaviour
 
             TryMoveSelectedPiece(destination);
         }
+    }
+
+    private List<Vector2Int> GetSafeLegalMoves(ChessPiece piece)
+    {
+        List<Vector2Int> safeMoves = new List<Vector2Int>();
+        if (!piece)
+            return safeMoves;
+
+        IReadOnlyList<Vector2Int> candidateMoves = piece.GetLegalMoves(pieces);
+        for (int i = 0; i < candidateMoves.Count; i++)
+        {
+            Vector2Int destination = candidateMoves[i];
+            if (IsLegalMoveAfterKingSafety(piece, piece.BoardPosition, destination))
+                safeMoves.Add(destination);
+        }
+
+        return safeMoves;
+    }
+
+    private bool IsLegalMoveAfterKingSafety(ChessPiece piece, Vector2Int from, Vector2Int destination)
+    {
+        if (!ChessMoveRules.IsLegalMove(piece, from, destination, pieces))
+            return false;
+
+        ChessPiece targetPiece = pieces[destination.x, destination.y];
+        if (targetPiece && targetPiece.Type == PieceType.King)
+            return false;
+
+        return DoesMoveKeepTeamKingSafe(piece, from, destination, piece.Team);
+    }
+
+    private bool DoesMoveKeepTeamKingSafe(ChessPiece piece, Vector2Int from, Vector2Int destination, PieceTeam team)
+    {
+        ChessPiece capturedPiece = pieces[destination.x, destination.y];
+
+        pieces[from.x, from.y] = null;
+        pieces[destination.x, destination.y] = piece;
+        piece.SetBoardPosition(destination);
+
+        bool kingIsSafe = !IsTeamInCheck(team);
+
+        piece.SetBoardPosition(from);
+        pieces[from.x, from.y] = piece;
+        pieces[destination.x, destination.y] = capturedPiece;
+
+        return kingIsSafe;
+    }
+
+    private bool IsCheckmate(PieceTeam team)
+    {
+        return IsTeamInCheck(team) && !HasAnySafeLegalMove(team);
+    }
+
+    private bool HasAnySafeLegalMove(PieceTeam team)
+    {
+        for (int x = 0; x < pieces.GetLength(0); x++)
+            for (int y = 0; y < pieces.GetLength(1); y++)
+            {
+                ChessPiece piece = pieces[x, y];
+                if (!piece || piece.Team != team)
+                    continue;
+
+                IReadOnlyList<Vector2Int> candidateMoves = piece.GetLegalMoves(pieces);
+                for (int i = 0; i < candidateMoves.Count; i++)
+                    if (IsLegalMoveAfterKingSafety(piece, piece.BoardPosition, candidateMoves[i]))
+                        return true;
+            }
+
+        return false;
+    }
+
+    private bool IsTeamInCheck(PieceTeam team)
+    {
+        ChessPiece king = FindKing(team);
+        if (!king)
+            return true;
+
+        PieceTeam enemyTeam = team == PieceTeam.White ? PieceTeam.Black : PieceTeam.White;
+        Vector2Int kingPosition = king.BoardPosition;
+        for (int x = 0; x < pieces.GetLength(0); x++)
+            for (int y = 0; y < pieces.GetLength(1); y++)
+            {
+                ChessPiece piece = pieces[x, y];
+                if (!piece || piece.Team != enemyTeam)
+                    continue;
+
+                if (piece.IsLegalMove(kingPosition, pieces))
+                    return true;
+            }
+
+        return false;
+    }
+
+    private ChessPiece FindKing(PieceTeam team)
+    {
+        for (int x = 0; x < pieces.GetLength(0); x++)
+            for (int y = 0; y < pieces.GetLength(1); y++)
+            {
+                ChessPiece piece = pieces[x, y];
+                if (piece && piece.Team == team && piece.Type == PieceType.King)
+                    return piece;
+            }
+
+        return null;
+    }
+
+    private void UpdateCheckWarningForCurrentTurn()
+    {
+        if (!gameStarted || gameOver)
+        {
+            StopCheckWarning();
+            return;
+        }
+
+        if (!IsTeamInCheck(currentTurn))
+        {
+            StopCheckWarning();
+            return;
+        }
+
+        ShowCheckWarning(currentTurn);
+    }
+
+    private void ShowCheckWarning(PieceTeam checkedTeam)
+    {
+        ChessPiece king = FindKing(checkedTeam);
+        if (!king)
+            return;
+
+        if (checkedKing == king && checkPulseCoroutine != null)
+        {
+            turnSelectionUI?.ShowCheckWarning(checkedTeam);
+            return;
+        }
+
+        StopCheckWarning();
+        checkedKing = king;
+        checkedKingOriginalScale = checkedKing.transform.localScale;
+        checkPulseCoroutine = StartCoroutine(AnimateCheckedKing(checkedKing, checkedTeam));
+        turnSelectionUI?.ShowCheckWarning(checkedTeam);
+    }
+
+    private void StopCheckWarning()
+    {
+        if (checkPulseCoroutine != null)
+        {
+            StopCoroutine(checkPulseCoroutine);
+            checkPulseCoroutine = null;
+        }
+
+        if (checkedKing)
+            checkedKing.transform.localScale = checkedKingOriginalScale;
+
+        checkedKing = null;
+        turnSelectionUI?.HideCheckWarning();
+    }
+
+    private IEnumerator AnimateCheckedKing(ChessPiece king, PieceTeam checkedTeam)
+    {
+        float elapsed = 0f;
+        while (king && gameStarted && !gameOver && IsTeamInCheck(checkedTeam))
+        {
+            elapsed += Time.deltaTime;
+            float wave = (Mathf.Sin((elapsed / Mathf.Max(0.001f, checkPulseDuration)) * Mathf.PI * 2f) + 1f) * 0.5f;
+            float scale = Mathf.Lerp(1f, checkPulseScale, wave);
+            king.transform.localScale = checkedKingOriginalScale * scale;
+            yield return null;
+        }
+
+        if (king)
+            king.transform.localScale = checkedKingOriginalScale;
+
+        checkPulseCoroutine = null;
+        checkedKing = null;
+        turnSelectionUI?.HideCheckWarning();
     }
 
     private void CreateRuntimePiecesFromVisualSet()
@@ -682,6 +942,27 @@ public class ChessGame : MonoBehaviour
         AnimatePieceToTile(movingPiece, destination, 0f, moveAnimationDuration, moveArcHeight);
         yield return new WaitForSeconds(moveAnimationDuration);
         inputLocked = false;
+    }
+
+    private IEnumerator AnimateMoveAndFinishGame(ChessPiece movingPiece, Vector2Int destination, PieceTeam winner)
+    {
+        inputLocked = true;
+        AnimatePieceToTile(movingPiece, destination, 0f, moveAnimationDuration, moveArcHeight);
+        yield return new WaitForSeconds(moveAnimationDuration);
+        FinishGame(winner);
+    }
+
+    private void FinishGame(PieceTeam winner)
+    {
+        StopCheckWarning();
+        winningTeam = winner;
+        selectedPiece = null;
+        gameStarted = false;
+        gameOver = true;
+        inputLocked = false;
+        chessboard?.ClearLegalMoveHighlights();
+        chessboard?.SetInteractionEnabled(false);
+        turnSelectionUI?.ShowGameOver(winningTeam);
     }
 
     private void ClearPieceMap()
