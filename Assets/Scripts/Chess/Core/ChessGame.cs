@@ -28,9 +28,15 @@ public class ChessGame : MonoBehaviour
     private bool gameOver;
     private bool inputLocked;
     private PieceTeam winningTeam;
+    private PieceTeam playerTeam;
     private ChessPiece checkedKing;
     private Coroutine checkPulseCoroutine;
     private Vector3 checkedKingOriginalScale;
+    private ChessPiece lastMovedPiece;
+    private Vector2Int lastMoveTo;
+    private bool lastMoveWasPawnDoubleStep;
+    private PawnPiece pendingPromotionPawn;
+    private PieceTeam pendingPromotionOpponentTeam;
     private ChessTurnSelectionUI turnSelectionUI;
 
     public PieceTeam CurrentTurn => currentTurn;
@@ -84,6 +90,7 @@ public class ChessGame : MonoBehaviour
     public void BeginGame(PieceTeam firstTurn)
     {
         currentTurn = firstTurn;
+        playerTeam = firstTurn;
         selectedPiece = null;
         gameOver = false;
         ArrangePiecesForFirstTurn(firstTurn);
@@ -126,17 +133,44 @@ public class ChessGame : MonoBehaviour
         ChessPiece movingPiece = selectedPiece;
         ChessPiece capturedPiece = pieces[destination.x, destination.y];
         PieceTeam opponentTeam = movingPiece.Team == PieceTeam.White ? PieceTeam.Black : PieceTeam.White;
+        bool isEnPassant = TryGetEnPassantCapture(movingPiece, from, destination, out ChessPiece enPassantCapturedPiece, out Vector2Int enPassantCapturePosition);
+        bool isCastling = TryGetCastlingRookMove(movingPiece, from, destination, out ChessPiece castlingRook, out Vector2Int castlingRookFrom, out Vector2Int castlingRookTo);
+        StopCheckWarning();
+
+        if (isEnPassant)
+            capturedPiece = enPassantCapturedPiece;
 
         pieces[from.x, from.y] = null;
+        if (isEnPassant)
+            pieces[enPassantCapturePosition.x, enPassantCapturePosition.y] = null;
+
         pieces[destination.x, destination.y] = movingPiece;
+
+        if (isCastling)
+        {
+            pieces[castlingRookFrom.x, castlingRookFrom.y] = null;
+            pieces[castlingRookTo.x, castlingRookTo.y] = castlingRook;
+            castlingRook.SetBoardPosition(castlingRookTo);
+            castlingRook.MarkMoved();
+        }
 
         movingPiece.SetBoardPosition(destination);
         movingPiece.MarkMoved();
+        RecordLastMove(movingPiece, from, destination);
         selectedPiece = null;
         chessboard.ClearLegalMoveHighlights();
 
         if (capturedPiece)
             Destroy(capturedPiece.gameObject);
+
+        if (isCastling)
+            AnimatePieceToTile(castlingRook, castlingRookTo, 0f, moveAnimationDuration, moveArcHeight * 0.5f);
+
+        if (movingPiece is PawnPiece promotedPawn && IsPromotionRank(promotedPawn))
+        {
+            StartCoroutine(AnimateMoveAndPromptPromotion(promotedPawn, destination, opponentTeam));
+            return true;
+        }
 
         if (IsCheckmate(opponentTeam))
         {
@@ -210,6 +244,11 @@ public class ChessGame : MonoBehaviour
         gameStarted = false;
         gameOver = false;
         inputLocked = false;
+        playerTeam = PieceTeam.White;
+        lastMovedPiece = null;
+        lastMoveTo = -Vector2Int.one;
+        lastMoveWasPawnDoubleStep = false;
+        pendingPromotionPawn = null;
     }
 
     private Transform CreateRuntimePiecesRoot()
@@ -299,7 +338,7 @@ public class ChessGame : MonoBehaviour
         if (!piece)
             return safeMoves;
 
-        IReadOnlyList<Vector2Int> candidateMoves = piece.GetLegalMoves(pieces);
+        IReadOnlyList<Vector2Int> candidateMoves = GetCandidateMoves(piece);
         for (int i = 0; i < candidateMoves.Count; i++)
         {
             Vector2Int destination = candidateMoves[i];
@@ -312,7 +351,7 @@ public class ChessGame : MonoBehaviour
 
     private bool IsLegalMoveAfterKingSafety(ChessPiece piece, Vector2Int from, Vector2Int destination)
     {
-        if (!ChessMoveRules.IsLegalMove(piece, from, destination, pieces))
+        if (!IsLegalMoveIgnoringKingSafety(piece, from, destination))
             return false;
 
         ChessPiece targetPiece = pieces[destination.x, destination.y];
@@ -322,21 +361,107 @@ public class ChessGame : MonoBehaviour
         return DoesMoveKeepTeamKingSafe(piece, from, destination, piece.Team);
     }
 
+    private IReadOnlyList<Vector2Int> GetCandidateMoves(ChessPiece piece)
+    {
+        List<Vector2Int> candidateMoves = new List<Vector2Int>(piece.GetLegalMoves(pieces));
+        AddSpecialCandidateMoves(piece, candidateMoves);
+        return candidateMoves;
+    }
+
+    private void AddSpecialCandidateMoves(ChessPiece piece, List<Vector2Int> candidateMoves)
+    {
+        if (!piece)
+            return;
+
+        Vector2Int from = piece.BoardPosition;
+        if (piece.Type == PieceType.Pawn)
+        {
+            Vector2Int leftEnPassant = new Vector2Int(from.x - 1, from.y + piece.ForwardDirection);
+            Vector2Int rightEnPassant = new Vector2Int(from.x + 1, from.y + piece.ForwardDirection);
+            AddSpecialCandidateIfLegal(piece, from, leftEnPassant, candidateMoves);
+            AddSpecialCandidateIfLegal(piece, from, rightEnPassant, candidateMoves);
+        }
+        else if (piece.Type == PieceType.King)
+        {
+            AddSpecialCandidateIfLegal(piece, from, new Vector2Int(from.x + 2, from.y), candidateMoves);
+            AddSpecialCandidateIfLegal(piece, from, new Vector2Int(from.x - 2, from.y), candidateMoves);
+        }
+    }
+
+    private void AddSpecialCandidateIfLegal(ChessPiece piece, Vector2Int from, Vector2Int destination, List<Vector2Int> candidateMoves)
+    {
+        if (!chessboard || !chessboard.IsValidTile(destination) || candidateMoves.Contains(destination))
+            return;
+
+        if (IsEnPassantMove(piece, from, destination) || IsCastlingMove(piece, from, destination))
+            candidateMoves.Add(destination);
+    }
+
+    private bool IsLegalMoveIgnoringKingSafety(ChessPiece piece, Vector2Int from, Vector2Int destination)
+    {
+        return ChessMoveRules.IsLegalMove(piece, from, destination, pieces) ||
+            IsEnPassantMove(piece, from, destination) ||
+            IsCastlingMove(piece, from, destination);
+    }
+
     private bool DoesMoveKeepTeamKingSafe(ChessPiece piece, Vector2Int from, Vector2Int destination, PieceTeam team)
     {
-        ChessPiece capturedPiece = pieces[destination.x, destination.y];
+        MoveSimulation simulation = ApplyMoveSimulation(piece, from, destination);
+
+        bool kingIsSafe = !IsTeamInCheck(team);
+
+        RestoreMoveSimulation(piece, from, destination, simulation);
+
+        return kingIsSafe;
+    }
+
+    private MoveSimulation ApplyMoveSimulation(ChessPiece piece, Vector2Int from, Vector2Int destination)
+    {
+        MoveSimulation simulation = new MoveSimulation
+        {
+            destinationPiece = pieces[destination.x, destination.y]
+        };
+
+        if (TryGetEnPassantCapture(piece, from, destination, out ChessPiece enPassantCapturedPiece, out Vector2Int enPassantCapturePosition))
+        {
+            simulation.isEnPassant = true;
+            simulation.enPassantCapturedPiece = enPassantCapturedPiece;
+            simulation.enPassantCapturePosition = enPassantCapturePosition;
+            pieces[enPassantCapturePosition.x, enPassantCapturePosition.y] = null;
+        }
+
+        if (TryGetCastlingRookMove(piece, from, destination, out ChessPiece rook, out Vector2Int rookFrom, out Vector2Int rookTo))
+        {
+            simulation.isCastling = true;
+            simulation.castlingRook = rook;
+            simulation.castlingRookFrom = rookFrom;
+            simulation.castlingRookTo = rookTo;
+            pieces[rookFrom.x, rookFrom.y] = null;
+            pieces[rookTo.x, rookTo.y] = rook;
+            rook.SetBoardPosition(rookTo);
+        }
 
         pieces[from.x, from.y] = null;
         pieces[destination.x, destination.y] = piece;
         piece.SetBoardPosition(destination);
+        return simulation;
+    }
 
-        bool kingIsSafe = !IsTeamInCheck(team);
-
+    private void RestoreMoveSimulation(ChessPiece piece, Vector2Int from, Vector2Int destination, MoveSimulation simulation)
+    {
         piece.SetBoardPosition(from);
         pieces[from.x, from.y] = piece;
-        pieces[destination.x, destination.y] = capturedPiece;
+        pieces[destination.x, destination.y] = simulation.destinationPiece;
 
-        return kingIsSafe;
+        if (simulation.isEnPassant)
+            pieces[simulation.enPassantCapturePosition.x, simulation.enPassantCapturePosition.y] = simulation.enPassantCapturedPiece;
+
+        if (simulation.isCastling && simulation.castlingRook)
+        {
+            simulation.castlingRook.SetBoardPosition(simulation.castlingRookFrom);
+            pieces[simulation.castlingRookFrom.x, simulation.castlingRookFrom.y] = simulation.castlingRook;
+            pieces[simulation.castlingRookTo.x, simulation.castlingRookTo.y] = null;
+        }
     }
 
     private bool IsCheckmate(PieceTeam team)
@@ -353,7 +478,7 @@ public class ChessGame : MonoBehaviour
                 if (!piece || piece.Team != team)
                     continue;
 
-                IReadOnlyList<Vector2Int> candidateMoves = piece.GetLegalMoves(pieces);
+                IReadOnlyList<Vector2Int> candidateMoves = GetCandidateMoves(piece);
                 for (int i = 0; i < candidateMoves.Count; i++)
                     if (IsLegalMoveAfterKingSafety(piece, piece.BoardPosition, candidateMoves[i]))
                         return true;
@@ -368,20 +493,37 @@ public class ChessGame : MonoBehaviour
         if (!king)
             return true;
 
-        PieceTeam enemyTeam = team == PieceTeam.White ? PieceTeam.Black : PieceTeam.White;
-        Vector2Int kingPosition = king.BoardPosition;
+        return IsSquareUnderAttack(king.BoardPosition, team == PieceTeam.White ? PieceTeam.Black : PieceTeam.White);
+    }
+
+    private bool IsSquareUnderAttack(Vector2Int square, PieceTeam attackerTeam)
+    {
         for (int x = 0; x < pieces.GetLength(0); x++)
             for (int y = 0; y < pieces.GetLength(1); y++)
             {
                 ChessPiece piece = pieces[x, y];
-                if (!piece || piece.Team != enemyTeam)
+                if (!piece || piece.Team != attackerTeam)
                     continue;
 
-                if (piece.IsLegalMove(kingPosition, pieces))
+                if (CanPieceAttackSquare(piece, square))
                     return true;
             }
 
         return false;
+    }
+
+    private bool CanPieceAttackSquare(ChessPiece piece, Vector2Int square)
+    {
+        if (!piece || piece.BoardPosition == square)
+            return false;
+
+        if (piece.Type == PieceType.Pawn)
+        {
+            Vector2Int delta = square - piece.BoardPosition;
+            return Mathf.Abs(delta.x) == 1 && delta.y == piece.ForwardDirection;
+        }
+
+        return piece.IsLegalMove(square, pieces);
     }
 
     private ChessPiece FindKing(PieceTeam team)
@@ -395,6 +537,270 @@ public class ChessGame : MonoBehaviour
             }
 
         return null;
+    }
+
+    private bool IsEnPassantMove(ChessPiece piece, Vector2Int from, Vector2Int destination)
+    {
+        return TryGetEnPassantCapture(piece, from, destination, out _, out _);
+    }
+
+    private bool TryGetEnPassantCapture(ChessPiece piece, Vector2Int from, Vector2Int destination, out ChessPiece capturedPawn, out Vector2Int capturePosition)
+    {
+        capturedPawn = null;
+        capturePosition = new Vector2Int(destination.x, from.y);
+
+        if (!piece || piece.Type != PieceType.Pawn || !lastMoveWasPawnDoubleStep || !lastMovedPiece)
+            return false;
+
+        Vector2Int delta = destination - from;
+        if (Mathf.Abs(delta.x) != 1 || delta.y != piece.ForwardDirection)
+            return false;
+
+        if (!ChessMoveRules.IsInsideBoard(destination) || pieces[destination.x, destination.y])
+            return false;
+
+        if (lastMovedPiece.Type != PieceType.Pawn || lastMovedPiece.Team == piece.Team)
+            return false;
+
+        if (lastMoveTo != capturePosition || lastMovedPiece.BoardPosition != capturePosition)
+            return false;
+
+        capturedPawn = pieces[capturePosition.x, capturePosition.y];
+        return capturedPawn == lastMovedPiece;
+    }
+
+    private bool IsCastlingMove(ChessPiece piece, Vector2Int from, Vector2Int destination)
+    {
+        if (!TryGetCastlingRookMove(piece, from, destination, out _, out Vector2Int rookFrom, out _))
+            return false;
+
+        if (IsTeamInCheck(piece.Team))
+            return false;
+
+        int direction = destination.x > from.x ? 1 : -1;
+        PieceTeam enemyTeam = piece.Team == PieceTeam.White ? PieceTeam.Black : PieceTeam.White;
+        for (int x = from.x + direction; x != destination.x + direction; x += direction)
+            if (IsSquareUnderAttack(new Vector2Int(x, from.y), enemyTeam))
+                return false;
+
+        return true;
+    }
+
+    private bool TryGetCastlingRookMove(
+        ChessPiece piece,
+        Vector2Int from,
+        Vector2Int destination,
+        out ChessPiece rook,
+        out Vector2Int rookFrom,
+        out Vector2Int rookTo)
+    {
+        rook = null;
+        rookFrom = default;
+        rookTo = default;
+
+        if (!piece || piece.Type != PieceType.King || piece.HasMoved)
+            return false;
+
+        Vector2Int delta = destination - from;
+        if (delta.y != 0 || Mathf.Abs(delta.x) != 2)
+            return false;
+
+        if (!ChessMoveRules.IsInsideBoard(destination) || pieces[destination.x, destination.y])
+            return false;
+
+        int direction = delta.x > 0 ? 1 : -1;
+        rookFrom = new Vector2Int(direction > 0 ? 7 : 0, from.y);
+        rookTo = new Vector2Int(from.x + direction, from.y);
+        if (!ChessMoveRules.IsInsideBoard(rookFrom) || !ChessMoveRules.IsInsideBoard(rookTo))
+            return false;
+
+        rook = pieces[rookFrom.x, rookFrom.y];
+        if (!rook || rook.Team != piece.Team || rook.Type != PieceType.Rook || rook.HasMoved)
+            return false;
+
+        for (int x = from.x + direction; x != rookFrom.x; x += direction)
+            if (pieces[x, from.y])
+                return false;
+
+        return true;
+    }
+
+    private bool IsPromotionRank(PawnPiece pawn)
+    {
+        if (!pawn)
+            return false;
+
+        return pawn.BoardPosition.y == (pawn.ForwardDirection > 0 ? 7 : 0);
+    }
+
+    private void RecordLastMove(ChessPiece movingPiece, Vector2Int from, Vector2Int destination)
+    {
+        lastMovedPiece = movingPiece;
+        lastMoveTo = destination;
+        lastMoveWasPawnDoubleStep = movingPiece &&
+            movingPiece.Type == PieceType.Pawn &&
+            Mathf.Abs(destination.y - from.y) == 2;
+    }
+
+    private IEnumerator AnimateMoveAndPromptPromotion(PawnPiece pawn, Vector2Int destination, PieceTeam opponentTeam)
+    {
+        inputLocked = true;
+        chessboard?.SetInteractionEnabled(false);
+        AnimatePieceToTile(pawn, destination, 0f, moveAnimationDuration, moveArcHeight);
+        yield return new WaitForSeconds(moveAnimationDuration);
+
+        pendingPromotionPawn = pawn;
+        pendingPromotionOpponentTeam = opponentTeam;
+        turnSelectionUI?.ShowPromotionChoice(pawn.Team, CompletePromotion);
+    }
+
+    private void CompletePromotion(PieceType promotionType)
+    {
+        if (!pendingPromotionPawn)
+            return;
+
+        ChessPiece promotedPiece = PromotePawn(pendingPromotionPawn, promotionType);
+        pendingPromotionPawn = null;
+        inputLocked = false;
+        chessboard?.SetInteractionEnabled(true);
+
+        if (IsCheckmate(pendingPromotionOpponentTeam))
+        {
+            FinishGame(promotedPiece.Team);
+            return;
+        }
+
+        currentTurn = pendingPromotionOpponentTeam;
+        turnSelectionUI?.SetTurn(currentTurn);
+        UpdateCheckWarningForCurrentTurn();
+    }
+
+    private ChessPiece PromotePawn(PawnPiece pawn, PieceType promotionType)
+    {
+        if (promotionType == PieceType.Pawn || promotionType == PieceType.King)
+            promotionType = PieceType.Queen;
+
+        PieceTeam team = pawn.Team;
+        Vector2Int boardPosition = pawn.BoardPosition;
+        int forwardDirection = pawn.ForwardDirection;
+
+        if (pieceAnimations.TryGetValue(pawn, out Coroutine existingAnimation))
+        {
+            StopCoroutine(existingAnimation);
+            pieceAnimations.Remove(pawn);
+        }
+
+        GameObject pawnObject = pawn.gameObject;
+        ChessPiece promotedPiece = CreatePromotedPieceObject(team, promotionType, boardPosition, forwardDirection);
+        if (!promotedPiece)
+            promotedPiece = CreateFallbackPromotedPieceObject(pawnObject, team, promotionType, boardPosition, forwardDirection);
+
+        promotedPiece.Initialize(team, boardPosition, forwardDirection);
+        promotedPiece.MarkMoved();
+        promotedPiece.gameObject.name = $"{team} {promotionType} {boardPosition.x},{boardPosition.y}";
+        MovePieceToTile(promotedPiece, boardPosition, 0f);
+        pieces[boardPosition.x, boardPosition.y] = promotedPiece;
+        lastMovedPiece = promotedPiece;
+        lastMoveWasPawnDoubleStep = false;
+
+        DestroyRuntimeObject(pawnObject);
+        return promotedPiece;
+    }
+
+    private ChessPiece CreatePromotedPieceObject(PieceTeam team, PieceType promotionType, Vector2Int boardPosition, int forwardDirection)
+    {
+        Transform sourceTransform = FindVisualChild(GetVisualSourceName(team, promotionType));
+        if (!sourceTransform)
+            return null;
+
+        MeshFilter sourceMeshFilter = sourceTransform.GetComponent<MeshFilter>();
+        MeshRenderer sourceRenderer = sourceTransform.GetComponent<MeshRenderer>();
+        if (!sourceMeshFilter || !sourceMeshFilter.sharedMesh || !sourceRenderer)
+            return null;
+
+        int sourcePieceCount = promotionType == PieceType.Queen ? 1 : 2;
+        List<MeshComponentData> components = SplitMeshIntoSpatialGroups(sourceMeshFilter.sharedMesh, sourcePieceCount);
+        if (components.Count == 0)
+            return null;
+
+        components.Sort((left, right) =>
+            sourceTransform.TransformPoint(left.pivot).x.CompareTo(sourceTransform.TransformPoint(right.pivot).x));
+
+        GameObject promotedObject = new GameObject($"{team} {promotionType} {boardPosition.x},{boardPosition.y}");
+        promotedObject.transform.SetParent(runtimePiecesRoot);
+        promotedObject.transform.position = sourceTransform.TransformPoint(components[0].pivot);
+        promotedObject.transform.rotation = sourceTransform.rotation;
+        promotedObject.transform.localScale = sourceTransform.lossyScale;
+
+        MeshFilter meshFilter = promotedObject.AddComponent<MeshFilter>();
+        meshFilter.sharedMesh = components[0].mesh;
+
+        MeshRenderer meshRenderer = promotedObject.AddComponent<MeshRenderer>();
+        meshRenderer.sharedMaterials = sourceRenderer.sharedMaterials;
+
+        ChessPiece promotedPiece = AddPieceComponent(promotedObject, promotionType);
+        EnsurePieceCollider(promotedObject);
+        return promotedPiece;
+    }
+
+    private ChessPiece CreateFallbackPromotedPieceObject(GameObject pawnObject, PieceTeam team, PieceType promotionType, Vector2Int boardPosition, int forwardDirection)
+    {
+        GameObject promotedObject = new GameObject($"{team} {promotionType} {boardPosition.x},{boardPosition.y}");
+        promotedObject.transform.SetParent(runtimePiecesRoot);
+        promotedObject.transform.position = pawnObject.transform.position;
+        promotedObject.transform.rotation = pawnObject.transform.rotation;
+        promotedObject.transform.localScale = pawnObject.transform.localScale;
+
+        MeshFilter pawnMeshFilter = pawnObject.GetComponent<MeshFilter>();
+        MeshRenderer pawnRenderer = pawnObject.GetComponent<MeshRenderer>();
+        if (pawnMeshFilter && pawnMeshFilter.sharedMesh)
+        {
+            MeshFilter meshFilter = promotedObject.AddComponent<MeshFilter>();
+            meshFilter.sharedMesh = pawnMeshFilter.sharedMesh;
+        }
+
+        if (pawnRenderer)
+        {
+            MeshRenderer meshRenderer = promotedObject.AddComponent<MeshRenderer>();
+            meshRenderer.sharedMaterials = pawnRenderer.sharedMaterials;
+        }
+
+        ChessPiece promotedPiece = AddPieceComponent(promotedObject, promotionType);
+        EnsurePieceCollider(promotedObject);
+        return promotedPiece;
+    }
+
+    private string GetVisualSourceName(PieceTeam team, PieceType pieceType)
+    {
+        string suffix = team == PieceTeam.White ? "_1" : "_2";
+        switch (pieceType)
+        {
+            case PieceType.Rook:
+                return "Rook" + suffix;
+            case PieceType.Bishop:
+                return "Bishop" + suffix;
+            case PieceType.Knight:
+                return "Knight" + suffix;
+            case PieceType.Queen:
+            default:
+                return "Queen" + suffix;
+        }
+    }
+
+    private ChessPiece AddPieceComponent(GameObject targetObject, PieceType pieceType)
+    {
+        switch (pieceType)
+        {
+            case PieceType.Rook:
+                return targetObject.AddComponent<RookPiece>();
+            case PieceType.Bishop:
+                return targetObject.AddComponent<BishopPiece>();
+            case PieceType.Knight:
+                return targetObject.AddComponent<KnightPiece>();
+            case PieceType.Queen:
+            default:
+                return targetObject.AddComponent<QueenPiece>();
+        }
     }
 
     private void UpdateCheckWarningForCurrentTurn()
@@ -962,7 +1368,7 @@ public class ChessGame : MonoBehaviour
         inputLocked = false;
         chessboard?.ClearLegalMoveHighlights();
         chessboard?.SetInteractionEnabled(false);
-        turnSelectionUI?.ShowGameOver(winningTeam);
+        turnSelectionUI?.ShowGameOver(winningTeam, playerTeam);
     }
 
     private void ClearPieceMap()
@@ -1002,4 +1408,15 @@ public class ChessGame : MonoBehaviour
         }
     }
 
+    private struct MoveSimulation
+    {
+        public ChessPiece destinationPiece;
+        public bool isEnPassant;
+        public ChessPiece enPassantCapturedPiece;
+        public Vector2Int enPassantCapturePosition;
+        public bool isCastling;
+        public ChessPiece castlingRook;
+        public Vector2Int castlingRookFrom;
+        public Vector2Int castlingRookTo;
+    }
 }

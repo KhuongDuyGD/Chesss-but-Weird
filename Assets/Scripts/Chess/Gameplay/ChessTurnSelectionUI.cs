@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 public class ChessTurnSelectionUI : MonoBehaviour
@@ -8,6 +9,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
         TransitionToTurnSelection,
         TurnSelection,
         Playing,
+        Promotion,
         GameOver
     }
 
@@ -16,7 +18,10 @@ public class ChessTurnSelectionUI : MonoBehaviour
     private ChessGame chessGame;
     private PieceTeam currentTurn;
     private PieceTeam winningTeam;
+    private PieceTeam playerTeam;
     private PieceTeam checkedTeam;
+    private PieceTeam promotionTeam;
+    private Action<PieceType> promotionCallback;
     private ScreenState state = ScreenState.MainMenu;
     private float transitionStartTime;
     private bool showCheckWarning;
@@ -38,6 +43,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
     public void SetTurn(PieceTeam newCurrentTurn)
     {
         currentTurn = newCurrentTurn;
+        promotionCallback = null;
         showCheckWarning = false;
         state = ScreenState.Playing;
     }
@@ -53,8 +59,17 @@ public class ChessTurnSelectionUI : MonoBehaviour
         showCheckWarning = false;
     }
 
+    public void ShowPromotionChoice(PieceTeam newPromotionTeam, Action<PieceType> onPromotionSelected)
+    {
+        promotionTeam = newPromotionTeam;
+        promotionCallback = onPromotionSelected;
+        showCheckWarning = false;
+        state = ScreenState.Promotion;
+    }
+
     public void ShowMainMenu()
     {
+        promotionCallback = null;
         showCheckWarning = false;
         state = ScreenState.MainMenu;
     }
@@ -66,10 +81,12 @@ public class ChessTurnSelectionUI : MonoBehaviour
         transitionStartTime = Time.realtimeSinceStartup;
     }
 
-    public void ShowGameOver(PieceTeam winner)
+    public void ShowGameOver(PieceTeam winner, PieceTeam selectedPlayerTeam)
     {
+        promotionCallback = null;
         showCheckWarning = false;
         winningTeam = winner;
+        playerTeam = selectedPlayerTeam;
         state = ScreenState.GameOver;
     }
 
@@ -84,7 +101,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
                 GUI.Label(new Rect(24f, 78f, 520f, 62f), $"{checkedTeam} king is in CHECK", checkWarningStyle);
         }
         else if (state == ScreenState.GameOver)
-            GUI.Label(new Rect(24f, 22f, 480f, 54f), $"Winner: {winningTeam}", turnLabelStyle);
+            GUI.Label(new Rect(24f, 22f, 520f, 54f), $"You played: {playerTeam}", turnLabelStyle);
 
         switch (state)
         {
@@ -96,6 +113,9 @@ public class ChessTurnSelectionUI : MonoBehaviour
                 break;
             case ScreenState.TurnSelection:
                 DrawTurnSelection();
+                break;
+            case ScreenState.Promotion:
+                DrawPromotion();
                 break;
             case ScreenState.GameOver:
                 DrawGameOver();
@@ -164,6 +184,40 @@ public class ChessTurnSelectionUI : MonoBehaviour
             chessGame.BeginGame(PieceTeam.Black);
     }
 
+    private void DrawPromotion()
+    {
+        DrawDimBackground(0.48f);
+
+        float panelWidth = Mathf.Clamp(Screen.width * 0.56f, 820f, 1160f);
+        float panelHeight = Mathf.Clamp(Screen.height * 0.34f, 380f, 500f);
+        Rect panelRect = GetCenteredRect(panelWidth, panelHeight);
+
+        GUI.Box(panelRect, string.Empty);
+        GUI.Label(new Rect(panelRect.x, panelRect.y + 48f, panelRect.width, 76f), $"{promotionTeam} pawn promotion", titleStyle);
+
+        float buttonWidth = Mathf.Clamp(panelWidth * 0.19f, 150f, 210f);
+        float buttonHeight = Mathf.Clamp(panelHeight * 0.22f, 82f, 108f);
+        float gap = Mathf.Clamp(panelWidth * 0.035f, 26f, 42f);
+        float totalWidth = buttonWidth * 4f + gap * 3f;
+        float buttonX = panelRect.x + (panelRect.width - totalWidth) * 0.5f;
+        float buttonY = panelRect.y + panelRect.height * 0.56f;
+
+        DrawPromotionButton(new Rect(buttonX, buttonY, buttonWidth, buttonHeight), "Queen", PieceType.Queen);
+        DrawPromotionButton(new Rect(buttonX + (buttonWidth + gap), buttonY, buttonWidth, buttonHeight), "Rook", PieceType.Rook);
+        DrawPromotionButton(new Rect(buttonX + (buttonWidth + gap) * 2f, buttonY, buttonWidth, buttonHeight), "Bishop", PieceType.Bishop);
+        DrawPromotionButton(new Rect(buttonX + (buttonWidth + gap) * 3f, buttonY, buttonWidth, buttonHeight), "Knight", PieceType.Knight);
+    }
+
+    private void DrawPromotionButton(Rect rect, string label, PieceType pieceType)
+    {
+        if (!GUI.Button(rect, label, buttonStyle))
+            return;
+
+        Action<PieceType> callback = promotionCallback;
+        promotionCallback = null;
+        callback?.Invoke(pieceType);
+    }
+
     private void DrawGameOver()
     {
         DrawDimBackground(0.62f);
@@ -174,13 +228,14 @@ public class ChessTurnSelectionUI : MonoBehaviour
 
         GUI.Box(panelRect, string.Empty);
         GUI.Label(new Rect(panelRect.x, panelRect.y + 56f, panelRect.width, 80f), "Game Over", titleStyle);
-        GUI.Label(new Rect(panelRect.x, panelRect.y + 142f, panelRect.width, 70f), $"{winningTeam} wins", resultStyle);
+        GUI.Label(new Rect(panelRect.x, panelRect.y + 132f, panelRect.width, 70f), winningTeam == playerTeam ? "You Win" : "You Lose", resultStyle);
+        GUI.Label(new Rect(panelRect.x, panelRect.y + 200f, panelRect.width, 48f), $"{winningTeam} wins", turnLabelStyle);
 
         float buttonWidth = Mathf.Clamp(panelWidth * 0.34f, 260f, 360f);
         float buttonHeight = Mathf.Clamp(panelHeight * 0.20f, 82f, 104f);
         Rect restartButton = new Rect(
             panelRect.x + (panelRect.width - buttonWidth) * 0.5f,
-            panelRect.y + panelRect.height * 0.64f,
+            panelRect.y + panelRect.height * 0.70f,
             buttonWidth,
             buttonHeight);
 
