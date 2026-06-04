@@ -17,6 +17,8 @@ public class ChessGame : MonoBehaviour
     [SerializeField] private float moveArcHeight = 0.2f;
     [SerializeField] private float checkPulseScale = 1.14f;
     [SerializeField] private float checkPulseDuration = 0.42f;
+    [Tooltip("Local Chessboard-axis offset applied after resolving a tile center. Use X/Z to nudge all generated pieces onto the drawn squares.")]
+    [SerializeField] private Vector3 pieceBoardLocalOffset;
 
     private readonly ChessPiece[,] pieces = new ChessPiece[8, 8];
     private readonly Dictionary<ChessPiece, Coroutine> pieceAnimations = new Dictionary<ChessPiece, Coroutine>();
@@ -1260,6 +1262,7 @@ public class ChessGame : MonoBehaviour
     private Vector3 GetPieceTilePosition(ChessPiece piece, Vector2Int tile, float liftHeight)
     {
         Vector3 targetPosition = chessboard.GetTileCenterWorld(tile);
+        targetPosition += chessboard.TransformBoardLocalOffset(pieceBoardLocalOffset);
         targetPosition.y += liftHeight + GetPieceBottomOffset(piece);
         return targetPosition;
     }

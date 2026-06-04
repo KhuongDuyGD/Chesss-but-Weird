@@ -152,13 +152,17 @@ MonoBehaviour:
   hoverMaterial: {fileID: 2100000, guid: da5c49de0b731f841bc85f63bce5fefb, type: 2}
   lightTileColor: {r: 0.72, g: 0.64, b: 0.5, a: 1}
   darkTileColor: {r: 0.24, g: 0.28, b: 0.3, a: 1}
+  legalMoveTileColor: {r: 0.15, g: 0.85, b: 0.45, a: 0.35}
   hoverDisplayHeightOffset: 0.001
   tileRaycastHeightOffset: 0.02
   tileColliderHeight: 0.06
+  tileVisualSizeMultiplier: {x: 1.04, y: 1.04}
+  tileColliderSizeMultiplier: {x: 1, y: 1}
   showGeneratedTiles: 0
   visualBoardRoot: {fileID: 353244004}
   visualBoardObjectName: ChessBoard_Scene
   visualBoardMaterialName: ChessBoard_Final.001
+  preferVisualBoardBounds: 1
   playableAreaInsetPercent: 0.025
   playableAreaInsetsPercent: {x: 0.16, y: 0.13, z: 0.14, w: 0.14}
   playableAreaPositionOffset: {x: 0, y: 0}
@@ -179,7 +183,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 2, y: 0, z: -8}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 1.5, y: 1.5, z: 1.5}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 353244004}
@@ -272,7 +276,7 @@ Transform:
   m_GameObject: {fileID: 330585543}
   serializedVersion: 2
   m_LocalRotation: {x: 0.46174863, y: 0, z: 0, w: 0.8870109}
-  m_LocalPosition: {x: 5.98, y: 3.59, z: -6.6}
+  m_LocalPosition: {x: 7.83, y: 4.15, z: -4.86}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

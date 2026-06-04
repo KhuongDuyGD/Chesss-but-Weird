@@ -1,5 +1,8 @@
 {
-    "Port": 8014,
+    "Port": 17806,
+    "AutoSelectAvailablePort": true,
+    "PreferredPort": 17806,
+    "PortSearchRange": 30,
     "RequestTimeoutSeconds": 100,
     "AutoStartServer": true,
     "EnableInfoLogs": true,

@@ -31,12 +31,14 @@ public class ChessTurnSelectionUI : MonoBehaviour
     private GUIStyle turnLabelStyle;
     private GUIStyle checkWarningStyle;
     private GUIStyle resultStyle;
+    private HandDrawnMenuView handDrawnMenu;
 
     public static ChessTurnSelectionUI Create(ChessGame chessGame)
     {
-        GameObject root = new GameObject("Chess Turn Selection UI");
+        GameObject root = new GameObject("Chess Turn Selection UI", typeof(RectTransform));
         ChessTurnSelectionUI ui = root.AddComponent<ChessTurnSelectionUI>();
         ui.chessGame = chessGame;
+        ui.TryCreateHandDrawnMenu();
         return ui;
     }
 
@@ -46,6 +48,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
         promotionCallback = null;
         showCheckWarning = false;
         state = ScreenState.Playing;
+        handDrawnMenu?.HideForPlaying();
     }
 
     public void ShowCheckWarning(PieceTeam newCheckedTeam)
@@ -72,13 +75,28 @@ public class ChessTurnSelectionUI : MonoBehaviour
         promotionCallback = null;
         showCheckWarning = false;
         state = ScreenState.MainMenu;
+        handDrawnMenu?.ShowMainMenu();
     }
 
     public void ShowTurnSelection()
     {
         showCheckWarning = false;
+        if (handDrawnMenu && handDrawnMenu.IsReady)
+        {
+            state = ScreenState.TransitionToTurnSelection;
+            handDrawnMenu.ShowModeSelection();
+            return;
+        }
+
         state = ScreenState.TransitionToTurnSelection;
         transitionStartTime = Time.realtimeSinceStartup;
+    }
+
+    public void ShowSideSelection()
+    {
+        showCheckWarning = false;
+        state = ScreenState.TurnSelection;
+        handDrawnMenu?.ShowSideSelection();
     }
 
     public void ShowGameOver(PieceTeam winner, PieceTeam selectedPlayerTeam)
@@ -88,20 +106,25 @@ public class ChessTurnSelectionUI : MonoBehaviour
         winningTeam = winner;
         playerTeam = selectedPlayerTeam;
         state = ScreenState.GameOver;
+        handDrawnMenu?.HideForPlaying();
     }
 
     private void OnGUI()
     {
         EnsureStyles();
 
+        if (handDrawnMenu && handDrawnMenu.IsReady &&
+            (state == ScreenState.MainMenu || state == ScreenState.TransitionToTurnSelection || state == ScreenState.TurnSelection))
+            return;
+
         if (state == ScreenState.Playing)
         {
-            GUI.Label(new Rect(24f, 22f, 360f, 54f), $"Turn: {currentTurn}", turnLabelStyle);
+            GUI.Label(new Rect(28f, 24f, 460f, 72f), $"Turn: {currentTurn}", turnLabelStyle);
             if (showCheckWarning)
-                GUI.Label(new Rect(24f, 78f, 520f, 62f), $"{checkedTeam} king is in CHECK", checkWarningStyle);
+                GUI.Label(new Rect(28f, 96f, 760f, 78f), $"{checkedTeam} king is in CHECK", checkWarningStyle);
         }
         else if (state == ScreenState.GameOver)
-            GUI.Label(new Rect(24f, 22f, 520f, 54f), $"You played: {playerTeam}", turnLabelStyle);
+            GUI.Label(new Rect(28f, 24f, 680f, 72f), $"You played: {playerTeam}", turnLabelStyle);
 
         switch (state)
         {
@@ -127,20 +150,20 @@ public class ChessTurnSelectionUI : MonoBehaviour
     {
         DrawDimBackground(0.78f);
 
-        float panelWidth = Mathf.Clamp(Screen.width * 0.54f, 760f, 1120f);
-        float panelHeight = Mathf.Clamp(Screen.height * 0.42f, 420f, 560f);
+        float panelWidth = Mathf.Clamp(Screen.width * 0.60f, 840f, 1240f);
+        float panelHeight = Mathf.Clamp(Screen.height * 0.48f, 500f, 660f);
         Rect panelRect = GetCenteredRect(panelWidth, panelHeight);
 
         GUI.Box(panelRect, string.Empty);
-        GUI.Label(new Rect(panelRect.x, panelRect.y + 58f, panelRect.width, 80f), "Chess but Weird", titleStyle);
-        GUI.Label(new Rect(panelRect.x + 70f, panelRect.y + 142f, panelRect.width - 140f, 72f),
+        GUI.Label(new Rect(panelRect.x, panelRect.y + 58f, panelRect.width, 96f), "Chess but Weird", titleStyle);
+        GUI.Label(new Rect(panelRect.x + 72f, panelRect.y + 164f, panelRect.width - 144f, 126f),
             "Classic chess foundation with room for weird variants.", subtitleStyle);
 
         float buttonWidth = Mathf.Clamp(panelWidth * 0.34f, 280f, 380f);
         float buttonHeight = Mathf.Clamp(panelHeight * 0.20f, 86f, 110f);
         Rect playButton = new Rect(
             panelRect.x + (panelRect.width - buttonWidth) * 0.5f,
-            panelRect.y + panelRect.height * 0.64f,
+            panelRect.y + panelRect.height * 0.68f,
             buttonWidth,
             buttonHeight);
 
@@ -268,32 +291,33 @@ public class ChessTurnSelectionUI : MonoBehaviour
         titleStyle = new GUIStyle(GUI.skin.label)
         {
             alignment = TextAnchor.MiddleCenter,
-            fontSize = 46,
+            fontSize = 72,
             fontStyle = FontStyle.Bold
         };
 
         subtitleStyle = new GUIStyle(GUI.skin.label)
         {
             alignment = TextAnchor.MiddleCenter,
-            fontSize = 24,
+            fontSize = 54,
+            fontStyle = FontStyle.Bold,
             wordWrap = true
         };
 
         buttonStyle = new GUIStyle(GUI.skin.button)
         {
-            fontSize = 34,
+            fontSize = 46,
             fontStyle = FontStyle.Bold
         };
 
         turnLabelStyle = new GUIStyle(GUI.skin.label)
         {
-            fontSize = 28,
+            fontSize = 48,
             fontStyle = FontStyle.Bold
         };
 
         checkWarningStyle = new GUIStyle(GUI.skin.label)
         {
-            fontSize = 30,
+            fontSize = 50,
             fontStyle = FontStyle.Bold
         };
         checkWarningStyle.normal.textColor = new Color(1f, 0.28f, 0.18f, 1f);
@@ -301,8 +325,29 @@ public class ChessTurnSelectionUI : MonoBehaviour
         resultStyle = new GUIStyle(GUI.skin.label)
         {
             alignment = TextAnchor.MiddleCenter,
-            fontSize = 36,
+            fontSize = 60,
             fontStyle = FontStyle.Bold
         };
+    }
+
+    private void TryCreateHandDrawnMenu()
+    {
+        HandDrawnMenuAssets menuAssets = FindAnyObjectByType<HandDrawnMenuAssets>();
+        if (!menuAssets)
+        {
+            menuAssets = gameObject.AddComponent<HandDrawnMenuAssets>();
+        }
+
+        if (!menuAssets.HasRequiredSprites)
+            menuAssets.LoadFromResources();
+
+        if (!menuAssets.HasRequiredSprites)
+        {
+            Debug.LogWarning("[HandDrawnMenu] Missing required sprites. Falling back to IMGUI menu.");
+            return;
+        }
+
+        handDrawnMenu = gameObject.AddComponent<HandDrawnMenuView>();
+        handDrawnMenu.Initialize(this, chessGame, menuAssets);
     }
 }
