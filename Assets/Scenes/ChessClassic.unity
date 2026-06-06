@@ -156,22 +156,12 @@ MonoBehaviour:
   hoverDisplayHeightOffset: 0.001
   tileRaycastHeightOffset: 0.02
   tileColliderHeight: 0.06
-  tileVisualSizeMultiplier: {x: 1.04, y: 1.04}
+  tileVisualSizeMultiplier: {x: 1, y: 1}
   tileColliderSizeMultiplier: {x: 1, y: 1}
   showGeneratedTiles: 0
   visualBoardRoot: {fileID: 353244004}
   visualBoardObjectName: ChessBoard_Scene
   visualBoardMaterialName: ChessBoard_Final.001
-  preferVisualBoardBounds: 1
-  playableAreaInsetPercent: 0.025
-  playableAreaInsetsPercent: {x: 0.16, y: 0.13, z: 0.14, w: 0.14}
-  playableAreaPositionOffset: {x: 0, y: 0}
-  playableAreaSizeOffset: {x: 0, y: 0}
-  useEstimatedPieceAnchors: 1
-  customEstimatedPieceAnchors: []
-  useManualPlayableArea: 0
-  manualPlayableOrigin: {x: 0, y: 0, z: 0}
-  manualPlayableSize: {x: 8, y: 8}
   drawBoardSyncGizmos: 1
 --- !u!4 &173133775
 Transform:
@@ -183,7 +173,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 2, y: 0, z: -8}
-  m_LocalScale: {x: 1.5, y: 1.5, z: 1.5}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 353244004}
@@ -275,13 +265,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 330585543}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.46174863, y: 0, z: 0, w: 0.8870109}
-  m_LocalPosition: {x: 7.83, y: 4.15, z: -4.86}
+  m_LocalRotation: {x: 0.53729963, y: 0, z: 0, w: 0.8433915}
+  m_LocalPosition: {x: 5.94, y: 3.5, z: -5.65}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 55, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 65, y: 0, z: 0}
 --- !u!114 &330585547
 MonoBehaviour:
   m_ObjectHideFlags: 0

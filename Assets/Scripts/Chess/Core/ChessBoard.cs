@@ -16,35 +16,15 @@ public class Chessboard : MonoBehaviour
     [SerializeField] private float tileRaycastHeightOffset = 0.02f;
     [SerializeField] private float tileColliderHeight = 0.06f;
     [Tooltip("Scales only the visible generated hover/highlight quad. The logical tile center stays unchanged.")]
-    [SerializeField] private Vector2 tileVisualSizeMultiplier = new Vector2(1.04f, 1.04f);
+    [SerializeField] private Vector2 tileVisualSizeMultiplier = Vector2.one;
     [Tooltip("Scales the invisible raycast box. Keep this near 1 to avoid excessive overlap between neighbor tiles.")]
     [SerializeField] private Vector2 tileColliderSizeMultiplier = new Vector2(1.0f, 1.0f);
-    [Tooltip("When a visual board mesh is available, make generated hover/highlight quads at least as large as the detected drawn square.")]
-    [SerializeField] private bool syncHoverSizeWithVisualBoard = true;
-    [SerializeField] private float syncedHoverSizeMultiplier = 1.04f;
-    [Tooltip("Also let the invisible hover/click collider use the detected square size when it is larger than the virtual tile size.")]
-    [SerializeField] private bool syncColliderSizeWithVisualBoard = true;
     [SerializeField] private bool showGeneratedTiles;
 
     [Header("Visual board sync")]
     [SerializeField] private Transform visualBoardRoot;
     [SerializeField] private string visualBoardObjectName = "ChessBoard_Scene";
     [SerializeField] private string visualBoardMaterialName = "ChessBoard_Final.001";
-    [Tooltip("Use the visible board renderer as the primary source for the playable checker grid.")]
-    [SerializeField] private bool preferVisualBoardBounds = true;
-    [SerializeField, Range(0f, 0.45f)] private float playableAreaInsetPercent = 0.025f;
-    [SerializeField] private Vector4 playableAreaInsetsPercent = new Vector4(0.16f, 0.13f, 0.14f, 0.14f);
-    [SerializeField] private Vector2 playableAreaPositionOffset;
-    [SerializeField] private Vector2 playableAreaSizeOffset;
-    [Tooltip("Fits the virtual board from known visual piece positions. Use this when no manual playable area is configured.")]
-    [SerializeField] private bool useEstimatedPieceAnchors = true;
-    [Tooltip("Optional overrides. Leave empty to use Rook_2/Bishop_2/Bishop_1/Rook_1 anchors from the imported visual set.")]
-    [SerializeField] private PieceAnchor[] customEstimatedPieceAnchors;
-    [SerializeField] private bool useManualPlayableArea;
-    [Tooltip("Manual local-space lower-left playable corner. X/Z are board plane, Y is board surface height.")]
-    [SerializeField] private Vector3 manualPlayableOrigin;
-    [Tooltip("Manual local-space playable width/depth across all 8x8 tiles.")]
-    [SerializeField] private Vector2 manualPlayableSize = new Vector2(8f, 8f);
     [SerializeField] private bool drawBoardSyncGizmos = true;
 
     private const int TILE_COUNT_X = 8;
@@ -53,14 +33,7 @@ public class Chessboard : MonoBehaviour
     private static readonly int ColorId = Shader.PropertyToID("_Color");
     private static readonly int BaseMapId = Shader.PropertyToID("_BaseMap");
     private static readonly int MainTexId = Shader.PropertyToID("_MainTex");
-    private static readonly PieceAnchor[] DefaultEstimatedPieceAnchors =
-    {
-        new PieceAnchor("Rook_2", new Vector2Int(0, 7)),
-        new PieceAnchor("Bishop_2", new Vector2Int(2, 7)),
-        new PieceAnchor("Bishop_1", new Vector2Int(5, 0)),
-        new PieceAnchor("Rook_1", new Vector2Int(7, 0))
-    };
-    private static readonly MeshPieceAnchor[] DefaultEstimatedMeshAnchors =
+    private static readonly MeshPieceAnchor[] DefaultMeshPieceAnchors =
     {
         new MeshPieceAnchor("Rook_1", 2, 0, new Vector2Int(0, 0)),
         new MeshPieceAnchor("Rook_1", 2, 1, new Vector2Int(7, 0)),
@@ -366,20 +339,13 @@ public class Chessboard : MonoBehaviour
 
     private BoardLayout ResolveBoardLayout()
     {
-        if (useManualPlayableArea)
-            return FinalizeBoardLayout(CreateManualBoardLayout());
+        if (TryCreatePieceAnchorLayout(out BoardLayout anchorLayout))
+            return anchorLayout;
 
-        bool hasVisualBoard = visualBoardRoot || transform.Find("VisualChessSet");
-        if ((preferVisualBoardBounds || hasVisualBoard) && TryCreateVisualBoardBoundsLayout(out BoardLayout visualBoardLayout))
-            return FinalizeBoardLayout(visualBoardLayout);
+        if (TryCreateVisualBoardBoundsLayout(out BoardLayout visualBoardLayout))
+            return visualBoardLayout;
 
-        if (useEstimatedPieceAnchors && TryCreateEstimatedPieceAnchorLayout(out BoardLayout estimatedLayout))
-            return FinalizeBoardLayout(estimatedLayout);
-
-        if (TryCreateVisualBoardBoundsLayout(out visualBoardLayout))
-            return FinalizeBoardLayout(visualBoardLayout);
-
-        return FinalizeBoardLayout(new BoardLayout
+        return new BoardLayout
         {
             origin = Vector3.zero,
             surfaceY = 0f,
@@ -387,18 +353,7 @@ public class Chessboard : MonoBehaviour
             colliderY = tileRaycastHeightOffset,
             tileWidth = 1f,
             tileDepth = 1f
-        });
-    }
-
-    private BoardLayout FinalizeBoardLayout(BoardLayout boardLayout)
-    {
-        if (TryGetPlayableBoardTileSize(out Vector2 detectedTileSize))
-        {
-            boardLayout.detectedTileWidth = detectedTileSize.x;
-            boardLayout.detectedTileDepth = detectedTileSize.y;
-        }
-
-        return boardLayout;
+        };
     }
 
     private bool TryCreateVisualBoardBoundsLayout(out BoardLayout boardLayout)
@@ -407,13 +362,8 @@ public class Chessboard : MonoBehaviour
         if (!TryGetVisualBoardBounds(out Bounds boardBounds))
             return false;
 
-        Vector4 resolvedInsets = GetResolvedPlayableAreaInsets();
-        float leftInset = boardBounds.size.x * resolvedInsets.x;
-        float rightInset = boardBounds.size.x * resolvedInsets.y;
-        float bottomInset = boardBounds.size.z * resolvedInsets.z;
-        float topInset = boardBounds.size.z * resolvedInsets.w;
-        float playableWidth = Mathf.Max(0.01f, boardBounds.size.x - leftInset - rightInset + playableAreaSizeOffset.x);
-        float playableDepth = Mathf.Max(0.01f, boardBounds.size.z - bottomInset - topInset + playableAreaSizeOffset.y);
+        float playableWidth = Mathf.Max(0.01f, boardBounds.size.x);
+        float playableDepth = Mathf.Max(0.01f, boardBounds.size.z);
         float surfaceY = boardBounds.max.y;
         float tileWidth = playableWidth / TILE_COUNT_X;
         float tileDepth = playableDepth / TILE_COUNT_Y;
@@ -421,9 +371,9 @@ public class Chessboard : MonoBehaviour
         boardLayout = new BoardLayout
         {
             origin = new Vector3(
-                boardBounds.min.x + leftInset + playableAreaPositionOffset.x,
+                boardBounds.min.x,
                 surfaceY,
-                boardBounds.min.z + bottomInset + playableAreaPositionOffset.y),
+                boardBounds.min.z),
             surfaceY = surfaceY,
             visualY = surfaceY + hoverDisplayHeightOffset,
             colliderY = surfaceY + tileRaycastHeightOffset,
@@ -434,71 +384,30 @@ public class Chessboard : MonoBehaviour
         return true;
     }
 
-    private bool TryGetPlayableBoardTileSize(out Vector2 detectedTileSize)
-    {
-        detectedTileSize = default;
-        if (!TryGetVisualBoardBounds(out Bounds boardBounds))
-            return false;
-
-        Vector4 resolvedInsets = GetResolvedPlayableAreaInsets();
-        float leftInset = boardBounds.size.x * resolvedInsets.x;
-        float rightInset = boardBounds.size.x * resolvedInsets.y;
-        float bottomInset = boardBounds.size.z * resolvedInsets.z;
-        float topInset = boardBounds.size.z * resolvedInsets.w;
-        float playableWidth = Mathf.Max(0.01f, boardBounds.size.x - leftInset - rightInset + playableAreaSizeOffset.x);
-        float playableDepth = Mathf.Max(0.01f, boardBounds.size.z - bottomInset - topInset + playableAreaSizeOffset.y);
-
-        detectedTileSize = new Vector2(playableWidth / TILE_COUNT_X, playableDepth / TILE_COUNT_Y);
-        return true;
-    }
-
-    private bool TryCreateEstimatedPieceAnchorLayout(out BoardLayout boardLayout)
+    private bool TryCreatePieceAnchorLayout(out BoardLayout boardLayout)
     {
         boardLayout = default;
 
-        bool fittedLayout;
         float originX = 0f;
         float originZ = 0f;
         float tileWidth = 0f;
         float tileDepth = 0f;
-        if (customEstimatedPieceAnchors != null && customEstimatedPieceAnchors.Length > 0)
-        {
-            fittedLayout =
-                TryFitAxis(customEstimatedPieceAnchors, true, out originX, out tileWidth) &&
-                TryFitAxis(customEstimatedPieceAnchors, false, out originZ, out tileDepth);
-        }
-        else
-        {
-            fittedLayout =
-                TryFitAxis(DefaultEstimatedMeshAnchors, true, out originX, out tileWidth) &&
-                TryFitAxis(DefaultEstimatedMeshAnchors, false, out originZ, out tileDepth);
-
-            if (!fittedLayout)
-            {
-                fittedLayout =
-                    TryFitAxis(DefaultEstimatedPieceAnchors, true, out originX, out tileWidth) &&
-                    TryFitAxis(DefaultEstimatedPieceAnchors, false, out originZ, out tileDepth);
-            }
-        }
-
-        if (!fittedLayout)
+        if (!TryFitAxis(DefaultMeshPieceAnchors, true, out originX, out tileWidth) ||
+            !TryFitAxis(DefaultMeshPieceAnchors, false, out originZ, out tileDepth))
             return false;
 
         float surfaceY = 0f;
         if (TryGetVisualBoardBounds(out Bounds boardBounds))
             surfaceY = boardBounds.max.y;
 
-        float logicTileWidth = Mathf.Max(0.01f, (tileWidth * TILE_COUNT_X + playableAreaSizeOffset.x) / TILE_COUNT_X);
-        float logicTileDepth = Mathf.Max(0.01f, (tileDepth * TILE_COUNT_Y + playableAreaSizeOffset.y) / TILE_COUNT_Y);
-
         boardLayout = new BoardLayout
         {
-            origin = new Vector3(originX + playableAreaPositionOffset.x, surfaceY, originZ + playableAreaPositionOffset.y),
+            origin = new Vector3(originX, surfaceY, originZ),
             surfaceY = surfaceY,
             visualY = surfaceY + hoverDisplayHeightOffset,
             colliderY = surfaceY + tileRaycastHeightOffset,
-            tileWidth = logicTileWidth,
-            tileDepth = logicTileDepth
+            tileWidth = Mathf.Max(0.01f, tileWidth),
+            tileDepth = Mathf.Max(0.01f, tileDepth)
         };
 
         return true;
@@ -542,60 +451,6 @@ public class Chessboard : MonoBehaviour
             origin -= tileSize * TILE_COUNT_X;
         }
 
-        return true;
-    }
-
-    private bool TryFitAxis(PieceAnchor[] anchors, bool useX, out float origin, out float tileSize)
-    {
-        origin = 0f;
-        tileSize = 0f;
-
-        float sumIndex = 0f;
-        float sumPosition = 0f;
-        float sumIndexPosition = 0f;
-        float sumIndexSquared = 0f;
-        int validAnchorCount = 0;
-
-        for (int i = 0; i < anchors.Length; i++)
-        {
-            if (!TryGetAnchorLocalPosition(anchors[i], out Vector3 localPosition))
-                continue;
-
-            float index = useX ? anchors[i].boardPosition.x + 0.5f : anchors[i].boardPosition.y + 0.5f;
-            float position = useX ? localPosition.x : localPosition.z;
-            sumIndex += index;
-            sumPosition += position;
-            sumIndexPosition += index * position;
-            sumIndexSquared += index * index;
-            validAnchorCount++;
-        }
-
-        float denominator = validAnchorCount * sumIndexSquared - sumIndex * sumIndex;
-        if (validAnchorCount < 2 || Mathf.Abs(denominator) < 0.0001f)
-            return false;
-
-        tileSize = (validAnchorCount * sumIndexPosition - sumIndex * sumPosition) / denominator;
-        origin = (sumPosition - tileSize * sumIndex) / validAnchorCount;
-
-        if (tileSize < 0f)
-        {
-            tileSize = Mathf.Abs(tileSize);
-            origin -= tileSize * TILE_COUNT_X;
-        }
-
-        return true;
-    }
-
-    private bool TryGetAnchorLocalPosition(PieceAnchor anchor, out Vector3 localPosition)
-    {
-        Transform anchorTransform = FindVisualChild(anchor.objectName);
-        if (!anchorTransform)
-        {
-            localPosition = default;
-            return false;
-        }
-
-        localPosition = transform.InverseTransformPoint(anchorTransform.position);
         return true;
     }
 
@@ -739,41 +594,6 @@ public class Chessboard : MonoBehaviour
         return nearestIndex;
     }
 
-    private BoardLayout CreateManualBoardLayout()
-    {
-        float surfaceY = manualPlayableOrigin.y;
-        return new BoardLayout
-        {
-            origin = manualPlayableOrigin,
-            surfaceY = surfaceY,
-            visualY = surfaceY + hoverDisplayHeightOffset,
-            colliderY = surfaceY + tileRaycastHeightOffset,
-            tileWidth = Mathf.Max(0.01f, manualPlayableSize.x) / TILE_COUNT_X,
-            tileDepth = Mathf.Max(0.01f, manualPlayableSize.y) / TILE_COUNT_Y
-        };
-    }
-
-    private Vector4 GetResolvedPlayableAreaInsets()
-    {
-        if (playableAreaInsetsPercent != Vector4.zero)
-            return ClampInsetPercent(playableAreaInsetsPercent);
-
-        return ClampInsetPercent(new Vector4(
-            playableAreaInsetPercent,
-            playableAreaInsetPercent,
-            playableAreaInsetPercent,
-            playableAreaInsetPercent));
-    }
-
-    private Vector4 ClampInsetPercent(Vector4 insets)
-    {
-        return new Vector4(
-            Mathf.Clamp(insets.x, 0f, 0.45f),
-            Mathf.Clamp(insets.y, 0f, 0.45f),
-            Mathf.Clamp(insets.z, 0f, 0.45f),
-            Mathf.Clamp(insets.w, 0f, 0.45f));
-    }
-
     private bool TryGetVisualBoardBounds(out Bounds boardBounds)
     {
         Renderer[] renderers = GetVisualBoardSearchRoot().GetComponentsInChildren<Renderer>(true);
@@ -911,25 +731,12 @@ public class Chessboard : MonoBehaviour
 
     private Vector2 GetHoverVisualTileSize(BoardLayout boardLayout)
     {
-        Vector2 visualSize = GetScaledTileSize(boardLayout, tileVisualSizeMultiplier);
-        if (!syncHoverSizeWithVisualBoard || boardLayout.detectedTileWidth <= 0f || boardLayout.detectedTileDepth <= 0f)
-            return visualSize;
-
-        float visualMultiplier = Mathf.Max(0.01f, syncedHoverSizeMultiplier);
-        return new Vector2(
-            Mathf.Max(visualSize.x, boardLayout.detectedTileWidth * visualMultiplier),
-            Mathf.Max(visualSize.y, boardLayout.detectedTileDepth * visualMultiplier));
+        return GetScaledTileSize(boardLayout, tileVisualSizeMultiplier);
     }
 
     private Vector2 GetTileColliderSize(BoardLayout boardLayout)
     {
-        Vector2 colliderSize = GetScaledTileSize(boardLayout, tileColliderSizeMultiplier);
-        if (!syncColliderSizeWithVisualBoard || boardLayout.detectedTileWidth <= 0f || boardLayout.detectedTileDepth <= 0f)
-            return colliderSize;
-
-        return new Vector2(
-            Mathf.Max(colliderSize.x, boardLayout.detectedTileWidth),
-            Mathf.Max(colliderSize.y, boardLayout.detectedTileDepth));
+        return GetScaledTileSize(boardLayout, tileColliderSizeMultiplier);
     }
 
     private Material CreateTileMaterial(string materialName, Color color, bool transparent = false)
@@ -1037,21 +844,6 @@ public class Chessboard : MonoBehaviour
         public float colliderY;
         public float tileWidth;
         public float tileDepth;
-        public float detectedTileWidth;
-        public float detectedTileDepth;
-    }
-
-    [System.Serializable]
-    private struct PieceAnchor
-    {
-        public string objectName;
-        public Vector2Int boardPosition;
-
-        public PieceAnchor(string objectName, Vector2Int boardPosition)
-        {
-            this.objectName = objectName;
-            this.boardPosition = boardPosition;
-        }
     }
 
     private readonly struct MeshPieceAnchor
