@@ -21,6 +21,8 @@ public class ChessTurnSelectionUI : MonoBehaviour
     private PieceTeam playerTeam;
     private PieceTeam checkedTeam;
     private PieceTeam promotionTeam;
+    private bool resultIsDraw;
+    private string drawReason;
     private Action<PieceType> promotionCallback;
     private ScreenState state = ScreenState.MainMenu;
     private float transitionStartTime;
@@ -46,6 +48,8 @@ public class ChessTurnSelectionUI : MonoBehaviour
     {
         currentTurn = newCurrentTurn;
         promotionCallback = null;
+        resultIsDraw = false;
+        drawReason = string.Empty;
         showCheckWarning = false;
         state = ScreenState.Playing;
         handDrawnMenu?.HideForPlaying();
@@ -73,6 +77,8 @@ public class ChessTurnSelectionUI : MonoBehaviour
     public void ShowMainMenu()
     {
         promotionCallback = null;
+        resultIsDraw = false;
+        drawReason = string.Empty;
         showCheckWarning = false;
         state = ScreenState.MainMenu;
         handDrawnMenu?.ShowMainMenu();
@@ -103,7 +109,20 @@ public class ChessTurnSelectionUI : MonoBehaviour
     {
         promotionCallback = null;
         showCheckWarning = false;
+        resultIsDraw = false;
+        drawReason = string.Empty;
         winningTeam = winner;
+        playerTeam = selectedPlayerTeam;
+        state = ScreenState.GameOver;
+        handDrawnMenu?.HideForPlaying();
+    }
+
+    public void ShowDraw(PieceTeam selectedPlayerTeam, string reason)
+    {
+        promotionCallback = null;
+        showCheckWarning = false;
+        resultIsDraw = true;
+        drawReason = string.IsNullOrWhiteSpace(reason) ? "Draw" : reason;
         playerTeam = selectedPlayerTeam;
         state = ScreenState.GameOver;
         handDrawnMenu?.HideForPlaying();
@@ -250,9 +269,13 @@ public class ChessTurnSelectionUI : MonoBehaviour
         Rect panelRect = GetCenteredRect(panelWidth, panelHeight);
 
         GUI.Box(panelRect, string.Empty);
-        GUI.Label(new Rect(panelRect.x, panelRect.y + 56f, panelRect.width, 80f), "Game Over", titleStyle);
-        GUI.Label(new Rect(panelRect.x, panelRect.y + 132f, panelRect.width, 70f), winningTeam == playerTeam ? "You Win" : "You Lose", resultStyle);
-        GUI.Label(new Rect(panelRect.x, panelRect.y + 200f, panelRect.width, 48f), $"{winningTeam} wins", turnLabelStyle);
+        string title = resultIsDraw ? "Match Drawn!" : "Game Over";
+        string result = resultIsDraw ? "Draw" : winningTeam == playerTeam ? "You Win" : "You Lose";
+        string detail = resultIsDraw ? $"Reason: {drawReason}" : $"{winningTeam} wins";
+
+        GUI.Label(new Rect(panelRect.x, panelRect.y + 56f, panelRect.width, 80f), title, titleStyle);
+        GUI.Label(new Rect(panelRect.x, panelRect.y + 132f, panelRect.width, 70f), result, resultStyle);
+        GUI.Label(new Rect(panelRect.x, panelRect.y + 200f, panelRect.width, 58f), detail, turnLabelStyle);
 
         float buttonWidth = Mathf.Clamp(panelWidth * 0.34f, 260f, 360f);
         float buttonHeight = Mathf.Clamp(panelHeight * 0.20f, 82f, 104f);
@@ -262,7 +285,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
             buttonWidth,
             buttonHeight);
 
-        if (GUI.Button(restartButton, "Main Menu", buttonStyle))
+        if (GUI.Button(restartButton, "Restart", buttonStyle))
             chessGame.RestartToMainMenu();
     }
 

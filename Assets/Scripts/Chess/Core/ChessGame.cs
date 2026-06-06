@@ -1,11 +1,22 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Text;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 
 public class ChessGame : MonoBehaviour
 {
+    public enum ChessGameStatus
+    {
+        NotStarted,
+        Playing,
+        Win,
+        Draw
+    }
+
+    private const int FiftyMoveRuleHalfMoveLimit = 100;
+
     [SerializeField] private Chessboard chessboard;
     [SerializeField] private Transform piecesRoot;
     [SerializeField] private bool spawnDefaultPiecesOnStart = true;
@@ -22,15 +33,19 @@ public class ChessGame : MonoBehaviour
 
     private readonly ChessPiece[,] pieces = new ChessPiece[8, 8];
     private readonly Dictionary<ChessPiece, Coroutine> pieceAnimations = new Dictionary<ChessPiece, Coroutine>();
+    private readonly Dictionary<string, int> positionHistory = new Dictionary<string, int>();
     private readonly HashSet<ChessPiece> startingPlacementPieces = new HashSet<ChessPiece>();
     private PieceTeam currentTurn = PieceTeam.White;
     private ChessPiece selectedPiece;
     private Transform runtimePiecesRoot;
+    private ChessGameStatus status = ChessGameStatus.NotStarted;
     private bool gameStarted;
     private bool gameOver;
     private bool inputLocked;
     private PieceTeam winningTeam;
     private PieceTeam playerTeam;
+    private string drawReason;
+    private int halfMoveClock;
     private ChessPiece checkedKing;
     private Coroutine checkPulseCoroutine;
     private Vector3 checkedKingOriginalScale;
@@ -46,6 +61,9 @@ public class ChessGame : MonoBehaviour
     public bool GameStarted => gameStarted;
     public bool GameOver => gameOver;
     public PieceTeam WinningTeam => winningTeam;
+    public ChessGameStatus Status => status;
+    public string DrawReason => drawReason;
+    public int HalfMoveClock => halfMoveClock;
 
     private void Awake()
     {
@@ -95,9 +113,13 @@ public class ChessGame : MonoBehaviour
         playerTeam = firstTurn;
         selectedPiece = null;
         gameOver = false;
+        status = ChessGameStatus.Playing;
+        drawReason = string.Empty;
+        ResetDrawTracking();
         ArrangePiecesForFirstTurn(firstTurn);
         SetRuntimePiecesVisible(true);
         RefreshPieceMap();
+        RecordCurrentPosition();
         gameStarted = true;
         chessboard?.SetInteractionEnabled(true);
         chessboard?.ClearLegalMoveHighlights();
@@ -137,10 +159,13 @@ public class ChessGame : MonoBehaviour
         PieceTeam opponentTeam = movingPiece.Team == PieceTeam.White ? PieceTeam.Black : PieceTeam.White;
         bool isEnPassant = TryGetEnPassantCapture(movingPiece, from, destination, out ChessPiece enPassantCapturedPiece, out Vector2Int enPassantCapturePosition);
         bool isCastling = TryGetCastlingRookMove(movingPiece, from, destination, out ChessPiece castlingRook, out Vector2Int castlingRookFrom, out Vector2Int castlingRookTo);
+        bool movedPawn = movingPiece.Type == PieceType.Pawn;
         StopCheckWarning();
 
         if (isEnPassant)
             capturedPiece = enPassantCapturedPiece;
+
+        bool capturedAnyPiece = capturedPiece;
 
         pieces[from.x, from.y] = null;
         if (isEnPassant)
@@ -159,6 +184,7 @@ public class ChessGame : MonoBehaviour
         movingPiece.SetBoardPosition(destination);
         movingPiece.MarkMoved();
         RecordLastMove(movingPiece, from, destination);
+        UpdateHalfMoveClock(movedPawn, capturedAnyPiece);
         selectedPiece = null;
         chessboard.ClearLegalMoveHighlights();
 
@@ -174,17 +200,34 @@ public class ChessGame : MonoBehaviour
             return true;
         }
 
-        if (IsCheckmate(opponentTeam))
+        currentTurn = opponentTeam;
+        turnSelectionUI?.SetTurn(currentTurn);
+
+        if (TryFinishGameAfterCompletedMove(movingPiece, destination))
+            return true;
+
+        UpdateCheckWarningForCurrentTurn();
+        StartCoroutine(AnimateMoveAndUnlock(movingPiece, destination));
+        return true;
+    }
+
+    private bool TryFinishGameAfterCompletedMove(ChessPiece movingPiece, Vector2Int destination)
+    {
+        RecordCurrentPosition();
+
+        if (IsCheckmate(currentTurn))
         {
             StartCoroutine(AnimateMoveAndFinishGame(movingPiece, destination, movingPiece.Team));
             return true;
         }
 
-        currentTurn = currentTurn == PieceTeam.White ? PieceTeam.Black : PieceTeam.White;
-        turnSelectionUI?.SetTurn(currentTurn);
-        UpdateCheckWarningForCurrentTurn();
-        StartCoroutine(AnimateMoveAndUnlock(movingPiece, destination));
-        return true;
+        if (TryGetDrawReason(out string reason))
+        {
+            StartCoroutine(AnimateMoveAndFinishDraw(movingPiece, destination, reason));
+            return true;
+        }
+
+        return false;
     }
 
     public void ClearSelection()
@@ -243,10 +286,14 @@ public class ChessGame : MonoBehaviour
         chessboard?.SetInteractionEnabled(false);
 
         currentTurn = PieceTeam.White;
+        status = ChessGameStatus.NotStarted;
         gameStarted = false;
         gameOver = false;
         inputLocked = false;
         playerTeam = PieceTeam.White;
+        winningTeam = PieceTeam.White;
+        drawReason = string.Empty;
+        ResetDrawTracking();
         lastMovedPiece = null;
         lastMoveTo = -Vector2Int.one;
         lastMoveWasPawnDoubleStep = false;
@@ -489,6 +536,83 @@ public class ChessGame : MonoBehaviour
         return false;
     }
 
+    private bool TryGetDrawReason(out string reason)
+    {
+        if (IsStalemate(currentTurn))
+        {
+            reason = "Stalemate";
+            return true;
+        }
+
+        if (halfMoveClock >= FiftyMoveRuleHalfMoveLimit)
+        {
+            reason = "50-Move Rule";
+            return true;
+        }
+
+        if (HasThreefoldRepetition())
+        {
+            reason = "Threefold Repetition";
+            return true;
+        }
+
+        if (HasInsufficientMaterial())
+        {
+            reason = "Insufficient Material";
+            return true;
+        }
+
+        reason = string.Empty;
+        return false;
+    }
+
+    private bool IsStalemate(PieceTeam team)
+    {
+        return !IsTeamInCheck(team) && !HasAnySafeLegalMove(team);
+    }
+
+    private bool HasThreefoldRepetition()
+    {
+        string positionKey = BuildPositionKey();
+        return positionHistory.TryGetValue(positionKey, out int occurrenceCount) && occurrenceCount >= 3;
+    }
+
+    private bool HasInsufficientMaterial()
+    {
+        List<ChessPiece> nonKingPieces = new List<ChessPiece>();
+        for (int x = 0; x < pieces.GetLength(0); x++)
+            for (int y = 0; y < pieces.GetLength(1); y++)
+            {
+                ChessPiece piece = pieces[x, y];
+                if (piece && piece.Type != PieceType.King)
+                    nonKingPieces.Add(piece);
+            }
+
+        if (nonKingPieces.Count == 0)
+            return true;
+
+        if (nonKingPieces.Count == 1)
+        {
+            PieceType type = nonKingPieces[0].Type;
+            return type == PieceType.Bishop || type == PieceType.Knight;
+        }
+
+        if (nonKingPieces.Count != 2)
+            return false;
+
+        ChessPiece first = nonKingPieces[0];
+        ChessPiece second = nonKingPieces[1];
+        return first.Type == PieceType.Bishop &&
+            second.Type == PieceType.Bishop &&
+            first.Team != second.Team &&
+            IsSameColorSquare(first.BoardPosition, second.BoardPosition);
+    }
+
+    private bool IsSameColorSquare(Vector2Int first, Vector2Int second)
+    {
+        return (first.x + first.y) % 2 == (second.x + second.y) % 2;
+    }
+
     private bool IsTeamInCheck(PieceTeam team)
     {
         ChessPiece king = FindKing(team);
@@ -644,6 +768,141 @@ public class ChessGame : MonoBehaviour
             Mathf.Abs(destination.y - from.y) == 2;
     }
 
+    private void UpdateHalfMoveClock(bool movedPawn, bool capturedAnyPiece)
+    {
+        halfMoveClock = movedPawn || capturedAnyPiece ? 0 : halfMoveClock + 1;
+    }
+
+    private void ResetDrawTracking()
+    {
+        halfMoveClock = 0;
+        positionHistory.Clear();
+    }
+
+    private void RecordCurrentPosition()
+    {
+        string positionKey = BuildPositionKey();
+        if (positionHistory.TryGetValue(positionKey, out int occurrenceCount))
+            positionHistory[positionKey] = occurrenceCount + 1;
+        else
+            positionHistory.Add(positionKey, 1);
+    }
+
+    private string BuildPositionKey()
+    {
+        StringBuilder builder = new StringBuilder(96);
+
+        for (int rank = 7; rank >= 0; rank--)
+        {
+            int emptyCount = 0;
+            for (int file = 0; file < 8; file++)
+            {
+                ChessPiece piece = pieces[file, rank];
+                if (!piece)
+                {
+                    emptyCount++;
+                    continue;
+                }
+
+                if (emptyCount > 0)
+                {
+                    builder.Append(emptyCount);
+                    emptyCount = 0;
+                }
+
+                builder.Append(GetFenPieceSymbol(piece));
+            }
+
+            if (emptyCount > 0)
+                builder.Append(emptyCount);
+
+            if (rank > 0)
+                builder.Append('/');
+        }
+
+        builder.Append(' ');
+        builder.Append(currentTurn == PieceTeam.White ? 'w' : 'b');
+        builder.Append(' ');
+        AppendCastlingRights(builder);
+        builder.Append(' ');
+        builder.Append(GetEnPassantTargetKey());
+        return builder.ToString();
+    }
+
+    private char GetFenPieceSymbol(ChessPiece piece)
+    {
+        char symbol;
+        switch (piece.Type)
+        {
+            case PieceType.King:
+                symbol = 'k';
+                break;
+            case PieceType.Queen:
+                symbol = 'q';
+                break;
+            case PieceType.Rook:
+                symbol = 'r';
+                break;
+            case PieceType.Bishop:
+                symbol = 'b';
+                break;
+            case PieceType.Knight:
+                symbol = 'n';
+                break;
+            case PieceType.Pawn:
+            default:
+                symbol = 'p';
+                break;
+        }
+
+        return piece.Team == PieceTeam.White ? char.ToUpperInvariant(symbol) : symbol;
+    }
+
+    private void AppendCastlingRights(StringBuilder builder)
+    {
+        int startLength = builder.Length;
+        AppendCastlingRight(builder, PieceTeam.White, 7, 'K');
+        AppendCastlingRight(builder, PieceTeam.White, 0, 'Q');
+        AppendCastlingRight(builder, PieceTeam.Black, 7, 'k');
+        AppendCastlingRight(builder, PieceTeam.Black, 0, 'q');
+
+        if (builder.Length == startLength)
+            builder.Append('-');
+    }
+
+    private void AppendCastlingRight(StringBuilder builder, PieceTeam team, int rookFile, char symbol)
+    {
+        ChessPiece king = FindKing(team);
+        if (!king || king.BoardPosition.x != 4 || king.HasMoved)
+            return;
+
+        int rank = king.BoardPosition.y;
+        ChessPiece rook = pieces[rookFile, rank];
+
+        if (rook && rook.Team == team && rook.Type == PieceType.Rook && !rook.HasMoved)
+            builder.Append(symbol);
+    }
+
+    private string GetEnPassantTargetKey()
+    {
+        if (!lastMoveWasPawnDoubleStep || !lastMovedPiece || lastMovedPiece.Type != PieceType.Pawn)
+            return "-";
+
+        Vector2Int pawnPosition = lastMovedPiece.BoardPosition;
+        int targetRank = pawnPosition.y - lastMovedPiece.ForwardDirection;
+        if (!ChessMoveRules.IsInsideBoard(new Vector2Int(pawnPosition.x, targetRank)))
+            return "-";
+
+        return FormatSquare(new Vector2Int(pawnPosition.x, targetRank));
+    }
+
+    private string FormatSquare(Vector2Int square)
+    {
+        char file = (char)('a' + square.x);
+        char rank = (char)('1' + square.y);
+        return new string(new[] { file, rank });
+    }
+
     private IEnumerator AnimateMoveAndPromptPromotion(PawnPiece pawn, Vector2Int destination, PieceTeam opponentTeam)
     {
         inputLocked = true;
@@ -666,14 +925,12 @@ public class ChessGame : MonoBehaviour
         inputLocked = false;
         chessboard?.SetInteractionEnabled(true);
 
-        if (IsCheckmate(pendingPromotionOpponentTeam))
-        {
-            FinishGame(promotedPiece.Team);
-            return;
-        }
-
         currentTurn = pendingPromotionOpponentTeam;
         turnSelectionUI?.SetTurn(currentTurn);
+
+        if (TryFinishGameAfterCompletedMove(promotedPiece, promotedPiece.BoardPosition))
+            return;
+
         UpdateCheckWarningForCurrentTurn();
     }
 
@@ -1361,10 +1618,20 @@ public class ChessGame : MonoBehaviour
         FinishGame(winner);
     }
 
+    private IEnumerator AnimateMoveAndFinishDraw(ChessPiece movingPiece, Vector2Int destination, string reason)
+    {
+        inputLocked = true;
+        AnimatePieceToTile(movingPiece, destination, 0f, moveAnimationDuration, moveArcHeight);
+        yield return new WaitForSeconds(moveAnimationDuration);
+        FinishDraw(reason);
+    }
+
     private void FinishGame(PieceTeam winner)
     {
         StopCheckWarning();
+        status = ChessGameStatus.Win;
         winningTeam = winner;
+        drawReason = string.Empty;
         selectedPiece = null;
         gameStarted = false;
         gameOver = true;
@@ -1372,6 +1639,20 @@ public class ChessGame : MonoBehaviour
         chessboard?.ClearLegalMoveHighlights();
         chessboard?.SetInteractionEnabled(false);
         turnSelectionUI?.ShowGameOver(winningTeam, playerTeam);
+    }
+
+    private void FinishDraw(string reason)
+    {
+        StopCheckWarning();
+        status = ChessGameStatus.Draw;
+        drawReason = reason;
+        selectedPiece = null;
+        gameStarted = false;
+        gameOver = true;
+        inputLocked = false;
+        chessboard?.ClearLegalMoveHighlights();
+        chessboard?.SetInteractionEnabled(false);
+        turnSelectionUI?.ShowDraw(playerTeam, drawReason);
     }
 
     private void ClearPieceMap()
