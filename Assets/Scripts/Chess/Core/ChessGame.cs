@@ -31,6 +31,18 @@ public class ChessGame : MonoBehaviour
     [Tooltip("Local Chessboard-axis offset applied after resolving a tile center. Use X/Z to nudge all generated pieces onto the drawn squares.")]
     [SerializeField] private Vector3 pieceBoardLocalOffset;
 
+    [Header("Audio")]
+    [SerializeField] private AudioSource audioSource;
+    [SerializeField] private AudioClip pickSound;
+    [SerializeField] private AudioClip moveSound;
+    [SerializeField] private AudioClip hitSound;
+    [SerializeField] private AudioClip errorSound;
+    [SerializeField] private AudioClip castleSound;
+    [SerializeField] private AudioClip promotionSound;
+    [SerializeField] private AudioClip checkSound;
+    [SerializeField] private AudioClip winSound;
+    [SerializeField, Range(0f, 1f)] private float soundVolume = 1f;
+
     private readonly ChessPiece[,] pieces = new ChessPiece[8, 8];
     private readonly Dictionary<ChessPiece, Coroutine> pieceAnimations = new Dictionary<ChessPiece, Coroutine>();
     private readonly Dictionary<string, int> positionHistory = new Dictionary<string, int>();
@@ -69,7 +81,52 @@ public class ChessGame : MonoBehaviour
     {
         if (!chessboard)
             chessboard = FindAnyObjectByType<Chessboard>();
+
+        EnsureAudioSource();
+        AutoAssignDefaultAudioClips();
     }
+
+    private void EnsureAudioSource()
+    {
+        if (!audioSource)
+            audioSource = GetComponent<AudioSource>();
+
+        if (!audioSource)
+            audioSource = gameObject.AddComponent<AudioSource>();
+
+        audioSource.playOnAwake = false;
+        audioSource.spatialBlend = 0f;
+    }
+
+    private void PlaySound(AudioClip clip)
+    {
+        if (!clip)
+            return;
+
+        EnsureAudioSource();
+        audioSource.PlayOneShot(clip, soundVolume);
+    }
+
+    private void AutoAssignDefaultAudioClips()
+    {
+#if UNITY_EDITOR
+        pickSound = pickSound ? pickSound : LoadEditorAudioClip("Assets/Audio/Music/pick.mp3");
+        moveSound = moveSound ? moveSound : LoadEditorAudioClip("Assets/Audio/Music/move.wav");
+        hitSound = hitSound ? hitSound : LoadEditorAudioClip("Assets/Audio/Music/hit.mp3");
+        errorSound = errorSound ? errorSound : LoadEditorAudioClip("Assets/Audio/Music/error.mp3");
+        castleSound = castleSound ? castleSound : LoadEditorAudioClip("Assets/Audio/Music/nhapthanh.mp3");
+        promotionSound = promotionSound ? promotionSound : LoadEditorAudioClip("Assets/Audio/Music/phonghau.mp3");
+        checkSound = checkSound ? checkSound : LoadEditorAudioClip("Assets/Audio/Music/chieu.mp3");
+        winSound = winSound ? winSound : LoadEditorAudioClip("Assets/Audio/Music/win.mp3");
+#endif
+    }
+
+#if UNITY_EDITOR
+    private AudioClip LoadEditorAudioClip(string assetPath)
+    {
+        return UnityEditor.AssetDatabase.LoadAssetAtPath<AudioClip>(assetPath);
+    }
+#endif
 
     private void Start()
     {
@@ -142,17 +199,26 @@ public class ChessGame : MonoBehaviour
         selectedPiece = piece;
         chessboard?.SetLegalMoveHighlights(GetSafeLegalMoves(selectedPiece));
         AnimatePieceToTile(selectedPiece, selectedPiece.BoardPosition, selectedPieceLiftHeight, selectAnimationDuration, 0f);
+        PlaySound(pickSound);
         return true;
     }
 
     public bool TryMoveSelectedPiece(Vector2Int destination)
     {
         if (!gameStarted || gameOver || inputLocked || !selectedPiece || !chessboard || !chessboard.IsValidTile(destination))
+        {
+            if (selectedPiece)
+                PlaySound(errorSound);
+
             return false;
+        }
 
         Vector2Int from = selectedPiece.BoardPosition;
         if (!IsLegalMoveAfterKingSafety(selectedPiece, from, destination))
+        {
+            PlaySound(errorSound);
             return false;
+        }
 
         ChessPiece movingPiece = selectedPiece;
         ChessPiece capturedPiece = pieces[destination.x, destination.y];
@@ -187,6 +253,13 @@ public class ChessGame : MonoBehaviour
         UpdateHalfMoveClock(movedPawn, capturedAnyPiece);
         selectedPiece = null;
         chessboard.ClearLegalMoveHighlights();
+
+        if (isCastling)
+            PlaySound(castleSound);
+        else if (capturedAnyPiece)
+            PlaySound(hitSound);
+        else
+            PlaySound(moveSound);
 
         if (capturedPiece)
             Destroy(capturedPiece.gameObject);
@@ -921,6 +994,7 @@ public class ChessGame : MonoBehaviour
             return;
 
         ChessPiece promotedPiece = PromotePawn(pendingPromotionPawn, promotionType);
+        PlaySound(promotionSound);
         pendingPromotionPawn = null;
         inputLocked = false;
         chessboard?.SetInteractionEnabled(true);
@@ -1095,6 +1169,7 @@ public class ChessGame : MonoBehaviour
         checkedKing = king;
         checkedKingOriginalScale = checkedKing.transform.localScale;
         checkPulseCoroutine = StartCoroutine(AnimateCheckedKing(checkedKing, checkedTeam));
+        PlaySound(checkSound);
         turnSelectionUI?.ShowCheckWarning(checkedTeam);
     }
 
@@ -1631,6 +1706,7 @@ public class ChessGame : MonoBehaviour
         StopCheckWarning();
         status = ChessGameStatus.Win;
         winningTeam = winner;
+        PlaySound(winSound);
         drawReason = string.Empty;
         selectedPiece = null;
         gameStarted = false;
