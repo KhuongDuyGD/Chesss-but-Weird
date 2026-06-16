@@ -19,6 +19,14 @@ public class HandDrawnPressable : MonoBehaviour, IPointerEnterHandler, IPointerE
     private bool hovering;
     private bool pressing;
 
+    public void Configure(float newHoverScale, float newPressedScale, float newRotationAmount, Color newHoverTint)
+    {
+        hoverScale = newHoverScale;
+        pressedScale = newPressedScale;
+        rotationAmount = newRotationAmount;
+        hoverTint = newHoverTint;
+    }
+
     private void Awake()
     {
         rectTransform = transform as RectTransform;

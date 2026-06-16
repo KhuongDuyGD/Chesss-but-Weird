@@ -1,3 +1,4 @@
+using System.IO;
 using UnityEngine;
 
 public class HandDrawnMenuAssets : MonoBehaviour
@@ -25,12 +26,18 @@ public class HandDrawnMenuAssets : MonoBehaviour
     public Sprite playerProfileIcon;
     public Sprite settingsIcon;
 
+    [Header("Multiplayer Mode")]
+    public Sprite multiplayerModeTitle;
+    public Sprite lanCard;
+    public Sprite multiplayerOnlineCard;
+
     [Header("Side Select")]
     public Sprite chooseSideTitle;
     public Sprite whiteCard;
     public Sprite blackCard;
 
     public bool HasRequiredSprites => logo && startButton && localButton && whiteCard && blackCard;
+    public bool HasMultiplayerModeSprites => multiplayerModeTitle && lanCard && multiplayerOnlineCard;
 
     public void LoadFromResources()
     {
@@ -55,6 +62,19 @@ public class HandDrawnMenuAssets : MonoBehaviour
         playerProfileIcon = LoadSprite("player_profile_icon", new SpriteCrop(1254f, 1254f, 138f, 169f, 987f, 917f));
         settingsIcon = LoadSprite("settings_icon", new SpriteCrop(1254f, 1254f, 169f, 153f, 885f, 916f));
 
+        multiplayerModeTitle = LoadFullSpriteWithFallback(
+            "multiplayer_mode_title",
+            "Assets/Materials/Main_Menu/bbe5b59a-ccd3-4bb8-bba1-e1c3ae33b9e2.png",
+            new SpriteCrop(2172f, 724f, 20f, 220f, 2130f, 300f));
+        lanCard = LoadFullSpriteWithFallback(
+            "lan_card",
+            "Assets/Materials/Main_Menu/1846e0bb-33fb-4796-a26e-4d073d258f67.png",
+            new SpriteCrop(1086f, 1448f, 36f, 112f, 1010f, 1250f));
+        multiplayerOnlineCard = LoadFullSpriteWithFallback(
+            "multiplayer_online_card",
+            "Assets/Materials/Main_Menu/80a42711-47dc-4d74-845f-2c451d244e84.png",
+            new SpriteCrop(1086f, 1448f, 36f, 112f, 1010f, 1250f));
+
         chooseSideTitle = LoadSprite("choose_side_title", new SpriteCrop(2172f, 724f, 216f, 218f, 1797f, 253f));
         whiteCard = LoadSprite("white_card", new SpriteCrop(1086f, 1448f, 109f, 167f, 876f, 1093f));
         blackCard = LoadSprite("black_card", new SpriteCrop(1086f, 1448f, 151f, 176f, 811f, 1002f));
@@ -72,6 +92,46 @@ public class HandDrawnMenuAssets : MonoBehaviour
         texture.filterMode = FilterMode.Bilinear;
         Rect sourceRect = crop.ToUnityRect(texture.width, texture.height);
         return Sprite.Create(texture, sourceRect, new Vector2(0.5f, 0.5f), 100f);
+    }
+
+    private static Sprite LoadFullSpriteWithFallback(string resourceName, string projectRelativePath)
+    {
+        return LoadFullSpriteWithFallback(resourceName, projectRelativePath, null);
+    }
+
+    private static Sprite LoadFullSpriteWithFallback(string resourceName, string projectRelativePath, SpriteCrop? crop)
+    {
+        Texture2D texture = Resources.Load<Texture2D>($"Main_Menu/{resourceName}");
+        if (!texture)
+            texture = LoadTextureFromProjectFile(projectRelativePath);
+
+        if (!texture)
+        {
+            Debug.LogWarning($"[HandDrawnMenu] Missing sprite at Resources/Main_Menu/{resourceName}.png and {projectRelativePath}");
+            return null;
+        }
+
+        texture.filterMode = FilterMode.Bilinear;
+        Rect sourceRect = crop.HasValue ? crop.Value.ToUnityRect(texture.width, texture.height) : new Rect(0f, 0f, texture.width, texture.height);
+        return Sprite.Create(texture, sourceRect, new Vector2(0.5f, 0.5f), 100f);
+    }
+
+    private static Texture2D LoadTextureFromProjectFile(string projectRelativePath)
+    {
+        string fullPath = Path.Combine(Directory.GetCurrentDirectory(), projectRelativePath);
+        if (!File.Exists(fullPath))
+            return null;
+
+        byte[] bytes = File.ReadAllBytes(fullPath);
+        Texture2D texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+        if (!texture.LoadImage(bytes))
+        {
+            Destroy(texture);
+            return null;
+        }
+
+        texture.name = Path.GetFileNameWithoutExtension(projectRelativePath);
+        return texture;
     }
 
     private readonly struct SpriteCrop

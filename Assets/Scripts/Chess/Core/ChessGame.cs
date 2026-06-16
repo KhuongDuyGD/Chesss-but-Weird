@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;
@@ -67,15 +68,25 @@ public class ChessGame : MonoBehaviour
     private PawnPiece pendingPromotionPawn;
     private PieceTeam pendingPromotionOpponentTeam;
     private ChessTurnSelectionUI turnSelectionUI;
+    private bool restrictInputToControlledTeam;
+    private PieceTeam localControlledTeam = PieceTeam.White;
+    private bool suppressMoveCommittedEvent;
+    private bool pendingRemotePromotionResolution;
+    private PieceType remotePromotionType = PieceType.Queen;
+    private Vector2Int pendingCommittedMoveFrom = -Vector2Int.one;
+    private Vector2Int pendingCommittedMoveTo = -Vector2Int.one;
 
     public PieceTeam CurrentTurn => currentTurn;
     public ChessPiece SelectedPiece => selectedPiece;
     public bool GameStarted => gameStarted;
     public bool GameOver => gameOver;
     public PieceTeam WinningTeam => winningTeam;
+    public PieceTeam PlayerTeam => playerTeam;
     public ChessGameStatus Status => status;
     public string DrawReason => drawReason;
     public int HalfMoveClock => halfMoveClock;
+    public event Action<ChessLanMove> MoveCommitted;
+    public event Action ReturnedToMainMenu;
 
     private void Awake()
     {
@@ -109,22 +120,47 @@ public class ChessGame : MonoBehaviour
 
     private void AutoAssignDefaultAudioClips()
     {
+        LoadAudioProfile();
+
 #if UNITY_EDITOR
-        pickSound = pickSound ? pickSound : LoadEditorAudioClip("Assets/Audio/Music/pick.mp3");
-        moveSound = moveSound ? moveSound : LoadEditorAudioClip("Assets/Audio/Music/move.wav");
-        hitSound = hitSound ? hitSound : LoadEditorAudioClip("Assets/Audio/Music/hit.mp3");
-        errorSound = errorSound ? errorSound : LoadEditorAudioClip("Assets/Audio/Music/error.mp3");
-        castleSound = castleSound ? castleSound : LoadEditorAudioClip("Assets/Audio/Music/nhapthanh.mp3");
-        promotionSound = promotionSound ? promotionSound : LoadEditorAudioClip("Assets/Audio/Music/phonghau.mp3");
-        checkSound = checkSound ? checkSound : LoadEditorAudioClip("Assets/Audio/Music/chieu.mp3");
-        winSound = winSound ? winSound : LoadEditorAudioClip("Assets/Audio/Music/win.mp3");
+        pickSound = pickSound ? pickSound : LoadEditorAudioClip("Assets/Audio/SFX/pick.mp3", "Assets/Audio/Music/pick.mp3");
+        moveSound = moveSound ? moveSound : LoadEditorAudioClip("Assets/Audio/SFX/move.wav", "Assets/Audio/Music/move.wav");
+        hitSound = hitSound ? hitSound : LoadEditorAudioClip("Assets/Audio/SFX/hit.mp3", "Assets/Audio/Music/hit.mp3");
+        errorSound = errorSound ? errorSound : LoadEditorAudioClip("Assets/Audio/SFX/error.mp3", "Assets/Audio/Music/error.mp3");
+        castleSound = castleSound ? castleSound : LoadEditorAudioClip("Assets/Audio/SFX/nhapthanh.mp3", "Assets/Audio/Music/nhapthanh.mp3");
+        promotionSound = promotionSound ? promotionSound : LoadEditorAudioClip("Assets/Audio/SFX/phonghau.mp3", "Assets/Audio/Music/phonghau.mp3");
+        checkSound = checkSound ? checkSound : LoadEditorAudioClip("Assets/Audio/SFX/chieu.mp3", "Assets/Audio/Music/chieu.mp3");
+        winSound = winSound ? winSound : LoadEditorAudioClip("Assets/Audio/SFX/win.mp3", "Assets/Audio/Music/win.mp3");
 #endif
     }
 
-#if UNITY_EDITOR
-    private AudioClip LoadEditorAudioClip(string assetPath)
+    private void LoadAudioProfile()
     {
-        return UnityEditor.AssetDatabase.LoadAssetAtPath<AudioClip>(assetPath);
+        ChessGameAudioProfile audioProfile = Resources.Load<ChessGameAudioProfile>("Chess/ChessGameAudioProfile");
+        if (!audioProfile)
+            return;
+
+        pickSound = pickSound ? pickSound : audioProfile.pickSound;
+        moveSound = moveSound ? moveSound : audioProfile.moveSound;
+        hitSound = hitSound ? hitSound : audioProfile.hitSound;
+        errorSound = errorSound ? errorSound : audioProfile.errorSound;
+        castleSound = castleSound ? castleSound : audioProfile.castleSound;
+        promotionSound = promotionSound ? promotionSound : audioProfile.promotionSound;
+        checkSound = checkSound ? checkSound : audioProfile.checkSound;
+        winSound = winSound ? winSound : audioProfile.winSound;
+    }
+
+#if UNITY_EDITOR
+    private AudioClip LoadEditorAudioClip(params string[] assetPaths)
+    {
+        for (int i = 0; i < assetPaths.Length; i++)
+        {
+            AudioClip clip = UnityEditor.AssetDatabase.LoadAssetAtPath<AudioClip>(assetPaths[i]);
+            if (clip)
+                return clip;
+        }
+
+        return null;
     }
 #endif
 
@@ -136,7 +172,7 @@ public class ChessGame : MonoBehaviour
 
     private void Update()
     {
-        if (!gameStarted || inputLocked || Mouse.current == null || !Mouse.current.leftButton.wasPressedThisFrame)
+        if (!gameStarted || inputLocked || !CanLocalPlayerInteract() || Mouse.current == null || !Mouse.current.leftButton.wasPressedThisFrame)
             return;
 
         if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
@@ -166,27 +202,40 @@ public class ChessGame : MonoBehaviour
 
     public void BeginGame(PieceTeam firstTurn)
     {
+        BeginGameInternal(firstTurn, firstTurn, false, firstTurn);
+    }
+
+    public void BeginLanGame(PieceTeam firstTurn, PieceTeam localPlayerTeam)
+    {
+        BeginGameInternal(firstTurn, localPlayerTeam, true, localPlayerTeam);
+    }
+
+    private void BeginGameInternal(PieceTeam firstTurn, PieceTeam localPlayerTeam, bool restrictInput, PieceTeam frontTeam)
+    {
         currentTurn = firstTurn;
-        playerTeam = firstTurn;
+        playerTeam = localPlayerTeam;
+        localControlledTeam = localPlayerTeam;
+        restrictInputToControlledTeam = restrictInput;
         selectedPiece = null;
         gameOver = false;
+        inputLocked = false;
         status = ChessGameStatus.Playing;
         drawReason = string.Empty;
         ResetDrawTracking();
-        ArrangePiecesForFirstTurn(firstTurn);
+        ArrangePiecesForFirstTurn(frontTeam);
         SetRuntimePiecesVisible(true);
         RefreshPieceMap();
         RecordCurrentPosition();
         gameStarted = true;
-        chessboard?.SetInteractionEnabled(true);
         chessboard?.ClearLegalMoveHighlights();
+        RefreshLocalInteractionState();
         turnSelectionUI?.SetTurn(currentTurn);
         UpdateCheckWarningForCurrentTurn();
     }
 
     public bool TrySelectPiece(ChessPiece piece)
     {
-        if (!gameStarted || inputLocked || !piece || piece.Team != currentTurn)
+        if (!gameStarted || inputLocked || !piece || piece.Team != currentTurn || !CanControlPieceTeam(piece.Team))
             return false;
 
         if (selectedPiece == piece)
@@ -214,8 +263,11 @@ public class ChessGame : MonoBehaviour
         }
 
         Vector2Int from = selectedPiece.BoardPosition;
+        pendingCommittedMoveFrom = from;
+        pendingCommittedMoveTo = destination;
         if (!IsLegalMoveAfterKingSafety(selectedPiece, from, destination))
         {
+            ClearPendingCommittedMove();
             PlaySound(errorSound);
             return false;
         }
@@ -274,7 +326,9 @@ public class ChessGame : MonoBehaviour
         }
 
         currentTurn = opponentTeam;
+        NotifyMoveCommitted(new ChessLanMove(from, destination));
         turnSelectionUI?.SetTurn(currentTurn);
+        RefreshLocalInteractionState();
 
         if (TryFinishGameAfterCompletedMove(movingPiece, destination))
             return true;
@@ -314,7 +368,7 @@ public class ChessGame : MonoBehaviour
             return;
 
         SetRuntimePiecesVisible(false);
-        chessboard?.SetInteractionEnabled(false);
+        RefreshLocalInteractionState();
         turnSelectionUI?.ShowTurnSelection();
     }
 
@@ -322,6 +376,7 @@ public class ChessGame : MonoBehaviour
     {
         PrepareGame();
         turnSelectionUI?.ShowMainMenu();
+        ReturnedToMainMenu?.Invoke();
     }
 
     private void PrepareGame()
@@ -364,6 +419,8 @@ public class ChessGame : MonoBehaviour
         gameOver = false;
         inputLocked = false;
         playerTeam = PieceTeam.White;
+        localControlledTeam = PieceTeam.White;
+        restrictInputToControlledTeam = false;
         winningTeam = PieceTeam.White;
         drawReason = string.Empty;
         ResetDrawTracking();
@@ -371,6 +428,11 @@ public class ChessGame : MonoBehaviour
         lastMoveTo = -Vector2Int.one;
         lastMoveWasPawnDoubleStep = false;
         pendingPromotionPawn = null;
+        suppressMoveCommittedEvent = false;
+        pendingRemotePromotionResolution = false;
+        remotePromotionType = PieceType.Queen;
+        ClearPendingCommittedMove();
+        RefreshLocalInteractionState();
     }
 
     private Transform CreateRuntimePiecesRoot()
@@ -979,12 +1041,19 @@ public class ChessGame : MonoBehaviour
     private IEnumerator AnimateMoveAndPromptPromotion(PawnPiece pawn, Vector2Int destination, PieceTeam opponentTeam)
     {
         inputLocked = true;
-        chessboard?.SetInteractionEnabled(false);
+        RefreshLocalInteractionState();
         AnimatePieceToTile(pawn, destination, 0f, moveAnimationDuration, moveArcHeight);
         yield return new WaitForSeconds(moveAnimationDuration);
 
         pendingPromotionPawn = pawn;
         pendingPromotionOpponentTeam = opponentTeam;
+
+        if (pendingRemotePromotionResolution)
+        {
+            CompletePromotion(remotePromotionType);
+            yield break;
+        }
+
         turnSelectionUI?.ShowPromotionChoice(pawn.Team, CompletePromotion);
     }
 
@@ -997,10 +1066,13 @@ public class ChessGame : MonoBehaviour
         PlaySound(promotionSound);
         pendingPromotionPawn = null;
         inputLocked = false;
-        chessboard?.SetInteractionEnabled(true);
 
         currentTurn = pendingPromotionOpponentTeam;
+        NotifyMoveCommitted(new ChessLanMove(pendingCommittedMoveFrom, pendingCommittedMoveTo, promotionType));
         turnSelectionUI?.SetTurn(currentTurn);
+        pendingRemotePromotionResolution = false;
+        suppressMoveCommittedEvent = false;
+        RefreshLocalInteractionState();
 
         if (TryFinishGameAfterCompletedMove(promotedPiece, promotedPiece.BoardPosition))
             return;
@@ -1680,9 +1752,11 @@ public class ChessGame : MonoBehaviour
     private IEnumerator AnimateMoveAndUnlock(ChessPiece movingPiece, Vector2Int destination)
     {
         inputLocked = true;
+        RefreshLocalInteractionState();
         AnimatePieceToTile(movingPiece, destination, 0f, moveAnimationDuration, moveArcHeight);
         yield return new WaitForSeconds(moveAnimationDuration);
         inputLocked = false;
+        RefreshLocalInteractionState();
     }
 
     private IEnumerator AnimateMoveAndFinishGame(ChessPiece movingPiece, Vector2Int destination, PieceTeam winner)
@@ -1713,7 +1787,7 @@ public class ChessGame : MonoBehaviour
         gameOver = true;
         inputLocked = false;
         chessboard?.ClearLegalMoveHighlights();
-        chessboard?.SetInteractionEnabled(false);
+        RefreshLocalInteractionState();
         turnSelectionUI?.ShowGameOver(winningTeam, playerTeam);
     }
 
@@ -1727,8 +1801,89 @@ public class ChessGame : MonoBehaviour
         gameOver = true;
         inputLocked = false;
         chessboard?.ClearLegalMoveHighlights();
-        chessboard?.SetInteractionEnabled(false);
+        RefreshLocalInteractionState();
         turnSelectionUI?.ShowDraw(playerTeam, drawReason);
+    }
+
+    public bool ApplyNetworkMove(ChessLanMove move)
+    {
+        if (!gameStarted || gameOver)
+            return false;
+
+        if (!restrictInputToControlledTeam)
+            return false;
+
+        if (currentTurn == localControlledTeam)
+            return false;
+
+        ChessPiece piece = GetPieceAt(move.from);
+        if (!piece || piece.Team != currentTurn)
+            return false;
+
+        DeselectCurrentPiece(false);
+        selectedPiece = piece;
+        suppressMoveCommittedEvent = true;
+        pendingRemotePromotionResolution = move.hasPromotion;
+        remotePromotionType = move.hasPromotion ? move.promotionType : PieceType.Queen;
+
+        bool moveApplied = TryMoveSelectedPiece(move.to);
+        if (!moveApplied)
+        {
+            suppressMoveCommittedEvent = false;
+            pendingRemotePromotionResolution = false;
+            selectedPiece = null;
+            chessboard?.ClearLegalMoveHighlights();
+            ClearPendingCommittedMove();
+        }
+        else if (!move.hasPromotion)
+        {
+            suppressMoveCommittedEvent = false;
+        }
+
+        return moveApplied;
+    }
+
+    private bool CanLocalPlayerInteract()
+    {
+        return !restrictInputToControlledTeam || currentTurn == localControlledTeam;
+    }
+
+    private bool CanControlPieceTeam(PieceTeam team)
+    {
+        return !restrictInputToControlledTeam || (team == localControlledTeam && currentTurn == localControlledTeam);
+    }
+
+    private ChessPiece GetPieceAt(Vector2Int position)
+    {
+        if (!ChessMoveRules.IsInsideBoard(position))
+            return null;
+
+        return pieces[position.x, position.y];
+    }
+
+    private void NotifyMoveCommitted(ChessLanMove move)
+    {
+        if (!suppressMoveCommittedEvent)
+            MoveCommitted?.Invoke(move);
+
+        ClearPendingCommittedMove();
+    }
+
+    private void ClearPendingCommittedMove()
+    {
+        pendingCommittedMoveFrom = -Vector2Int.one;
+        pendingCommittedMoveTo = -Vector2Int.one;
+    }
+
+    private void RefreshLocalInteractionState()
+    {
+        bool shouldEnableInteraction = gameStarted &&
+            !gameOver &&
+            !inputLocked &&
+            pendingPromotionPawn == null &&
+            CanLocalPlayerInteract();
+
+        chessboard?.SetInteractionEnabled(shouldEnableInteraction);
     }
 
     private void ClearPieceMap()

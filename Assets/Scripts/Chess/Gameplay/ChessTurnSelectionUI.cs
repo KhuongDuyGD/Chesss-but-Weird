@@ -34,6 +34,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
     private GUIStyle checkWarningStyle;
     private GUIStyle resultStyle;
     private HandDrawnMenuView handDrawnMenu;
+    private ChessLanController lanController;
 
     public static ChessTurnSelectionUI Create(ChessGame chessGame)
     {
@@ -41,6 +42,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
         ChessTurnSelectionUI ui = root.AddComponent<ChessTurnSelectionUI>();
         ui.chessGame = chessGame;
         ui.TryCreateHandDrawnMenu();
+        ui.TryCreateLanController();
         return ui;
     }
 
@@ -81,12 +83,14 @@ public class ChessTurnSelectionUI : MonoBehaviour
         drawReason = string.Empty;
         showCheckWarning = false;
         state = ScreenState.MainMenu;
+        lanController?.HideLanSetup();
         handDrawnMenu?.ShowMainMenu();
     }
 
     public void ShowTurnSelection()
     {
         showCheckWarning = false;
+        lanController?.HideLanSetup();
         if (handDrawnMenu && handDrawnMenu.IsReady)
         {
             state = ScreenState.TransitionToTurnSelection;
@@ -101,8 +105,26 @@ public class ChessTurnSelectionUI : MonoBehaviour
     public void ShowSideSelection()
     {
         showCheckWarning = false;
+        lanController?.HideLanSetup();
         state = ScreenState.TurnSelection;
         handDrawnMenu?.ShowSideSelection();
+    }
+
+    public void ShowMultiplayerModeSelection()
+    {
+        showCheckWarning = false;
+        lanController?.HideLanSetup();
+        state = ScreenState.TurnSelection;
+        handDrawnMenu?.ShowMultiplayerModeSelection();
+    }
+
+    public void ShowLanSetup()
+    {
+        showCheckWarning = false;
+        state = ScreenState.TurnSelection;
+        handDrawnMenu?.ShowMultiplayerModeSelection();
+        handDrawnMenu?.SetInputEnabled(false);
+        lanController?.ShowLanSetup();
     }
 
     public void ShowGameOver(PieceTeam winner, PieceTeam selectedPlayerTeam)
@@ -113,6 +135,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
         drawReason = string.Empty;
         winningTeam = winner;
         playerTeam = selectedPlayerTeam;
+        lanController?.HideLanSetup();
         state = ScreenState.GameOver;
         handDrawnMenu?.HideForPlaying();
     }
@@ -124,6 +147,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
         resultIsDraw = true;
         drawReason = string.IsNullOrWhiteSpace(reason) ? "Draw" : reason;
         playerTeam = selectedPlayerTeam;
+        lanController?.HideLanSetup();
         state = ScreenState.GameOver;
         handDrawnMenu?.HideForPlaying();
     }
@@ -372,5 +396,11 @@ public class ChessTurnSelectionUI : MonoBehaviour
 
         handDrawnMenu = gameObject.AddComponent<HandDrawnMenuView>();
         handDrawnMenu.Initialize(this, chessGame, menuAssets);
+    }
+
+    private void TryCreateLanController()
+    {
+        lanController = gameObject.AddComponent<ChessLanController>();
+        lanController.Initialize(chessGame, this);
     }
 }

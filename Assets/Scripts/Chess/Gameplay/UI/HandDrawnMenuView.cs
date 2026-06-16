@@ -13,8 +13,10 @@ public class HandDrawnMenuView : MonoBehaviour
     private ChessGame chessGame;
     private HandDrawnMenuAssets assets;
     private Canvas canvas;
+    private GraphicRaycaster raycaster;
     private RectTransform mainScreen;
     private RectTransform modeScreen;
+    private RectTransform multiplayerModeScreen;
     private RectTransform sideScreen;
 
     public bool IsReady => assets != null && assets.HasRequiredSprites && canvas != null;
@@ -32,6 +34,7 @@ public class HandDrawnMenuView : MonoBehaviour
         BuildCanvas();
         BuildMainScreen();
         BuildModeScreen();
+        BuildMultiplayerModeScreen();
         BuildSideScreen();
         ShowMainMenu();
     }
@@ -39,24 +42,47 @@ public class HandDrawnMenuView : MonoBehaviour
     public void ShowMainMenu()
     {
         SetVisible(true);
+        SetInputEnabled(true);
         SetScreen(mainScreen);
     }
 
     public void ShowModeSelection()
     {
         SetVisible(true);
+        SetInputEnabled(true);
         SetScreen(modeScreen);
     }
 
     public void ShowSideSelection()
     {
         SetVisible(true);
+        SetInputEnabled(true);
         SetScreen(sideScreen);
+    }
+
+    public void ShowMultiplayerModeSelection()
+    {
+        if (!assets || !assets.HasMultiplayerModeSprites)
+        {
+            ShowSideSelection();
+            return;
+        }
+
+        SetVisible(true);
+        SetInputEnabled(true);
+        SetScreen(multiplayerModeScreen);
     }
 
     public void HideForPlaying()
     {
         SetVisible(false);
+        SetInputEnabled(false);
+    }
+
+    public void SetInputEnabled(bool enabled)
+    {
+        if (raycaster)
+            raycaster.enabled = enabled;
     }
 
     private void BuildCanvas()
@@ -71,7 +97,7 @@ public class HandDrawnMenuView : MonoBehaviour
         scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
         scaler.matchWidthOrHeight = 0.5f;
 
-        gameObject.AddComponent<GraphicRaycaster>();
+        raycaster = gameObject.AddComponent<GraphicRaycaster>();
 
         RectTransform root = gameObject.GetComponent<RectTransform>();
         root.anchorMin = Vector2.zero;
@@ -119,7 +145,7 @@ public class HandDrawnMenuView : MonoBehaviour
         AddImage(screen, "Logo", assets.logo, new Vector2(530f, 315f), new Vector2(520f, 270f), 0.8f, 0.25f);
 
         AddInteractive(screen, "Local", assets.localButton, new Vector2(-735f, 250f), new Vector2(380f, 116f), () => owner.ShowSideSelection(), true);
-        AddInteractive(screen, "Online", assets.onlineButton, new Vector2(-735f, 75f), new Vector2(380f, 116f), () => LogMenuClick("Online"), true);
+        AddInteractive(screen, "Online", assets.onlineButton, new Vector2(-735f, 75f), new Vector2(380f, 116f), () => owner.ShowMultiplayerModeSelection(), true);
         AddInteractive(screen, "Aram", assets.aramButton, new Vector2(-735f, -100f), new Vector2(390f, 122f), () => LogMenuClick("ARAM"), true);
         AddInteractive(screen, "Shop", assets.shopButton, new Vector2(-735f, -280f), new Vector2(380f, 118f), () => LogMenuClick("Shop"), true);
 
@@ -128,6 +154,45 @@ public class HandDrawnMenuView : MonoBehaviour
         AddInteractive(screen, "Player Profile", assets.playerProfileIcon, new Vector2(800f, -235f), new Vector2(132f, 132f), () => LogMenuClick("Player Profile"), false);
         AddInteractive(screen, "Settings Icon", assets.settingsIcon, new Vector2(500f, -395f), new Vector2(116f, 116f), () => LogMenuClick("Settings"), false);
         AddImage(screen, "Early Access", assets.earlyAccess, new Vector2(735f, -410f), new Vector2(310f, 138f), 0f, 0f);
+    }
+
+    private void BuildMultiplayerModeScreen()
+    {
+        multiplayerModeScreen = CreateScreen("Multiplayer Mode");
+
+        if (!assets.HasMultiplayerModeSprites)
+            return;
+
+        AddImage(multiplayerModeScreen, "Mode Title", assets.multiplayerModeTitle, new Vector2(0f, 380f), new Vector2(1700f, 220f), 0f, 0f);
+        AddInteractive(
+            multiplayerModeScreen,
+            "LAN Card",
+            assets.lanCard,
+            new Vector2(-365f, -105f),
+            new Vector2(590f, 785f),
+            () => SelectMultiplayerMode("LAN"),
+            true,
+            1.05f,
+            new Color(0.83f, 0.95f, 1f, 1f),
+            0.965f,
+            1.25f);
+        AddInteractive(
+            multiplayerModeScreen,
+            "Online Card",
+            assets.multiplayerOnlineCard,
+            new Vector2(365f, -105f),
+            new Vector2(590f, 785f),
+            () => SelectMultiplayerMode("Multiplayer Online"),
+            true,
+            1.05f,
+            new Color(1f, 0.96f, 0.72f, 1f),
+            0.965f,
+            1.25f);
+
+        AddImage(multiplayerModeScreen, "Stars Left", assets.stars, new Vector2(-615f, 305f), new Vector2(92f, 62f), 0.3f, 0.14f);
+        AddImage(multiplayerModeScreen, "Stars Right", assets.stars, new Vector2(625f, 292f), new Vector2(92f, 62f), 0.3f, 0.14f);
+        AddImage(multiplayerModeScreen, "Hearts Left", assets.hearts, new Vector2(-765f, -338f), new Vector2(92f, 80f), 0.3f, 0.14f);
+        AddImage(multiplayerModeScreen, "Hearts Right", assets.hearts, new Vector2(770f, -338f), new Vector2(92f, 80f), 0.3f, 0.14f);
     }
 
     private void BuildSideScreen()
@@ -214,7 +279,18 @@ public class HandDrawnMenuView : MonoBehaviour
         AddImage(parent, "Crown Doodle", assets.crown, new Vector2(45f, -350f), new Vector2(100f, 78f), 0.3f, 0.15f);
     }
 
-    private Button AddInteractive(RectTransform parent, string buttonName, Sprite sprite, Vector2 position, Vector2 size, UnityAction action, bool addIdleWiggle)
+    private Button AddInteractive(
+        RectTransform parent,
+        string buttonName,
+        Sprite sprite,
+        Vector2 position,
+        Vector2 size,
+        UnityAction action,
+        bool addIdleWiggle,
+        float hoverScale = 1.07f,
+        Color? hoverTint = null,
+        float pressedScale = 0.94f,
+        float rotationAmount = 2.2f)
     {
         Image image = CreateImage(parent, buttonName, sprite, position, size);
         image.raycastTarget = true;
@@ -223,7 +299,12 @@ public class HandDrawnMenuView : MonoBehaviour
         button.targetGraphic = image;
         button.onClick.AddListener(action);
 
-        image.gameObject.AddComponent<HandDrawnPressable>();
+        HandDrawnPressable pressable = image.gameObject.AddComponent<HandDrawnPressable>();
+        pressable.Configure(
+            hoverScale,
+            pressedScale,
+            rotationAmount,
+            hoverTint ?? new Color(1f, 0.96f, 0.72f, 1f));
 
         if (addIdleWiggle)
         {
@@ -253,11 +334,12 @@ public class HandDrawnMenuView : MonoBehaviour
 
     private void SetScreen(RectTransform activeScreen)
     {
-        if (!mainScreen || !modeScreen || !sideScreen || !activeScreen)
+        if (!mainScreen || !modeScreen || !multiplayerModeScreen || !sideScreen || !activeScreen)
             return;
 
         mainScreen.gameObject.SetActive(activeScreen == mainScreen);
         modeScreen.gameObject.SetActive(activeScreen == modeScreen);
+        multiplayerModeScreen.gameObject.SetActive(activeScreen == multiplayerModeScreen);
         sideScreen.gameObject.SetActive(activeScreen == sideScreen);
     }
 
@@ -270,6 +352,17 @@ public class HandDrawnMenuView : MonoBehaviour
     private void LogMenuClick(string label)
     {
         Debug.Log($"[HandDrawnMenu] {label} clicked.");
+    }
+
+    private void SelectMultiplayerMode(string modeLabel)
+    {
+        if (string.Equals(modeLabel, "LAN"))
+        {
+            owner.ShowLanSetup();
+            return;
+        }
+
+        Debug.LogWarning("[HandDrawnMenu] Multiplayer Online is temporarily blocked while LAN multiplayer is in progress.");
     }
 
     private static void Stretch(RectTransform rect)
