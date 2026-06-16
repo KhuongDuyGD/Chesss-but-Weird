@@ -207,7 +207,7 @@ public class ChessGame : MonoBehaviour
 
     public void BeginLanGame(PieceTeam firstTurn, PieceTeam localPlayerTeam)
     {
-        BeginGameInternal(firstTurn, localPlayerTeam, true, localPlayerTeam);
+        BeginGameInternal(firstTurn, localPlayerTeam, true, PieceTeam.White);
     }
 
     private void BeginGameInternal(PieceTeam firstTurn, PieceTeam localPlayerTeam, bool restrictInput, PieceTeam frontTeam)

@@ -106,6 +106,9 @@ public class ChessLanSession : MonoBehaviour
         }
 
         RefreshConnectionHealth();
+
+        if (connectionHealth == ChessLanConnectionHealth.Lost)
+            NotifyPeerDisconnected("LAN connection lost.");
     }
 
     private void OnDestroy()

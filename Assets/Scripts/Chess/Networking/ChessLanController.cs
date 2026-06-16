@@ -4,6 +4,8 @@ using UnityEngine;
 public class ChessLanController : MonoBehaviour
 {
     private const int DefaultPort = 19847;
+    private const float ReferenceWidth = 1920f;
+    private const float ReferenceHeight = 1080f;
 
     private ChessGame chessGame;
     private ChessTurnSelectionUI turnSelectionUI;
@@ -14,6 +16,8 @@ public class ChessLanController : MonoBehaviour
     private string portText = DefaultPort.ToString();
     private string statusMessage = "Choose Host or Join to start a LAN match.";
     private string localAddressesSummary = "127.0.0.1";
+    private float guiWidth = ReferenceWidth;
+    private float guiHeight = ReferenceHeight;
 
     public void Initialize(ChessGame newChessGame, ChessTurnSelectionUI newTurnSelectionUI)
     {
@@ -49,44 +53,57 @@ public class ChessLanController : MonoBehaviour
 
     private void OnGUI()
     {
-        if (!showLanPanel || lanGameActive)
+        Matrix4x4 previousMatrix = GUI.matrix;
+        float guiScale = GetGuiScale();
+        guiWidth = Screen.width / guiScale;
+        guiHeight = Screen.height / guiScale;
+        GUI.matrix = Matrix4x4.Scale(new Vector3(guiScale, guiScale, 1f));
+
+        try
         {
+            if (!showLanPanel || lanGameActive)
+            {
+                DrawInGameLanHud();
+                return;
+            }
+
+            float panelWidth = Mathf.Clamp(guiWidth * 0.46f, 720f, 960f);
+            float panelHeight = Mathf.Clamp(guiHeight * 0.58f, 520f, 700f);
+            Rect panelRect = new Rect(
+                (guiWidth - panelWidth) * 0.5f,
+                (guiHeight - panelHeight) * 0.5f,
+                panelWidth,
+                panelHeight);
+
+            Color previousColor = GUI.color;
+            GUI.color = new Color(0f, 0f, 0f, 0.28f);
+            GUI.DrawTexture(new Rect(0f, 0f, guiWidth, guiHeight), Texture2D.whiteTexture);
+            GUI.color = previousColor;
+
+            GUI.Box(panelRect, string.Empty);
+
+            Rect titleRect = new Rect(panelRect.x + 36f, panelRect.y + 24f, panelRect.width - 72f, 48f);
+            GUI.Label(titleRect, "LAN Multiplayer", GetTitleStyle());
+
+            Rect helpRect = new Rect(panelRect.x + 36f, panelRect.y + 78f, panelRect.width - 72f, 64f);
+            GUI.Label(helpRect, "Direct IP connection on the same local network.", GetBodyStyle());
+
+            Rect addressesRect = new Rect(panelRect.x + 36f, panelRect.y + 140f, panelRect.width - 72f, 56f);
+            GUI.Label(addressesRect, $"Local IPs: {localAddressesSummary}", GetBodyStyle());
+
+            Rect statusRect = new Rect(panelRect.x + 36f, panelRect.y + 196f, panelRect.width - 72f, 72f);
+            GUI.Label(statusRect, statusMessage, GetStatusStyle());
+
+            DrawSessionInfo(panelRect);
+            DrawPortField(panelRect);
+            DrawAddressField(panelRect);
+            DrawActionButtons(panelRect);
             DrawInGameLanHud();
-            return;
         }
-
-        float panelWidth = Mathf.Clamp(Screen.width * 0.44f, 660f, 860f);
-        float panelHeight = Mathf.Clamp(Screen.height * 0.52f, 460f, 640f);
-        Rect panelRect = new Rect(
-            (Screen.width - panelWidth) * 0.5f,
-            (Screen.height - panelHeight) * 0.5f,
-            panelWidth,
-            panelHeight);
-
-        Color previousColor = GUI.color;
-        GUI.color = new Color(0f, 0f, 0f, 0.28f);
-        GUI.DrawTexture(new Rect(0f, 0f, Screen.width, Screen.height), Texture2D.whiteTexture);
-        GUI.color = previousColor;
-
-        GUI.Box(panelRect, string.Empty);
-
-        Rect titleRect = new Rect(panelRect.x + 36f, panelRect.y + 24f, panelRect.width - 72f, 48f);
-        GUI.Label(titleRect, "LAN Multiplayer", GetTitleStyle());
-
-        Rect helpRect = new Rect(panelRect.x + 36f, panelRect.y + 78f, panelRect.width - 72f, 64f);
-        GUI.Label(helpRect, "Direct IP connection on the same local network.", GetBodyStyle());
-
-        Rect addressesRect = new Rect(panelRect.x + 36f, panelRect.y + 140f, panelRect.width - 72f, 56f);
-        GUI.Label(addressesRect, $"Local IPs: {localAddressesSummary}", GetBodyStyle());
-
-        Rect statusRect = new Rect(panelRect.x + 36f, panelRect.y + 196f, panelRect.width - 72f, 72f);
-        GUI.Label(statusRect, statusMessage, GetStatusStyle());
-
-        DrawSessionInfo(panelRect);
-        DrawPortField(panelRect);
-        DrawAddressField(panelRect);
-        DrawActionButtons(panelRect);
-        DrawInGameLanHud();
+        finally
+        {
+            GUI.matrix = previousMatrix;
+        }
     }
 
     public void ShowLanSetup()
@@ -318,20 +335,18 @@ public class ChessLanController : MonoBehaviour
         if (!lanGameActive)
             return;
 
-        float width = Mathf.Clamp(Screen.width * 0.22f, 320f, 420f);
-        float height = 210f;
-        Rect panelRect = new Rect(Screen.width - width - 18f, 18f, width, height);
+        float width = Mathf.Clamp(guiWidth * 0.18f, 300f, 360f);
+        float height = 162f;
+        Rect panelRect = new Rect(18f, guiHeight - height - 18f, width, height);
         GUI.Box(panelRect, string.Empty);
 
-        GUI.Label(new Rect(panelRect.x + 16f, panelRect.y + 12f, panelRect.width - 32f, 28f), "LAN Room", GetHudTitleStyle());
-        GUI.Label(new Rect(panelRect.x + 16f, panelRect.y + 44f, panelRect.width - 32f, 22f), $"Role: {session.Role}", GetHudBodyStyle());
-        GUI.Label(new Rect(panelRect.x + 16f, panelRect.y + 66f, panelRect.width - 32f, 22f), $"Machine: {session.LocalMachineName}", GetHudBodyStyle());
-        GUI.Label(new Rect(panelRect.x + 16f, panelRect.y + 88f, panelRect.width - 32f, 22f), $"Peer: {GetPeerDisplayText()}", GetHudBodyStyle());
-        GUI.Label(new Rect(panelRect.x + 16f, panelRect.y + 110f, panelRect.width - 32f, 22f), $"Room: {GetRoomStateLabel()}", GetHudBodyStyle());
-        GUI.Label(new Rect(panelRect.x + 16f, panelRect.y + 132f, panelRect.width - 32f, 22f), $"Network: {GetNetworkDisplayText()}", GetHudBodyStyle());
-        GUI.Label(new Rect(panelRect.x + 16f, panelRect.y + 154f, panelRect.width - 32f, 22f), $"You: {chessGame.PlayerTeam} | Turn: {chessGame.CurrentTurn}", GetHudBodyStyle());
+        GUI.Label(new Rect(panelRect.x + 14f, panelRect.y + 10f, panelRect.width - 28f, 24f), "LAN Room", GetHudTitleStyle());
+        GUI.Label(new Rect(panelRect.x + 14f, panelRect.y + 36f, panelRect.width - 28f, 20f), $"Role: {session.Role} | You: {chessGame.PlayerTeam}", GetHudBodyStyle());
+        GUI.Label(new Rect(panelRect.x + 14f, panelRect.y + 56f, panelRect.width - 28f, 20f), $"Turn: {chessGame.CurrentTurn} | Room: {GetRoomStateLabel()}", GetHudBodyStyle());
+        GUI.Label(new Rect(panelRect.x + 14f, panelRect.y + 76f, panelRect.width - 28f, 20f), $"Peer: {GetPeerDisplayText()}", GetHudBodyStyle());
+        GUI.Label(new Rect(panelRect.x + 14f, panelRect.y + 96f, panelRect.width - 28f, 20f), $"Network: {GetNetworkDisplayText()}", GetHudBodyStyle());
 
-        if (GUI.Button(new Rect(panelRect.x + 16f, panelRect.y + 176f, panelRect.width - 32f, 24f), "Leave Room"))
+        if (GUI.Button(new Rect(panelRect.x + 14f, panelRect.y + 124f, panelRect.width - 28f, 26f), "Leave Room"))
             LeaveLanRoom();
     }
 
@@ -434,7 +449,7 @@ public class ChessLanController : MonoBehaviour
     {
         GUIStyle style = new GUIStyle(GUI.skin.label)
         {
-            fontSize = 20,
+            fontSize = 18,
             fontStyle = FontStyle.Bold
         };
         return style;
@@ -444,7 +459,9 @@ public class ChessLanController : MonoBehaviour
     {
         GUIStyle style = new GUIStyle(GUI.skin.label)
         {
-            fontSize = 14
+            fontSize = 13,
+            wordWrap = false,
+            clipping = TextClipping.Clip
         };
         return style;
     }
@@ -458,5 +475,12 @@ public class ChessLanController : MonoBehaviour
             wordWrap = true
         };
         return style;
+    }
+
+    private static float GetGuiScale()
+    {
+        float widthScale = Screen.width / ReferenceWidth;
+        float heightScale = Screen.height / ReferenceHeight;
+        return Mathf.Clamp(Mathf.Min(widthScale, heightScale), 1f, 2f);
     }
 }
