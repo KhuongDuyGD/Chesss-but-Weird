@@ -362,7 +362,7 @@ public class HandDrawnMenuView : MonoBehaviour
             return;
         }
 
-        Debug.LogWarning("[HandDrawnMenu] Multiplayer Online is temporarily blocked while LAN multiplayer is in progress.");
+        owner.ShowOnlineSetup();
     }
 
     private static void Stretch(RectTransform rect)

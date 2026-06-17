@@ -35,6 +35,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
     private GUIStyle resultStyle;
     private HandDrawnMenuView handDrawnMenu;
     private ChessLanController lanController;
+    private ChessOnlineController onlineController;
 
     public static ChessTurnSelectionUI Create(ChessGame chessGame)
     {
@@ -43,6 +44,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
         ui.chessGame = chessGame;
         ui.TryCreateHandDrawnMenu();
         ui.TryCreateLanController();
+        ui.TryCreateOnlineController();
         return ui;
     }
 
@@ -84,6 +86,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
         showCheckWarning = false;
         state = ScreenState.MainMenu;
         lanController?.HideLanSetup();
+        onlineController?.HideOnlineSetup();
         handDrawnMenu?.ShowMainMenu();
     }
 
@@ -91,6 +94,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
     {
         showCheckWarning = false;
         lanController?.HideLanSetup();
+        onlineController?.HideOnlineSetup();
         if (handDrawnMenu && handDrawnMenu.IsReady)
         {
             state = ScreenState.TransitionToTurnSelection;
@@ -106,6 +110,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
     {
         showCheckWarning = false;
         lanController?.HideLanSetup();
+        onlineController?.HideOnlineSetup();
         state = ScreenState.TurnSelection;
         handDrawnMenu?.ShowSideSelection();
     }
@@ -114,6 +119,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
     {
         showCheckWarning = false;
         lanController?.HideLanSetup();
+        onlineController?.HideOnlineSetup();
         state = ScreenState.TurnSelection;
         handDrawnMenu?.ShowMultiplayerModeSelection();
     }
@@ -122,9 +128,18 @@ public class ChessTurnSelectionUI : MonoBehaviour
     {
         showCheckWarning = false;
         state = ScreenState.TurnSelection;
-        handDrawnMenu?.ShowMultiplayerModeSelection();
-        handDrawnMenu?.SetInputEnabled(false);
+        onlineController?.HideOnlineSetup();
+        handDrawnMenu?.HideForPlaying();
         lanController?.ShowLanSetup();
+    }
+
+    public void ShowOnlineSetup()
+    {
+        showCheckWarning = false;
+        state = ScreenState.TurnSelection;
+        lanController?.HideLanSetup();
+        handDrawnMenu?.HideForPlaying();
+        onlineController?.ShowOnlineSetup();
     }
 
     public void ShowGameOver(PieceTeam winner, PieceTeam selectedPlayerTeam)
@@ -136,6 +151,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
         winningTeam = winner;
         playerTeam = selectedPlayerTeam;
         lanController?.HideLanSetup();
+        onlineController?.HideOnlineSetup();
         state = ScreenState.GameOver;
         handDrawnMenu?.HideForPlaying();
     }
@@ -148,6 +164,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
         drawReason = string.IsNullOrWhiteSpace(reason) ? "Draw" : reason;
         playerTeam = selectedPlayerTeam;
         lanController?.HideLanSetup();
+        onlineController?.HideOnlineSetup();
         state = ScreenState.GameOver;
         handDrawnMenu?.HideForPlaying();
     }
@@ -402,5 +419,11 @@ public class ChessTurnSelectionUI : MonoBehaviour
     {
         lanController = gameObject.AddComponent<ChessLanController>();
         lanController.Initialize(chessGame, this);
+    }
+
+    private void TryCreateOnlineController()
+    {
+        onlineController = gameObject.AddComponent<ChessOnlineController>();
+        onlineController.Initialize(chessGame, this);
     }
 }
