@@ -32,11 +32,13 @@ public enum ChessLanConnectionHealth
 
 public class ChessLanSession : MonoBehaviour
 {
+    private const string LogPrefix = "[ChessLAN]";
     private const string StartCommand = "START";
     private const string MoveCommand = "MOVE";
     private const string HelloCommand = "HELLO";
     private const string PingCommand = "PING";
     private const string PongCommand = "PONG";
+    private const int ConnectTimeoutMilliseconds = 6000;
     private const double HeartbeatIntervalSeconds = 2d;
     private const double WeakConnectionSilenceSeconds = 4d;
     private const double LostConnectionSilenceSeconds = 8d;
@@ -118,6 +120,7 @@ public class ChessLanSession : MonoBehaviour
 
     public void Host(int port)
     {
+        Log($"Host requested on TCP port {port}.");
         Disconnect();
 
         try
@@ -127,6 +130,7 @@ public class ChessLanSession : MonoBehaviour
             Role = ChessLanSessionRole.Host;
             listener = new TcpListener(IPAddress.Any, port);
             listener.Start();
+            Log($"TCP listener started on 0.0.0.0:{port}. Local IPv4: {string.Join(", ", GetLocalIpv4Addresses())}");
             SetState(ChessLanSessionState.Hosting, $"Hosting on port {port}. Waiting for LAN peer...");
 
             acceptThread = new Thread(AcceptLoop)
@@ -138,12 +142,14 @@ public class ChessLanSession : MonoBehaviour
         }
         catch (Exception exception)
         {
+            LogError($"Unable to start TCP host on port {port}: {exception.GetType().Name}: {exception.Message}");
             Fail($"Unable to start LAN host: {exception.Message}");
         }
     }
 
     public void Join(string address, int port)
     {
+        Log($"Join requested for TCP endpoint {address}:{port}.");
         Disconnect();
 
         shutdownRequested = false;
@@ -161,6 +167,7 @@ public class ChessLanSession : MonoBehaviour
 
     public void Disconnect()
     {
+        Log($"Disconnect requested. Current state={State}, role={Role}, remote={RemoteEndpointDisplay}.");
         DisconnectInternal(true, true, "Disconnected.");
     }
 
@@ -207,24 +214,29 @@ public class ChessLanSession : MonoBehaviour
     {
         try
         {
+            Log($"Accept thread waiting for TCP peer on port {ActivePort}.");
             TcpClient acceptedClient = listener.AcceptTcpClient();
             if (shutdownRequested)
             {
+                Log("Accept thread received a peer after shutdown; closing accepted socket.");
                 acceptedClient.Close();
                 return;
             }
 
             acceptedClient.NoDelay = true;
             string remoteDisplay = acceptedClient.Client.RemoteEndPoint?.ToString() ?? "LAN peer";
+            Log($"TCP peer accepted from {remoteDisplay}. Queueing stream attach on main thread.");
             EnqueueMainThread(() => AttachClient(acceptedClient, remoteDisplay));
         }
-        catch (SocketException)
+        catch (SocketException exception)
         {
+            LogWarning($"TCP accept socket exception: {exception.SocketErrorCode} / {exception.Message}");
             if (!shutdownRequested)
                 EnqueueMainThread(() => Fail("LAN host stopped listening unexpectedly."));
         }
         catch (Exception exception)
         {
+            LogError($"TCP accept failed: {exception.GetType().Name}: {exception.Message}");
             if (!shutdownRequested)
                 EnqueueMainThread(() => Fail($"LAN host failed: {exception.Message}"));
         }
@@ -236,9 +248,17 @@ public class ChessLanSession : MonoBehaviour
         try
         {
             connectingClient.NoDelay = true;
-            connectingClient.Connect(address, port);
+            Log($"TCP connect begin to {address}:{port} with {ConnectTimeoutMilliseconds}ms timeout.");
+            IAsyncResult connectResult = connectingClient.BeginConnect(address, port, null, null);
+            bool connected = connectResult.AsyncWaitHandle.WaitOne(ConnectTimeoutMilliseconds);
+            if (!connected)
+                throw new TimeoutException($"Connection to {address}:{port} timed out after {ConnectTimeoutMilliseconds}ms.");
+
+            connectingClient.EndConnect(connectResult);
+            Log($"TCP connect succeeded to {address}:{port}. Local endpoint={connectingClient.Client.LocalEndPoint}, remote={connectingClient.Client.RemoteEndPoint}.");
             if (shutdownRequested)
             {
+                Log("TCP connect succeeded after shutdown; closing socket.");
                 connectingClient.Close();
                 return;
             }
@@ -246,8 +266,16 @@ public class ChessLanSession : MonoBehaviour
             string remoteDisplay = connectingClient.Client.RemoteEndPoint?.ToString() ?? $"{address}:{port}";
             EnqueueMainThread(() => AttachClient(connectingClient, remoteDisplay));
         }
+        catch (SocketException exception)
+        {
+            LogWarning($"TCP connect socket exception to {address}:{port}: {exception.SocketErrorCode} / {exception.Message}");
+            connectingClient.Close();
+            if (!shutdownRequested)
+                EnqueueMainThread(() => Fail($"Unable to connect to {address}:{port}: {exception.Message}"));
+        }
         catch (Exception exception)
         {
+            LogWarning($"TCP connect failed to {address}:{port}: {exception.GetType().Name}: {exception.Message}");
             connectingClient.Close();
             if (!shutdownRequested)
                 EnqueueMainThread(() => Fail($"Unable to connect to {address}:{port}: {exception.Message}"));
@@ -258,6 +286,7 @@ public class ChessLanSession : MonoBehaviour
     {
         try
         {
+            Log($"Attaching TCP stream. Role={Role}, remote={remoteDisplay}, local={connectedClient.Client.LocalEndPoint}.");
             client = connectedClient;
             RemoteEndpointDisplay = remoteDisplay;
             remoteMachineName = string.Empty;
@@ -274,6 +303,7 @@ public class ChessLanSession : MonoBehaviour
             };
 
             SetState(ChessLanSessionState.Connected, $"Connected to {remoteDisplay}.");
+            Log($"TCP stream ready. Sending HELLO as {LocalMachineName}.");
             SendLine($"{HelloCommand}|{LocalMachineName}", false);
 
             receiveThread = new Thread(ReceiveLoop)
@@ -282,9 +312,11 @@ public class ChessLanSession : MonoBehaviour
                 Name = "Chess LAN Receive"
             };
             receiveThread.Start();
+            Log("Receive thread started.");
         }
         catch (Exception exception)
         {
+            LogError($"Unable to attach TCP stream: {exception.GetType().Name}: {exception.Message}");
             Fail($"Unable to open LAN data stream: {exception.Message}");
         }
     }
@@ -299,22 +331,28 @@ public class ChessLanSession : MonoBehaviour
             {
                 string line = reader.ReadLine();
                 if (line == null)
+                {
+                    LogWarning("Receive loop got end-of-stream from peer.");
                     break;
+                }
 
                 string capturedLine = line;
+                Log($"RX line: {GetSafeProtocolLog(capturedLine)}");
                 EnqueueMainThread(() => HandleIncomingLine(capturedLine));
             }
         }
-        catch (IOException)
+        catch (IOException exception)
         {
+            LogWarning($"Receive loop IO exception: {exception.Message}");
             if (!shutdownRequested)
             {
                 disconnectAlreadyQueued = true;
                 EnqueueMainThread(() => NotifyPeerDisconnected("Connection closed."));
             }
         }
-        catch (ObjectDisposedException)
+        catch (ObjectDisposedException exception)
         {
+            LogWarning($"Receive loop disposed: {exception.Message}");
             if (!shutdownRequested)
             {
                 disconnectAlreadyQueued = true;
@@ -323,6 +361,7 @@ public class ChessLanSession : MonoBehaviour
         }
         catch (Exception exception)
         {
+            LogError($"Receive loop failed: {exception.GetType().Name}: {exception.Message}");
             if (!shutdownRequested)
             {
                 disconnectAlreadyQueued = true;
@@ -351,12 +390,14 @@ public class ChessLanSession : MonoBehaviour
         if (string.Equals(command, HelloCommand, StringComparison.OrdinalIgnoreCase))
         {
             remoteMachineName = payload?.Trim() ?? string.Empty;
+            Log($"HELLO received. Remote machine='{remoteMachineName}'.");
             StateChanged?.Invoke();
             return;
         }
 
         if (string.Equals(command, PingCommand, StringComparison.OrdinalIgnoreCase))
         {
+            Log("PING received. Sending PONG.");
             SendLine($"{PongCommand}|{payload}", false);
             return;
         }
@@ -367,6 +408,7 @@ public class ChessLanSession : MonoBehaviour
             {
                 DateTime sentUtc = new DateTime(sentTicks, DateTimeKind.Utc);
                 roundTripMilliseconds = Math.Max(0d, (DateTime.UtcNow - sentUtc).TotalMilliseconds);
+                Log($"PONG received. RTT={roundTripMilliseconds:0.0}ms.");
                 RefreshConnectionHealth();
             }
 
@@ -375,6 +417,7 @@ public class ChessLanSession : MonoBehaviour
 
         if (string.Equals(command, StartCommand, StringComparison.OrdinalIgnoreCase))
         {
+            Log($"START received. Payload='{payload}'.");
             if (Enum.TryParse(payload, true, out PieceTeam hostTeam))
                 StartGameRequested?.Invoke(hostTeam);
             else
@@ -385,6 +428,7 @@ public class ChessLanSession : MonoBehaviour
 
         if (string.Equals(command, MoveCommand, StringComparison.OrdinalIgnoreCase))
         {
+            Log($"MOVE received. Payload='{payload}'.");
             if (ChessLanMove.TryParse(payload, out ChessLanMove move))
                 MoveReceived?.Invoke(move);
             else
@@ -399,12 +443,16 @@ public class ChessLanSession : MonoBehaviour
     private bool SendLine(string line, bool reportFailure = true)
     {
         if (!IsConnected || writer == null)
+        {
+            LogWarning($"TX skipped because stream is not connected. Line={GetSafeProtocolLog(line)}");
             return false;
+        }
 
         try
         {
             lock (sendLock)
             {
+                Log($"TX line: {GetSafeProtocolLog(line)}");
                 writer.WriteLine(line);
                 writer.Flush();
             }
@@ -413,6 +461,7 @@ public class ChessLanSession : MonoBehaviour
         }
         catch (Exception exception)
         {
+            LogWarning($"TX failed: {exception.GetType().Name}: {exception.Message}. Line={GetSafeProtocolLog(line)}");
             if (reportFailure)
                 Fail($"Unable to send LAN data: {exception.Message}");
 
@@ -422,18 +471,21 @@ public class ChessLanSession : MonoBehaviour
 
     private void NotifyPeerDisconnected(string message)
     {
+        LogWarning($"Peer disconnected. Message='{message}'.");
         DisconnectInternal(false, true, message);
         PeerDisconnected?.Invoke(message);
     }
 
     private void Fail(string message)
     {
+        LogError($"Session fail. Message='{message}'. State={State}, role={Role}, remote={RemoteEndpointDisplay}.");
         DisconnectInternal(false, true, message);
         SetState(ChessLanSessionState.Error, message);
     }
 
     private void DisconnectInternal(bool requestedByUser, bool clearTransport, string statusMessage)
     {
+        Log($"DisconnectInternal requestedByUser={requestedByUser}, clearTransport={clearTransport}, status='{statusMessage}', state={State}, role={Role}.");
         shutdownRequested = true;
 
         lock (queueLock)
@@ -495,6 +547,7 @@ public class ChessLanSession : MonoBehaviour
 
     private void SetState(ChessLanSessionState newState, string message)
     {
+        Log($"State change: {State} -> {newState}. Message='{message}'.");
         State = newState;
         StatusMessage = message;
         StateChanged?.Invoke();
@@ -522,6 +575,7 @@ public class ChessLanSession : MonoBehaviour
         if (nextHealth == connectionHealth)
             return;
 
+        Log($"Connection health changed: {connectionHealth} -> {nextHealth}. Silence={SecondsSinceLastMessage:0.0}s, RTT={roundTripMilliseconds:0.0}ms.");
         connectionHealth = nextHealth;
         StateChanged?.Invoke();
     }
@@ -532,5 +586,34 @@ public class ChessLanSession : MonoBehaviour
         {
             mainThreadActions.Enqueue(action);
         }
+    }
+
+    private static string GetSafeProtocolLog(string line)
+    {
+        if (string.IsNullOrEmpty(line))
+            return "<empty>";
+
+        if (line.StartsWith(MoveCommand, StringComparison.OrdinalIgnoreCase))
+            return line;
+
+        if (line.Length <= 160)
+            return line;
+
+        return $"{line.Substring(0, 160)}...";
+    }
+
+    private static void Log(string message)
+    {
+        Debug.Log($"{LogPrefix} {message}");
+    }
+
+    private static void LogWarning(string message)
+    {
+        Debug.LogWarning($"{LogPrefix} {message}");
+    }
+
+    private static void LogError(string message)
+    {
+        Debug.LogError($"{LogPrefix} {message}");
     }
 }

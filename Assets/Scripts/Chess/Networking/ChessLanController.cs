@@ -9,6 +9,7 @@ using UnityEngine;
 
 public class ChessLanController : MonoBehaviour
 {
+    private const string LogPrefix = "[ChessLAN]";
     private const int DefaultPort = 19847;
     private const int DiscoveryPort = 19846;
     private const string DiscoveryRequest = "CHESS_BUT_WEIRD_LAN_DISCOVER_V1";
@@ -126,6 +127,7 @@ public class ChessLanController : MonoBehaviour
 
     public void ShowLanSetup()
     {
+        Log("LAN setup opened.");
         showLanPanel = true;
         RefreshLocalAddresses();
         if (session != null && session.State == ChessLanSessionState.Idle)
@@ -240,6 +242,7 @@ public class ChessLanController : MonoBehaviour
 
     private void StartHosting()
     {
+        Log($"Host LAN button pressed. TCP port={DefaultPort}, discovery UDP port={DiscoveryPort}.");
         statusMessage = "Starting LAN host...";
         session.Host(DefaultPort);
 
@@ -249,12 +252,14 @@ public class ChessLanController : MonoBehaviour
 
     private void StopHosting()
     {
+        Log("Stop Hosting button pressed.");
         StopHostDiscovery();
         session.Disconnect();
     }
 
     private void JoinDiscoveredHost(DiscoveredLanHost host)
     {
+        Log($"Join button pressed for discovered host: {host.DisplayName}, endpoint={host.Address}:{host.Port}.");
         StopHostDiscovery();
         statusMessage = $"Connecting to {host.DisplayName}...";
         session.Join(host.Address, host.Port);
@@ -263,8 +268,12 @@ public class ChessLanController : MonoBehaviour
     private void StartDiscoveryScan()
     {
         if (discoveryInProgress)
+        {
+            Log("Refresh ignored because discovery scan is already running.");
             return;
+        }
 
+        Log($"Refresh started. UDP discovery port={DiscoveryPort}.");
         lock (discoveredHostsLock)
         {
             discoveredHosts.Clear();
@@ -288,6 +297,7 @@ public class ChessLanController : MonoBehaviour
             using (UdpClient client = CreateDiscoveryClient(DiscoveryPort, 250, true))
             {
                 byte[] request = Encoding.UTF8.GetBytes(DiscoveryRequest);
+                Log("Discovery scan socket ready. Sending broadcast discovery requests.");
                 SendToBroadcastEndpoints(client, request);
 
                 DateTime deadline = DateTime.UtcNow.AddSeconds(DiscoveryTimeoutSeconds);
@@ -298,6 +308,7 @@ public class ChessLanController : MonoBehaviour
                         IPEndPoint remoteEndpoint = new IPEndPoint(IPAddress.Any, 0);
                         byte[] response = client.Receive(ref remoteEndpoint);
                         string message = Encoding.UTF8.GetString(response);
+                        Log($"Discovery RX from {remoteEndpoint}: {message}");
                         TryAddDiscoveryResponse(message, remoteEndpoint.Address.ToString());
                     }
                     catch (SocketException)
@@ -312,6 +323,7 @@ public class ChessLanController : MonoBehaviour
         }
         catch (Exception exception)
         {
+            LogWarning($"Discovery scan failed: {exception.GetType().Name}: {exception.Message}");
             statusMessage = $"Unable to scan LAN rooms: {exception.Message}";
         }
         finally
@@ -326,6 +338,7 @@ public class ChessLanController : MonoBehaviour
                 }
 
                 statusMessage = roomCount == 0 ? "No LAN rooms found." : $"Found {roomCount} LAN room(s).";
+                Log($"Discovery scan finished. Found rooms={roomCount}.");
             }
         }
     }
@@ -341,6 +354,7 @@ public class ChessLanController : MonoBehaviour
 
         string machineName = parts[2];
         DiscoveredLanHost host = new DiscoveredLanHost(address, port, machineName);
+        Log($"Discovery host parsed: {host.DisplayName}, endpoint={host.Address}:{host.Port}.");
 
         lock (discoveredHostsLock)
         {
@@ -367,6 +381,7 @@ public class ChessLanController : MonoBehaviour
 
     private void StartHostDiscovery()
     {
+        Log($"Starting host discovery responder on UDP port {DiscoveryPort}.");
         StopHostDiscovery();
 
         try
@@ -381,16 +396,21 @@ public class ChessLanController : MonoBehaviour
                 Name = "Chess LAN Host Discovery"
             };
             hostDiscoveryThread.Start();
+            Log("Host discovery responder started.");
         }
         catch (Exception exception)
         {
             hostDiscoveryRunning = false;
+            LogWarning($"Host discovery responder failed: {exception.GetType().Name}: {exception.Message}");
             statusMessage = $"Hosting, but LAN discovery failed: {exception.Message}";
         }
     }
 
     private void StopHostDiscovery()
     {
+        if (hostDiscoveryRunning || hostDiscoveryClient != null)
+            Log("Stopping host discovery responder.");
+
         hostDiscoveryRunning = false;
 
         if (hostDiscoveryClient != null)
@@ -418,11 +438,13 @@ public class ChessLanController : MonoBehaviour
                 IPEndPoint remoteEndpoint = new IPEndPoint(IPAddress.Any, 0);
                 byte[] request = hostDiscoveryClient.Receive(ref remoteEndpoint);
                 string message = Encoding.UTF8.GetString(request);
+                Log($"Host discovery RX from {remoteEndpoint}: {message}");
                 if (!string.Equals(message, DiscoveryRequest, StringComparison.Ordinal))
                     continue;
 
                 byte[] response = Encoding.UTF8.GetBytes(CreateDiscoveryResponse());
                 hostDiscoveryClient.Send(response, response.Length, remoteEndpoint);
+                Log($"Host discovery replied directly to {remoteEndpoint}.");
             }
             catch (SocketException)
             {
@@ -444,6 +466,7 @@ public class ChessLanController : MonoBehaviour
             return;
 
         byte[] response = Encoding.UTF8.GetBytes(CreateDiscoveryResponse());
+        Log("Host discovery broadcasting room advertisement.");
         SendToBroadcastEndpoints(hostDiscoveryClient, response);
     }
 
@@ -454,6 +477,7 @@ public class ChessLanController : MonoBehaviour
 
     private void StartLanMatchAsHost(PieceTeam hostTeam)
     {
+        Log($"Host pressed start match as {hostTeam}. Connected={session.IsConnected}.");
         if (!session.IsConnected)
         {
             statusMessage = "A LAN peer must be connected before the match can start.";
@@ -474,6 +498,7 @@ public class ChessLanController : MonoBehaviour
 
     private void HandleStartGameRequested(PieceTeam hostTeam)
     {
+        Log($"Start game requested by host. Host team={hostTeam}.");
         if (lanGameActive)
             return;
 
@@ -485,6 +510,7 @@ public class ChessLanController : MonoBehaviour
 
     private void HandleMoveCommitted(ChessLanMove move)
     {
+        Log($"Local move committed for LAN send: {move.ToProtocolPayload()}.");
         if (!lanGameActive || session == null || !session.IsConnected)
             return;
 
@@ -494,6 +520,7 @@ public class ChessLanController : MonoBehaviour
 
     private void HandleMoveReceived(ChessLanMove move)
     {
+        Log($"Network move received for apply: {move.ToProtocolPayload()}.");
         if (!lanGameActive)
             return;
 
@@ -503,6 +530,7 @@ public class ChessLanController : MonoBehaviour
 
     private void HandlePeerDisconnected(string message)
     {
+        LogWarning($"Controller peer disconnected: {message}");
         statusMessage = string.IsNullOrWhiteSpace(message) ? "LAN peer disconnected." : message;
         StopHostDiscovery();
         if (!lanGameActive)
@@ -515,6 +543,7 @@ public class ChessLanController : MonoBehaviour
 
     private void HandleReturnedToMainMenu()
     {
+        Log("Returned to main menu; stopping LAN session.");
         lanGameActive = false;
         StopHostDiscovery();
         if (session != null)
@@ -523,6 +552,7 @@ public class ChessLanController : MonoBehaviour
 
     private void HandleSessionStateChanged()
     {
+        Log($"Controller observed session state={session.State}, role={session.Role}, status='{session.StatusMessage}'.");
         statusMessage = session.StatusMessage;
 
         if (session.State != ChessLanSessionState.Hosting)
@@ -715,7 +745,10 @@ public class ChessLanController : MonoBehaviour
     {
         IPEndPoint[] endpoints = GetBroadcastEndpoints();
         for (int i = 0; i < endpoints.Length; i++)
+        {
+            Log($"UDP TX broadcast to {endpoints[i]}.");
             client.Send(payload, payload.Length, endpoints[i]);
+        }
     }
 
     private static UdpClient CreateDiscoveryClient(int port, int receiveTimeoutMilliseconds, bool allowEphemeralFallback)
@@ -728,9 +761,11 @@ public class ChessLanController : MonoBehaviour
         try
         {
             client.Client.Bind(new IPEndPoint(IPAddress.Any, port));
+            Log($"UDP discovery socket bound to 0.0.0.0:{port}.");
         }
-        catch
+        catch (Exception exception)
         {
+            LogWarning($"UDP discovery bind to port {port} failed: {exception.GetType().Name}: {exception.Message}");
             client.Close();
 
             if (!allowEphemeralFallback)
@@ -741,6 +776,7 @@ public class ChessLanController : MonoBehaviour
             client.Client.ReceiveTimeout = receiveTimeoutMilliseconds;
             client.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
             client.Client.Bind(new IPEndPoint(IPAddress.Any, 0));
+            Log($"UDP discovery socket bound to ephemeral port {((IPEndPoint)client.Client.LocalEndPoint).Port}.");
         }
 
         return client;
@@ -780,6 +816,16 @@ public class ChessLanController : MonoBehaviour
         }
 
         return endpoints.ToArray();
+    }
+
+    private static void Log(string message)
+    {
+        Debug.Log($"{LogPrefix} {message}");
+    }
+
+    private static void LogWarning(string message)
+    {
+        Debug.LogWarning($"{LogPrefix} {message}");
     }
 
     private static IPAddress GetSubnetBroadcastAddress(IPAddress address, IPAddress subnetMask)
