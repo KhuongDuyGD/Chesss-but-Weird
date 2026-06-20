@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Net;
+using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
@@ -13,6 +14,7 @@ public class ChessLanController : MonoBehaviour
     private const string DiscoveryRequest = "CHESS_BUT_WEIRD_LAN_DISCOVER_V1";
     private const string DiscoveryResponsePrefix = "CHESS_BUT_WEIRD_LAN_HOST_V1";
     private const float DiscoveryTimeoutSeconds = 2f;
+    private const double HostAdvertisementIntervalSeconds = 1d;
     private const float ReferenceWidth = 1920f;
     private const float ReferenceHeight = 1080f;
 
@@ -33,6 +35,7 @@ public class ChessLanController : MonoBehaviour
     private Thread hostDiscoveryThread;
     private Thread discoveryScanThread;
     private bool hostDiscoveryRunning;
+    private DateTime lastHostAdvertisementUtc;
 
     public void Initialize(ChessGame newChessGame, ChessTurnSelectionUI newTurnSelectionUI)
     {
@@ -282,13 +285,10 @@ public class ChessLanController : MonoBehaviour
     {
         try
         {
-            using (UdpClient client = new UdpClient())
+            using (UdpClient client = CreateDiscoveryClient(DiscoveryPort, 250, true))
             {
-                client.EnableBroadcast = true;
-                client.Client.ReceiveTimeout = 250;
-
                 byte[] request = Encoding.UTF8.GetBytes(DiscoveryRequest);
-                client.Send(request, request.Length, new IPEndPoint(IPAddress.Broadcast, DiscoveryPort));
+                SendToBroadcastEndpoints(client, request);
 
                 DateTime deadline = DateTime.UtcNow.AddSeconds(DiscoveryTimeoutSeconds);
                 while (DateTime.UtcNow < deadline)
@@ -372,10 +372,8 @@ public class ChessLanController : MonoBehaviour
         try
         {
             hostDiscoveryRunning = true;
-            hostDiscoveryClient = new UdpClient();
-            hostDiscoveryClient.EnableBroadcast = true;
-            hostDiscoveryClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-            hostDiscoveryClient.Client.Bind(new IPEndPoint(IPAddress.Any, DiscoveryPort));
+            hostDiscoveryClient = CreateDiscoveryClient(DiscoveryPort, 500, false);
+            lastHostAdvertisementUtc = DateTime.MinValue;
 
             hostDiscoveryThread = new Thread(HostDiscoveryLoop)
             {
@@ -410,14 +408,20 @@ public class ChessLanController : MonoBehaviour
         {
             try
             {
+                DateTime utcNow = DateTime.UtcNow;
+                if ((utcNow - lastHostAdvertisementUtc).TotalSeconds >= HostAdvertisementIntervalSeconds)
+                {
+                    lastHostAdvertisementUtc = utcNow;
+                    SendDiscoveryResponseToBroadcast();
+                }
+
                 IPEndPoint remoteEndpoint = new IPEndPoint(IPAddress.Any, 0);
                 byte[] request = hostDiscoveryClient.Receive(ref remoteEndpoint);
                 string message = Encoding.UTF8.GetString(request);
                 if (!string.Equals(message, DiscoveryRequest, StringComparison.Ordinal))
                     continue;
 
-                string responseText = $"{DiscoveryResponsePrefix}|{DefaultPort}|{session.LocalMachineName}";
-                byte[] response = Encoding.UTF8.GetBytes(responseText);
+                byte[] response = Encoding.UTF8.GetBytes(CreateDiscoveryResponse());
                 hostDiscoveryClient.Send(response, response.Length, remoteEndpoint);
             }
             catch (SocketException)
@@ -432,6 +436,20 @@ public class ChessLanController : MonoBehaviour
                 Debug.LogWarning($"[ChessLAN] Discovery responder failed: {exception.Message}");
             }
         }
+    }
+
+    private void SendDiscoveryResponseToBroadcast()
+    {
+        if (hostDiscoveryClient == null)
+            return;
+
+        byte[] response = Encoding.UTF8.GetBytes(CreateDiscoveryResponse());
+        SendToBroadcastEndpoints(hostDiscoveryClient, response);
+    }
+
+    private string CreateDiscoveryResponse()
+    {
+        return $"{DiscoveryResponsePrefix}|{DefaultPort}|{session.LocalMachineName}";
     }
 
     private void StartLanMatchAsHost(PieceTeam hostTeam)
@@ -595,6 +613,9 @@ public class ChessLanController : MonoBehaviour
     private string GetNetworkDisplayText()
     {
         string health = GetConnectionHealthLabel(session.ConnectionHealth);
+        if (session.State == ChessLanSessionState.Hosting)
+            return hostDiscoveryRunning ? "Discoverable on LAN" : "Discovery unavailable";
+
         if (!session.IsConnected)
             return health;
 
@@ -688,6 +709,100 @@ public class ChessLanController : MonoBehaviour
         float widthScale = Screen.width / ReferenceWidth;
         float heightScale = Screen.height / ReferenceHeight;
         return Mathf.Clamp(Mathf.Min(widthScale, heightScale), 1f, 2f);
+    }
+
+    private static void SendToBroadcastEndpoints(UdpClient client, byte[] payload)
+    {
+        IPEndPoint[] endpoints = GetBroadcastEndpoints();
+        for (int i = 0; i < endpoints.Length; i++)
+            client.Send(payload, payload.Length, endpoints[i]);
+    }
+
+    private static UdpClient CreateDiscoveryClient(int port, int receiveTimeoutMilliseconds, bool allowEphemeralFallback)
+    {
+        UdpClient client = new UdpClient(AddressFamily.InterNetwork);
+        client.EnableBroadcast = true;
+        client.Client.ReceiveTimeout = receiveTimeoutMilliseconds;
+        client.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+
+        try
+        {
+            client.Client.Bind(new IPEndPoint(IPAddress.Any, port));
+        }
+        catch
+        {
+            client.Close();
+
+            if (!allowEphemeralFallback)
+                throw;
+
+            client = new UdpClient(AddressFamily.InterNetwork);
+            client.EnableBroadcast = true;
+            client.Client.ReceiveTimeout = receiveTimeoutMilliseconds;
+            client.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+            client.Client.Bind(new IPEndPoint(IPAddress.Any, 0));
+        }
+
+        return client;
+    }
+
+    private static IPEndPoint[] GetBroadcastEndpoints()
+    {
+        List<IPEndPoint> endpoints = new List<IPEndPoint>
+        {
+            new IPEndPoint(IPAddress.Broadcast, DiscoveryPort)
+        };
+
+        try
+        {
+            NetworkInterface[] interfaces = NetworkInterface.GetAllNetworkInterfaces();
+            for (int i = 0; i < interfaces.Length; i++)
+            {
+                NetworkInterface networkInterface = interfaces[i];
+                if (networkInterface.OperationalStatus != OperationalStatus.Up ||
+                    networkInterface.NetworkInterfaceType == NetworkInterfaceType.Loopback)
+                    continue;
+
+                UnicastIPAddressInformationCollection unicastAddresses = networkInterface.GetIPProperties().UnicastAddresses;
+                foreach (UnicastIPAddressInformation unicastAddress in unicastAddresses)
+                {
+                    if (unicastAddress.Address.AddressFamily != AddressFamily.InterNetwork || unicastAddress.IPv4Mask == null)
+                        continue;
+
+                    IPAddress broadcastAddress = GetSubnetBroadcastAddress(unicastAddress.Address, unicastAddress.IPv4Mask);
+                    AddUniqueEndpoint(endpoints, new IPEndPoint(broadcastAddress, DiscoveryPort));
+                }
+            }
+        }
+        catch (Exception exception)
+        {
+            Debug.LogWarning($"[ChessLAN] Unable to enumerate broadcast addresses: {exception.Message}");
+        }
+
+        return endpoints.ToArray();
+    }
+
+    private static IPAddress GetSubnetBroadcastAddress(IPAddress address, IPAddress subnetMask)
+    {
+        byte[] addressBytes = address.GetAddressBytes();
+        byte[] maskBytes = subnetMask.GetAddressBytes();
+        byte[] broadcastBytes = new byte[addressBytes.Length];
+
+        for (int i = 0; i < broadcastBytes.Length; i++)
+            broadcastBytes[i] = (byte)(addressBytes[i] | ~maskBytes[i]);
+
+        return new IPAddress(broadcastBytes);
+    }
+
+    private static void AddUniqueEndpoint(List<IPEndPoint> endpoints, IPEndPoint endpoint)
+    {
+        for (int i = 0; i < endpoints.Count; i++)
+        {
+            if (endpoints[i].Address.Equals(endpoint.Address) && endpoints[i].Port == endpoint.Port)
+                return;
+        }
+
+        endpoints.Add(endpoint);
     }
 
     private struct DiscoveredLanHost
