@@ -68,7 +68,7 @@ public class ChessOnlineSession : MonoBehaviour
         State != ChessOnlineSessionState.Error &&
         client != null &&
         client.Connected;
-    public string LocalPlayerName => Environment.MachineName;
+    public string LocalPlayerName => PlayerAuthService.CurrentDisplayName;
     public string RemotePlayerName => remotePlayerName;
     public double RoundTripMilliseconds => roundTripMilliseconds;
     public ChessLanConnectionHealth ConnectionHealth => connectionHealth;

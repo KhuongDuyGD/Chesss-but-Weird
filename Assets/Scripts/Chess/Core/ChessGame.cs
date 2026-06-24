@@ -167,7 +167,34 @@ public class ChessGame : MonoBehaviour
     private void Start()
     {
         PrepareGame();
-        turnSelectionUI = ChessTurnSelectionUI.Create(this);
+        if (PlayerAuthService.IsAuthenticated)
+        {
+            BeginAuthenticatedSession();
+            return;
+        }
+
+        AuthController.Create(this, QueueAuthenticatedSession);
+    }
+
+    private void QueueAuthenticatedSession()
+    {
+        StartCoroutine(BeginAuthenticatedSessionNextFrame());
+    }
+
+    private IEnumerator BeginAuthenticatedSessionNextFrame()
+    {
+        yield return null;
+        yield return null;
+        BeginAuthenticatedSession();
+    }
+
+    private void BeginAuthenticatedSession()
+    {
+        PrepareGame();
+        if (!turnSelectionUI)
+            turnSelectionUI = ChessTurnSelectionUI.Create(this);
+        else
+            turnSelectionUI.ShowMainMenu();
     }
 
     private void Update()
@@ -1780,6 +1807,7 @@ public class ChessGame : MonoBehaviour
         StopCheckWarning();
         status = ChessGameStatus.Win;
         winningTeam = winner;
+        PlayerAuthService.RecordGameResult(winner == playerTeam, winner != playerTeam, false);
         PlaySound(winSound);
         drawReason = string.Empty;
         selectedPiece = null;
@@ -1795,6 +1823,7 @@ public class ChessGame : MonoBehaviour
     {
         StopCheckWarning();
         status = ChessGameStatus.Draw;
+        PlayerAuthService.RecordGameResult(false, false, true);
         drawReason = reason;
         selectedPiece = null;
         gameStarted = false;

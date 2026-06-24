@@ -68,7 +68,7 @@ public class ChessLanSession : MonoBehaviour
     public string RemoteEndpointDisplay { get; private set; } = string.Empty;
     public int ActivePort { get; private set; }
     public bool IsConnected => State == ChessLanSessionState.Connected && client != null && client.Connected;
-    public string LocalMachineName => Environment.MachineName;
+    public string LocalMachineName => PlayerAuthService.CurrentDisplayName;
     public string RemoteMachineName => remoteMachineName;
     public double RoundTripMilliseconds => roundTripMilliseconds;
     public ChessLanConnectionHealth ConnectionHealth => connectionHealth;
