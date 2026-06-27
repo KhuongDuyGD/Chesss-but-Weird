@@ -79,6 +79,7 @@ public class Chessboard : MonoBehaviour
     private Vector2Int currentHover = -Vector2Int.one;
     private bool[,] legalMoveHighlights;
     private bool interactionEnabled;
+    private bool presentationVisible = true;
     private int tileLayer;
     private int hoverLayer;
     private BoardLayout currentBoardLayout;
@@ -266,6 +267,13 @@ public class Chessboard : MonoBehaviour
         ClearLegalMoveHighlights();
     }
 
+    public void SetPresentationVisible(bool visible)
+    {
+        presentationVisible = visible;
+        ApplyBoardRendererVisibility();
+        RefreshAllTileVisuals();
+    }
+
     private void RefreshTileVisual(Vector2Int position)
     {
         if (!IsValidTilePosition(position))
@@ -273,7 +281,7 @@ public class Chessboard : MonoBehaviour
 
         bool isHovering = currentHover == position;
         bool isLegalMove = legalMoveHighlights != null && legalMoveHighlights[position.x, position.y];
-        tileRenderers[position.x, position.y].enabled = showGeneratedTiles || isHovering || isLegalMove;
+        tileRenderers[position.x, position.y].enabled = presentationVisible && (showGeneratedTiles || isHovering || isLegalMove);
 
         if (isHovering && hoverMaterial)
             tileRenderers[position.x, position.y].sharedMaterial = hoverMaterial;
@@ -281,6 +289,31 @@ public class Chessboard : MonoBehaviour
             tileRenderers[position.x, position.y].sharedMaterial = legalMoveTileMaterial;
         else
             tileRenderers[position.x, position.y].sharedMaterial = baseTileMaterials[position.x, position.y];
+    }
+
+    private void RefreshAllTileVisuals()
+    {
+        if (tileRenderers == null)
+            return;
+
+        for (int x = 0; x < TILE_COUNT_X; x++)
+            for (int y = 0; y < TILE_COUNT_Y; y++)
+                RefreshTileVisual(new Vector2Int(x, y));
+    }
+
+    private void ApplyBoardRendererVisibility()
+    {
+        Transform visualRoot = GetVisualBoardSearchRoot();
+        if (!visualRoot)
+            return;
+
+        Renderer[] renderers = visualRoot.GetComponentsInChildren<Renderer>(true);
+        for (int i = 0; i < renderers.Length; i++)
+        {
+            Renderer currentRenderer = renderers[i];
+            if (IsVisualBoardRenderer(currentRenderer))
+                currentRenderer.enabled = presentationVisible;
+        }
     }
 
     public Vector3 GetTileCenterWorld(Vector2Int tile)

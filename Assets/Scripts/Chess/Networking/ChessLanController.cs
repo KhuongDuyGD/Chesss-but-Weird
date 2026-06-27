@@ -1,123 +1,90 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
-using System.Net;
-using System.Net.NetworkInformation;
-using System.Net.Sockets;
-using System.Text;
-using System.Threading;
+using Newtonsoft.Json.Linq;
 using UnityEngine;
 
 public class ChessLanController : MonoBehaviour
 {
-    private const string LogPrefix = "[ChessLAN]";
-    private const int DefaultPort = 19847;
-    private const int DiscoveryPort = 19846;
-    private const string DiscoveryRequest = "CHESS_BUT_WEIRD_LAN_DISCOVER_V1";
-    private const string DiscoveryResponsePrefix = "CHESS_BUT_WEIRD_LAN_HOST_V1";
-    private const float DiscoveryTimeoutSeconds = 2f;
-    private const double HostAdvertisementIntervalSeconds = 1d;
     private const float ReferenceWidth = 1920f;
     private const float ReferenceHeight = 1080f;
-
-    private readonly object discoveredHostsLock = new object();
-    private readonly List<DiscoveredLanHost> discoveredHosts = new List<DiscoveredLanHost>();
+    private const float ReconnectDelaySeconds = 3f;
+    private const float HeartbeatIntervalSeconds = 10f;
 
     private ChessGame chessGame;
     private ChessTurnSelectionUI turnSelectionUI;
-    private ChessLanSession session;
+    private BackendWebSocketClient webSocketClient;
+    private readonly HashSet<string> pendingLocalMoveRequestIds = new HashSet<string>();
+    private readonly List<BackendMatchDto> recentMatches = new List<BackendMatchDto>();
+
     private bool showLanPanel;
     private bool lanGameActive;
-    private bool discoveryInProgress;
-    private string statusMessage = "Host a LAN room or refresh to find one.";
-    private string localAddressesSummary = "127.0.0.1";
-    private float guiWidth = ReferenceWidth;
-    private float guiHeight = ReferenceHeight;
-    private UdpClient hostDiscoveryClient;
-    private Thread hostDiscoveryThread;
-    private Thread discoveryScanThread;
-    private bool hostDiscoveryRunning;
-    private DateTime lastHostAdvertisementUtc;
+    private bool requestInFlight;
+    private bool reconnectPending;
+    private string roomCodeInput = string.Empty;
+    private string statusMessage = "Connect to the Spring Boot backend, create a room, and wait for another player.";
+    private string currentRoomCode = string.Empty;
+    private string currentMatchId = string.Empty;
+    private string lastConfirmedFen = string.Empty;
+    private float reconnectAt;
+    private float lastHeartbeatAt;
+    private BackendRoomDto currentRoom;
+    private BackendGameStartPayload currentGameStart;
+    private bool localReady;
+    private int readyCount;
+    private bool opponentDrawOfferPending;
+    private bool intentionalDisconnect;
 
     public void Initialize(ChessGame newChessGame, ChessTurnSelectionUI newTurnSelectionUI)
     {
         chessGame = newChessGame;
         turnSelectionUI = newTurnSelectionUI;
-        session = gameObject.AddComponent<ChessLanSession>();
-        session.StateChanged += HandleSessionStateChanged;
-        session.StartGameRequested += HandleStartGameRequested;
-        session.MoveReceived += HandleMoveReceived;
-        session.PeerDisconnected += HandlePeerDisconnected;
         chessGame.MoveCommitted += HandleMoveCommitted;
         chessGame.ReturnedToMainMenu += HandleReturnedToMainMenu;
+        EnsureWebSocketClient();
+    }
 
-        RefreshLocalAddresses();
+    private void Update()
+    {
+        if (reconnectPending && Time.unscaledTime >= reconnectAt && !requestInFlight)
+        {
+            reconnectPending = false;
+            StartCoroutine(ConnectWebSocketCoroutine(true));
+        }
+
+        if (webSocketClient != null && webSocketClient.IsConnected && lanGameActive && Time.unscaledTime - lastHeartbeatAt >= HeartbeatIntervalSeconds)
+        {
+            lastHeartbeatAt = Time.unscaledTime;
+            _ = webSocketClient.SendAsync("SYNC_REQUEST", CreateRequestId("sync"), new { });
+        }
     }
 
     private void OnDestroy()
     {
-        StopHostDiscovery();
-
-        if (session != null)
-        {
-            session.StateChanged -= HandleSessionStateChanged;
-            session.StartGameRequested -= HandleStartGameRequested;
-            session.MoveReceived -= HandleMoveReceived;
-            session.PeerDisconnected -= HandlePeerDisconnected;
-        }
-
         if (chessGame != null)
         {
             chessGame.MoveCommitted -= HandleMoveCommitted;
             chessGame.ReturnedToMainMenu -= HandleReturnedToMainMenu;
         }
+
+        ReleaseWebSocketClient();
     }
 
     private void OnGUI()
     {
         Matrix4x4 previousMatrix = GUI.matrix;
         float guiScale = GetGuiScale();
-        guiWidth = Screen.width / guiScale;
-        guiHeight = Screen.height / guiScale;
+        float guiWidth = Screen.width / guiScale;
+        float guiHeight = Screen.height / guiScale;
         GUI.matrix = Matrix4x4.Scale(new Vector3(guiScale, guiScale, 1f));
 
         try
         {
-            if (!showLanPanel || lanGameActive)
-            {
-                DrawInGameLanHud();
-                return;
-            }
+            if (showLanPanel)
+                DrawLanPanel(guiWidth, guiHeight);
 
-            float panelWidth = Mathf.Clamp(guiWidth * 0.50f, 760f, 1040f);
-            float panelHeight = Mathf.Clamp(guiHeight * 0.64f, 620f, 780f);
-            Rect panelRect = new Rect(
-                (guiWidth - panelWidth) * 0.5f,
-                (guiHeight - panelHeight) * 0.5f,
-                panelWidth,
-                panelHeight);
-
-            Color previousColor = GUI.color;
-            GUI.color = new Color(0f, 0f, 0f, 0.28f);
-            GUI.DrawTexture(new Rect(0f, 0f, guiWidth, guiHeight), Texture2D.whiteTexture);
-            GUI.color = previousColor;
-
-            GUI.Box(panelRect, string.Empty);
-
-            GUI.Label(new Rect(panelRect.x + 36f, panelRect.y + 24f, panelRect.width - 72f, 48f), "LAN Hub", GetTitleStyle());
-            GUI.Label(
-                new Rect(panelRect.x + 36f, panelRect.y + 78f, panelRect.width - 72f, 52f),
-                "Host a room or refresh to find rooms on this network.",
-                GetBodyStyle());
-            GUI.Label(
-                new Rect(panelRect.x + 36f, panelRect.y + 128f, panelRect.width - 72f, 48f),
-                $"This machine: {session.LocalMachineName} | Local IPs: {localAddressesSummary}",
-                GetBodyStyle());
-            GUI.Label(new Rect(panelRect.x + 36f, panelRect.y + 174f, panelRect.width - 72f, 64f), statusMessage, GetStatusStyle());
-
-            DrawSessionInfo(panelRect);
-            DrawDiscoveredHosts(panelRect);
-            DrawActionButtons(panelRect);
-            DrawInGameLanHud();
+            if (lanGameActive)
+                DrawInGameHud(guiWidth, guiHeight);
         }
         finally
         {
@@ -127,13 +94,12 @@ public class ChessLanController : MonoBehaviour
 
     public void ShowLanSetup()
     {
-        Log("LAN setup opened.");
+        EnsureWebSocketClient();
         showLanPanel = true;
-        RefreshLocalAddresses();
-        if (session != null && session.State == ChessLanSessionState.Idle)
-            StartDiscoveryScan();
-        else
-            statusMessage = session != null ? session.StatusMessage : statusMessage;
+        statusMessage = "Connect to the backend, share your room code, and play online.";
+        roomCodeInput = currentRoomCode;
+        StartCoroutine(LoadMatchHistoryCoroutine());
+        StartCoroutine(LoadActiveMatchCoroutine());
     }
 
     public void HideLanSetup()
@@ -141,597 +107,773 @@ public class ChessLanController : MonoBehaviour
         showLanPanel = false;
     }
 
-    private void DrawActionButtons(Rect panelRect)
+    private void DrawLanPanel(float guiWidth, float guiHeight)
     {
-        Rect firstButtonRect = new Rect(panelRect.x + 36f, panelRect.y + panelRect.height - 98f, 220f, 52f);
-        Rect secondButtonRect = new Rect(panelRect.x + 274f, panelRect.y + panelRect.height - 98f, 220f, 52f);
-        Rect thirdButtonRect = new Rect(panelRect.x + panelRect.width - 226f, panelRect.y + panelRect.height - 98f, 190f, 52f);
+        float panelWidth = Mathf.Clamp(guiWidth * 0.54f, 860f, 1120f);
+        float panelHeight = Mathf.Clamp(guiHeight * 0.72f, 720f, 900f);
+        Rect panelRect = new Rect(
+            (guiWidth - panelWidth) * 0.5f,
+            (guiHeight - panelHeight) * 0.5f,
+            panelWidth,
+            panelHeight);
 
-        switch (session.State)
+        Color previousColor = GUI.color;
+        GUI.color = new Color(0f, 0f, 0f, 0.30f);
+        GUI.DrawTexture(new Rect(0f, 0f, guiWidth, guiHeight), Texture2D.whiteTexture);
+        GUI.color = previousColor;
+
+        GUI.Box(panelRect, string.Empty);
+        GUI.Label(new Rect(panelRect.x + 28f, panelRect.y + 20f, panelRect.width - 56f, 36f), "Online Multiplayer", GetTitleStyle());
+        GUI.Label(new Rect(panelRect.x + 28f, panelRect.y + 58f, panelRect.width - 56f, 62f), statusMessage, GetStatusStyle());
+
+        DrawServerInfo(panelRect);
+        DrawRoomSection(panelRect);
+        DrawHistory(panelRect);
+        DrawButtons(panelRect);
+    }
+
+    private void DrawServerInfo(Rect panelRect)
+    {
+        GUI.Label(new Rect(panelRect.x + 28f, panelRect.y + 126f, 180f, 28f), $"Server: {BackendConfig.BaseUrl}", GetBodyStyle());
+        GUI.Label(new Rect(panelRect.x + 28f, panelRect.y + 154f, 360f, 28f), $"User: {PlayerAuthService.CurrentDisplayName}", GetBodyStyle());
+        GUI.Label(new Rect(panelRect.x + 28f, panelRect.y + 182f, 360f, 28f), $"Room: {GetRoomSummary()}", GetBodyStyle());
+        GUI.Label(new Rect(panelRect.x + 28f, panelRect.y + 210f, 360f, 28f), $"Connection: {GetConnectionSummary()}", GetBodyStyle());
+        GUI.Label(new Rect(panelRect.x + 420f, panelRect.y + 154f, panelRect.width - 600f, 56f), "Players on any network can join this room code if they use the same backend URL.", GetBodyStyle());
+
+        if (GUI.Button(new Rect(panelRect.x + panelRect.width - 152f, panelRect.y + 20f, 124f, 32f), "Refresh"))
         {
-            case ChessLanSessionState.Idle:
-            case ChessLanSessionState.Error:
-                if (GUI.Button(firstButtonRect, "Host LAN"))
-                    StartHosting();
-
-                GUI.enabled = !discoveryInProgress;
-                if (GUI.Button(secondButtonRect, discoveryInProgress ? "Scanning..." : "Refresh"))
-                    StartDiscoveryScan();
-                GUI.enabled = true;
-
-                if (GUI.Button(thirdButtonRect, "Back"))
-                    BackToMultiplayerModes();
-                break;
-
-            case ChessLanSessionState.Hosting:
-                if (GUI.Button(firstButtonRect, "Stop Hosting"))
-                    StopHosting();
-
-                GUI.Label(secondButtonRect, "Waiting for a peer...", GetBodyStyle());
-
-                if (GUI.Button(thirdButtonRect, "Back"))
-                    BackToMultiplayerModes();
-                break;
-
-            case ChessLanSessionState.Connecting:
-                GUI.Label(firstButtonRect, "Connecting...", GetBodyStyle());
-
-                if (GUI.Button(secondButtonRect, "Cancel"))
-                    session.Disconnect();
-
-                if (GUI.Button(thirdButtonRect, "Back"))
-                    BackToMultiplayerModes();
-                break;
-
-            case ChessLanSessionState.Connected:
-                if (session.Role == ChessLanSessionRole.Host)
-                {
-                    if (GUI.Button(firstButtonRect, "Start As White"))
-                        StartLanMatchAsHost(PieceTeam.White);
-
-                    if (GUI.Button(secondButtonRect, "Start As Black"))
-                        StartLanMatchAsHost(PieceTeam.Black);
-                }
-                else
-                {
-                    GUI.Label(firstButtonRect, "Connected. Waiting for host...", GetBodyStyle());
-                    GUI.Label(secondButtonRect, session.RemoteEndpointDisplay, GetBodyStyle());
-                }
-
-                if (GUI.Button(thirdButtonRect, "Disconnect"))
-                    session.Disconnect();
-                break;
+            StartCoroutine(LoadMatchHistoryCoroutine());
+            StartCoroutine(LoadActiveMatchCoroutine());
         }
     }
 
-    private void DrawDiscoveredHosts(Rect panelRect)
+    private void DrawRoomSection(Rect panelRect)
     {
-        Rect listRect = new Rect(panelRect.x + 36f, panelRect.y + 366f, panelRect.width - 72f, panelRect.height - 484f);
-        GUI.Box(listRect, string.Empty);
+        Rect roomRect = new Rect(panelRect.x + 28f, panelRect.y + 252f, panelRect.width - 56f, 170f);
+        GUI.Box(roomRect, string.Empty);
+        GUI.Label(new Rect(roomRect.x + 16f, roomRect.y + 12f, roomRect.width - 32f, 28f), "Room", GetSectionStyle());
 
-        GUI.Label(new Rect(listRect.x + 18f, listRect.y + 12f, listRect.width - 36f, 30f), "Available LAN Rooms", GetHudTitleStyle());
+        GUI.Label(new Rect(roomRect.x + 16f, roomRect.y + 50f, 120f, 28f), "Room Code", GetBodyStyle());
+        roomCodeInput = GUI.TextField(new Rect(roomRect.x + 144f, roomRect.y + 46f, 180f, 34f), roomCodeInput, 6).Trim().ToUpperInvariant();
+        if (GUI.Button(new Rect(roomRect.x + 338f, roomRect.y + 46f, 120f, 34f), "Copy Code"))
+            CopyRoomCodeToClipboard();
 
-        if (session.State != ChessLanSessionState.Idle && session.State != ChessLanSessionState.Error)
+        if (currentRoom != null)
         {
-            GUI.Label(new Rect(listRect.x + 18f, listRect.y + 52f, listRect.width - 36f, 40f), GetRoomStateLabel(), GetBodyStyle());
+            GUI.Label(new Rect(roomRect.x + 16f, roomRect.y + 92f, roomRect.width - 32f, 24f), $"Host: {currentRoom.hostUsername}", GetBodyStyle());
+            GUI.Label(new Rect(roomRect.x + 16f, roomRect.y + 118f, roomRect.width - 32f, 24f), $"Guest: {(string.IsNullOrWhiteSpace(currentRoom.guestUsername) ? "Waiting..." : currentRoom.guestUsername)}", GetBodyStyle());
+            GUI.Label(new Rect(roomRect.x + 16f, roomRect.y + 144f, roomRect.width - 32f, 24f), $"Status: {currentRoom.status} | Ready: {readyCount}/2", GetBodyStyle());
+        }
+    }
+
+    private void DrawHistory(Rect panelRect)
+    {
+        Rect historyRect = new Rect(panelRect.x + 28f, panelRect.y + 438f, panelRect.width - 56f, 220f);
+        GUI.Box(historyRect, string.Empty);
+        GUI.Label(new Rect(historyRect.x + 16f, historyRect.y + 12f, historyRect.width - 32f, 28f), "Recent Matches", GetSectionStyle());
+
+        if (recentMatches.Count == 0)
+        {
+            GUI.Label(new Rect(historyRect.x + 16f, historyRect.y + 52f, historyRect.width - 32f, 28f), "No match history loaded yet.", GetBodyStyle());
             return;
         }
 
-        DiscoveredLanHost[] hosts = GetDiscoveredHostsSnapshot();
-        if (hosts.Length == 0)
+        float rowY = historyRect.y + 48f;
+        int maxRows = Mathf.Min(5, recentMatches.Count);
+        for (int i = 0; i < maxRows; i++)
         {
-            string emptyText = discoveryInProgress ? "Scanning the local network..." : "No rooms found. Press Refresh to scan again.";
-            GUI.Label(new Rect(listRect.x + 18f, listRect.y + 52f, listRect.width - 36f, 48f), emptyText, GetBodyStyle());
-            return;
-        }
-
-        float rowY = listRect.y + 54f;
-        for (int i = 0; i < hosts.Length; i++)
-        {
-            DiscoveredLanHost host = hosts[i];
-            Rect rowRect = new Rect(listRect.x + 18f, rowY, listRect.width - 36f, 48f);
-            GUI.Box(rowRect, string.Empty);
-            GUI.Label(new Rect(rowRect.x + 14f, rowRect.y + 8f, rowRect.width - 176f, 30f), host.DisplayName, GetBodyStyle());
-
-            if (GUI.Button(new Rect(rowRect.x + rowRect.width - 142f, rowRect.y + 7f, 126f, 34f), "Join"))
-                JoinDiscoveredHost(host);
-
-            rowY += 56f;
+            BackendMatchDto match = recentMatches[i];
+            string label = $"{match.whiteUsername} vs {match.blackUsername} | {match.status} | {match.terminationReason} | Moves: {match.moveCount}";
+            GUI.Label(new Rect(historyRect.x + 16f, rowY, historyRect.width - 32f, 28f), label, GetBodyStyle());
+            rowY += 32f;
         }
     }
 
-    private void StartHosting()
+    private void DrawButtons(Rect panelRect)
     {
-        Log($"Host LAN button pressed. TCP port={DefaultPort}, discovery UDP port={DiscoveryPort}.");
-        statusMessage = "Starting LAN host...";
-        session.Host(DefaultPort);
+        bool previousEnabled = GUI.enabled;
+        GUI.enabled = !requestInFlight;
 
-        if (session.State == ChessLanSessionState.Hosting)
-            StartHostDiscovery();
-    }
+        Rect firstButton = new Rect(panelRect.x + 28f, panelRect.y + panelRect.height - 72f, 180f, 40f);
+        Rect secondButton = new Rect(panelRect.x + 220f, panelRect.y + panelRect.height - 72f, 180f, 40f);
+        Rect thirdButton = new Rect(panelRect.x + 412f, panelRect.y + panelRect.height - 72f, 180f, 40f);
+        Rect fourthButton = new Rect(panelRect.x + panelRect.width - 208f, panelRect.y + panelRect.height - 72f, 180f, 40f);
 
-    private void StopHosting()
-    {
-        Log("Stop Hosting button pressed.");
-        StopHostDiscovery();
-        session.Disconnect();
-    }
+        if (GUI.Button(firstButton, "Create Room"))
+            StartCoroutine(CreateRoomCoroutine());
 
-    private void JoinDiscoveredHost(DiscoveredLanHost host)
-    {
-        Log($"Join button pressed for discovered host: {host.DisplayName}, endpoint={host.Address}:{host.Port}.");
-        StopHostDiscovery();
-        statusMessage = $"Connecting to {host.DisplayName}...";
-        session.Join(host.Address, host.Port);
-    }
+        if (GUI.Button(secondButton, "Join Room"))
+            StartCoroutine(JoinRoomCoroutine());
 
-    private void StartDiscoveryScan()
-    {
-        if (discoveryInProgress)
+        if (GUI.Button(thirdButton, localReady ? "Ready Sent" : "Ready"))
+            SendReady();
+
+        if (GUI.Button(fourthButton, currentRoom != null ? "Leave Room" : "Back"))
         {
-            Log("Refresh ignored because discovery scan is already running.");
-            return;
+            if (currentRoom != null)
+                LeaveRoom();
+            else
+                turnSelectionUI.ShowMultiplayerModeSelection();
         }
 
-        Log($"Refresh started. UDP discovery port={DiscoveryPort}.");
-        lock (discoveredHostsLock)
-        {
-            discoveredHosts.Clear();
-        }
-
-        discoveryInProgress = true;
-        statusMessage = "Scanning for LAN rooms...";
-
-        discoveryScanThread = new Thread(DiscoveryScanLoop)
-        {
-            IsBackground = true,
-            Name = "Chess LAN Discovery Scan"
-        };
-        discoveryScanThread.Start();
+        GUI.enabled = previousEnabled;
     }
 
-    private void DiscoveryScanLoop()
+    private void DrawInGameHud(float guiWidth, float guiHeight)
     {
-        try
+        float width = Mathf.Clamp(guiWidth * 0.24f, 360f, 460f);
+        Rect panelRect = new Rect(18f, guiHeight - 220f, width, 202f);
+        GUI.Box(panelRect, string.Empty);
+
+        GUI.Label(new Rect(panelRect.x + 14f, panelRect.y + 10f, panelRect.width - 28f, 24f), "Backend Room", GetSectionStyle());
+        GUI.Label(new Rect(panelRect.x + 14f, panelRect.y + 38f, panelRect.width - 28f, 22f), $"Room: {currentRoomCode}", GetHudStyle());
+        GUI.Label(new Rect(panelRect.x + 14f, panelRect.y + 60f, panelRect.width - 28f, 22f), $"Turn: {chessGame.CurrentTurn} | You: {chessGame.PlayerTeam}", GetHudStyle());
+        GUI.Label(new Rect(panelRect.x + 14f, panelRect.y + 82f, panelRect.width - 28f, 22f), $"Match: {currentMatchId}", GetHudStyle());
+        GUI.Label(new Rect(panelRect.x + 14f, panelRect.y + 104f, panelRect.width - 28f, 22f), GetConnectionSummary(), GetHudStyle());
+        GUI.Label(new Rect(panelRect.x + 14f, panelRect.y + 126f, panelRect.width - 28f, 20f), opponentDrawOfferPending ? "Opponent offered a draw." : string.Empty, GetHudStyle());
+
+        if (GUI.Button(new Rect(panelRect.x + 14f, panelRect.y + 150f, panelRect.width - 28f, 22f), "Offer Draw"))
+            SendDrawOffer();
+
+        if (GUI.Button(new Rect(panelRect.x + 14f, panelRect.y + 174f, (panelRect.width - 38f) * 0.5f, 22f), opponentDrawOfferPending ? "Accept Draw" : "Resign"))
         {
-            using (UdpClient client = CreateDiscoveryClient(DiscoveryPort, 250, true))
+            if (opponentDrawOfferPending)
+                SendDrawAccept();
+            else
+                SendResign();
+        }
+
+        if (GUI.Button(new Rect(panelRect.x + 20f + (panelRect.width - 38f) * 0.5f, panelRect.y + 174f, (panelRect.width - 38f) * 0.5f, 22f), "Leave"))
+            LeaveRoom();
+    }
+
+    private IEnumerator CreateRoomCoroutine()
+    {
+        requestInFlight = true;
+        statusMessage = "Creating room...";
+        yield return BackendRestClient.Send<BackendRoomDto>(
+            "POST",
+            "/api/rooms/create",
+            null,
+            true,
+            response =>
             {
-                byte[] request = Encoding.UTF8.GetBytes(DiscoveryRequest);
-                Log("Discovery scan socket ready. Sending broadcast discovery requests.");
-                SendToBroadcastEndpoints(client, request);
-
-                DateTime deadline = DateTime.UtcNow.AddSeconds(DiscoveryTimeoutSeconds);
-                while (DateTime.UtcNow < deadline)
-                {
-                    try
-                    {
-                        IPEndPoint remoteEndpoint = new IPEndPoint(IPAddress.Any, 0);
-                        byte[] response = client.Receive(ref remoteEndpoint);
-                        string message = Encoding.UTF8.GetString(response);
-                        Log($"Discovery RX from {remoteEndpoint}: {message}");
-                        TryAddDiscoveryResponse(message, remoteEndpoint.Address.ToString());
-                    }
-                    catch (SocketException)
-                    {
-                    }
-                    catch (ObjectDisposedException)
-                    {
-                        break;
-                    }
-                }
-            }
-        }
-        catch (Exception exception)
-        {
-            LogWarning($"Discovery scan failed: {exception.GetType().Name}: {exception.Message}");
-            statusMessage = $"Unable to scan LAN rooms: {exception.Message}";
-        }
-        finally
-        {
-            discoveryInProgress = false;
-            if (session != null && (session.State == ChessLanSessionState.Idle || session.State == ChessLanSessionState.Error))
+                requestInFlight = false;
+                currentRoom = response.result;
+                currentRoomCode = currentRoom.roomCode ?? string.Empty;
+                roomCodeInput = currentRoomCode;
+                readyCount = 0;
+                localReady = false;
+                statusMessage = $"Room {currentRoomCode} created. Connecting to waiting room...";
+                StartCoroutine(ConnectWebSocketCoroutine(false));
+            },
+            (message, _) =>
             {
-                int roomCount;
-                lock (discoveredHostsLock)
-                {
-                    roomCount = discoveredHosts.Count;
-                }
-
-                statusMessage = roomCount == 0 ? "No LAN rooms found." : $"Found {roomCount} LAN room(s).";
-                Log($"Discovery scan finished. Found rooms={roomCount}.");
-            }
-        }
+                requestInFlight = false;
+                statusMessage = message;
+            });
     }
 
-    private void TryAddDiscoveryResponse(string message, string address)
+    private IEnumerator JoinRoomCoroutine()
     {
-        if (string.IsNullOrWhiteSpace(message) || !message.StartsWith(DiscoveryResponsePrefix, StringComparison.Ordinal))
-            return;
-
-        string[] parts = message.Split('|');
-        if (parts.Length < 3 || !int.TryParse(parts[1], out int port))
-            return;
-
-        string machineName = parts[2];
-        DiscoveredLanHost host = new DiscoveredLanHost(address, port, machineName);
-        Log($"Discovery host parsed: {host.DisplayName}, endpoint={host.Address}:{host.Port}.");
-
-        lock (discoveredHostsLock)
+        if (string.IsNullOrWhiteSpace(roomCodeInput))
         {
-            for (int i = 0; i < discoveredHosts.Count; i++)
+            statusMessage = "Enter the 6-character room code first.";
+            yield break;
+        }
+
+        requestInFlight = true;
+        statusMessage = $"Joining room {roomCodeInput}...";
+        yield return BackendRestClient.Send<BackendRoomDto>(
+            "POST",
+            "/api/rooms/join",
+            new BackendJoinRoomRequest { roomCode = roomCodeInput },
+            true,
+            response =>
             {
-                if (discoveredHosts[i].Address == host.Address && discoveredHosts[i].Port == host.Port)
-                {
-                    discoveredHosts[i] = host;
+                requestInFlight = false;
+                currentRoom = response.result;
+                currentRoomCode = currentRoom.roomCode ?? roomCodeInput;
+                roomCodeInput = currentRoomCode;
+                readyCount = 0;
+                localReady = false;
+                statusMessage = $"Joined room {currentRoomCode}. Connecting to waiting room...";
+                StartCoroutine(ConnectWebSocketCoroutine(false));
+            },
+            (message, _) =>
+            {
+                requestInFlight = false;
+                statusMessage = message;
+            });
+    }
+
+    private IEnumerator ConnectWebSocketCoroutine(bool reconnecting)
+    {
+        if (string.IsNullOrWhiteSpace(currentRoomCode))
+        {
+            statusMessage = "Room code is missing.";
+            yield break;
+        }
+
+        if (!PlayerAuthService.IsAuthenticated || string.IsNullOrWhiteSpace(PlayerAuthService.Token))
+        {
+            statusMessage = "Login expired. Please sign in again.";
+            yield break;
+        }
+
+        EnsureWebSocketClient();
+        intentionalDisconnect = false;
+        requestInFlight = true;
+        statusMessage = reconnecting ? "Reconnecting to room..." : "Connecting to room socket...";
+        var task = webSocketClient.ConnectAsync(currentRoomCode, PlayerAuthService.Token);
+        while (!task.IsCompleted)
+            yield return null;
+
+        requestInFlight = false;
+        if (task.IsFaulted)
+            statusMessage = "Unable to connect to room socket.";
+    }
+
+    private IEnumerator LoadMatchHistoryCoroutine()
+    {
+        if (!PlayerAuthService.IsAuthenticated)
+            yield break;
+
+        yield return BackendRestClient.Send<List<BackendMatchDto>>(
+            "GET",
+            "/api/matches/history",
+            null,
+            true,
+            response =>
+            {
+                recentMatches.Clear();
+                if (response.result != null)
+                    recentMatches.AddRange(response.result);
+            },
+            (_, __) => { });
+    }
+
+    private IEnumerator LoadActiveMatchCoroutine()
+    {
+        if (!PlayerAuthService.IsAuthenticated)
+            yield break;
+
+        yield return BackendRestClient.Send<BackendMatchDto>(
+            "GET",
+            "/api/matches/active",
+            null,
+            true,
+            response =>
+            {
+                if (response.result == null)
                     return;
-                }
-            }
 
-            discoveredHosts.Add(host);
-        }
-    }
+                BackendMatchDto match = response.result;
+                currentRoomCode = match.roomCode ?? currentRoomCode;
+                currentMatchId = match.id ?? currentMatchId;
+                lastConfirmedFen = match.currentFen ?? lastConfirmedFen;
+                PieceTeam localTeam = string.Equals(match.whitePlayerId, PlayerAuthService.UserId, StringComparison.OrdinalIgnoreCase)
+                    ? PieceTeam.White
+                    : PieceTeam.Black;
+                chessGame.BeginLanGame(PieceTeam.White, localTeam);
+                chessGame.ApplyFenState(match.currentFen);
+                lanGameActive = string.Equals(match.status, "ACTIVE", StringComparison.OrdinalIgnoreCase);
+                statusMessage = $"Recovered active match in room {currentRoomCode}.";
+                StartCoroutine(RefreshRoomCoroutine());
 
-    private DiscoveredLanHost[] GetDiscoveredHostsSnapshot()
-    {
-        lock (discoveredHostsLock)
-        {
-            return discoveredHosts.ToArray();
-        }
-    }
-
-    private void StartHostDiscovery()
-    {
-        Log($"Starting host discovery responder on UDP port {DiscoveryPort}.");
-        StopHostDiscovery();
-
-        try
-        {
-            hostDiscoveryRunning = true;
-            hostDiscoveryClient = CreateDiscoveryClient(DiscoveryPort, 500, false);
-            lastHostAdvertisementUtc = DateTime.MinValue;
-
-            hostDiscoveryThread = new Thread(HostDiscoveryLoop)
+                if (!string.IsNullOrWhiteSpace(currentRoomCode) && (webSocketClient == null || !webSocketClient.IsConnected) && !requestInFlight)
+                    StartCoroutine(ConnectWebSocketCoroutine(true));
+            },
+            (_, error) =>
             {
-                IsBackground = true,
-                Name = "Chess LAN Host Discovery"
-            };
-            hostDiscoveryThread.Start();
-            Log("Host discovery responder started.");
-        }
-        catch (Exception exception)
+                if (error != null && error.code != 4004)
+                    statusMessage = "Unable to load active match.";
+            });
+    }
+
+    private void SendReady()
+    {
+        if (string.IsNullOrWhiteSpace(currentRoomCode) || webSocketClient == null || !webSocketClient.IsConnected)
         {
-            hostDiscoveryRunning = false;
-            LogWarning($"Host discovery responder failed: {exception.GetType().Name}: {exception.Message}");
-            statusMessage = $"Hosting, but LAN discovery failed: {exception.Message}";
-        }
-    }
-
-    private void StopHostDiscovery()
-    {
-        if (hostDiscoveryRunning || hostDiscoveryClient != null)
-            Log("Stopping host discovery responder.");
-
-        hostDiscoveryRunning = false;
-
-        if (hostDiscoveryClient != null)
-        {
-            hostDiscoveryClient.Close();
-            hostDiscoveryClient = null;
-        }
-
-        hostDiscoveryThread = null;
-    }
-
-    private void HostDiscoveryLoop()
-    {
-        while (hostDiscoveryRunning && hostDiscoveryClient != null)
-        {
-            try
-            {
-                DateTime utcNow = DateTime.UtcNow;
-                if ((utcNow - lastHostAdvertisementUtc).TotalSeconds >= HostAdvertisementIntervalSeconds)
-                {
-                    lastHostAdvertisementUtc = utcNow;
-                    SendDiscoveryResponseToBroadcast();
-                }
-
-                IPEndPoint remoteEndpoint = new IPEndPoint(IPAddress.Any, 0);
-                byte[] request = hostDiscoveryClient.Receive(ref remoteEndpoint);
-                string message = Encoding.UTF8.GetString(request);
-                Log($"Host discovery RX from {remoteEndpoint}: {message}");
-                if (!string.Equals(message, DiscoveryRequest, StringComparison.Ordinal))
-                    continue;
-
-                byte[] response = Encoding.UTF8.GetBytes(CreateDiscoveryResponse());
-                hostDiscoveryClient.Send(response, response.Length, remoteEndpoint);
-                Log($"Host discovery replied directly to {remoteEndpoint}.");
-            }
-            catch (SocketException)
-            {
-            }
-            catch (ObjectDisposedException)
-            {
-                break;
-            }
-            catch (Exception exception)
-            {
-                Debug.LogWarning($"[ChessLAN] Discovery responder failed: {exception.Message}");
-            }
-        }
-    }
-
-    private void SendDiscoveryResponseToBroadcast()
-    {
-        if (hostDiscoveryClient == null)
-            return;
-
-        byte[] response = Encoding.UTF8.GetBytes(CreateDiscoveryResponse());
-        Log("Host discovery broadcasting room advertisement.");
-        SendToBroadcastEndpoints(hostDiscoveryClient, response);
-    }
-
-    private string CreateDiscoveryResponse()
-    {
-        return $"{DiscoveryResponsePrefix}|{DefaultPort}|{session.LocalMachineName}";
-    }
-
-    private void StartLanMatchAsHost(PieceTeam hostTeam)
-    {
-        Log($"Host pressed start match as {hostTeam}. Connected={session.IsConnected}.");
-        if (!session.IsConnected)
-        {
-            statusMessage = "A LAN peer must be connected before the match can start.";
+            statusMessage = "Connect to the room before sending ready.";
             return;
         }
 
-        if (!session.SendStartGame(hostTeam))
+        if (localReady)
         {
-            statusMessage = "Unable to send LAN start message to the peer.";
+            statusMessage = "Ready already sent.";
             return;
         }
 
-        StopHostDiscovery();
-        lanGameActive = true;
-        showLanPanel = false;
-        chessGame.BeginLanGame(hostTeam, hostTeam);
+        localReady = true;
+        string requestId = CreateRequestId("ready");
+        _ = webSocketClient.SendAsync("READY", requestId, new { });
+        statusMessage = "Ready sent. Waiting for the other player...";
     }
 
-    private void HandleStartGameRequested(PieceTeam hostTeam)
+    private void SendResign()
     {
-        Log($"Start game requested by host. Host team={hostTeam}.");
-        if (lanGameActive)
+        if (!CanSendGameCommand())
             return;
 
-        PieceTeam localTeam = hostTeam == PieceTeam.White ? PieceTeam.Black : PieceTeam.White;
-        lanGameActive = true;
-        showLanPanel = false;
-        chessGame.BeginLanGame(hostTeam, localTeam);
+        _ = webSocketClient.SendAsync("RESIGN", CreateRequestId("resign"), new { });
+        statusMessage = "Resign sent.";
+    }
+
+    private void SendDrawOffer()
+    {
+        if (!CanSendGameCommand())
+            return;
+
+        _ = webSocketClient.SendAsync("DRAW_OFFER", CreateRequestId("draw-offer"), new { });
+        statusMessage = "Draw offer sent.";
+    }
+
+    private void SendDrawAccept()
+    {
+        if (!CanSendGameCommand())
+            return;
+
+        _ = webSocketClient.SendAsync("DRAW_ACCEPT", CreateRequestId("draw-accept"), new { });
+        opponentDrawOfferPending = false;
+        statusMessage = "Draw accepted.";
     }
 
     private void HandleMoveCommitted(ChessLanMove move)
     {
-        Log($"Local move committed for LAN send: {move.ToProtocolPayload()}.");
-        if (!lanGameActive || session == null || !session.IsConnected)
+        if (!lanGameActive || webSocketClient == null || !webSocketClient.IsConnected)
             return;
 
-        if (!session.SendMove(move))
-            HandlePeerDisconnected("Unable to send LAN move to the peer.");
-    }
-
-    private void HandleMoveReceived(ChessLanMove move)
-    {
-        Log($"Network move received for apply: {move.ToProtocolPayload()}.");
-        if (!lanGameActive)
-            return;
-
-        if (!chessGame.ApplyNetworkMove(move))
-            HandlePeerDisconnected("Received an out-of-sync LAN move.");
-    }
-
-    private void HandlePeerDisconnected(string message)
-    {
-        LogWarning($"Controller peer disconnected: {message}");
-        statusMessage = string.IsNullOrWhiteSpace(message) ? "LAN peer disconnected." : message;
-        StopHostDiscovery();
-        if (!lanGameActive)
-            return;
-
-        lanGameActive = false;
-        showLanPanel = false;
-        chessGame.RestartToMainMenu();
+        string requestId = CreateRequestId("move");
+        pendingLocalMoveRequestIds.Add(requestId);
+        _ = webSocketClient.SendAsync("MOVE", requestId, new BackendMovePayload
+        {
+            from = ToSquare(move.from),
+            to = ToSquare(move.to),
+            promotion = move.hasPromotion ? ToPromotion(move.promotionType) : null
+        });
     }
 
     private void HandleReturnedToMainMenu()
     {
-        Log("Returned to main menu; stopping LAN session.");
-        lanGameActive = false;
-        StopHostDiscovery();
-        if (session != null)
-            session.Disconnect();
+        ResetRoomState(clearRoomIdentity: false);
+        DisconnectSocketIntentional();
     }
 
-    private void HandleSessionStateChanged()
+    private void HandleWebSocketConnected()
     {
-        Log($"Controller observed session state={session.State}, role={session.Role}, status='{session.StatusMessage}'.");
-        statusMessage = session.StatusMessage;
-
-        if (session.State != ChessLanSessionState.Hosting)
-            StopHostDiscovery();
+        requestInFlight = false;
+        reconnectPending = false;
+        statusMessage = $"Connected to room {currentRoomCode}.";
+        lastHeartbeatAt = Time.unscaledTime;
+        _ = webSocketClient.SendAsync("SYNC_REQUEST", CreateRequestId("sync"), new { });
+        StartCoroutine(LoadActiveMatchCoroutine());
     }
 
-    private void RefreshLocalAddresses()
+    private void HandleWebSocketClosed(string message)
     {
-        string[] addresses = ChessLanSession.GetLocalIpv4Addresses();
-        localAddressesSummary = string.Join(", ", addresses);
-    }
+        requestInFlight = false;
 
-    private void DrawSessionInfo(Rect panelRect)
-    {
-        float infoTop = panelRect.y + 248f;
-        GUI.Label(
-            new Rect(panelRect.x + 36f, infoTop, panelRect.width - 72f, 28f),
-            $"Room state: {GetRoomStateLabel()}",
-            GetBodyStyle());
-        GUI.Label(
-            new Rect(panelRect.x + 36f, infoTop + 28f, panelRect.width - 72f, 28f),
-            $"Peer: {GetPeerDisplayText()}",
-            GetBodyStyle());
-        GUI.Label(
-            new Rect(panelRect.x + 36f, infoTop + 56f, panelRect.width - 72f, 28f),
-            $"Network: {GetNetworkDisplayText()}",
-            GetBodyStyle());
-    }
+        if (intentionalDisconnect)
+        {
+            intentionalDisconnect = false;
+            return;
+        }
 
-    private void DrawInGameLanHud()
-    {
-        if (!lanGameActive)
+        if (string.IsNullOrWhiteSpace(currentRoomCode) || !PlayerAuthService.IsAuthenticated)
             return;
 
-        float width = Mathf.Clamp(guiWidth * 0.18f, 300f, 360f);
-        float height = 162f;
-        Rect panelRect = new Rect(18f, guiHeight - height - 18f, width, height);
-        GUI.Box(panelRect, string.Empty);
-
-        GUI.Label(new Rect(panelRect.x + 14f, panelRect.y + 10f, panelRect.width - 28f, 24f), "LAN Room", GetHudTitleStyle());
-        GUI.Label(new Rect(panelRect.x + 14f, panelRect.y + 36f, panelRect.width - 28f, 20f), $"Role: {session.Role} | You: {chessGame.PlayerTeam}", GetHudBodyStyle());
-        GUI.Label(new Rect(panelRect.x + 14f, panelRect.y + 56f, panelRect.width - 28f, 20f), $"Turn: {chessGame.CurrentTurn} | Room: {GetRoomStateLabel()}", GetHudBodyStyle());
-        GUI.Label(new Rect(panelRect.x + 14f, panelRect.y + 76f, panelRect.width - 28f, 20f), $"Peer: {GetPeerDisplayText()}", GetHudBodyStyle());
-        GUI.Label(new Rect(panelRect.x + 14f, panelRect.y + 96f, panelRect.width - 28f, 20f), $"Network: {GetNetworkDisplayText()}", GetHudBodyStyle());
-
-        if (GUI.Button(new Rect(panelRect.x + 14f, panelRect.y + 124f, panelRect.width - 28f, 26f), "Leave Room"))
-            LeaveLanRoom();
+        statusMessage = message;
+        reconnectPending = true;
+        reconnectAt = Time.unscaledTime + ReconnectDelaySeconds;
     }
 
-    private void LeaveLanRoom()
+    private void HandleWebSocketError(string message)
     {
+        statusMessage = message;
+    }
+
+    private void HandleWebSocketMessage(BackendSocketEnvelope envelope)
+    {
+        if (envelope == null)
+            return;
+
+        switch (envelope.type)
+        {
+            case "PLAYER_JOINED":
+                statusMessage = "A player connected to the room.";
+                StartCoroutine(RefreshRoomCoroutine());
+                break;
+            case "PLAYER_DISCONNECTED":
+                statusMessage = "A player disconnected from the room.";
+                StartCoroutine(RefreshRoomCoroutine());
+                break;
+            case "PLAYER_READY":
+                HandlePlayerReady(envelope.payload);
+                break;
+            case "GAME_START":
+                HandleGameStart(envelope.payload);
+                break;
+            case "MOVE_RESULT":
+                HandleMoveResult(envelope.requestId, envelope.payload);
+                break;
+            case "DRAW_OFFERED":
+                HandleDrawOffered(envelope.payload);
+                break;
+            case "GAME_STATE":
+                HandleGameState(envelope.payload);
+                break;
+            case "GAME_OVER":
+                HandleGameOver(envelope.payload);
+                break;
+            case "ERROR":
+                HandleSocketErrorPayload(envelope.requestId, envelope.payload);
+                break;
+        }
+    }
+
+    private void HandlePlayerReady(JToken payloadToken)
+    {
+        BackendPlayerReadyPayload payload = payloadToken.ToObject<BackendPlayerReadyPayload>();
+        readyCount = payload != null ? Mathf.Max(readyCount, payload.readyCount) : readyCount;
+        statusMessage = payload == null
+            ? "A player is ready."
+            : $"{payload.username} is ready ({payload.readyCount}/2).";
+    }
+
+    private void HandleDrawOffered(JToken payloadToken)
+    {
+        BackendDrawOfferedPayload payload = payloadToken.ToObject<BackendDrawOfferedPayload>();
+        opponentDrawOfferPending = payload != null &&
+            !string.Equals(payload.offeredBy, PlayerAuthService.Username, StringComparison.OrdinalIgnoreCase);
+        statusMessage = opponentDrawOfferPending
+            ? $"{payload.offeredBy} offered a draw."
+            : "Draw offer broadcast to room.";
+    }
+
+    private void HandleGameStart(JToken payloadToken)
+    {
+        BackendGameStartPayload payload = payloadToken.ToObject<BackendGameStartPayload>();
+        if (payload == null)
+            return;
+
+        currentGameStart = payload;
+        currentMatchId = payload.matchId ?? string.Empty;
+        lastConfirmedFen = payload.fen ?? string.Empty;
+        opponentDrawOfferPending = false;
+        PieceTeam localTeam = string.Equals(payload.whitePlayerId, PlayerAuthService.UserId, StringComparison.OrdinalIgnoreCase)
+            ? PieceTeam.White
+            : PieceTeam.Black;
+        chessGame.BeginLanGame(PieceTeam.White, localTeam);
+        chessGame.ApplyFenState(payload.fen);
+        lanGameActive = true;
         showLanPanel = false;
+        readyCount = 2;
+        statusMessage = "Match started.";
+        StartCoroutine(RefreshRoomCoroutine());
+    }
+
+    private void HandleMoveResult(string requestId, JToken payloadToken)
+    {
+        BackendMoveResultPayload payload = payloadToken.ToObject<BackendMoveResultPayload>();
+        if (payload == null)
+            return;
+
+        bool isLocalMove = !string.IsNullOrWhiteSpace(requestId) && pendingLocalMoveRequestIds.Remove(requestId);
+        lastConfirmedFen = payload.fen ?? lastConfirmedFen;
+
+        chessGame.ApplyFenState(payload.fen);
+        statusMessage = string.IsNullOrWhiteSpace(payload.notation)
+            ? $"Move {payload.moveNumber} accepted."
+            : $"{(isLocalMove ? "Your" : "Opponent")} move {payload.moveNumber}: {payload.notation}";
+
+        if (!string.Equals(payload.status, "ACTIVE", StringComparison.OrdinalIgnoreCase) && payload.gameOver != null)
+            HandleGameOver(JToken.FromObject(payload.gameOver));
+    }
+
+    private void HandleGameState(JToken payloadToken)
+    {
+        BackendGameStatePayload payload = payloadToken.ToObject<BackendGameStatePayload>();
+        if (payload == null)
+            return;
+
+        currentMatchId = payload.matchId ?? currentMatchId;
+        if (!string.IsNullOrWhiteSpace(payload.fen))
+        {
+            lastConfirmedFen = payload.fen;
+            if (!chessGame.GameStarted)
+            {
+                PieceTeam localTeam = string.Equals(payload.whitePlayerId, PlayerAuthService.UserId, StringComparison.OrdinalIgnoreCase)
+                    ? PieceTeam.White
+                    : PieceTeam.Black;
+                chessGame.BeginLanGame(PieceTeam.White, localTeam);
+                lanGameActive = string.Equals(payload.status, "ACTIVE", StringComparison.OrdinalIgnoreCase);
+            }
+
+            chessGame.ApplyFenState(payload.fen);
+        }
+
+        if (!string.Equals(payload.status, "ACTIVE", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(payload.result))
+            chessGame.ApplyServerGameOver(payload.result, payload.reason);
+    }
+
+    private void HandleGameOver(JToken payloadToken)
+    {
+        BackendGameOverPayload payload = payloadToken.ToObject<BackendGameOverPayload>();
+        if (payload == null)
+            return;
+
         lanGameActive = false;
-        StopHostDiscovery();
+        opponentDrawOfferPending = false;
+        statusMessage = $"Game over: {payload.result} ({payload.reason})";
+        chessGame.ApplyServerGameOver(payload.result, payload.reason);
+        StartCoroutine(LoadMatchHistoryCoroutine());
+    }
+
+    private void HandleSocketErrorPayload(string requestId, JToken payloadToken)
+    {
+        BackendSocketErrorPayload payload = payloadToken.ToObject<BackendSocketErrorPayload>();
+        string message = payload != null && !string.IsNullOrWhiteSpace(payload.message)
+            ? payload.message
+            : "Socket request failed.";
+        statusMessage = message;
+
+        if (!string.IsNullOrWhiteSpace(requestId) && pendingLocalMoveRequestIds.Remove(requestId) && !string.IsNullOrWhiteSpace(lastConfirmedFen))
+            chessGame.ApplyFenState(lastConfirmedFen);
+    }
+
+    private IEnumerator RefreshRoomCoroutine()
+    {
+        if (string.IsNullOrWhiteSpace(currentRoomCode))
+            yield break;
+
+        yield return BackendRestClient.Send<BackendRoomDto>(
+            "GET",
+            $"/api/rooms/{currentRoomCode}",
+            null,
+            true,
+            response => currentRoom = response.result,
+            (_, __) => { });
+    }
+
+    private void LeaveRoom()
+    {
+        ResetRoomState(clearRoomIdentity: true);
+        statusMessage = "Left online room.";
+        DisconnectSocketIntentional();
+        showLanPanel = true;
         chessGame.RestartToMainMenu();
     }
 
-    private string GetRoomStateLabel()
+    private void CopyRoomCodeToClipboard()
     {
-        if (lanGameActive)
-            return "In match";
-
-        switch (session.State)
+        string codeToCopy = !string.IsNullOrWhiteSpace(currentRoomCode) ? currentRoomCode : roomCodeInput;
+        if (string.IsNullOrWhiteSpace(codeToCopy))
         {
-            case ChessLanSessionState.Hosting:
-                return "Hosting room";
-            case ChessLanSessionState.Connecting:
-                return "Connecting";
-            case ChessLanSessionState.Connected:
-                return session.Role == ChessLanSessionRole.Host ? "Peer connected, ready to start" : "Connected, waiting for host";
-            case ChessLanSessionState.Error:
-                return "Connection error";
+            statusMessage = "No room code to copy yet.";
+            return;
+        }
+
+        GUIUtility.systemCopyBuffer = codeToCopy;
+        statusMessage = $"Copied room code {codeToCopy}.";
+    }
+
+    private void EnsureWebSocketClient()
+    {
+        if (webSocketClient != null)
+            return;
+
+        webSocketClient = new BackendWebSocketClient();
+        webSocketClient.Connected += HandleWebSocketConnected;
+        webSocketClient.MessageReceived += HandleWebSocketMessage;
+        webSocketClient.Closed += HandleWebSocketClosed;
+        webSocketClient.Error += HandleWebSocketError;
+    }
+
+    private void ReleaseWebSocketClient()
+    {
+        if (webSocketClient == null)
+            return;
+
+        webSocketClient.Connected -= HandleWebSocketConnected;
+        webSocketClient.MessageReceived -= HandleWebSocketMessage;
+        webSocketClient.Closed -= HandleWebSocketClosed;
+        webSocketClient.Error -= HandleWebSocketError;
+        webSocketClient.Dispose();
+        webSocketClient = null;
+    }
+
+    private void DisconnectSocketIntentional()
+    {
+        reconnectPending = false;
+        requestInFlight = false;
+        intentionalDisconnect = true;
+        ReleaseWebSocketClient();
+    }
+
+    private void ResetRoomState(bool clearRoomIdentity)
+    {
+        lanGameActive = false;
+        localReady = false;
+        readyCount = 0;
+        opponentDrawOfferPending = false;
+        pendingLocalMoveRequestIds.Clear();
+
+        if (!clearRoomIdentity)
+            return;
+
+        currentRoom = null;
+        currentRoomCode = string.Empty;
+        currentMatchId = string.Empty;
+        lastConfirmedFen = string.Empty;
+    }
+
+    private string GetRoomSummary()
+    {
+        if (currentRoom == null)
+            return "Not in a room";
+
+        return $"{currentRoom.roomCode} ({currentRoom.status})";
+    }
+
+    private string GetConnectionSummary()
+    {
+        if (webSocketClient == null)
+            return "No socket";
+        if (webSocketClient.IsConnected)
+            return "Connected";
+        if (reconnectPending)
+            return "Reconnecting";
+        return "Disconnected";
+    }
+
+    private bool CanSendGameCommand()
+    {
+        if (!lanGameActive || webSocketClient == null || !webSocketClient.IsConnected)
+        {
+            statusMessage = "You need an active connected match first.";
+            return false;
+        }
+
+        return true;
+    }
+
+    private static string CreateRequestId(string prefix)
+    {
+        return $"{prefix}-{Guid.NewGuid():N}";
+    }
+
+    private static string ToSquare(Vector2Int boardPosition)
+    {
+        return $"{(char)('a' + boardPosition.x)}{(char)('1' + boardPosition.y)}";
+    }
+
+    private static bool TryParseSquare(string square, out Vector2Int boardPosition)
+    {
+        boardPosition = -Vector2Int.one;
+        if (string.IsNullOrWhiteSpace(square) || square.Length != 2)
+            return false;
+
+        char file = char.ToLowerInvariant(square[0]);
+        char rank = square[1];
+        if (file < 'a' || file > 'h' || rank < '1' || rank > '8')
+            return false;
+
+        boardPosition = new Vector2Int(file - 'a', rank - '1');
+        return true;
+    }
+
+    private static string ToPromotion(PieceType pieceType)
+    {
+        switch (pieceType)
+        {
+            case PieceType.Rook:
+                return "ROOK";
+            case PieceType.Bishop:
+                return "BISHOP";
+            case PieceType.Knight:
+                return "KNIGHT";
+            case PieceType.Queen:
             default:
-                return "Not connected";
+                return "QUEEN";
         }
     }
 
-    private string GetPeerDisplayText()
+    private static bool TryCreateLanMove(BackendMoveResultPayload payload, out ChessLanMove move)
     {
-        if (session.State == ChessLanSessionState.Hosting)
-            return "No peer joined yet";
+        move = default;
+        if (payload == null || !TryParseSquare(payload.from, out Vector2Int from) || !TryParseSquare(payload.to, out Vector2Int to))
+            return false;
 
-        string remoteName = string.IsNullOrWhiteSpace(session.RemoteMachineName) ? "Unknown machine" : session.RemoteMachineName;
-        string endpoint = string.IsNullOrWhiteSpace(session.RemoteEndpointDisplay) ? "No endpoint" : session.RemoteEndpointDisplay;
-        return $"{remoteName} ({endpoint})";
-    }
-
-    private string GetNetworkDisplayText()
-    {
-        string health = GetConnectionHealthLabel(session.ConnectionHealth);
-        if (session.State == ChessLanSessionState.Hosting)
-            return hostDiscoveryRunning ? "Discoverable on LAN" : "Discovery unavailable";
-
-        if (!session.IsConnected)
-            return health;
-
-        string pingText = session.RoundTripMilliseconds >= 0d
-            ? $"{Math.Round(session.RoundTripMilliseconds)} ms"
-            : "measuring...";
-        double secondsSinceMessage = session.SecondsSinceLastMessage;
-        string silenceText = double.IsInfinity(secondsSinceMessage)
-            ? "n/a"
-            : $"{secondsSinceMessage:0.0}s ago";
-        return $"{health} | Ping: {pingText} | Last msg: {silenceText}";
-    }
-
-    private static string GetConnectionHealthLabel(ChessLanConnectionHealth health)
-    {
-        switch (health)
+        if (string.IsNullOrWhiteSpace(payload.promotion))
         {
-            case ChessLanConnectionHealth.Good:
-                return "Stable";
-            case ChessLanConnectionHealth.Weak:
-                return "Weak";
-            case ChessLanConnectionHealth.Lost:
-                return "Lost";
-            default:
-                return "Unknown";
+            move = new ChessLanMove(from, to);
+            return true;
         }
-    }
 
-    private void BackToMultiplayerModes()
-    {
-        StopHostDiscovery();
-        session.Disconnect();
-        showLanPanel = false;
-        turnSelectionUI.ShowMultiplayerModeSelection();
+        PieceType promotionType = PieceType.Queen;
+        switch (payload.promotion.ToUpperInvariant())
+        {
+            case "ROOK":
+                promotionType = PieceType.Rook;
+                break;
+            case "BISHOP":
+                promotionType = PieceType.Bishop;
+                break;
+            case "KNIGHT":
+                promotionType = PieceType.Knight;
+                break;
+        }
+
+        move = new ChessLanMove(from, to, promotionType);
+        return true;
     }
 
     private static GUIStyle GetTitleStyle()
     {
-        GUIStyle style = new GUIStyle(GUI.skin.label)
+        return new GUIStyle(GUI.skin.label)
         {
             fontSize = 30,
             fontStyle = FontStyle.Bold
         };
-        return style;
+    }
+
+    private static GUIStyle GetSectionStyle()
+    {
+        return new GUIStyle(GUI.skin.label)
+        {
+            fontSize = 20,
+            fontStyle = FontStyle.Bold
+        };
     }
 
     private static GUIStyle GetBodyStyle()
     {
-        GUIStyle style = new GUIStyle(GUI.skin.label)
-        {
-            fontSize = 20,
-            wordWrap = true
-        };
-        return style;
-    }
-
-    private static GUIStyle GetHudTitleStyle()
-    {
-        GUIStyle style = new GUIStyle(GUI.skin.label)
+        return new GUIStyle(GUI.skin.label)
         {
             fontSize = 18,
-            fontStyle = FontStyle.Bold
+            wordWrap = true
         };
-        return style;
     }
 
-    private static GUIStyle GetHudBodyStyle()
+    private static GUIStyle GetHudStyle()
     {
-        GUIStyle style = new GUIStyle(GUI.skin.label)
+        return new GUIStyle(GUI.skin.label)
         {
-            fontSize = 13,
+            fontSize = 14,
             wordWrap = false,
             clipping = TextClipping.Clip
         };
-        return style;
     }
 
     private static GUIStyle GetStatusStyle()
     {
-        GUIStyle style = new GUIStyle(GUI.skin.label)
+        return new GUIStyle(GUI.skin.label)
         {
-            fontSize = 19,
+            fontSize = 18,
             fontStyle = FontStyle.Italic,
             wordWrap = true
         };
-        return style;
     }
 
     private static float GetGuiScale()
@@ -739,131 +881,5 @@ public class ChessLanController : MonoBehaviour
         float widthScale = Screen.width / ReferenceWidth;
         float heightScale = Screen.height / ReferenceHeight;
         return Mathf.Clamp(Mathf.Min(widthScale, heightScale), 1f, 2f);
-    }
-
-    private static void SendToBroadcastEndpoints(UdpClient client, byte[] payload)
-    {
-        IPEndPoint[] endpoints = GetBroadcastEndpoints();
-        for (int i = 0; i < endpoints.Length; i++)
-        {
-            Log($"UDP TX broadcast to {endpoints[i]}.");
-            client.Send(payload, payload.Length, endpoints[i]);
-        }
-    }
-
-    private static UdpClient CreateDiscoveryClient(int port, int receiveTimeoutMilliseconds, bool allowEphemeralFallback)
-    {
-        UdpClient client = new UdpClient(AddressFamily.InterNetwork);
-        client.EnableBroadcast = true;
-        client.Client.ReceiveTimeout = receiveTimeoutMilliseconds;
-        client.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-
-        try
-        {
-            client.Client.Bind(new IPEndPoint(IPAddress.Any, port));
-            Log($"UDP discovery socket bound to 0.0.0.0:{port}.");
-        }
-        catch (Exception exception)
-        {
-            LogWarning($"UDP discovery bind to port {port} failed: {exception.GetType().Name}: {exception.Message}");
-            client.Close();
-
-            if (!allowEphemeralFallback)
-                throw;
-
-            client = new UdpClient(AddressFamily.InterNetwork);
-            client.EnableBroadcast = true;
-            client.Client.ReceiveTimeout = receiveTimeoutMilliseconds;
-            client.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-            client.Client.Bind(new IPEndPoint(IPAddress.Any, 0));
-            Log($"UDP discovery socket bound to ephemeral port {((IPEndPoint)client.Client.LocalEndPoint).Port}.");
-        }
-
-        return client;
-    }
-
-    private static IPEndPoint[] GetBroadcastEndpoints()
-    {
-        List<IPEndPoint> endpoints = new List<IPEndPoint>
-        {
-            new IPEndPoint(IPAddress.Broadcast, DiscoveryPort)
-        };
-
-        try
-        {
-            NetworkInterface[] interfaces = NetworkInterface.GetAllNetworkInterfaces();
-            for (int i = 0; i < interfaces.Length; i++)
-            {
-                NetworkInterface networkInterface = interfaces[i];
-                if (networkInterface.OperationalStatus != OperationalStatus.Up ||
-                    networkInterface.NetworkInterfaceType == NetworkInterfaceType.Loopback)
-                    continue;
-
-                UnicastIPAddressInformationCollection unicastAddresses = networkInterface.GetIPProperties().UnicastAddresses;
-                foreach (UnicastIPAddressInformation unicastAddress in unicastAddresses)
-                {
-                    if (unicastAddress.Address.AddressFamily != AddressFamily.InterNetwork || unicastAddress.IPv4Mask == null)
-                        continue;
-
-                    IPAddress broadcastAddress = GetSubnetBroadcastAddress(unicastAddress.Address, unicastAddress.IPv4Mask);
-                    AddUniqueEndpoint(endpoints, new IPEndPoint(broadcastAddress, DiscoveryPort));
-                }
-            }
-        }
-        catch (Exception exception)
-        {
-            Debug.LogWarning($"[ChessLAN] Unable to enumerate broadcast addresses: {exception.Message}");
-        }
-
-        return endpoints.ToArray();
-    }
-
-    private static void Log(string message)
-    {
-        Debug.Log($"{LogPrefix} {message}");
-    }
-
-    private static void LogWarning(string message)
-    {
-        Debug.LogWarning($"{LogPrefix} {message}");
-    }
-
-    private static IPAddress GetSubnetBroadcastAddress(IPAddress address, IPAddress subnetMask)
-    {
-        byte[] addressBytes = address.GetAddressBytes();
-        byte[] maskBytes = subnetMask.GetAddressBytes();
-        byte[] broadcastBytes = new byte[addressBytes.Length];
-
-        for (int i = 0; i < broadcastBytes.Length; i++)
-            broadcastBytes[i] = (byte)(addressBytes[i] | ~maskBytes[i]);
-
-        return new IPAddress(broadcastBytes);
-    }
-
-    private static void AddUniqueEndpoint(List<IPEndPoint> endpoints, IPEndPoint endpoint)
-    {
-        for (int i = 0; i < endpoints.Count; i++)
-        {
-            if (endpoints[i].Address.Equals(endpoint.Address) && endpoints[i].Port == endpoint.Port)
-                return;
-        }
-
-        endpoints.Add(endpoint);
-    }
-
-    private struct DiscoveredLanHost
-    {
-        public readonly string Address;
-        public readonly int Port;
-        public readonly string MachineName;
-
-        public DiscoveredLanHost(string address, int port, string machineName)
-        {
-            Address = address;
-            Port = port;
-            MachineName = string.IsNullOrWhiteSpace(machineName) ? "LAN Host" : machineName;
-        }
-
-        public string DisplayName => $"{MachineName} ({Address})";
     }
 }

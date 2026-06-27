@@ -71,6 +71,7 @@ public class ChessGame : MonoBehaviour
     private bool restrictInputToControlledTeam;
     private PieceTeam localControlledTeam = PieceTeam.White;
     private bool suppressMoveCommittedEvent;
+    private bool serverAuthoritativeMode;
     private bool pendingRemotePromotionResolution;
     private PieceType remotePromotionType = PieceType.Queen;
     private Vector2Int pendingCommittedMoveFrom = -Vector2Int.one;
@@ -167,6 +168,7 @@ public class ChessGame : MonoBehaviour
     private void Start()
     {
         PrepareGame();
+        PlayerAuthService.TryRestoreSession();
         if (PlayerAuthService.IsAuthenticated)
         {
             BeginAuthenticatedSession();
@@ -229,11 +231,13 @@ public class ChessGame : MonoBehaviour
 
     public void BeginGame(PieceTeam firstTurn)
     {
+        serverAuthoritativeMode = false;
         BeginGameInternal(firstTurn, firstTurn, false, firstTurn);
     }
 
     public void BeginLanGame(PieceTeam firstTurn, PieceTeam localPlayerTeam)
     {
+        serverAuthoritativeMode = true;
         BeginGameInternal(firstTurn, localPlayerTeam, true, PieceTeam.White);
     }
 
@@ -254,6 +258,7 @@ public class ChessGame : MonoBehaviour
         RefreshPieceMap();
         RecordCurrentPosition();
         gameStarted = true;
+        chessboard?.SetPresentationVisible(true);
         chessboard?.ClearLegalMoveHighlights();
         RefreshLocalInteractionState();
         turnSelectionUI?.SetTurn(currentTurn);
@@ -357,6 +362,13 @@ public class ChessGame : MonoBehaviour
         turnSelectionUI?.SetTurn(currentTurn);
         RefreshLocalInteractionState();
 
+        if (serverAuthoritativeMode)
+        {
+            UpdateCheckWarningForCurrentTurn();
+            StartCoroutine(AnimateMoveAndUnlock(movingPiece, destination));
+            return true;
+        }
+
         if (TryFinishGameAfterCompletedMove(movingPiece, destination))
             return true;
 
@@ -438,6 +450,7 @@ public class ChessGame : MonoBehaviour
         RefreshPieceMap();
         AlignAllPiecesToBoard();
         SetRuntimePiecesVisible(false);
+        chessboard?.SetPresentationVisible(false);
         chessboard?.SetInteractionEnabled(false);
 
         currentTurn = PieceTeam.White;
@@ -448,6 +461,7 @@ public class ChessGame : MonoBehaviour
         playerTeam = PieceTeam.White;
         localControlledTeam = PieceTeam.White;
         restrictInputToControlledTeam = false;
+        serverAuthoritativeMode = false;
         winningTeam = PieceTeam.White;
         drawReason = string.Empty;
         ResetDrawTracking();
@@ -1101,6 +1115,12 @@ public class ChessGame : MonoBehaviour
         suppressMoveCommittedEvent = false;
         RefreshLocalInteractionState();
 
+        if (serverAuthoritativeMode)
+        {
+            UpdateCheckWarningForCurrentTurn();
+            return;
+        }
+
         if (TryFinishGameAfterCompletedMove(promotedPiece, promotedPiece.BoardPosition))
             return;
 
@@ -1207,6 +1227,10 @@ public class ChessGame : MonoBehaviour
         string suffix = team == PieceTeam.White ? "_1" : "_2";
         switch (pieceType)
         {
+            case PieceType.King:
+                return "King" + suffix;
+            case PieceType.Pawn:
+                return "Pawn" + suffix;
             case PieceType.Rook:
                 return "Rook" + suffix;
             case PieceType.Bishop:
@@ -1223,6 +1247,10 @@ public class ChessGame : MonoBehaviour
     {
         switch (pieceType)
         {
+            case PieceType.King:
+                return targetObject.AddComponent<KingPiece>();
+            case PieceType.Pawn:
+                return targetObject.AddComponent<PawnPiece>();
             case PieceType.Rook:
                 return targetObject.AddComponent<RookPiece>();
             case PieceType.Bishop:
@@ -1872,6 +1900,97 @@ public class ChessGame : MonoBehaviour
         return moveApplied;
     }
 
+    public bool ApplyFenState(string fen)
+    {
+        if (string.IsNullOrWhiteSpace(fen) || runtimePiecesRoot == null)
+            return false;
+
+        string[] parts = fen.Trim().Split(' ');
+        if (parts.Length < 2)
+            return false;
+
+        StopCheckWarning();
+        StopAllCoroutines();
+        pieceAnimations.Clear();
+        ClearRuntimePiecesRoot();
+        ClearPieceMap();
+        selectedPiece = null;
+        pendingPromotionPawn = null;
+        pendingRemotePromotionResolution = false;
+        suppressMoveCommittedEvent = false;
+        drawReason = string.Empty;
+        lastMovedPiece = null;
+        lastMoveTo = -Vector2Int.one;
+        lastMoveWasPawnDoubleStep = false;
+        halfMoveClock = parts.Length > 4 && int.TryParse(parts[4], out int parsedHalfMoveClock) ? parsedHalfMoveClock : 0;
+        positionHistory.Clear();
+
+        string[] ranks = parts[0].Split('/');
+        if (ranks.Length != 8)
+            return false;
+
+        for (int rank = 7; rank >= 0; rank--)
+        {
+            int file = 0;
+            string rankText = ranks[7 - rank];
+            for (int i = 0; i < rankText.Length; i++)
+            {
+                char symbol = rankText[i];
+                if (char.IsDigit(symbol))
+                {
+                    file += symbol - '0';
+                    continue;
+                }
+
+                if (file < 0 || file >= 8)
+                    return false;
+
+                Vector2Int boardPosition = new Vector2Int(file, rank);
+                ChessPiece piece = CreatePieceFromFenSymbol(symbol, boardPosition);
+                if (!piece)
+                    return false;
+
+                pieces[file, rank] = piece;
+                file++;
+            }
+
+            if (file != 8)
+                return false;
+        }
+
+        currentTurn = string.Equals(parts[1], "b", StringComparison.OrdinalIgnoreCase)
+            ? PieceTeam.Black
+            : PieceTeam.White;
+
+        ApplyFenMovementFlags(parts.Length > 2 ? parts[2] : "-");
+        ApplyFenEnPassant(parts.Length > 3 ? parts[3] : "-");
+
+        gameStarted = true;
+        gameOver = false;
+        inputLocked = false;
+        status = ChessGameStatus.Playing;
+        SetRuntimePiecesVisible(true);
+        chessboard?.SetPresentationVisible(true);
+        turnSelectionUI?.SetTurn(currentTurn);
+        RefreshLocalInteractionState();
+        UpdateCheckWarningForCurrentTurn();
+        return true;
+    }
+
+    public void ApplyServerGameOver(string result, string reason)
+    {
+        if (string.Equals(result, "DRAW", StringComparison.OrdinalIgnoreCase))
+        {
+            FinishDraw(string.IsNullOrWhiteSpace(reason) ? "Draw" : reason);
+            return;
+        }
+
+        PieceTeam winner = string.Equals(result, "BLACK_WON", StringComparison.OrdinalIgnoreCase)
+            ? PieceTeam.Black
+            : PieceTeam.White;
+        FinishGame(winner);
+    }
+
     private bool CanLocalPlayerInteract()
     {
         return !restrictInputToControlledTeam || currentTurn == localControlledTeam;
@@ -1920,6 +2039,197 @@ public class ChessGame : MonoBehaviour
         for (int x = 0; x < pieces.GetLength(0); x++)
             for (int y = 0; y < pieces.GetLength(1); y++)
                 pieces[x, y] = null;
+    }
+
+    private ChessPiece CreatePieceFromFenSymbol(char symbol, Vector2Int boardPosition)
+    {
+        PieceTeam team = char.IsUpper(symbol) ? PieceTeam.White : PieceTeam.Black;
+        PieceType pieceType = GetPieceTypeFromFenSymbol(symbol);
+        int forwardDirection = team == PieceTeam.White ? 1 : -1;
+        ChessPiece piece = CreateVisualPieceObject(team, pieceType, boardPosition, forwardDirection);
+        if (!piece)
+            return null;
+
+        piece.SetStartingBoardPosition(boardPosition, forwardDirection);
+        MovePieceToTile(piece, boardPosition, 0f);
+        return piece;
+    }
+
+    private PieceType GetPieceTypeFromFenSymbol(char symbol)
+    {
+        switch (char.ToLowerInvariant(symbol))
+        {
+            case 'k':
+                return PieceType.King;
+            case 'q':
+                return PieceType.Queen;
+            case 'r':
+                return PieceType.Rook;
+            case 'b':
+                return PieceType.Bishop;
+            case 'n':
+                return PieceType.Knight;
+            case 'p':
+            default:
+                return PieceType.Pawn;
+        }
+    }
+
+    private ChessPiece CreateVisualPieceObject(PieceTeam team, PieceType pieceType, Vector2Int boardPosition, int forwardDirection)
+    {
+        string sourceName = GetVisualSourceName(team, pieceType);
+        Transform sourceTransform = FindVisualChild(sourceName);
+        GameObject pieceObject = new GameObject($"{team} {pieceType} {boardPosition.x},{boardPosition.y}");
+        pieceObject.transform.SetParent(runtimePiecesRoot);
+
+        if (sourceTransform)
+        {
+            pieceObject.transform.rotation = sourceTransform.rotation;
+            pieceObject.transform.localScale = sourceTransform.lossyScale;
+
+            MeshFilter sourceMeshFilter = sourceTransform.GetComponent<MeshFilter>();
+            MeshRenderer sourceRenderer = sourceTransform.GetComponent<MeshRenderer>();
+            if (sourceMeshFilter && sourceMeshFilter.sharedMesh)
+            {
+                List<MeshComponentData> components = SplitMeshIntoSpatialGroups(sourceMeshFilter.sharedMesh, GetExpectedGroupCount(pieceType));
+                if (components.Count > 0)
+                {
+                    components.Sort((left, right) =>
+                        sourceTransform.TransformPoint(left.pivot).x.CompareTo(sourceTransform.TransformPoint(right.pivot).x));
+                    int componentIndex = GetPreferredVisualIndex(pieceType, boardPosition.x, components.Count);
+                    pieceObject.transform.position = sourceTransform.TransformPoint(components[componentIndex].pivot);
+                    MeshFilter meshFilter = pieceObject.AddComponent<MeshFilter>();
+                    meshFilter.sharedMesh = components[componentIndex].mesh;
+                }
+                else
+                {
+                    pieceObject.transform.position = sourceTransform.position;
+                    MeshFilter meshFilter = pieceObject.AddComponent<MeshFilter>();
+                    meshFilter.sharedMesh = sourceMeshFilter.sharedMesh;
+                }
+            }
+
+            if (sourceRenderer)
+            {
+                MeshRenderer meshRenderer = pieceObject.AddComponent<MeshRenderer>();
+                meshRenderer.sharedMaterials = sourceRenderer.sharedMaterials;
+            }
+        }
+
+        ChessPiece piece = AddPieceComponent(pieceObject, pieceType);
+        EnsurePieceCollider(pieceObject);
+        piece.Initialize(team, boardPosition, forwardDirection);
+        return piece;
+    }
+
+    private int GetExpectedGroupCount(PieceType pieceType)
+    {
+        switch (pieceType)
+        {
+            case PieceType.Pawn:
+                return 8;
+            case PieceType.Rook:
+            case PieceType.Bishop:
+            case PieceType.Knight:
+                return 2;
+            case PieceType.King:
+            case PieceType.Queen:
+            default:
+                return 1;
+        }
+    }
+
+    private int GetPreferredVisualIndex(PieceType pieceType, int file, int componentCount)
+    {
+        if (componentCount <= 1)
+            return 0;
+
+        switch (pieceType)
+        {
+            case PieceType.Pawn:
+                return Mathf.Clamp(file, 0, componentCount - 1);
+            case PieceType.Rook:
+            case PieceType.Bishop:
+            case PieceType.Knight:
+                return file <= 3 ? 0 : componentCount - 1;
+            default:
+                return 0;
+        }
+    }
+
+    private void ApplyFenMovementFlags(string castlingRights)
+    {
+        ChessPiece[] scenePieces = runtimePiecesRoot.GetComponentsInChildren<ChessPiece>(true);
+        for (int i = 0; i < scenePieces.Length; i++)
+        {
+            ChessPiece piece = scenePieces[i];
+            if (ShouldMarkPieceAsMovedFromFen(piece, castlingRights))
+                piece.MarkMoved();
+        }
+    }
+
+    private bool ShouldMarkPieceAsMovedFromFen(ChessPiece piece, string castlingRights)
+    {
+        if (!piece)
+            return false;
+
+        switch (piece.Type)
+        {
+            case PieceType.Pawn:
+                return piece.Team == PieceTeam.White ? piece.BoardPosition.y != 1 : piece.BoardPosition.y != 6;
+            case PieceType.King:
+                return piece.Team == PieceTeam.White
+                    ? !castlingRights.Contains("K") && !castlingRights.Contains("Q")
+                    : !castlingRights.Contains("k") && !castlingRights.Contains("q");
+            case PieceType.Rook:
+                if (piece.Team == PieceTeam.White && piece.BoardPosition == new Vector2Int(0, 0))
+                    return !castlingRights.Contains("Q");
+                if (piece.Team == PieceTeam.White && piece.BoardPosition == new Vector2Int(7, 0))
+                    return !castlingRights.Contains("K");
+                if (piece.Team == PieceTeam.Black && piece.BoardPosition == new Vector2Int(0, 7))
+                    return !castlingRights.Contains("q");
+                if (piece.Team == PieceTeam.Black && piece.BoardPosition == new Vector2Int(7, 7))
+                    return !castlingRights.Contains("k");
+                return true;
+            default:
+                return true;
+        }
+    }
+
+    private void ApplyFenEnPassant(string enPassantSquare)
+    {
+        if (string.IsNullOrWhiteSpace(enPassantSquare) || enPassantSquare == "-")
+            return;
+
+        if (!TryParseSquare(enPassantSquare, out Vector2Int targetSquare))
+            return;
+
+        PieceTeam justMovedTeam = currentTurn == PieceTeam.White ? PieceTeam.Black : PieceTeam.White;
+        Vector2Int pawnPosition = justMovedTeam == PieceTeam.White
+            ? new Vector2Int(targetSquare.x, targetSquare.y + 1)
+            : new Vector2Int(targetSquare.x, targetSquare.y - 1);
+        ChessPiece pawn = GetPieceAt(pawnPosition);
+        if (!pawn || pawn.Type != PieceType.Pawn || pawn.Team != justMovedTeam)
+            return;
+
+        lastMovedPiece = pawn;
+        lastMoveTo = pawnPosition;
+        lastMoveWasPawnDoubleStep = true;
+    }
+
+    private bool TryParseSquare(string square, out Vector2Int boardPosition)
+    {
+        boardPosition = -Vector2Int.one;
+        if (string.IsNullOrWhiteSpace(square) || square.Length != 2)
+            return false;
+
+        char file = char.ToLowerInvariant(square[0]);
+        char rank = square[1];
+        if (file < 'a' || file > 'h' || rank < '1' || rank > '8')
+            return false;
+
+        boardPosition = new Vector2Int(file - 'a', rank - '1');
+        return true;
     }
 
     private readonly struct MeshComponentData

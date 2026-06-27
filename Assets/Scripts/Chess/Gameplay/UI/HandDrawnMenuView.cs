@@ -358,7 +358,7 @@ public class HandDrawnMenuView : MonoBehaviour
     {
         if (string.Equals(modeLabel, "LAN"))
         {
-            owner.ShowLanSetup();
+            owner.ShowOnlineSetup();
             return;
         }
 

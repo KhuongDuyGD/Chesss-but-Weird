@@ -1,6 +1,4 @@
 using System;
-using System.IO;
-using System.Reflection;
 using UnityEditor;
 using UnityEngine;
 
@@ -9,33 +7,32 @@ public static class AuthSmokeTestRunner
     [MenuItem("Tools/Chess But Weird/Run Auth Smoke Tests")]
     public static void Run()
     {
-        string storePath = ProfileStore.StorePath;
-        string backupPath = storePath + ".smoke_backup";
-        bool hadProfileStore = File.Exists(storePath);
-
         try
         {
+            BackendSessionStore.Clear();
             PlayerAuthService.Logout();
-            ResetProfileStoreCache();
 
-            if (File.Exists(backupPath))
-                File.Delete(backupPath);
+            AssertFalse(PlayerAuthService.IsAuthenticated, "Expected logged-out state after clearing session.");
 
-            if (hadProfileStore)
-                File.Move(storePath, backupPath);
+            BackendAuthResponseDto auth = new BackendAuthResponseDto
+            {
+                token = "smoke-token",
+                expiresInSeconds = 600,
+                user = new BackendUserProfileDto
+                {
+                    id = "smoke-user-id",
+                    username = "smoke_player",
+                    elo = 1337,
+                    createdAt = DateTime.UtcNow.ToString("O")
+                }
+            };
 
-            ResetProfileStoreCache();
-
-            AssertTrue(PlayerAuthService.Register("smoke_player", "secret1", out string registerMessage), registerMessage);
-            AssertTrue(PlayerAuthService.IsAuthenticated, "Register should authenticate the new player.");
-            AssertEqual("smoke_player", PlayerAuthService.CurrentProfile.username, "Registered username mismatch.");
+            PlayerAuthService.ApplyAuthResponse(auth);
+            AssertTrue(PlayerAuthService.IsAuthenticated, "ApplyAuthResponse should authenticate the player.");
+            AssertEqual("smoke_player", PlayerAuthService.Username, "Username mismatch.");
             AssertEqual("smoke_player", PlayerAuthService.CurrentDisplayName, "Display name mismatch.");
+            AssertEqual(1337, PlayerAuthService.CurrentProfile.rating, "Rating mismatch.");
 
-            PlayerAuthService.Logout();
-            AssertFalse(PlayerAuthService.Login("smoke_player", "wrongpw", out string badLoginMessage), "Bad password should fail.");
-            AssertEqual("Incorrect password.", badLoginMessage, "Bad password message mismatch.");
-
-            AssertTrue(PlayerAuthService.Login("smoke_player", "secret1", out string loginMessage), loginMessage);
             PlayerAuthService.RecordGameResult(true, false, false);
             PlayerAuthService.RecordGameResult(false, true, false);
             PlayerAuthService.RecordGameResult(false, false, true);
@@ -45,10 +42,12 @@ public static class AuthSmokeTestRunner
             AssertEqual(3, PlayerAuthService.CurrentProfile.totalGames, "Total games mismatch.");
 
             PlayerAuthService.Logout();
-            AssertFalse(PlayerAuthService.Register("smoke_player", "secret2", out string duplicateMessage), "Duplicate username should fail.");
-            AssertEqual("Username already exists.", duplicateMessage, "Duplicate username message mismatch.");
+            AssertFalse(PlayerAuthService.IsAuthenticated, "Logout should clear authentication.");
 
-            Debug.Log("[ChessAuthTest] Auth smoke tests passed.");
+            PlayerAuthService.TryRestoreSession();
+            AssertFalse(PlayerAuthService.IsAuthenticated, "Session should not restore after logout.");
+
+            Debug.Log("[ChessAuthTest] Backend auth smoke tests passed.");
         }
         catch (Exception exception)
         {
@@ -56,23 +55,9 @@ public static class AuthSmokeTestRunner
         }
         finally
         {
+            BackendSessionStore.Clear();
             PlayerAuthService.Logout();
-            ResetProfileStoreCache();
-
-            if (File.Exists(storePath))
-                File.Delete(storePath);
-
-            if (hadProfileStore && File.Exists(backupPath))
-                File.Move(backupPath, storePath);
-
-            ResetProfileStoreCache();
         }
-    }
-
-    private static void ResetProfileStoreCache()
-    {
-        FieldInfo dataField = typeof(ProfileStore).GetField("data", BindingFlags.NonPublic | BindingFlags.Static);
-        dataField?.SetValue(null, null);
     }
 
     private static void AssertTrue(bool value, string message)

@@ -12,8 +12,11 @@ public class AuthController : MonoBehaviour
     private string username = string.Empty;
     private string password = string.Empty;
     private string confirmPassword = string.Empty;
-    private string statusMessage = "Login or create a profile to continue.";
+    private string serverHost = string.Empty;
+    private string serverPort = string.Empty;
+    private string statusMessage = "Login or create an account on the backend server.";
     private bool registerMode;
+    private bool requestInFlight;
     private GUIStyle titleStyle;
     private GUIStyle bodyStyle;
     private GUIStyle buttonStyle;
@@ -26,6 +29,8 @@ public class AuthController : MonoBehaviour
         controller.chessGame = game;
         controller.authenticatedCallback = onAuthenticated;
         controller.username = PlayerAuthService.GetLastUsername();
+        controller.serverHost = BackendConfig.Host;
+        controller.serverPort = BackendConfig.Port.ToString();
         controller.menuAssets = root.AddComponent<HandDrawnMenuAssets>();
         controller.menuAssets.LoadFromResources();
         return controller;
@@ -45,8 +50,8 @@ public class AuthController : MonoBehaviour
         {
             DrawMenuBackground(guiWidth, guiHeight);
 
-            float panelWidth = Mathf.Clamp(guiWidth * 0.42f, 640f, 820f);
-            float panelHeight = registerMode ? 520f : 450f;
+            float panelWidth = Mathf.Clamp(guiWidth * 0.46f, 700f, 900f);
+            float panelHeight = registerMode ? 620f : 550f;
             Rect panelRect = new Rect(
                 (guiWidth - panelWidth) * 0.5f,
                 (guiHeight - panelHeight) * 0.5f,
@@ -54,22 +59,33 @@ public class AuthController : MonoBehaviour
                 panelHeight);
 
             GUI.Box(panelRect, string.Empty);
-            GUI.Label(new Rect(panelRect.x + 32f, panelRect.y + 28f, panelRect.width - 64f, 54f), registerMode ? "Create Profile" : "Player Login", titleStyle);
-            GUI.Label(new Rect(panelRect.x + 40f, panelRect.y + 96f, 150f, 36f), "Username", bodyStyle);
-            username = GUI.TextField(new Rect(panelRect.x + 200f, panelRect.y + 92f, panelRect.width - 240f, 42f), username, 24);
+            GUI.Label(new Rect(panelRect.x + 32f, panelRect.y + 24f, panelRect.width - 64f, 54f), registerMode ? "Register" : "Login", titleStyle);
 
-            GUI.Label(new Rect(panelRect.x + 40f, panelRect.y + 154f, 150f, 36f), "Password", bodyStyle);
-            password = GUI.PasswordField(new Rect(panelRect.x + 200f, panelRect.y + 150f, panelRect.width - 240f, 42f), password, '*', 64);
+            GUI.Label(new Rect(panelRect.x + 40f, panelRect.y + 92f, 170f, 36f), "Server URL / Host", bodyStyle);
+            serverHost = GUI.TextField(new Rect(panelRect.x + 220f, panelRect.y + 88f, panelRect.width - 260f, 42f), serverHost, 128);
 
-            float nextY = panelRect.y + 212f;
+            GUI.Label(new Rect(panelRect.x + 40f, panelRect.y + 146f, 170f, 36f), "Port (host only)", bodyStyle);
+            serverPort = GUI.TextField(new Rect(panelRect.x + 220f, panelRect.y + 142f, 180f, 42f), serverPort, 8);
+
+            GUI.Label(new Rect(panelRect.x + 40f, panelRect.y + 200f, 150f, 36f), "Username", bodyStyle);
+            username = GUI.TextField(new Rect(panelRect.x + 220f, panelRect.y + 196f, panelRect.width - 260f, 42f), username, 50);
+
+            GUI.Label(new Rect(panelRect.x + 40f, panelRect.y + 254f, 150f, 36f), "Password", bodyStyle);
+            password = GUI.PasswordField(new Rect(panelRect.x + 220f, panelRect.y + 250f, panelRect.width - 260f, 42f), password, '*', 72);
+
+            float nextY = panelRect.y + 308f;
             if (registerMode)
             {
-                GUI.Label(new Rect(panelRect.x + 40f, nextY + 4f, 150f, 36f), "Confirm", bodyStyle);
-                confirmPassword = GUI.PasswordField(new Rect(panelRect.x + 200f, nextY, panelRect.width - 240f, 42f), confirmPassword, '*', 64);
-                nextY += 62f;
+                GUI.Label(new Rect(panelRect.x + 40f, nextY, 150f, 36f), "Confirm", bodyStyle);
+                confirmPassword = GUI.PasswordField(new Rect(panelRect.x + 220f, nextY - 4f, panelRect.width - 260f, 42f), confirmPassword, '*', 72);
+                nextY += 58f;
             }
 
-            GUI.Label(new Rect(panelRect.x + 40f, nextY, panelRect.width - 80f, 62f), statusMessage, statusStyle);
+            GUI.Label(new Rect(panelRect.x + 40f, nextY, panelRect.width - 80f, 48f), "Use host + port for local testing, or paste a public backend URL like https://body-unstamped-decimeter.ngrok-free.dev", statusStyle);
+            GUI.Label(new Rect(panelRect.x + 40f, nextY + 52f, panelRect.width - 80f, 82f), statusMessage, statusStyle);
+
+            bool previousEnabled = GUI.enabled;
+            GUI.enabled = !requestInFlight;
 
             float buttonY = panelRect.y + panelRect.height - 104f;
             Rect primaryButton = new Rect(panelRect.x + 40f, buttonY, 220f, 58f);
@@ -84,6 +100,8 @@ public class AuthController : MonoBehaviour
 
             if (GUI.Button(switchButton, registerMode ? "Login" : "Sign Up", buttonStyle))
                 ToggleMode();
+
+            GUI.enabled = previousEnabled;
         }
         finally
         {
@@ -93,24 +111,94 @@ public class AuthController : MonoBehaviour
 
     private void Submit()
     {
-        if (registerMode)
-        {
-            if (password != confirmPassword)
-            {
-                statusMessage = "Passwords do not match.";
-                return;
-            }
+        if (!TryApplyServerConfig())
+            return;
 
-            if (!PlayerAuthService.Register(username, password, out statusMessage))
-                return;
-        }
-        else if (!PlayerAuthService.Login(username, password, out statusMessage))
+        if (registerMode && password != confirmPassword)
         {
+            statusMessage = "Passwords do not match.";
             return;
         }
 
+        requestInFlight = true;
+        statusMessage = registerMode ? "Creating account..." : "Logging in...";
+
+        BackendAuthRequest request = new BackendAuthRequest
+        {
+            username = username.Trim(),
+            password = password
+        };
+
+        string path = registerMode ? "/api/auth/signup" : "/api/auth/login";
+        StartCoroutine(BackendRestClient.Send<BackendAuthResponseDto>(
+            "POST",
+            path,
+            request,
+            false,
+            HandleAuthSuccess,
+            HandleAuthFailure));
+    }
+
+    private bool TryApplyServerConfig()
+    {
+        if (string.IsNullOrWhiteSpace(serverHost))
+        {
+            statusMessage = "Server host or URL is required.";
+            return false;
+        }
+
+        string trimmedHost = serverHost.Trim();
+        if (Uri.TryCreate(trimmedHost, UriKind.Absolute, out Uri absoluteUri))
+        {
+            if (!string.Equals(absoluteUri.Scheme, "http", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(absoluteUri.Scheme, "https", StringComparison.OrdinalIgnoreCase))
+            {
+                statusMessage = "Server URL must start with http:// or https://.";
+                return false;
+            }
+
+            BackendConfig.Host = absoluteUri.GetLeftPart(UriPartial.Authority).TrimEnd('/');
+            BackendConfig.Scheme = absoluteUri.Scheme;
+            if (!absoluteUri.IsDefaultPort)
+                BackendConfig.Port = absoluteUri.Port;
+            BackendConfig.Save();
+            return true;
+        }
+
+        if (!int.TryParse(serverPort, out int parsedPort) || parsedPort < 1 || parsedPort > 65535)
+        {
+            statusMessage = "Server port must be between 1 and 65535.";
+            return false;
+        }
+
+        BackendConfig.Host = trimmedHost;
+        BackendConfig.Port = parsedPort;
+        BackendConfig.Scheme = "http";
+        BackendConfig.Save();
+        return true;
+    }
+
+    private void HandleAuthSuccess(BackendApiResponse<BackendAuthResponseDto> response)
+    {
+        requestInFlight = false;
+        PlayerAuthService.ApplyAuthResponse(response.result);
+        statusMessage = string.IsNullOrWhiteSpace(response.message) ? "Authenticated." : response.message;
         authenticatedCallback?.Invoke();
         Destroy(gameObject);
+    }
+
+    private void HandleAuthFailure(string message, BackendApiResponse<object> response)
+    {
+        requestInFlight = false;
+        statusMessage = message;
+        if (response != null && response.errors != null && response.errors.Count > 0)
+        {
+            foreach (var entry in response.errors)
+            {
+                statusMessage = $"{entry.Key}: {entry.Value}";
+                break;
+            }
+        }
     }
 
     private void ToggleMode()
@@ -118,7 +206,9 @@ public class AuthController : MonoBehaviour
         registerMode = !registerMode;
         password = string.Empty;
         confirmPassword = string.Empty;
-        statusMessage = registerMode ? "Create a new local profile." : "Login with your local profile.";
+        statusMessage = registerMode
+            ? "Create an account on the Spring Boot backend."
+            : "Login with an existing backend account.";
     }
 
     private void ClearInput()
@@ -126,7 +216,7 @@ public class AuthController : MonoBehaviour
         username = string.Empty;
         password = string.Empty;
         confirmPassword = string.Empty;
-        statusMessage = "Login or create a profile to continue.";
+        statusMessage = "Login or create an account on the backend server.";
     }
 
     private void DrawMenuBackground(float width, float height)
