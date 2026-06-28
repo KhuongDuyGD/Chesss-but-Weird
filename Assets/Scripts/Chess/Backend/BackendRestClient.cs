@@ -22,8 +22,8 @@ public static class BackendRestClient
 
         if (body != null)
         {
-            string json = JsonConvert.SerializeObject(body);
-            request.uploadHandler = new UploadHandlerRaw(Encoding.UTF8.GetBytes(json));
+            string requestJson = JsonConvert.SerializeObject(body);
+            request.uploadHandler = new UploadHandlerRaw(Encoding.UTF8.GetBytes(requestJson));
             request.SetRequestHeader("Content-Type", "application/json");
         }
 
@@ -32,9 +32,11 @@ public static class BackendRestClient
 
         yield return request.SendWebRequest();
 
+        string responseText = request.downloadHandler != null ? request.downloadHandler.text : string.Empty;
+
         if (request.result == UnityWebRequest.Result.Success)
         {
-            BackendApiResponse<T> response = SafeDeserialize<BackendApiResponse<T>>(request.downloadHandler.text);
+            BackendApiResponse<T> response = SafeDeserialize<BackendApiResponse<T>>(responseText);
             if (response == null)
             {
                 onError?.Invoke("Unable to parse server response.", null);
@@ -45,7 +47,7 @@ public static class BackendRestClient
             yield break;
         }
 
-        BackendApiResponse<object> errorResponse = SafeDeserialize<BackendApiResponse<object>>(request.downloadHandler.text);
+        BackendApiResponse<object> errorResponse = SafeDeserialize<BackendApiResponse<object>>(responseText);
         if (request.responseCode == 401)
             PlayerAuthService.Logout();
 

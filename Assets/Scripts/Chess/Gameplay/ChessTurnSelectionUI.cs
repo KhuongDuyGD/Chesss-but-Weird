@@ -112,6 +112,12 @@ public class ChessTurnSelectionUI : MonoBehaviour
 
     public void ShowMultiplayerModeSelection()
     {
+        if (PlayerAuthService.IsGuestSession)
+        {
+            Debug.Log("[ChessTurnSelectionUI] Multiplayer mode selection blocked for Guest.");
+            return;
+        }
+
         showCheckWarning = false;
         lanController?.HideLanSetup();
         state = ScreenState.TurnSelection;
@@ -128,6 +134,12 @@ public class ChessTurnSelectionUI : MonoBehaviour
 
     public void ShowOnlineSetup()
     {
+        if (PlayerAuthService.IsGuestSession)
+        {
+            Debug.Log("[ChessTurnSelectionUI] Online setup blocked for Guest.");
+            return;
+        }
+
         ShowLanSetup();
     }
 

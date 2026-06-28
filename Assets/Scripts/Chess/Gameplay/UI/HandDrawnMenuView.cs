@@ -137,6 +137,8 @@ public class HandDrawnMenuView : MonoBehaviour
 
     private void BuildPlayHub(RectTransform screen)
     {
+        bool guestMode = PlayerAuthService.IsGuestSession;
+
         AddBattleDoodles(screen, true);
         AddMenuConfetti(screen);
 
@@ -145,14 +147,14 @@ public class HandDrawnMenuView : MonoBehaviour
         AddImage(screen, "Logo", assets.logo, new Vector2(530f, 315f), new Vector2(520f, 270f), 0.8f, 0.25f);
 
         AddInteractive(screen, "Local", assets.localButton, new Vector2(-735f, 250f), new Vector2(380f, 116f), () => owner.ShowSideSelection(), true);
-        AddInteractive(screen, "Online", assets.onlineButton, new Vector2(-735f, 75f), new Vector2(380f, 116f), () => owner.ShowMultiplayerModeSelection(), true);
-        AddInteractive(screen, "Aram", assets.aramButton, new Vector2(-735f, -100f), new Vector2(390f, 122f), () => LogMenuClick("ARAM"), true);
-        AddInteractive(screen, "Shop", assets.shopButton, new Vector2(-735f, -280f), new Vector2(380f, 118f), () => LogMenuClick("Shop"), true);
+        AddInteractive(screen, "Online", assets.onlineButton, new Vector2(-735f, 75f), new Vector2(380f, 116f), guestMode ? CreateGuestLockedAction("Online") : () => owner.ShowMultiplayerModeSelection(), true);
+        AddInteractive(screen, "Aram", assets.aramButton, new Vector2(-735f, -100f), new Vector2(390f, 122f), guestMode ? CreateGuestLockedAction("ARAM") : () => LogMenuClick("ARAM"), true);
+        AddInteractive(screen, "Shop", assets.shopButton, new Vector2(-735f, -280f), new Vector2(380f, 118f), guestMode ? CreateGuestLockedAction("Shop") : () => LogMenuClick("Shop"), true);
 
-        AddInteractive(screen, "Inventory", assets.inventoryIcon, new Vector2(800f, 125f), new Vector2(125f, 125f), () => LogMenuClick("Inventory"), false);
-        AddInteractive(screen, "Gacha", assets.gachaIcon, new Vector2(800f, -55f), new Vector2(130f, 130f), () => LogMenuClick("Gacha"), false);
-        AddInteractive(screen, "Player Profile", assets.playerProfileIcon, new Vector2(800f, -235f), new Vector2(132f, 132f), () => LogMenuClick("Player Profile"), false);
-        AddInteractive(screen, "Settings Icon", assets.settingsIcon, new Vector2(500f, -395f), new Vector2(116f, 116f), () => LogMenuClick("Settings"), false);
+        AddInteractive(screen, "Inventory", assets.inventoryIcon, new Vector2(800f, 125f), new Vector2(125f, 125f), guestMode ? CreateGuestLockedAction("Inventory") : () => LogMenuClick("Inventory"), false);
+        AddInteractive(screen, "Gacha", assets.gachaIcon, new Vector2(800f, -55f), new Vector2(130f, 130f), guestMode ? CreateGuestLockedAction("Gacha") : () => LogMenuClick("Gacha"), false);
+        AddInteractive(screen, "Player Profile", assets.playerProfileIcon, new Vector2(800f, -235f), new Vector2(132f, 132f), guestMode ? CreateGuestLockedAction("Player Profile") : () => LogMenuClick("Player Profile"), false);
+        AddInteractive(screen, "Settings Icon", assets.settingsIcon, new Vector2(500f, -395f), new Vector2(116f, 116f), guestMode ? CreateGuestLockedAction("Settings") : () => LogMenuClick("Settings"), false);
         AddImage(screen, "Early Access", assets.earlyAccess, new Vector2(735f, -410f), new Vector2(310f, 138f), 0f, 0f);
     }
 
@@ -354,8 +356,24 @@ public class HandDrawnMenuView : MonoBehaviour
         Debug.Log($"[HandDrawnMenu] {label} clicked.");
     }
 
+    private UnityAction CreateGuestLockedAction(string featureLabel)
+    {
+        return () => LogGuestLock(featureLabel);
+    }
+
+    private void LogGuestLock(string featureLabel)
+    {
+        Debug.Log($"[HandDrawnMenu] {featureLabel} is unavailable for Guest. Local mode only.");
+    }
+
     private void SelectMultiplayerMode(string modeLabel)
     {
+        if (PlayerAuthService.IsGuestSession)
+        {
+            LogGuestLock(modeLabel);
+            return;
+        }
+
         if (string.Equals(modeLabel, "LAN"))
         {
             owner.ShowOnlineSetup();

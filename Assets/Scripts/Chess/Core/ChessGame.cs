@@ -169,7 +169,7 @@ public class ChessGame : MonoBehaviour
     {
         PrepareGame();
         PlayerAuthService.TryRestoreSession();
-        if (PlayerAuthService.IsAuthenticated)
+        if (PlayerAuthService.IsAuthenticated || PlayerAuthService.IsGuestSession)
         {
             BeginAuthenticatedSession();
             return;

@@ -3,7 +3,10 @@ using UnityEngine;
 
 public static class PlayerAuthService
 {
+    private const string GuestProfileKey = "guest.profile";
+
     public static PlayerProfile CurrentProfile { get; private set; }
+    public static bool IsGuestSession { get; private set; }
     public static bool IsAuthenticated => CurrentProfile != null && BackendSessionStore.HasToken && !BackendSessionStore.IsTokenExpired;
     public static string CurrentDisplayName => CurrentProfile != null ? CurrentProfile.displayName : Environment.MachineName;
     public static string Token => BackendSessionStore.Token;
@@ -15,18 +18,17 @@ public static class PlayerAuthService
         if (!BackendSessionStore.HasToken || BackendSessionStore.IsTokenExpired)
         {
             BackendSessionStore.Clear();
-            CurrentProfile = null;
-            return false;
+            return TryRestoreGuestSession();
         }
 
         BackendUserProfileDto storedUser = BackendSessionStore.GetStoredUser();
         if (storedUser == null)
         {
             BackendSessionStore.Clear();
-            CurrentProfile = null;
-            return false;
+            return TryRestoreGuestSession();
         }
 
+        IsGuestSession = false;
         ApplyUser(storedUser);
         return true;
     }
@@ -36,7 +38,9 @@ public static class PlayerAuthService
         if (auth == null || auth.user == null)
             return;
 
+        ClearGuestSessionInternal(false);
         BackendSessionStore.SaveAuth(auth);
+        IsGuestSession = false;
         ApplyUser(auth.user);
     }
 
@@ -58,7 +62,18 @@ public static class PlayerAuthService
     public static void Logout()
     {
         CurrentProfile = null;
+        IsGuestSession = false;
         BackendSessionStore.Clear();
+    }
+
+    public static void BeginGuestSession()
+    {
+        BackendSessionStore.Clear();
+        IsGuestSession = true;
+        CurrentProfile = LoadGuestProfile();
+        CurrentProfile.lastLoginAtUtc = DateTime.UtcNow.ToString("O");
+        SaveGuestProfile();
+        Debug.Log($"[PlayerAuthService] Guest session started for '{CurrentDisplayName}'.");
     }
 
     public static string GetLastUsername()
@@ -80,7 +95,12 @@ public static class PlayerAuthService
             CurrentProfile.draws++;
 
         CurrentProfile.totalGames++;
+
+        if (IsGuestSession)
+            SaveGuestProfile();
     }
+
+    public static bool CanUseOnlineFeatures => IsAuthenticated && !IsGuestSession;
 
     private static void ApplyUser(BackendUserProfileDto user)
     {
@@ -93,5 +113,77 @@ public static class PlayerAuthService
             lastLoginAtUtc = DateTime.UtcNow.ToString("O"),
             rating = user.elo
         };
+    }
+
+    private static bool TryRestoreGuestSession()
+    {
+        string json = PlayerPrefs.GetString(GuestProfileKey, string.Empty);
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            CurrentProfile = null;
+            IsGuestSession = false;
+            return false;
+        }
+
+        try
+        {
+            PlayerProfile profile = JsonUtility.FromJson<PlayerProfile>(json);
+            if (profile == null)
+            {
+                ClearGuestSessionInternal(true);
+                return false;
+            }
+
+            CurrentProfile = profile;
+            IsGuestSession = true;
+            Debug.Log($"[PlayerAuthService] Restored guest session for '{CurrentDisplayName}'.");
+            return true;
+        }
+        catch (Exception exception)
+        {
+            Debug.LogWarning($"[PlayerAuthService] Failed to restore guest session: {exception.Message}");
+            ClearGuestSessionInternal(true);
+            return false;
+        }
+    }
+
+    private static PlayerProfile LoadGuestProfile()
+    {
+        string json = PlayerPrefs.GetString(GuestProfileKey, string.Empty);
+        if (!string.IsNullOrWhiteSpace(json))
+        {
+            try
+            {
+                PlayerProfile existing = JsonUtility.FromJson<PlayerProfile>(json);
+                if (existing != null)
+                    return existing;
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning($"[PlayerAuthService] Failed to load existing guest profile: {exception.Message}");
+            }
+        }
+
+        PlayerProfile profile = PlayerProfile.Create("Guest");
+        profile.displayName = "Guest";
+        return profile;
+    }
+
+    private static void SaveGuestProfile()
+    {
+        if (CurrentProfile == null || !IsGuestSession)
+            return;
+
+        string json = JsonUtility.ToJson(CurrentProfile);
+        PlayerPrefs.SetString(GuestProfileKey, json);
+        PlayerPrefs.Save();
+    }
+
+    private static void ClearGuestSessionInternal(bool clearCurrentProfile)
+    {
+        PlayerPrefs.DeleteKey(GuestProfileKey);
+        if (clearCurrentProfile)
+            CurrentProfile = null;
+        IsGuestSession = false;
     }
 }
