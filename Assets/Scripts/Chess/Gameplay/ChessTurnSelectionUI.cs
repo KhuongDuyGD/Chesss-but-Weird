@@ -35,6 +35,9 @@ public class ChessTurnSelectionUI : MonoBehaviour
     private GUIStyle resultStyle;
     private HandDrawnMenuView handDrawnMenu;
     private ChessLanController lanController;
+    private AnalysisBoardView analysisBoard;
+    private string whitePlayerName;
+    private string blackPlayerName;
 
     public static ChessTurnSelectionUI Create(ChessGame chessGame)
     {
@@ -43,6 +46,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
         ui.chessGame = chessGame;
         ui.TryCreateHandDrawnMenu();
         ui.TryCreateLanController();
+        ui.TryCreateAnalysisBoard();
         return ui;
     }
 
@@ -55,6 +59,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
         showCheckWarning = false;
         state = ScreenState.Playing;
         handDrawnMenu?.HideForPlaying();
+        analysisBoard?.SetVisible(true);
     }
 
     public void ShowCheckWarning(PieceTeam newCheckedTeam)
@@ -85,6 +90,8 @@ public class ChessTurnSelectionUI : MonoBehaviour
         state = ScreenState.MainMenu;
         lanController?.HideLanSetup();
         handDrawnMenu?.ShowMainMenu();
+        analysisBoard?.SetVisible(false);
+        ClearMatchPlayers();
     }
 
     public void ShowTurnSelection()
@@ -99,6 +106,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
         }
 
         state = ScreenState.TransitionToTurnSelection;
+        analysisBoard?.SetVisible(false);
         transitionStartTime = Time.realtimeSinceStartup;
     }
 
@@ -107,6 +115,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
         showCheckWarning = false;
         lanController?.HideLanSetup();
         state = ScreenState.TurnSelection;
+        analysisBoard?.SetVisible(false);
         handDrawnMenu?.ShowSideSelection();
     }
 
@@ -121,6 +130,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
         showCheckWarning = false;
         lanController?.HideLanSetup();
         state = ScreenState.TurnSelection;
+        analysisBoard?.SetVisible(false);
         handDrawnMenu?.ShowMultiplayerModeSelection();
     }
 
@@ -129,6 +139,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
         showCheckWarning = false;
         state = ScreenState.TurnSelection;
         handDrawnMenu?.HideForPlaying();
+        analysisBoard?.SetVisible(false);
         lanController?.ShowLanSetup();
     }
 
@@ -154,6 +165,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
         lanController?.HideLanSetup();
         state = ScreenState.GameOver;
         handDrawnMenu?.HideForPlaying();
+        analysisBoard?.SetVisible(true);
     }
 
     public void ShowDraw(PieceTeam selectedPlayerTeam, string reason)
@@ -166,6 +178,24 @@ public class ChessTurnSelectionUI : MonoBehaviour
         lanController?.HideLanSetup();
         state = ScreenState.GameOver;
         handDrawnMenu?.HideForPlaying();
+        analysisBoard?.SetVisible(true);
+    }
+
+    public void SetMatchPlayers(string whiteName, string blackName)
+    {
+        whitePlayerName = string.IsNullOrWhiteSpace(whiteName) ? "White" : whiteName.Trim();
+        blackPlayerName = string.IsNullOrWhiteSpace(blackName) ? "Black" : blackName.Trim();
+    }
+
+    public void ClearMatchPlayers()
+    {
+        whitePlayerName = null;
+        blackPlayerName = null;
+    }
+
+    public void SetLatestMoveText(string moveText, bool replaceLatestHistory = false)
+    {
+        chessGame?.SetExternalLastMoveSummary(moveText, replaceLatestHistory);
     }
 
     private void OnGUI()
@@ -178,12 +208,13 @@ public class ChessTurnSelectionUI : MonoBehaviour
 
         if (state == ScreenState.Playing)
         {
-            GUI.Label(new Rect(28f, 24f, 460f, 72f), $"Turn: {currentTurn}", turnLabelStyle);
             if (showCheckWarning)
                 GUI.Label(new Rect(28f, 96f, 760f, 78f), $"{checkedTeam} king is in CHECK", checkWarningStyle);
         }
         else if (state == ScreenState.GameOver)
+        {
             GUI.Label(new Rect(28f, 24f, 680f, 72f), $"You played: {playerTeam}", turnLabelStyle);
+        }
 
         switch (state)
         {
@@ -391,6 +422,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
             fontSize = 60,
             fontStyle = FontStyle.Bold
         };
+
     }
 
     private void TryCreateHandDrawnMenu()
@@ -418,5 +450,13 @@ public class ChessTurnSelectionUI : MonoBehaviour
     {
         lanController = gameObject.AddComponent<ChessLanController>();
         lanController.Initialize(chessGame, this);
+    }
+
+    private void TryCreateAnalysisBoard()
+    {
+        analysisBoard = GetComponent<AnalysisBoardView>();
+        if (!analysisBoard)
+            analysisBoard = gameObject.AddComponent<AnalysisBoardView>();
+        analysisBoard.Initialize(chessGame);
     }
 }

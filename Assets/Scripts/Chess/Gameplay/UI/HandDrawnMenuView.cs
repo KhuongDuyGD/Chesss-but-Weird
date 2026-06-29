@@ -77,6 +77,7 @@ public class HandDrawnMenuView : MonoBehaviour
     {
         SetVisible(false);
         SetInputEnabled(false);
+        SetAllScreensActive(false);
     }
 
     public void SetInputEnabled(bool enabled)
@@ -156,6 +157,7 @@ public class HandDrawnMenuView : MonoBehaviour
         AddInteractive(screen, "Player Profile", assets.playerProfileIcon, new Vector2(800f, -235f), new Vector2(132f, 132f), guestMode ? CreateGuestLockedAction("Player Profile") : () => LogMenuClick("Player Profile"), false);
         AddInteractive(screen, "Settings Icon", assets.settingsIcon, new Vector2(500f, -395f), new Vector2(116f, 116f), guestMode ? CreateGuestLockedAction("Settings") : () => LogMenuClick("Settings"), false);
         AddImage(screen, "Early Access", assets.earlyAccess, new Vector2(735f, -410f), new Vector2(310f, 138f), 0f, 0f);
+        AddBackButton(screen, new Vector2(-820f, -420f), () => ShowMainMenu());
     }
 
     private void BuildMultiplayerModeScreen()
@@ -195,6 +197,7 @@ public class HandDrawnMenuView : MonoBehaviour
         AddImage(multiplayerModeScreen, "Stars Right", assets.stars, new Vector2(625f, 292f), new Vector2(92f, 62f), 0.3f, 0.14f);
         AddImage(multiplayerModeScreen, "Hearts Left", assets.hearts, new Vector2(-765f, -338f), new Vector2(92f, 80f), 0.3f, 0.14f);
         AddImage(multiplayerModeScreen, "Hearts Right", assets.hearts, new Vector2(770f, -338f), new Vector2(92f, 80f), 0.3f, 0.14f);
+        AddBackButton(multiplayerModeScreen, new Vector2(-820f, -420f), () => ShowModeSelection());
     }
 
     private void BuildSideScreen()
@@ -208,6 +211,7 @@ public class HandDrawnMenuView : MonoBehaviour
         AddInteractive(sideScreen, "Black Card", assets.blackCard, new Vector2(365f, -105f), new Vector2(560f, 745f), () => chessGame.BeginGame(PieceTeam.Black), true);
         AddImage(sideScreen, "Settings Icon", assets.settingsIcon, new Vector2(-760f, -410f), new Vector2(120f, 120f), 0f, 0f);
         AddImage(sideScreen, "Early Access", assets.earlyAccess, new Vector2(735f, -420f), new Vector2(330f, 145f), 0f, 0f);
+        AddBackButton(sideScreen, new Vector2(-600f, -420f), () => ShowModeSelection());
     }
 
     private RectTransform CreateScreen(string screenName)
@@ -317,6 +321,25 @@ public class HandDrawnMenuView : MonoBehaviour
         return button;
     }
 
+    private Button AddBackButton(RectTransform parent, Vector2 position, UnityAction action)
+    {
+        if (!assets || !assets.backButton)
+            return null;
+
+        return AddInteractive(
+            parent,
+            "Back Button",
+            assets.backButton,
+            position,
+            new Vector2(250f, 110f),
+            action,
+            true,
+            1.04f,
+            new Color(1f, 0.95f, 0.78f, 1f),
+            0.95f,
+            1.4f);
+    }
+
     private Image CreateImage(Transform parent, string imageName, Sprite sprite, Vector2 position, Vector2 size)
     {
         GameObject imageObject = new GameObject(imageName, typeof(RectTransform), typeof(Image));
@@ -343,6 +366,18 @@ public class HandDrawnMenuView : MonoBehaviour
         modeScreen.gameObject.SetActive(activeScreen == modeScreen);
         multiplayerModeScreen.gameObject.SetActive(activeScreen == multiplayerModeScreen);
         sideScreen.gameObject.SetActive(activeScreen == sideScreen);
+    }
+
+    private void SetAllScreensActive(bool active)
+    {
+        if (mainScreen)
+            mainScreen.gameObject.SetActive(active);
+        if (modeScreen)
+            modeScreen.gameObject.SetActive(active);
+        if (multiplayerModeScreen)
+            multiplayerModeScreen.gameObject.SetActive(active);
+        if (sideScreen)
+            sideScreen.gameObject.SetActive(active);
     }
 
     private void SetVisible(bool visible)

@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using Newtonsoft.Json.Linq;
 using UnityEngine;
 
@@ -34,6 +35,7 @@ public class ChessLanController : MonoBehaviour
     private int readyCount;
     private bool opponentDrawOfferPending;
     private bool intentionalDisconnect;
+    private Texture2D backButtonTexture;
 
     public void Initialize(ChessGame newChessGame, ChessTurnSelectionUI newTurnSelectionUI)
     {
@@ -41,6 +43,7 @@ public class ChessLanController : MonoBehaviour
         turnSelectionUI = newTurnSelectionUI;
         chessGame.MoveCommitted += HandleMoveCommitted;
         chessGame.ReturnedToMainMenu += HandleReturnedToMainMenu;
+        backButtonTexture = LoadProjectTexture("Assets/Materials/Main_Menu/Back.png");
         EnsureWebSocketClient();
     }
 
@@ -130,6 +133,7 @@ public class ChessLanController : MonoBehaviour
         DrawRoomSection(panelRect);
         DrawHistory(panelRect);
         DrawButtons(panelRect);
+        DrawBackButton(panelRect);
     }
 
     private void DrawServerInfo(Rect panelRect)
@@ -219,23 +223,40 @@ public class ChessLanController : MonoBehaviour
         GUI.enabled = previousEnabled;
     }
 
+    private void DrawBackButton(Rect panelRect)
+    {
+        if (currentRoom != null)
+            return;
+
+        Rect backRect = new Rect(panelRect.x + 18f, panelRect.y + 18f, 132f, 56f);
+        if (backButtonTexture != null)
+        {
+            if (GUI.Button(backRect, backButtonTexture, GUIStyle.none))
+                turnSelectionUI.ShowMultiplayerModeSelection();
+
+            return;
+        }
+
+        if (GUI.Button(backRect, "Back"))
+            turnSelectionUI.ShowMultiplayerModeSelection();
+    }
+
     private void DrawInGameHud(float guiWidth, float guiHeight)
     {
-        float width = Mathf.Clamp(guiWidth * 0.24f, 360f, 460f);
-        Rect panelRect = new Rect(18f, guiHeight - 220f, width, 202f);
+        float width = Mathf.Clamp(guiWidth * 0.22f, 320f, 410f);
+        Rect panelRect = new Rect(18f, guiHeight - 188f, width, 170f);
         GUI.Box(panelRect, string.Empty);
 
-        GUI.Label(new Rect(panelRect.x + 14f, panelRect.y + 10f, panelRect.width - 28f, 24f), "Backend Room", GetSectionStyle());
-        GUI.Label(new Rect(panelRect.x + 14f, panelRect.y + 38f, panelRect.width - 28f, 22f), $"Room: {currentRoomCode}", GetHudStyle());
-        GUI.Label(new Rect(panelRect.x + 14f, panelRect.y + 60f, panelRect.width - 28f, 22f), $"Turn: {chessGame.CurrentTurn} | You: {chessGame.PlayerTeam}", GetHudStyle());
-        GUI.Label(new Rect(panelRect.x + 14f, panelRect.y + 82f, panelRect.width - 28f, 22f), $"Match: {currentMatchId}", GetHudStyle());
-        GUI.Label(new Rect(panelRect.x + 14f, panelRect.y + 104f, panelRect.width - 28f, 22f), GetConnectionSummary(), GetHudStyle());
-        GUI.Label(new Rect(panelRect.x + 14f, panelRect.y + 126f, panelRect.width - 28f, 20f), opponentDrawOfferPending ? "Opponent offered a draw." : string.Empty, GetHudStyle());
+        GUI.Label(new Rect(panelRect.x + 14f, panelRect.y + 10f, panelRect.width - 28f, 24f), "Online Match", GetSectionStyle());
+        GUI.Label(new Rect(panelRect.x + 14f, panelRect.y + 38f, panelRect.width - 28f, 20f), $"Room: {currentRoomCode}", GetHudStyle());
+        GUI.Label(new Rect(panelRect.x + 14f, panelRect.y + 58f, panelRect.width - 28f, 20f), $"Match: {currentMatchId}", GetHudStyle());
+        GUI.Label(new Rect(panelRect.x + 14f, panelRect.y + 78f, panelRect.width - 28f, 20f), GetConnectionSummary(), GetHudStyle());
+        GUI.Label(new Rect(panelRect.x + 14f, panelRect.y + 98f, panelRect.width - 28f, 20f), opponentDrawOfferPending ? "Opponent offered a draw." : string.Empty, GetHudStyle());
 
-        if (GUI.Button(new Rect(panelRect.x + 14f, panelRect.y + 150f, panelRect.width - 28f, 22f), "Offer Draw"))
+        if (GUI.Button(new Rect(panelRect.x + 14f, panelRect.y + 122f, panelRect.width - 28f, 20f), "Offer Draw"))
             SendDrawOffer();
 
-        if (GUI.Button(new Rect(panelRect.x + 14f, panelRect.y + 174f, (panelRect.width - 38f) * 0.5f, 22f), opponentDrawOfferPending ? "Accept Draw" : "Resign"))
+        if (GUI.Button(new Rect(panelRect.x + 14f, panelRect.y + 144f, (panelRect.width - 38f) * 0.5f, 20f), opponentDrawOfferPending ? "Accept Draw" : "Resign"))
         {
             if (opponentDrawOfferPending)
                 SendDrawAccept();
@@ -243,7 +264,7 @@ public class ChessLanController : MonoBehaviour
                 SendResign();
         }
 
-        if (GUI.Button(new Rect(panelRect.x + 20f + (panelRect.width - 38f) * 0.5f, panelRect.y + 174f, (panelRect.width - 38f) * 0.5f, 22f), "Leave"))
+        if (GUI.Button(new Rect(panelRect.x + 20f + (panelRect.width - 38f) * 0.5f, panelRect.y + 144f, (panelRect.width - 38f) * 0.5f, 20f), "Leave"))
             LeaveRoom();
     }
 
@@ -372,6 +393,7 @@ public class ChessLanController : MonoBehaviour
                 currentRoomCode = match.roomCode ?? currentRoomCode;
                 currentMatchId = match.id ?? currentMatchId;
                 lastConfirmedFen = match.currentFen ?? lastConfirmedFen;
+                turnSelectionUI.SetMatchPlayers(match.whiteUsername, match.blackUsername);
                 PieceTeam localTeam = string.Equals(match.whitePlayerId, PlayerAuthService.UserId, StringComparison.OrdinalIgnoreCase)
                     ? PieceTeam.White
                     : PieceTeam.Black;
@@ -561,6 +583,7 @@ public class ChessLanController : MonoBehaviour
         currentMatchId = payload.matchId ?? string.Empty;
         lastConfirmedFen = payload.fen ?? string.Empty;
         opponentDrawOfferPending = false;
+        turnSelectionUI.SetMatchPlayers(payload.whiteUsername, payload.blackUsername);
         PieceTeam localTeam = string.Equals(payload.whitePlayerId, PlayerAuthService.UserId, StringComparison.OrdinalIgnoreCase)
             ? PieceTeam.White
             : PieceTeam.Black;
@@ -583,6 +606,9 @@ public class ChessLanController : MonoBehaviour
         lastConfirmedFen = payload.fen ?? lastConfirmedFen;
 
         chessGame.ApplyFenState(payload.fen);
+        turnSelectionUI.SetLatestMoveText(
+            string.IsNullOrWhiteSpace(payload.notation) ? $"{payload.from}-{payload.to}" : payload.notation,
+            isLocalMove);
         statusMessage = string.IsNullOrWhiteSpace(payload.notation)
             ? $"Move {payload.moveNumber} accepted."
             : $"{(isLocalMove ? "Your" : "Opponent")} move {payload.moveNumber}: {payload.notation}";
@@ -881,5 +907,24 @@ public class ChessLanController : MonoBehaviour
         float widthScale = Screen.width / ReferenceWidth;
         float heightScale = Screen.height / ReferenceHeight;
         return Mathf.Clamp(Mathf.Min(widthScale, heightScale), 1f, 2f);
+    }
+
+    private static Texture2D LoadProjectTexture(string projectRelativePath)
+    {
+        string fullPath = Path.Combine(Directory.GetCurrentDirectory(), projectRelativePath);
+        if (!File.Exists(fullPath))
+            return null;
+
+        byte[] bytes = File.ReadAllBytes(fullPath);
+        Texture2D texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+        if (!texture.LoadImage(bytes))
+        {
+            UnityEngine.Object.Destroy(texture);
+            return null;
+        }
+
+        texture.name = Path.GetFileNameWithoutExtension(projectRelativePath);
+        texture.filterMode = FilterMode.Bilinear;
+        return texture;
     }
 }

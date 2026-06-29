@@ -17,6 +17,7 @@ public class HandDrawnMenuAssets : MonoBehaviour
 
     [Header("Mode Select")]
     public Sprite slogan;
+    public Sprite backButton;
     public Sprite localButton;
     public Sprite onlineButton;
     public Sprite aramButton;
@@ -53,6 +54,9 @@ public class HandDrawnMenuAssets : MonoBehaviour
         stars = LoadSprite("stars", new SpriteCrop(1254f, 1254f, 240f, 429f, 781f, 333f));
 
         slogan = LoadSprite("slogan", new SpriteCrop(2508f, 627f, 45f, 172f, 2432f, 315f));
+        backButton = LoadFullSpriteWithFallback(
+            "back_button",
+            "Assets/Materials/Main_Menu/Back.png");
         localButton = LoadSprite("local_button", new SpriteCrop(1448f, 1086f, 111f, 306f, 1246f, 441f));
         onlineButton = LoadSprite("online_button", new SpriteCrop(1448f, 1086f, 74f, 300f, 1302f, 451f));
         aramButton = LoadSprite("aram_button", new SpriteCrop(1448f, 1086f, 88f, 328f, 1285f, 402f));

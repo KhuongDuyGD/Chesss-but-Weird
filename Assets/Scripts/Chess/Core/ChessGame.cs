@@ -31,7 +31,6 @@ public class ChessGame : MonoBehaviour
     [SerializeField] private float checkPulseDuration = 0.42f;
     [Tooltip("Local Chessboard-axis offset applied after resolving a tile center. Use X/Z to nudge all generated pieces onto the drawn squares.")]
     [SerializeField] private Vector3 pieceBoardLocalOffset;
-
     [Header("Audio")]
     [SerializeField] private AudioSource audioSource;
     [SerializeField] private AudioClip pickSound;
@@ -48,6 +47,9 @@ public class ChessGame : MonoBehaviour
     private readonly Dictionary<ChessPiece, Coroutine> pieceAnimations = new Dictionary<ChessPiece, Coroutine>();
     private readonly Dictionary<string, int> positionHistory = new Dictionary<string, int>();
     private readonly HashSet<ChessPiece> startingPlacementPieces = new HashSet<ChessPiece>();
+    private readonly List<string> moveHistory = new List<string>();
+    private readonly List<PieceType> whiteCapturedPieces = new List<PieceType>();
+    private readonly List<PieceType> blackCapturedPieces = new List<PieceType>();
     private PieceTeam currentTurn = PieceTeam.White;
     private ChessPiece selectedPiece;
     private Transform runtimePiecesRoot;
@@ -76,7 +78,10 @@ public class ChessGame : MonoBehaviour
     private PieceType remotePromotionType = PieceType.Queen;
     private Vector2Int pendingCommittedMoveFrom = -Vector2Int.one;
     private Vector2Int pendingCommittedMoveTo = -Vector2Int.one;
-
+    private float matchStartedAt;
+    private float frozenMatchDurationSeconds;
+    private string lastMoveSummary = "No moves yet.";
+    private PieceTeam moveHistoryFirstTurn = PieceTeam.White;
     public PieceTeam CurrentTurn => currentTurn;
     public ChessPiece SelectedPiece => selectedPiece;
     public bool GameStarted => gameStarted;
@@ -86,6 +91,10 @@ public class ChessGame : MonoBehaviour
     public ChessGameStatus Status => status;
     public string DrawReason => drawReason;
     public int HalfMoveClock => halfMoveClock;
+    public float MatchElapsedSeconds => gameStarted ? Mathf.Max(0f, Time.unscaledTime - matchStartedAt) : frozenMatchDurationSeconds;
+    public string LastMoveSummary => string.IsNullOrWhiteSpace(lastMoveSummary) ? "No moves yet." : lastMoveSummary;
+    public IReadOnlyList<string> MoveHistory => moveHistory;
+    public PieceTeam MoveHistoryFirstTurn => moveHistoryFirstTurn;
     public event Action<ChessLanMove> MoveCommitted;
     public event Action ReturnedToMainMenu;
 
@@ -244,6 +253,7 @@ public class ChessGame : MonoBehaviour
     private void BeginGameInternal(PieceTeam firstTurn, PieceTeam localPlayerTeam, bool restrictInput, PieceTeam frontTeam)
     {
         currentTurn = firstTurn;
+        moveHistoryFirstTurn = firstTurn;
         playerTeam = localPlayerTeam;
         localControlledTeam = localPlayerTeam;
         restrictInputToControlledTeam = restrictInput;
@@ -252,6 +262,12 @@ public class ChessGame : MonoBehaviour
         inputLocked = false;
         status = ChessGameStatus.Playing;
         drawReason = string.Empty;
+        matchStartedAt = Time.unscaledTime;
+        frozenMatchDurationSeconds = 0f;
+        lastMoveSummary = "No moves yet.";
+        moveHistory.Clear();
+        whiteCapturedPieces.Clear();
+        blackCapturedPieces.Clear();
         ResetDrawTracking();
         ArrangePiecesForFirstTurn(frontTeam);
         SetRuntimePiecesVisible(true);
@@ -334,6 +350,10 @@ public class ChessGame : MonoBehaviour
         movingPiece.SetBoardPosition(destination);
         movingPiece.MarkMoved();
         RecordLastMove(movingPiece, from, destination);
+        lastMoveSummary = BuildMoveSummary(movingPiece, from, destination, capturedPiece, isCastling);
+        moveHistory.Add(lastMoveSummary);
+        if (capturedPiece)
+            GetCapturedPieceList(movingPiece.Team).Add(capturedPiece.Type);
         UpdateHalfMoveClock(movedPawn, capturedAnyPiece);
         selectedPiece = null;
         chessboard.ClearLegalMoveHighlights();
@@ -472,6 +492,12 @@ public class ChessGame : MonoBehaviour
         suppressMoveCommittedEvent = false;
         pendingRemotePromotionResolution = false;
         remotePromotionType = PieceType.Queen;
+        matchStartedAt = 0f;
+        frozenMatchDurationSeconds = 0f;
+        lastMoveSummary = "No moves yet.";
+        moveHistory.Clear();
+        whiteCapturedPieces.Clear();
+        blackCapturedPieces.Clear();
         ClearPendingCommittedMove();
         RefreshLocalInteractionState();
     }
@@ -1107,6 +1133,9 @@ public class ChessGame : MonoBehaviour
         PlaySound(promotionSound);
         pendingPromotionPawn = null;
         inputLocked = false;
+        lastMoveSummary = AppendPromotionToMoveSummary(lastMoveSummary, promotionType);
+        if (moveHistory.Count > 0)
+            moveHistory[moveHistory.Count - 1] = lastMoveSummary;
 
         currentTurn = pendingPromotionOpponentTeam;
         NotifyMoveCommitted(new ChessLanMove(pendingCommittedMoveFrom, pendingCommittedMoveTo, promotionType));
@@ -1835,6 +1864,7 @@ public class ChessGame : MonoBehaviour
         StopCheckWarning();
         status = ChessGameStatus.Win;
         winningTeam = winner;
+        frozenMatchDurationSeconds = MatchElapsedSeconds;
         PlayerAuthService.RecordGameResult(winner == playerTeam, winner != playerTeam, false);
         PlaySound(winSound);
         drawReason = string.Empty;
@@ -1851,6 +1881,7 @@ public class ChessGame : MonoBehaviour
     {
         StopCheckWarning();
         status = ChessGameStatus.Draw;
+        frozenMatchDurationSeconds = MatchElapsedSeconds;
         PlayerAuthService.RecordGameResult(false, false, true);
         drawReason = reason;
         selectedPiece = null;
@@ -1964,6 +1995,7 @@ public class ChessGame : MonoBehaviour
 
         ApplyFenMovementFlags(parts.Length > 2 ? parts[2] : "-");
         ApplyFenEnPassant(parts.Length > 3 ? parts[3] : "-");
+        RebuildCapturedPiecesFromBoard();
 
         gameStarted = true;
         gameOver = false;
@@ -2001,6 +2033,75 @@ public class ChessGame : MonoBehaviour
         return !restrictInputToControlledTeam || (team == localControlledTeam && currentTurn == localControlledTeam);
     }
 
+    public IReadOnlyList<PieceType> GetCapturedPieces(PieceTeam capturingTeam)
+    {
+        return GetCapturedPieceList(capturingTeam);
+    }
+
+    public int GetCapturedPieceCount(PieceTeam capturingTeam)
+    {
+        return GetCapturedPieceList(capturingTeam).Count;
+    }
+
+    public int GetCapturedMaterialScore(PieceTeam capturingTeam)
+    {
+        int score = 0;
+        List<PieceType> capturedPieces = GetCapturedPieceList(capturingTeam);
+        for (int i = 0; i < capturedPieces.Count; i++)
+            score += GetPieceMaterialValue(capturedPieces[i]);
+
+        return score;
+    }
+
+    public void SetExternalLastMoveSummary(string moveSummary, bool replaceLatestHistory = false)
+    {
+        if (string.IsNullOrWhiteSpace(moveSummary))
+            return;
+
+        lastMoveSummary = moveSummary.Trim();
+        if (replaceLatestHistory && moveHistory.Count > 0)
+            moveHistory[moveHistory.Count - 1] = lastMoveSummary;
+        else
+            moveHistory.Add(lastMoveSummary);
+    }
+
+    private List<PieceType> GetCapturedPieceList(PieceTeam capturingTeam)
+    {
+        return capturingTeam == PieceTeam.White ? whiteCapturedPieces : blackCapturedPieces;
+    }
+
+    private void RebuildCapturedPiecesFromBoard()
+    {
+        whiteCapturedPieces.Clear();
+        blackCapturedPieces.Clear();
+        AppendMissingStartingPieces(PieceTeam.Black, whiteCapturedPieces);
+        AppendMissingStartingPieces(PieceTeam.White, blackCapturedPieces);
+    }
+
+    private void AppendMissingStartingPieces(PieceTeam capturedTeam, List<PieceType> destination)
+    {
+        AppendMissingPieces(capturedTeam, PieceType.Queen, 1, destination);
+        AppendMissingPieces(capturedTeam, PieceType.Rook, 2, destination);
+        AppendMissingPieces(capturedTeam, PieceType.Bishop, 2, destination);
+        AppendMissingPieces(capturedTeam, PieceType.Knight, 2, destination);
+        AppendMissingPieces(capturedTeam, PieceType.Pawn, 8, destination);
+    }
+
+    private void AppendMissingPieces(PieceTeam team, PieceType type, int startingCount, List<PieceType> destination)
+    {
+        int remaining = 0;
+        for (int x = 0; x < pieces.GetLength(0); x++)
+            for (int y = 0; y < pieces.GetLength(1); y++)
+            {
+                ChessPiece piece = pieces[x, y];
+                if (piece && piece.Team == team && piece.Type == type)
+                    remaining++;
+            }
+
+        for (int i = remaining; i < startingCount; i++)
+            destination.Add(type);
+    }
+
     private ChessPiece GetPieceAt(Vector2Int position)
     {
         if (!ChessMoveRules.IsInsideBoard(position))
@@ -2021,6 +2122,90 @@ public class ChessGame : MonoBehaviour
     {
         pendingCommittedMoveFrom = -Vector2Int.one;
         pendingCommittedMoveTo = -Vector2Int.one;
+    }
+
+    private int CountPiecesRemaining(PieceTeam team)
+    {
+        int count = 0;
+        for (int x = 0; x < pieces.GetLength(0); x++)
+            for (int y = 0; y < pieces.GetLength(1); y++)
+            {
+                ChessPiece piece = pieces[x, y];
+                if (piece && piece.Team == team)
+                    count++;
+            }
+
+        return count;
+    }
+
+    private int GetMaterialScore(PieceTeam team)
+    {
+        int score = 0;
+        for (int x = 0; x < pieces.GetLength(0); x++)
+            for (int y = 0; y < pieces.GetLength(1); y++)
+            {
+                ChessPiece piece = pieces[x, y];
+                if (!piece || piece.Team != team)
+                    continue;
+
+                score += GetPieceMaterialValue(piece.Type);
+            }
+
+        return score;
+    }
+
+    private int GetPieceMaterialValue(PieceType pieceType)
+    {
+        switch (pieceType)
+        {
+            case PieceType.Queen:
+                return 9;
+            case PieceType.Rook:
+                return 5;
+            case PieceType.Bishop:
+            case PieceType.Knight:
+                return 3;
+            case PieceType.Pawn:
+                return 1;
+            default:
+                return 0;
+        }
+    }
+
+    private string BuildMoveSummary(ChessPiece movingPiece, Vector2Int from, Vector2Int destination, ChessPiece capturedPiece, bool isCastling)
+    {
+        if (isCastling)
+            return destination.x > from.x ? "O-O" : "O-O-O";
+
+        PieceType pieceType = movingPiece != null ? movingPiece.Type : PieceType.Pawn;
+        string pieceLabel = pieceType == PieceType.Pawn ? string.Empty : GetMovePieceLabel(pieceType);
+        string separator = capturedPiece ? "x" : "-";
+        return $"{pieceLabel}{FormatSquare(from)}{separator}{FormatSquare(destination)}";
+    }
+
+    private string AppendPromotionToMoveSummary(string moveSummary, PieceType promotionType)
+    {
+        string normalized = string.IsNullOrWhiteSpace(moveSummary) ? "Pawn move" : moveSummary.Trim();
+        return $"{normalized}={GetMovePieceLabel(promotionType)}";
+    }
+
+    private string GetMovePieceLabel(PieceType pieceType)
+    {
+        switch (pieceType)
+        {
+            case PieceType.King:
+                return "K";
+            case PieceType.Queen:
+                return "Q";
+            case PieceType.Rook:
+                return "R";
+            case PieceType.Bishop:
+                return "B";
+            case PieceType.Knight:
+                return "N";
+            default:
+                return string.Empty;
+        }
     }
 
     private void RefreshLocalInteractionState()
