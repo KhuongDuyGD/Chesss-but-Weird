@@ -61,6 +61,7 @@ function leaveRoom(client, reason = "Online peer left the room.") {
   }
 
   const peer = room.host === client ? room.guest : room.host;
+  room.pausedPlayers.delete(client.id);
   rooms.delete(room.code);
 
   if (peer) {
@@ -80,6 +81,7 @@ function createRoom(client) {
     code,
     host: client,
     guest: null,
+    pausedPlayers: new Set(),
     createdAt: Date.now(),
   });
 
@@ -129,6 +131,44 @@ function relayToPeer(client, command, payload) {
   send(peer, `${command}|${payload || ""}`);
 }
 
+function setPaused(client, paused) {
+  const room = rooms.get(client.roomCode);
+  const peer = getPeer(client);
+  if (!room || !peer) {
+    send(client, "ERROR|No peer is connected to this room.");
+    return;
+  }
+
+  if (paused) {
+    room.pausedPlayers.add(client.id);
+    send(peer, `PLAYER_PAUSED|${sanitize(client.name, "Opponent")}`);
+  } else {
+    room.pausedPlayers.delete(client.id);
+    send(peer, `PLAYER_RESUMED|${sanitize(client.name, "Opponent")}`);
+  }
+
+  send(client, `PAUSE_STATE|${paused ? "PAUSED" : "RESUMED"}`);
+}
+
+function resign(client) {
+  const room = rooms.get(client.roomCode);
+  const peer = getPeer(client);
+  if (!room || !peer) {
+    send(client, "ERROR|No active opponent to surrender to.");
+    return;
+  }
+
+  send(client, "SURRENDERED|You surrendered the match.");
+  send(peer, `OPPONENT_SURRENDERED|${sanitize(client.name, "Opponent")}`);
+  client.roomCode = "";
+  client.role = "None";
+  peer.roomCode = "";
+  peer.role = "None";
+  room.pausedPlayers.clear();
+  rooms.delete(room.code);
+  console.log(`[room ${room.code}] ${client.name} surrendered`);
+}
+
 function handleLine(client, line) {
   const trimmed = line.trim();
   if (!trimmed) {
@@ -167,7 +207,23 @@ function handleLine(client, line) {
       break;
 
     case "MOVE":
+      if (client.roomCode && rooms.get(client.roomCode)?.pausedPlayers.size > 0) {
+        send(client, "ERROR|The match is paused.");
+        break;
+      }
       relayToPeer(client, "MOVE", payload);
+      break;
+
+    case "PAUSE":
+      setPaused(client, true);
+      break;
+
+    case "RESUME":
+      setPaused(client, false);
+      break;
+
+    case "RESIGN":
+      resign(client);
       break;
 
     case "LEAVE":

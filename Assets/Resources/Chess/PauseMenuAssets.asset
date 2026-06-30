@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0a8c39b83dd743f4ba766bd832e9186b, type: 3}
+  m_Name: PauseMenuAssets
+  m_EditorClassIdentifier: 
+  menuBlank: {fileID: 2800000, guid: f8807accc2d1e514e9ca68517316408e, type: 3}
+  resumeButton: {fileID: 2800000, guid: b08f9e595f85ea7498d8e97c13158aea, type: 3}
+  restartButton: {fileID: 2800000, guid: e6562b36007aa6742ae971d0d15bdb34, type: 3}
+  settingsButton: {fileID: 2800000, guid: 7b5fc11623df3f140952a4389d85fe54, type: 3}
+  quitButton: {fileID: 2800000, guid: e1994edcac8a0e948892ca8c8b9936b8, type: 3}

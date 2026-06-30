@@ -189,3 +189,11 @@ public class BackendDrawOfferedPayload
 {
     public string offeredBy;
 }
+
+[Serializable]
+public class BackendPauseStatePayload
+{
+    public string userId;
+    public string username;
+    public bool paused;
+}

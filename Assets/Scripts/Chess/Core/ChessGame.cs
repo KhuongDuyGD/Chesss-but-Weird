@@ -57,6 +57,7 @@ public class ChessGame : MonoBehaviour
     private bool gameStarted;
     private bool gameOver;
     private bool inputLocked;
+    private bool pauseLocked;
     private PieceTeam winningTeam;
     private PieceTeam playerTeam;
     private string drawReason;
@@ -74,29 +75,39 @@ public class ChessGame : MonoBehaviour
     private PieceTeam localControlledTeam = PieceTeam.White;
     private bool suppressMoveCommittedEvent;
     private bool serverAuthoritativeMode;
+    private bool botMode;
     private bool pendingRemotePromotionResolution;
     private PieceType remotePromotionType = PieceType.Queen;
     private Vector2Int pendingCommittedMoveFrom = -Vector2Int.one;
     private Vector2Int pendingCommittedMoveTo = -Vector2Int.one;
     private float matchStartedAt;
     private float frozenMatchDurationSeconds;
+    private float matchPausedAt = -1f;
+    private float accumulatedPausedSeconds;
     private string lastMoveSummary = "No moves yet.";
     private PieceTeam moveHistoryFirstTurn = PieceTeam.White;
     public PieceTeam CurrentTurn => currentTurn;
     public ChessPiece SelectedPiece => selectedPiece;
     public bool GameStarted => gameStarted;
     public bool GameOver => gameOver;
+    public bool InputLocked => inputLocked;
+    public bool PauseLocked => pauseLocked;
+    public bool IsBotGame => botMode;
     public PieceTeam WinningTeam => winningTeam;
     public PieceTeam PlayerTeam => playerTeam;
     public ChessGameStatus Status => status;
     public string DrawReason => drawReason;
     public int HalfMoveClock => halfMoveClock;
-    public float MatchElapsedSeconds => gameStarted ? Mathf.Max(0f, Time.unscaledTime - matchStartedAt) : frozenMatchDurationSeconds;
+    public float MatchElapsedSeconds => gameStarted
+        ? Mathf.Max(0f, Time.unscaledTime - matchStartedAt - accumulatedPausedSeconds - CurrentPauseDuration)
+        : frozenMatchDurationSeconds;
+    private float CurrentPauseDuration => matchPausedAt >= 0f ? Time.unscaledTime - matchPausedAt : 0f;
     public string LastMoveSummary => string.IsNullOrWhiteSpace(lastMoveSummary) ? "No moves yet." : lastMoveSummary;
     public IReadOnlyList<string> MoveHistory => moveHistory;
     public PieceTeam MoveHistoryFirstTurn => moveHistoryFirstTurn;
     public event Action<ChessLanMove> MoveCommitted;
     public event Action ReturnedToMainMenu;
+    public event Action LocalGameRestarted;
 
     private void Awake()
     {
@@ -210,7 +221,7 @@ public class ChessGame : MonoBehaviour
 
     private void Update()
     {
-        if (!gameStarted || inputLocked || !CanLocalPlayerInteract() || Mouse.current == null || !Mouse.current.leftButton.wasPressedThisFrame)
+        if (!gameStarted || inputLocked || pauseLocked || !CanLocalPlayerInteract() || Mouse.current == null || !Mouse.current.leftButton.wasPressedThisFrame)
             return;
 
         if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
@@ -241,13 +252,22 @@ public class ChessGame : MonoBehaviour
     public void BeginGame(PieceTeam firstTurn)
     {
         serverAuthoritativeMode = false;
+        botMode = false;
         BeginGameInternal(firstTurn, firstTurn, false, firstTurn);
     }
 
     public void BeginLanGame(PieceTeam firstTurn, PieceTeam localPlayerTeam)
     {
         serverAuthoritativeMode = true;
+        botMode = false;
         BeginGameInternal(firstTurn, localPlayerTeam, true, PieceTeam.White);
+    }
+
+    public void BeginBotGame(PieceTeam localPlayerTeam)
+    {
+        serverAuthoritativeMode = false;
+        botMode = true;
+        BeginGameInternal(PieceTeam.White, localPlayerTeam, true, PieceTeam.White);
     }
 
     private void BeginGameInternal(PieceTeam firstTurn, PieceTeam localPlayerTeam, bool restrictInput, PieceTeam frontTeam)
@@ -264,6 +284,8 @@ public class ChessGame : MonoBehaviour
         drawReason = string.Empty;
         matchStartedAt = Time.unscaledTime;
         frozenMatchDurationSeconds = 0f;
+        matchPausedAt = -1f;
+        accumulatedPausedSeconds = 0f;
         lastMoveSummary = "No moves yet.";
         moveHistory.Clear();
         whiteCapturedPieces.Clear();
@@ -283,7 +305,7 @@ public class ChessGame : MonoBehaviour
 
     public bool TrySelectPiece(ChessPiece piece)
     {
-        if (!gameStarted || inputLocked || !piece || piece.Team != currentTurn || !CanControlPieceTeam(piece.Team))
+        if (!gameStarted || inputLocked || pauseLocked || !piece || piece.Team != currentTurn || !CanControlPieceTeam(piece.Team))
             return false;
 
         if (selectedPiece == piece)
@@ -302,7 +324,7 @@ public class ChessGame : MonoBehaviour
 
     public bool TryMoveSelectedPiece(Vector2Int destination)
     {
-        if (!gameStarted || gameOver || inputLocked || !selectedPiece || !chessboard || !chessboard.IsValidTile(destination))
+        if (!gameStarted || gameOver || inputLocked || pauseLocked || !selectedPiece || !chessboard || !chessboard.IsValidTile(destination))
         {
             if (selectedPiece)
                 PlaySound(errorSound);
@@ -433,9 +455,51 @@ public class ChessGame : MonoBehaviour
 
     public void RestartToMainMenu()
     {
+        pauseLocked = false;
+        Time.timeScale = 1f;
         PrepareGame();
         turnSelectionUI?.ShowMainMenu();
         ReturnedToMainMenu?.Invoke();
+    }
+
+    public bool RestartCurrentLocalGame()
+    {
+        if (serverAuthoritativeMode)
+            return false;
+
+        PieceTeam selectedTeam = playerTeam;
+        bool restartBotGame = botMode;
+        pauseLocked = false;
+        Time.timeScale = 1f;
+        PrepareGame();
+        if (restartBotGame)
+            BeginBotGame(selectedTeam);
+        else
+            BeginGame(selectedTeam);
+        LocalGameRestarted?.Invoke();
+        return true;
+    }
+
+    public void SetPauseLocked(bool locked)
+    {
+        if (pauseLocked == locked)
+            return;
+
+        if (locked)
+        {
+            if (gameStarted)
+                matchPausedAt = Time.unscaledTime;
+        }
+        else if (matchPausedAt >= 0f)
+        {
+            accumulatedPausedSeconds += Time.unscaledTime - matchPausedAt;
+            matchPausedAt = -1f;
+        }
+
+        pauseLocked = locked;
+        if (locked)
+            ClearSelection();
+        RefreshLocalInteractionState();
     }
 
     private void PrepareGame()
@@ -478,10 +542,12 @@ public class ChessGame : MonoBehaviour
         gameStarted = false;
         gameOver = false;
         inputLocked = false;
+        pauseLocked = false;
         playerTeam = PieceTeam.White;
         localControlledTeam = PieceTeam.White;
         restrictInputToControlledTeam = false;
         serverAuthoritativeMode = false;
+        botMode = false;
         winningTeam = PieceTeam.White;
         drawReason = string.Empty;
         ResetDrawTracking();
@@ -494,6 +560,8 @@ public class ChessGame : MonoBehaviour
         remotePromotionType = PieceType.Queen;
         matchStartedAt = 0f;
         frozenMatchDurationSeconds = 0f;
+        matchPausedAt = -1f;
+        accumulatedPausedSeconds = 0f;
         lastMoveSummary = "No moves yet.";
         moveHistory.Clear();
         whiteCapturedPieces.Clear();
@@ -1103,6 +1171,12 @@ public class ChessGame : MonoBehaviour
         char file = (char)('a' + square.x);
         char rank = (char)('1' + square.y);
         return new string(new[] { file, rank });
+    }
+
+    public string ExportFen()
+    {
+        int fullMoveNumber = Mathf.Max(1, 1 + moveHistory.Count / 2);
+        return $"{BuildPositionKey()} {halfMoveClock} {fullMoveNumber}";
     }
 
     private IEnumerator AnimateMoveAndPromptPromotion(PawnPiece pawn, Vector2Int destination, PieceTeam opponentTeam)
@@ -1895,6 +1969,19 @@ public class ChessGame : MonoBehaviour
 
     public bool ApplyNetworkMove(ChessLanMove move)
     {
+        return ApplyControlledOpponentMove(move);
+    }
+
+    public bool ApplyBotMove(ChessLanMove move)
+    {
+        if (!botMode || serverAuthoritativeMode)
+            return false;
+
+        return ApplyControlledOpponentMove(move);
+    }
+
+    private bool ApplyControlledOpponentMove(ChessLanMove move)
+    {
         if (!gameStarted || gameOver)
             return false;
 
@@ -2213,6 +2300,7 @@ public class ChessGame : MonoBehaviour
         bool shouldEnableInteraction = gameStarted &&
             !gameOver &&
             !inputLocked &&
+            !pauseLocked &&
             pendingPromotionPawn == null &&
             CanLocalPlayerInteract();
 

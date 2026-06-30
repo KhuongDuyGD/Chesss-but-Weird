@@ -35,7 +35,10 @@ public class ChessTurnSelectionUI : MonoBehaviour
     private GUIStyle resultStyle;
     private HandDrawnMenuView handDrawnMenu;
     private ChessLanController lanController;
+    private ChessPauseMenu pauseMenu;
     private AnalysisBoardView analysisBoard;
+    private StockfishBotController botController;
+    private StockfishDifficulty selectedBotDifficulty = StockfishDifficulty.Medium;
     private string whitePlayerName;
     private string blackPlayerName;
 
@@ -46,7 +49,9 @@ public class ChessTurnSelectionUI : MonoBehaviour
         ui.chessGame = chessGame;
         ui.TryCreateHandDrawnMenu();
         ui.TryCreateLanController();
+        ui.TryCreatePauseMenu();
         ui.TryCreateAnalysisBoard();
+        ui.TryCreateBotController();
         return ui;
     }
 
@@ -117,6 +122,29 @@ public class ChessTurnSelectionUI : MonoBehaviour
         state = ScreenState.TurnSelection;
         analysisBoard?.SetVisible(false);
         handDrawnMenu?.ShowSideSelection();
+    }
+
+    public void ShowBotDifficultySelection()
+    {
+        showCheckWarning = false;
+        lanController?.HideLanSetup();
+        state = ScreenState.TurnSelection;
+        analysisBoard?.SetVisible(false);
+        handDrawnMenu?.ShowBotDifficultySelection();
+    }
+
+    public void SelectBotDifficulty(StockfishDifficulty difficulty)
+    {
+        selectedBotDifficulty = difficulty;
+        ShowSideSelection();
+    }
+
+    public void StartBotGame(PieceTeam playerTeam)
+    {
+        if (botController)
+            botController.StartBotGame(playerTeam, selectedBotDifficulty);
+        else
+            chessGame.BeginGame(playerTeam);
     }
 
     public void ShowMultiplayerModeSelection()
@@ -291,10 +319,10 @@ public class ChessTurnSelectionUI : MonoBehaviour
         Rect blackButton = new Rect(firstButtonX + buttonWidth + buttonGap, buttonY, buttonWidth, buttonHeight);
 
         if (GUI.Button(whiteButton, "White", buttonStyle))
-            chessGame.BeginGame(PieceTeam.White);
+            StartBotGame(PieceTeam.White);
 
         if (GUI.Button(blackButton, "Black", buttonStyle))
-            chessGame.BeginGame(PieceTeam.Black);
+            StartBotGame(PieceTeam.Black);
     }
 
     private void DrawPromotion()
@@ -452,11 +480,25 @@ public class ChessTurnSelectionUI : MonoBehaviour
         lanController.Initialize(chessGame, this);
     }
 
+    private void TryCreatePauseMenu()
+    {
+        pauseMenu = gameObject.AddComponent<ChessPauseMenu>();
+        pauseMenu.Initialize(chessGame, lanController);
+    }
+
     private void TryCreateAnalysisBoard()
     {
         analysisBoard = GetComponent<AnalysisBoardView>();
         if (!analysisBoard)
             analysisBoard = gameObject.AddComponent<AnalysisBoardView>();
         analysisBoard.Initialize(chessGame);
+    }
+
+    private void TryCreateBotController()
+    {
+        botController = GetComponent<StockfishBotController>();
+        if (!botController)
+            botController = gameObject.AddComponent<StockfishBotController>();
+        botController.Initialize(chessGame);
     }
 }

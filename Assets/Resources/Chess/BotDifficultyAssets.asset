@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a18d66e0b40a4aa39b0d512cb748f092, type: 3}
+  m_Name: BotDifficultyAssets
+  m_EditorClassIdentifier: 
+  background: {fileID: 2800000, guid: 5cb67219880c42ddb35ba1fe90a4ce70, type: 3}
+  beginnerButton: {fileID: 2800000, guid: 7f14656516fa7ef4a865379f8381a8f7, type: 3}
+  easyButton: {fileID: 2800000, guid: 5b5012298cb788b44b1faeb0db0edfc8, type: 3}
+  mediumButton: {fileID: 2800000, guid: e01530401c18cda42946423961409724, type: 3}
+  hardButton: {fileID: 2800000, guid: 76af93227a840b84ab50b3d68f7114cd, type: 3}
+  expertButton: {fileID: 2800000, guid: 94fc3bd20fa0c914e96ea1288c436d8e, type: 3}

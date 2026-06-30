@@ -37,6 +37,9 @@ public class ChessLanController : MonoBehaviour
     private bool intentionalDisconnect;
     private Texture2D backButtonTexture;
 
+    public bool IsNetworkGameActive => lanGameActive;
+    public event Action<bool, string> OpponentPauseChanged;
+
     public void Initialize(ChessGame newChessGame, ChessTurnSelectionUI newTurnSelectionUI)
     {
         chessGame = newChessGame;
@@ -71,6 +74,34 @@ public class ChessLanController : MonoBehaviour
         }
 
         ReleaseWebSocketClient();
+    }
+
+    public void SendPauseState(bool paused)
+    {
+        if (!lanGameActive || webSocketClient == null || !webSocketClient.IsConnected)
+            return;
+
+        string eventType = paused ? "PAUSE" : "RESUME";
+        _ = webSocketClient.SendAsync(eventType, CreateRequestId(paused ? "pause" : "resume"), new { paused });
+        statusMessage = paused ? "Pause sent to opponent." : "Resume sent to opponent.";
+    }
+
+    public void QuitActiveMatch()
+    {
+        if (!lanGameActive)
+        {
+            chessGame?.RestartToMainMenu();
+            return;
+        }
+
+        if (webSocketClient == null || !webSocketClient.IsConnected)
+        {
+            statusMessage = "Connection lost. Returning to the main menu.";
+            chessGame?.RestartToMainMenu();
+            return;
+        }
+
+        SendResign();
     }
 
     private void OnGUI()
@@ -542,6 +573,16 @@ public class ChessLanController : MonoBehaviour
             case "DRAW_OFFERED":
                 HandleDrawOffered(envelope.payload);
                 break;
+            case "PLAYER_PAUSED":
+                HandlePauseState(envelope.payload, true);
+                break;
+            case "PLAYER_RESUMED":
+                HandlePauseState(envelope.payload, false);
+                break;
+            case "PAUSE_STATE":
+            case "PAUSE_STATE_CHANGED":
+                HandlePauseState(envelope.payload, null);
+                break;
             case "GAME_STATE":
                 HandleGameState(envelope.payload);
                 break;
@@ -571,6 +612,20 @@ public class ChessLanController : MonoBehaviour
         statusMessage = opponentDrawOfferPending
             ? $"{payload.offeredBy} offered a draw."
             : "Draw offer broadcast to room.";
+    }
+
+    private void HandlePauseState(JToken payloadToken, bool? forcedState)
+    {
+        BackendPauseStatePayload payload = payloadToken?.ToObject<BackendPauseStatePayload>();
+        if (payload == null ||
+            string.Equals(payload.userId, PlayerAuthService.UserId, StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(payload.username, PlayerAuthService.Username, StringComparison.OrdinalIgnoreCase))
+            return;
+
+        bool paused = forcedState ?? payload.paused;
+        string opponentName = string.IsNullOrWhiteSpace(payload.username) ? "Opponent" : payload.username;
+        statusMessage = paused ? $"{opponentName} paused the match." : $"{opponentName} resumed the match.";
+        OpponentPauseChanged?.Invoke(paused, opponentName);
     }
 
     private void HandleGameStart(JToken payloadToken)
@@ -651,9 +706,19 @@ public class ChessLanController : MonoBehaviour
 
         lanGameActive = false;
         opponentDrawOfferPending = false;
+        OpponentPauseChanged?.Invoke(false, string.Empty);
         statusMessage = $"Game over: {payload.result} ({payload.reason})";
         chessGame.ApplyServerGameOver(payload.result, payload.reason);
         StartCoroutine(LoadMatchHistoryCoroutine());
+        if (string.Equals(payload.reason, "RESIGNATION", StringComparison.OrdinalIgnoreCase))
+            StartCoroutine(ReturnToMainMenuAfterResignation());
+    }
+
+    private IEnumerator ReturnToMainMenuAfterResignation()
+    {
+        yield return new WaitForSecondsRealtime(2.25f);
+        DisconnectSocketIntentional();
+        chessGame.RestartToMainMenu();
     }
 
     private void HandleSocketErrorPayload(string requestId, JToken payloadToken)
@@ -743,6 +808,7 @@ public class ChessLanController : MonoBehaviour
         localReady = false;
         readyCount = 0;
         opponentDrawOfferPending = false;
+        OpponentPauseChanged?.Invoke(false, string.Empty);
         pendingLocalMoveRequestIds.Clear();
 
         if (!clearRoomIdentity)

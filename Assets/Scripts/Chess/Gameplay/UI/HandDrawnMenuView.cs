@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.EventSystems;
@@ -17,7 +18,9 @@ public class HandDrawnMenuView : MonoBehaviour
     private RectTransform mainScreen;
     private RectTransform modeScreen;
     private RectTransform multiplayerModeScreen;
+    private RectTransform botDifficultyScreen;
     private RectTransform sideScreen;
+    private readonly List<Sprite> runtimeSprites = new List<Sprite>();
 
     public bool IsReady => assets != null && assets.HasRequiredSprites && canvas != null;
 
@@ -35,6 +38,7 @@ public class HandDrawnMenuView : MonoBehaviour
         BuildMainScreen();
         BuildModeScreen();
         BuildMultiplayerModeScreen();
+        BuildBotDifficultyScreen();
         BuildSideScreen();
         ShowMainMenu();
     }
@@ -58,6 +62,13 @@ public class HandDrawnMenuView : MonoBehaviour
         SetVisible(true);
         SetInputEnabled(true);
         SetScreen(sideScreen);
+    }
+
+    public void ShowBotDifficultySelection()
+    {
+        SetVisible(true);
+        SetInputEnabled(true);
+        SetScreen(botDifficultyScreen);
     }
 
     public void ShowMultiplayerModeSelection()
@@ -147,7 +158,7 @@ public class HandDrawnMenuView : MonoBehaviour
         AddImage(screen, "Slogan", assets.slogan, new Vector2(-350f, 425f), new Vector2(670f, 95f), 0.35f, 0.15f);
         AddImage(screen, "Logo", assets.logo, new Vector2(530f, 315f), new Vector2(520f, 270f), 0.8f, 0.25f);
 
-        AddInteractive(screen, "Local", assets.localButton, new Vector2(-735f, 250f), new Vector2(380f, 116f), () => owner.ShowSideSelection(), true);
+        AddInteractive(screen, "Local", assets.localButton, new Vector2(-735f, 250f), new Vector2(380f, 116f), () => owner.ShowBotDifficultySelection(), true);
         AddInteractive(screen, "Online", assets.onlineButton, new Vector2(-735f, 75f), new Vector2(380f, 116f), guestMode ? CreateGuestLockedAction("Online") : () => owner.ShowMultiplayerModeSelection(), true);
         AddInteractive(screen, "Aram", assets.aramButton, new Vector2(-735f, -100f), new Vector2(390f, 122f), guestMode ? CreateGuestLockedAction("ARAM") : () => LogMenuClick("ARAM"), true);
         AddInteractive(screen, "Shop", assets.shopButton, new Vector2(-735f, -280f), new Vector2(380f, 118f), guestMode ? CreateGuestLockedAction("Shop") : () => LogMenuClick("Shop"), true);
@@ -207,11 +218,118 @@ public class HandDrawnMenuView : MonoBehaviour
         AddBattleDoodles(sideScreen, true);
         AddMenuConfetti(sideScreen);
         AddImage(sideScreen, "Choose Side Title", assets.chooseSideTitle, new Vector2(0f, 365f), new Vector2(880f, 150f), 0f, 0f);
-        AddInteractive(sideScreen, "White Card", assets.whiteCard, new Vector2(-365f, -105f), new Vector2(560f, 745f), () => chessGame.BeginGame(PieceTeam.White), true);
-        AddInteractive(sideScreen, "Black Card", assets.blackCard, new Vector2(365f, -105f), new Vector2(560f, 745f), () => chessGame.BeginGame(PieceTeam.Black), true);
+        AddInteractive(sideScreen, "White Card", assets.whiteCard, new Vector2(-365f, -105f), new Vector2(560f, 745f), () => owner.StartBotGame(PieceTeam.White), true);
+        AddInteractive(sideScreen, "Black Card", assets.blackCard, new Vector2(365f, -105f), new Vector2(560f, 745f), () => owner.StartBotGame(PieceTeam.Black), true);
         AddImage(sideScreen, "Settings Icon", assets.settingsIcon, new Vector2(-760f, -410f), new Vector2(120f, 120f), 0f, 0f);
         AddImage(sideScreen, "Early Access", assets.earlyAccess, new Vector2(735f, -420f), new Vector2(330f, 145f), 0f, 0f);
-        AddBackButton(sideScreen, new Vector2(-600f, -420f), () => ShowModeSelection());
+        AddBackButton(sideScreen, new Vector2(-600f, -420f), () => ShowBotDifficultySelection());
+    }
+
+    private void BuildBotDifficultyScreen()
+    {
+        botDifficultyScreen = CreateScreen("Bot Difficulty");
+        BotDifficultyAssetCatalog catalog = BotDifficultyAssetCatalog.Load();
+        if (!catalog || !catalog.HasRequiredTextures)
+        {
+            Debug.LogWarning("[BotDifficultyUI] Missing Resources/Chess/BotDifficultyAssets.");
+            AddBackButton(botDifficultyScreen, new Vector2(-820f, -455f), () => ShowModeSelection());
+            return;
+        }
+
+        Sprite backgroundSprite = CreateRuntimeSprite(
+            catalog.background,
+            new Rect(0f, 0f, catalog.background.width, catalog.background.height));
+        Image background = CreateImage(
+            botDifficultyScreen,
+            "Difficulty Background",
+            backgroundSprite,
+            Vector2.zero,
+            new Vector2(ReferenceWidth, ReferenceHeight));
+        background.preserveAspect = false;
+
+        Texture2D[] textures =
+        {
+            catalog.beginnerButton,
+            catalog.easyButton,
+            catalog.mediumButton,
+            catalog.hardButton,
+            catalog.expertButton
+        };
+        Rect[] sourceCrops =
+        {
+            new Rect(124f, 101f, 881f, 1223f),
+            new Rect(130f, 88f, 864f, 1206f),
+            new Rect(226f, 204f, 668f, 987f),
+            new Rect(204f, 150f, 717f, 1060f),
+            new Rect(205f, 178f, 708f, 956f)
+        };
+        Vector2[] positions =
+        {
+            new Vector2(-737f, -109f),
+            new Vector2(-358f, -109f),
+            new Vector2(20f, -109f),
+            new Vector2(373f, -109f),
+            new Vector2(746f, -109f)
+        };
+        Vector2[] sizes =
+        {
+            new Vector2(357f, 471f),
+            new Vector2(340f, 471f),
+            new Vector2(349f, 471f),
+            new Vector2(336f, 471f),
+            new Vector2(362f, 471f)
+        };
+        StockfishDifficulty[] levels =
+        {
+            StockfishDifficulty.Beginner,
+            StockfishDifficulty.Easy,
+            StockfishDifficulty.Medium,
+            StockfishDifficulty.Hard,
+            StockfishDifficulty.Expert
+        };
+
+        for (int i = 0; i < levels.Length; i++)
+        {
+            StockfishDifficulty level = levels[i];
+            Sprite buttonSprite = CreateRuntimeSprite(textures[i], sourceCrops[i]);
+            Button button = AddInteractive(
+                botDifficultyScreen,
+                $"{level} Difficulty",
+                buttonSprite,
+                positions[i],
+                sizes[i],
+                () => owner.SelectBotDifficulty(level),
+                false,
+                1.035f,
+                Color.white,
+                0.965f,
+                0.8f);
+            if (button.targetGraphic is Image buttonImage)
+                buttonImage.preserveAspect = false;
+        }
+
+        AddBackButton(botDifficultyScreen, new Vector2(-820f, -455f), () => ShowModeSelection());
+    }
+
+    private Sprite CreateRuntimeSprite(Texture2D texture, Rect topLeftCrop)
+    {
+        if (!texture)
+            return null;
+
+        Rect unityCrop = new Rect(
+            topLeftCrop.x,
+            texture.height - topLeftCrop.y - topLeftCrop.height,
+            topLeftCrop.width,
+            topLeftCrop.height);
+        Sprite sprite = Sprite.Create(
+            texture,
+            unityCrop,
+            new Vector2(0.5f, 0.5f),
+            100f,
+            0u,
+            SpriteMeshType.FullRect);
+        runtimeSprites.Add(sprite);
+        return sprite;
     }
 
     private RectTransform CreateScreen(string screenName)
@@ -359,12 +477,13 @@ public class HandDrawnMenuView : MonoBehaviour
 
     private void SetScreen(RectTransform activeScreen)
     {
-        if (!mainScreen || !modeScreen || !multiplayerModeScreen || !sideScreen || !activeScreen)
+        if (!mainScreen || !modeScreen || !multiplayerModeScreen || !botDifficultyScreen || !sideScreen || !activeScreen)
             return;
 
         mainScreen.gameObject.SetActive(activeScreen == mainScreen);
         modeScreen.gameObject.SetActive(activeScreen == modeScreen);
         multiplayerModeScreen.gameObject.SetActive(activeScreen == multiplayerModeScreen);
+        botDifficultyScreen.gameObject.SetActive(activeScreen == botDifficultyScreen);
         sideScreen.gameObject.SetActive(activeScreen == sideScreen);
     }
 
@@ -376,6 +495,8 @@ public class HandDrawnMenuView : MonoBehaviour
             modeScreen.gameObject.SetActive(active);
         if (multiplayerModeScreen)
             multiplayerModeScreen.gameObject.SetActive(active);
+        if (botDifficultyScreen)
+            botDifficultyScreen.gameObject.SetActive(active);
         if (sideScreen)
             sideScreen.gameObject.SetActive(active);
     }
@@ -441,5 +562,13 @@ public class HandDrawnMenuView : MonoBehaviour
 
         if (!eventSystem.GetComponent<InputSystemUIInputModule>())
             eventSystem.gameObject.AddComponent<InputSystemUIInputModule>();
+    }
+
+    private void OnDestroy()
+    {
+        for (int i = 0; i < runtimeSprites.Count; i++)
+            if (runtimeSprites[i])
+                Destroy(runtimeSprites[i]);
+        runtimeSprites.Clear();
     }
 }
