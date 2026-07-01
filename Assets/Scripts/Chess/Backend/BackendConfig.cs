@@ -6,9 +6,14 @@ public static class BackendConfig
     private const string HostKey = "backend.host";
     private const string PortKey = "backend.port";
     private const string SchemeKey = "backend.scheme";
-    private const string DefaultHost = "127.0.0.1";
+    private const string DefaultHost = "https://chess-lan-backend.onrender.com";
     private const int DefaultPort = 8080;
     private const string DefaultScheme = "http";
+
+    static BackendConfig()
+    {
+        EnsureHostedDefaultForLegacyConfig();
+    }
 
     public static string Host
     {
@@ -74,5 +79,36 @@ public static class BackendConfig
     public static void Save()
     {
         PlayerPrefs.Save();
+    }
+
+    private static void EnsureHostedDefaultForLegacyConfig()
+    {
+        if (!PlayerPrefs.HasKey(HostKey))
+        {
+            Host = DefaultHost;
+            Save();
+            return;
+        }
+
+        string configuredHost = PlayerPrefs.GetString(HostKey, DefaultHost).Trim();
+        if (!IsLegacyHost(configuredHost))
+            return;
+
+        Host = DefaultHost;
+        Save();
+    }
+
+    private static bool IsLegacyHost(string configuredHost)
+    {
+        if (string.IsNullOrWhiteSpace(configuredHost))
+            return true;
+
+        if (configuredHost.IndexOf("localhost", StringComparison.OrdinalIgnoreCase) >= 0)
+            return true;
+
+        if (configuredHost.IndexOf("127.0.0.1", StringComparison.OrdinalIgnoreCase) >= 0)
+            return true;
+
+        return configuredHost.IndexOf("ngrok-free.dev", StringComparison.OrdinalIgnoreCase) >= 0;
     }
 }

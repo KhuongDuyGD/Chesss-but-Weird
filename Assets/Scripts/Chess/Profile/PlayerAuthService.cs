@@ -18,14 +18,16 @@ public static class PlayerAuthService
         if (!BackendSessionStore.HasToken || BackendSessionStore.IsTokenExpired)
         {
             BackendSessionStore.Clear();
-            return TryRestoreGuestSession();
+            ClearGuestSessionInternal(true);
+            return false;
         }
 
         BackendUserProfileDto storedUser = BackendSessionStore.GetStoredUser();
         if (storedUser == null)
         {
             BackendSessionStore.Clear();
-            return TryRestoreGuestSession();
+            ClearGuestSessionInternal(true);
+            return false;
         }
 
         IsGuestSession = false;
@@ -61,6 +63,7 @@ public static class PlayerAuthService
 
     public static void Logout()
     {
+        ClearGuestSessionInternal(false);
         CurrentProfile = null;
         IsGuestSession = false;
         BackendSessionStore.Clear();
@@ -113,38 +116,6 @@ public static class PlayerAuthService
             lastLoginAtUtc = DateTime.UtcNow.ToString("O"),
             rating = user.elo
         };
-    }
-
-    private static bool TryRestoreGuestSession()
-    {
-        string json = PlayerPrefs.GetString(GuestProfileKey, string.Empty);
-        if (string.IsNullOrWhiteSpace(json))
-        {
-            CurrentProfile = null;
-            IsGuestSession = false;
-            return false;
-        }
-
-        try
-        {
-            PlayerProfile profile = JsonUtility.FromJson<PlayerProfile>(json);
-            if (profile == null)
-            {
-                ClearGuestSessionInternal(true);
-                return false;
-            }
-
-            CurrentProfile = profile;
-            IsGuestSession = true;
-            Debug.Log($"[PlayerAuthService] Restored guest session for '{CurrentDisplayName}'.");
-            return true;
-        }
-        catch (Exception exception)
-        {
-            Debug.LogWarning($"[PlayerAuthService] Failed to restore guest session: {exception.Message}");
-            ClearGuestSessionInternal(true);
-            return false;
-        }
     }
 
     private static PlayerProfile LoadGuestProfile()

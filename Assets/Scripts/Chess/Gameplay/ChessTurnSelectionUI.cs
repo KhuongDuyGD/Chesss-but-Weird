@@ -151,7 +151,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
     {
         if (PlayerAuthService.IsGuestSession)
         {
-            Debug.Log("[ChessTurnSelectionUI] Multiplayer mode selection blocked for Guest.");
+            PromptAuthenticationFromGuest("Multiplayer requires a backend account. Please log in or sign up.");
             return;
         }
 
@@ -175,11 +175,21 @@ public class ChessTurnSelectionUI : MonoBehaviour
     {
         if (PlayerAuthService.IsGuestSession)
         {
-            Debug.Log("[ChessTurnSelectionUI] Online setup blocked for Guest.");
+            PromptAuthenticationFromGuest("Online play requires a backend account. Please log in or sign up.");
             return;
         }
 
         ShowLanSetup();
+    }
+
+    private void PromptAuthenticationFromGuest(string message)
+    {
+        PlayerAuthService.Logout();
+        lanController?.HideLanSetup();
+        analysisBoard?.SetVisible(false);
+        handDrawnMenu?.HideForPlaying();
+        AuthController.Create(chessGame, ShowMainMenu);
+        Debug.Log($"[ChessTurnSelectionUI] Guest session cleared. {message}");
     }
 
     public void ShowGameOver(PieceTeam winner, PieceTeam selectedPlayerTeam)

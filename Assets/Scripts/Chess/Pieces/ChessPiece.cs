@@ -30,6 +30,7 @@ public abstract class ChessPiece : MonoBehaviour
     public Vector2Int BoardPosition => boardPosition;
     public bool HasMoved => hasMoved;
     public int ForwardDirection => forwardDirection;
+    public event System.Action<ChessPiece> Destroyed;
 
     public void Initialize(PieceTeam initialTeam, Vector2Int initialBoardPosition, int initialForwardDirection = 1)
     {
@@ -137,5 +138,10 @@ public abstract class ChessPiece : MonoBehaviour
 
         ChessPiece targetPiece = board[destination.x, destination.y];
         return !targetPiece || targetPiece.Team != team;
+    }
+
+    private void OnDestroy()
+    {
+        Destroyed?.Invoke(this);
     }
 }

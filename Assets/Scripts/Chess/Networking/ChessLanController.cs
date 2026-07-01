@@ -15,6 +15,7 @@ public class ChessLanController : MonoBehaviour
     private ChessGame chessGame;
     private ChessTurnSelectionUI turnSelectionUI;
     private BackendWebSocketClient webSocketClient;
+    private ChessOrbitCamera orbitCamera;
     private readonly HashSet<string> pendingLocalMoveRequestIds = new HashSet<string>();
     private readonly List<BackendMatchDto> recentMatches = new List<BackendMatchDto>();
 
@@ -47,6 +48,8 @@ public class ChessLanController : MonoBehaviour
         chessGame.MoveCommitted += HandleMoveCommitted;
         chessGame.ReturnedToMainMenu += HandleReturnedToMainMenu;
         backButtonTexture = LoadProjectTexture("Assets/Materials/Main_Menu/Back.png");
+        CacheOrbitCamera();
+        ApplyLobbyCameraState(immediate: true);
         EnsureWebSocketClient();
     }
 
@@ -128,10 +131,12 @@ public class ChessLanController : MonoBehaviour
 
     public void ShowLanSetup()
     {
+        CacheOrbitCamera();
         EnsureWebSocketClient();
         showLanPanel = true;
         statusMessage = "Connect to the backend, share your room code, and play online.";
         roomCodeInput = currentRoomCode;
+        ApplyLobbyCameraState(immediate: false);
         StartCoroutine(LoadMatchHistoryCoroutine());
         StartCoroutine(LoadActiveMatchCoroutine());
     }
@@ -139,6 +144,8 @@ public class ChessLanController : MonoBehaviour
     public void HideLanSetup()
     {
         showLanPanel = false;
+        if (!lanGameActive)
+            ApplyLobbyCameraState(immediate: false);
     }
 
     private void DrawLanPanel(float guiWidth, float guiHeight)
@@ -431,6 +438,10 @@ public class ChessLanController : MonoBehaviour
                 chessGame.BeginLanGame(PieceTeam.White, localTeam);
                 chessGame.ApplyFenState(match.currentFen);
                 lanGameActive = string.Equals(match.status, "ACTIVE", StringComparison.OrdinalIgnoreCase);
+                if (lanGameActive)
+                    ApplyActiveMatchCameraState(localTeam, immediate: true);
+                else
+                    ApplyLobbyCameraState(immediate: false);
                 statusMessage = $"Recovered active match in room {currentRoomCode}.";
                 StartCoroutine(RefreshRoomCoroutine());
 
@@ -511,6 +522,7 @@ public class ChessLanController : MonoBehaviour
     {
         ResetRoomState(clearRoomIdentity: false);
         DisconnectSocketIntentional();
+        ApplyLobbyCameraState(immediate: false);
     }
 
     private void HandleWebSocketConnected()
@@ -644,6 +656,7 @@ public class ChessLanController : MonoBehaviour
             : PieceTeam.Black;
         chessGame.BeginLanGame(PieceTeam.White, localTeam);
         chessGame.ApplyFenState(payload.fen);
+        ApplyActiveMatchCameraState(localTeam, immediate: true);
         lanGameActive = true;
         showLanPanel = false;
         readyCount = 2;
@@ -682,16 +695,20 @@ public class ChessLanController : MonoBehaviour
         if (!string.IsNullOrWhiteSpace(payload.fen))
         {
             lastConfirmedFen = payload.fen;
+            PieceTeam localTeam = string.Equals(payload.whitePlayerId, PlayerAuthService.UserId, StringComparison.OrdinalIgnoreCase)
+                ? PieceTeam.White
+                : PieceTeam.Black;
             if (!chessGame.GameStarted)
             {
-                PieceTeam localTeam = string.Equals(payload.whitePlayerId, PlayerAuthService.UserId, StringComparison.OrdinalIgnoreCase)
-                    ? PieceTeam.White
-                    : PieceTeam.Black;
                 chessGame.BeginLanGame(PieceTeam.White, localTeam);
                 lanGameActive = string.Equals(payload.status, "ACTIVE", StringComparison.OrdinalIgnoreCase);
             }
 
             chessGame.ApplyFenState(payload.fen);
+            if (string.Equals(payload.status, "ACTIVE", StringComparison.OrdinalIgnoreCase))
+                ApplyActiveMatchCameraState(localTeam, immediate: false);
+            else
+                ApplyLobbyCameraState(immediate: false);
         }
 
         if (!string.Equals(payload.status, "ACTIVE", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(payload.result))
@@ -708,6 +725,7 @@ public class ChessLanController : MonoBehaviour
         opponentDrawOfferPending = false;
         OpponentPauseChanged?.Invoke(false, string.Empty);
         statusMessage = $"Game over: {payload.result} ({payload.reason})";
+        ApplyLobbyCameraState(immediate: false);
         chessGame.ApplyServerGameOver(payload.result, payload.reason);
         StartCoroutine(LoadMatchHistoryCoroutine());
         if (string.Equals(payload.reason, "RESIGNATION", StringComparison.OrdinalIgnoreCase))
@@ -753,6 +771,7 @@ public class ChessLanController : MonoBehaviour
         statusMessage = "Left online room.";
         DisconnectSocketIntentional();
         showLanPanel = true;
+        ApplyLobbyCameraState(immediate: false);
         chessGame.RestartToMainMenu();
     }
 
@@ -779,6 +798,34 @@ public class ChessLanController : MonoBehaviour
         webSocketClient.MessageReceived += HandleWebSocketMessage;
         webSocketClient.Closed += HandleWebSocketClosed;
         webSocketClient.Error += HandleWebSocketError;
+    }
+
+    private void CacheOrbitCamera()
+    {
+        if (orbitCamera == null)
+            orbitCamera = FindAnyObjectByType<ChessOrbitCamera>();
+    }
+
+    private void ApplyLobbyCameraState(bool immediate)
+    {
+        CacheOrbitCamera();
+        if (orbitCamera == null)
+            return;
+
+        // Trong menu va waiting room, camera chi orbit quanh tam ban de tranh khoa nham vao quan.
+        orbitCamera.SetAllowPieceLock(false);
+        orbitCamera.ResetToBoardView(immediate);
+    }
+
+    private void ApplyActiveMatchCameraState(PieceTeam localTeam, bool immediate)
+    {
+        CacheOrbitCamera();
+        if (orbitCamera == null)
+            return;
+
+        // Khi vao tran multiplayer, dua goc nhin ve phia nguoi choi hien tai.
+        orbitCamera.SetAllowPieceLock(true);
+        orbitCamera.ConfigureForPlayerSide(localTeam, immediate);
     }
 
     private void ReleaseWebSocketClient()

@@ -57,7 +57,11 @@ public sealed class ChessPauseMenu : MonoBehaviour
         escapePressed |= Input.GetKeyDown(KeyCode.Escape);
 #endif
         if (escapePressed)
+        {
+            if (chessGame && chessGame.TryCancelSelectionFromEscape())
+                return;
             TryToggleFromEscape();
+        }
     }
 
     private void OnGUI()

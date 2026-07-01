@@ -86,6 +86,7 @@ public class ChessGame : MonoBehaviour
     private float accumulatedPausedSeconds;
     private string lastMoveSummary = "No moves yet.";
     private PieceTeam moveHistoryFirstTurn = PieceTeam.White;
+    private ChessOrbitCamera orbitCamera;
     public PieceTeam CurrentTurn => currentTurn;
     public ChessPiece SelectedPiece => selectedPiece;
     public bool GameStarted => gameStarted;
@@ -96,6 +97,7 @@ public class ChessGame : MonoBehaviour
     public PieceTeam WinningTeam => winningTeam;
     public PieceTeam PlayerTeam => playerTeam;
     public ChessGameStatus Status => status;
+    public bool HasSelectedPiece => selectedPiece != null;
     public string DrawReason => drawReason;
     public int HalfMoveClock => halfMoveClock;
     public float MatchElapsedSeconds => gameStarted
@@ -108,11 +110,15 @@ public class ChessGame : MonoBehaviour
     public event Action<ChessLanMove> MoveCommitted;
     public event Action ReturnedToMainMenu;
     public event Action LocalGameRestarted;
+    public event Action<Transform, float> CameraLockRequested;
+    public event Action CameraLockReleased;
 
     private void Awake()
     {
         if (!chessboard)
             chessboard = FindAnyObjectByType<Chessboard>();
+
+        EnsureOrbitCamera();
 
         EnsureAudioSource();
         AutoAssignDefaultAudioClips();
@@ -296,6 +302,7 @@ public class ChessGame : MonoBehaviour
         RefreshPieceMap();
         RecordCurrentPosition();
         gameStarted = true;
+        ApplyGameplayCameraState(localPlayerTeam, true);
         chessboard?.SetPresentationVisible(true);
         chessboard?.ClearLegalMoveHighlights();
         RefreshLocalInteractionState();
@@ -314,10 +321,12 @@ public class ChessGame : MonoBehaviour
             return false;
         }
 
-        DeselectCurrentPiece(true);
+        DeselectCurrentPiece(true, false);
         selectedPiece = piece;
         chessboard?.SetLegalMoveHighlights(GetSafeLegalMoves(selectedPiece));
         AnimatePieceToTile(selectedPiece, selectedPiece.BoardPosition, selectedPieceLiftHeight, selectAnimationDuration, 0f);
+        // Khi đổi hoặc chọn quân mới, camera sẽ chuyển pivot sang quân hợp lệ hiện tại.
+        CameraLockRequested?.Invoke(selectedPiece.transform, GetCameraLockHeightOffset(selectedPiece));
         PlaySound(pickSound);
         return true;
     }
@@ -441,6 +450,15 @@ public class ChessGame : MonoBehaviour
     public void ClearSelection()
     {
         DeselectCurrentPiece(true);
+    }
+
+    public bool TryCancelSelectionFromEscape()
+    {
+        if (!HasSelectedPiece)
+            return false;
+
+        ClearSelection();
+        return true;
     }
 
     public void OpenTurnSelection()
@@ -614,6 +632,35 @@ public class ChessGame : MonoBehaviour
         DestroyImmediate(target);
     }
 
+    private void EnsureOrbitCamera()
+    {
+        Camera gameplayCamera = Camera.main;
+        if (!gameplayCamera)
+            gameplayCamera = FindAnyObjectByType<Camera>();
+
+        if (!gameplayCamera)
+            return;
+
+        orbitCamera = gameplayCamera.GetComponent<ChessOrbitCamera>();
+        if (orbitCamera != null)
+            return;
+
+        orbitCamera = gameplayCamera.gameObject.AddComponent<ChessOrbitCamera>();
+    }
+
+    private void ApplyGameplayCameraState(PieceTeam playerSide, bool immediate)
+    {
+        if (orbitCamera == null)
+            EnsureOrbitCamera();
+
+        if (orbitCamera == null)
+            return;
+
+        // Dua camera ve dung phia nguoi choi da chon trong local hoac online.
+        orbitCamera.SetAllowPieceLock(true);
+        orbitCamera.ConfigureForPlayerSide(playerSide, immediate);
+    }
+
     private void HandleBoardClick()
     {
         Camera currentCamera = Camera.main;
@@ -621,7 +668,8 @@ public class ChessGame : MonoBehaviour
             return;
 
         Ray ray = currentCamera.ScreenPointToRay(Mouse.current.position.ReadValue());
-        if (!Physics.Raycast(ray, out RaycastHit hitInfo, 100f))
+        int raycastMask = LayerMask.GetMask("ChessPiece", "Tile", "Hover");
+        if (!Physics.Raycast(ray, out RaycastHit hitInfo, 100f, raycastMask == 0 ? Physics.DefaultRaycastLayers : raycastMask))
         {
             ClearSelection();
             return;
@@ -648,7 +696,10 @@ public class ChessGame : MonoBehaviour
             }
 
             TryMoveSelectedPiece(destination);
+            return;
         }
+
+        ClearSelection();
     }
 
     private List<Vector2Int> GetSafeLegalMoves(ChessPiece piece)
@@ -1185,6 +1236,7 @@ public class ChessGame : MonoBehaviour
         RefreshLocalInteractionState();
         AnimatePieceToTile(pawn, destination, 0f, moveAnimationDuration, moveArcHeight);
         yield return new WaitForSeconds(moveAnimationDuration);
+        CameraLockReleased?.Invoke();
 
         pendingPromotionPawn = pawn;
         pendingPromotionOpponentTeam = opponentTeam;
@@ -1527,6 +1579,10 @@ public class ChessGame : MonoBehaviour
 
     private void EnsurePieceCollider(GameObject pieceObject)
     {
+        int chessPieceLayer = LayerMask.NameToLayer("ChessPiece");
+        if (chessPieceLayer >= 0)
+            SetLayerRecursively(pieceObject.transform, chessPieceLayer);
+
         if (pieceObject.GetComponentInChildren<Collider>())
             return;
 
@@ -1543,6 +1599,16 @@ public class ChessGame : MonoBehaviour
 
         Vector3 localSize = pieceObject.transform.InverseTransformVector(bounds.size);
         collider.size = new Vector3(Mathf.Abs(localSize.x), Mathf.Abs(localSize.y), Mathf.Abs(localSize.z));
+    }
+
+    private void SetLayerRecursively(Transform root, int layer)
+    {
+        if (!root)
+            return;
+
+        root.gameObject.layer = layer;
+        for (int i = 0; i < root.childCount; i++)
+            SetLayerRecursively(root.GetChild(i), layer);
     }
 
     private List<MeshComponentData> SplitMeshIntoSpatialGroups(Mesh sourceMesh, int expectedGroupCount)
@@ -1857,7 +1923,7 @@ public class ChessGame : MonoBehaviour
         }
     }
 
-    private void DeselectCurrentPiece(bool animateToBoard)
+    private void DeselectCurrentPiece(bool animateToBoard, bool releaseCameraLock = true)
     {
         if (!selectedPiece)
             return;
@@ -1865,6 +1931,8 @@ public class ChessGame : MonoBehaviour
         ChessPiece pieceToDeselect = selectedPiece;
         selectedPiece = null;
         chessboard?.ClearLegalMoveHighlights();
+        if (releaseCameraLock)
+            CameraLockReleased?.Invoke();
 
         if (animateToBoard)
             AnimatePieceToTile(pieceToDeselect, pieceToDeselect.BoardPosition, 0f, selectAnimationDuration, 0f);
@@ -1913,6 +1981,7 @@ public class ChessGame : MonoBehaviour
         RefreshLocalInteractionState();
         AnimatePieceToTile(movingPiece, destination, 0f, moveAnimationDuration, moveArcHeight);
         yield return new WaitForSeconds(moveAnimationDuration);
+        CameraLockReleased?.Invoke();
         inputLocked = false;
         RefreshLocalInteractionState();
     }
@@ -1922,6 +1991,7 @@ public class ChessGame : MonoBehaviour
         inputLocked = true;
         AnimatePieceToTile(movingPiece, destination, 0f, moveAnimationDuration, moveArcHeight);
         yield return new WaitForSeconds(moveAnimationDuration);
+        CameraLockReleased?.Invoke();
         FinishGame(winner);
     }
 
@@ -1930,6 +2000,7 @@ public class ChessGame : MonoBehaviour
         inputLocked = true;
         AnimatePieceToTile(movingPiece, destination, 0f, moveAnimationDuration, moveArcHeight);
         yield return new WaitForSeconds(moveAnimationDuration);
+        CameraLockReleased?.Invoke();
         FinishDraw(reason);
     }
 
@@ -2203,6 +2274,22 @@ public class ChessGame : MonoBehaviour
             MoveCommitted?.Invoke(move);
 
         ClearPendingCommittedMove();
+    }
+
+    private float GetCameraLockHeightOffset(ChessPiece piece)
+    {
+        if (!piece)
+            return 0.75f;
+
+        Renderer[] renderers = piece.GetComponentsInChildren<Renderer>(true);
+        if (renderers.Length == 0)
+            return 0.75f;
+
+        Bounds bounds = renderers[0].bounds;
+        for (int i = 1; i < renderers.Length; i++)
+            bounds.Encapsulate(renderers[i].bounds);
+
+        return Mathf.Max(0.55f, bounds.size.y * 0.6f);
     }
 
     private void ClearPendingCommittedMove()

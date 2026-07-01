@@ -334,6 +334,20 @@ public class Chessboard : MonoBehaviour
         return transform.TransformVector(localOffset);
     }
 
+    public Vector3 GetBoardCenterWorld()
+    {
+        Vector3 localCenter = new Vector3(
+            currentBoardLayout.origin.x + currentBoardLayout.tileWidth * 4f,
+            currentBoardLayout.surfaceY,
+            currentBoardLayout.origin.z + currentBoardLayout.tileDepth * 4f);
+        return transform.TransformPoint(localCenter);
+    }
+
+    public float GetBoardSurfaceY()
+    {
+        return transform.TransformPoint(new Vector3(0f, currentBoardLayout.surfaceY, 0f)).y;
+    }
+
     public bool TryGetTileFromObject(GameObject tileObject, out Vector2Int tile)
     {
         tile = LookupTileIndex(tileObject);
