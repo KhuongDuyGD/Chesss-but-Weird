@@ -104,10 +104,7 @@ public class HandDrawnMenuView : MonoBehaviour
         canvas.sortingOrder = 40;
 
         CanvasScaler scaler = gameObject.AddComponent<CanvasScaler>();
-        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(ReferenceWidth, ReferenceHeight);
-        scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
-        scaler.matchWidthOrHeight = 0.5f;
+        ResponsiveUi.ConfigureCanvasScaler(scaler, new Vector2(ReferenceWidth, ReferenceHeight));
 
         raycaster = gameObject.AddComponent<GraphicRaycaster>();
 
@@ -127,18 +124,19 @@ public class HandDrawnMenuView : MonoBehaviour
         mainScreen = CreateScreen("Main Menu");
 
         AddBattleDoodles(mainScreen, false);
-        AddImage(mainScreen, "Mascot", assets.mascot, new Vector2(-830f, 410f), new Vector2(225f, 175f), 1.7f, 0.7f);
-        AddImage(mainScreen, "Logo", assets.logo, new Vector2(0f, 300f), new Vector2(720f, 360f), 1.0f, 0.35f);
-        AddInteractive(mainScreen, "Start", assets.startButton, new Vector2(0f, 40f), new Vector2(610f, 150f), () => chessGame.OpenTurnSelection(), true);
-        AddInteractive(mainScreen, "Settings", assets.settingsButton, new Vector2(0f, -145f), new Vector2(610f, 138f), () => LogMenuClick("Settings"), true);
-        AddInteractive(mainScreen, "Credits", assets.creditsButton, new Vector2(0f, -325f), new Vector2(610f, 150f), () => LogMenuClick("Credits"), true);
+        AddImage(mainScreen, "Doodle Face", assets.doodleFaceDecoration, new Vector2(-835f, 425f), new Vector2(225f, 178f), 1.2f, 0.45f);
+        AddImage(mainScreen, "Game Logo", assets.gameLogo, new Vector2(0f, 295f), new Vector2(760f, 420f), 0.6f, 0.2f);
+        AddInteractive(mainScreen, "Start", assets.startButton, new Vector2(0f, 42f), new Vector2(660f, 158f), () => chessGame.OpenTurnSelection(), false, 1.035f);
+        AddInteractive(mainScreen, "Settings", assets.settingsButton, new Vector2(0f, -142f), new Vector2(660f, 148f), () => LogMenuClick("Settings"), false, 1.035f);
+        AddInteractive(mainScreen, "Credits", assets.creditsButton, new Vector2(0f, -326f), new Vector2(660f, 158f), () => LogMenuClick("Credits"), false, 1.035f);
 
-        AddImage(mainScreen, "Crown Doodle", assets.crown, new Vector2(-790f, -390f), new Vector2(210f, 160f), 0.8f, 0.35f);
-        AddImage(mainScreen, "Hearts Left", assets.hearts, new Vector2(-475f, -305f), new Vector2(92f, 82f), 0.35f, 0.2f);
-        AddImage(mainScreen, "Hearts Right", assets.hearts, new Vector2(475f, -305f), new Vector2(100f, 90f), 0.35f, 0.2f);
-        AddImage(mainScreen, "Stars Left", assets.stars, new Vector2(-480f, -70f), new Vector2(86f, 58f), 0.3f, 0.18f);
-        AddImage(mainScreen, "Stars Right", assets.stars, new Vector2(480f, -95f), new Vector2(86f, 58f), 0.3f, 0.18f);
-        AddImage(mainScreen, "Early Access", assets.earlyAccess, new Vector2(700f, -405f), new Vector2(320f, 145f), 0f, 0f);
+        AddImage(mainScreen, "Crown Doodle", assets.backgroundDecoration4, new Vector2(-735f, -330f), new Vector2(205f, 158f), 0.45f, 0.2f);
+        AddImage(mainScreen, "Hearts Left", assets.backgroundDecoration2, new Vector2(-475f, -305f), new Vector2(92f, 82f), 0.25f, 0.1f);
+        AddImage(mainScreen, "Hearts Right", assets.backgroundDecoration2, new Vector2(475f, -305f), new Vector2(100f, 90f), 0.25f, 0.1f);
+        AddImage(mainScreen, "Stars Left", assets.backgroundDecoration3, new Vector2(-480f, -70f), new Vector2(86f, 58f), 0.2f, 0.08f);
+        AddImage(mainScreen, "Stars Right", assets.backgroundDecoration3, new Vector2(480f, -95f), new Vector2(86f, 58f), 0.2f, 0.08f);
+        AddImage(mainScreen, "Game Version", assets.gameVersion, new Vector2(735f, -410f), new Vector2(335f, 150f), 0f, 0f);
+        AddLogoutButton(mainScreen);
     }
 
     private void BuildModeScreen()
@@ -149,26 +147,24 @@ public class HandDrawnMenuView : MonoBehaviour
 
     private void BuildPlayHub(RectTransform screen)
     {
-        bool guestMode = PlayerAuthService.IsGuestSession;
-
         AddBattleDoodles(screen, true);
         AddMenuConfetti(screen);
 
-        AddImage(screen, "Mascot", assets.mascot, new Vector2(-820f, 420f), new Vector2(205f, 160f), 1.3f, 0.55f);
-        AddImage(screen, "Slogan", assets.slogan, new Vector2(-350f, 425f), new Vector2(670f, 95f), 0.35f, 0.15f);
-        AddImage(screen, "Logo", assets.logo, new Vector2(530f, 315f), new Vector2(520f, 270f), 0.8f, 0.25f);
+        AddImage(screen, "Doodle Face", assets.doodleFaceDecoration, new Vector2(-840f, 430f), new Vector2(205f, 160f), 0.8f, 0.3f);
+        AddImage(screen, "Game Slogan", assets.gameSlogan, new Vector2(-240f, 438f), new Vector2(755f, 98f), 0.2f, 0.08f);
+        AddImage(screen, "Game Logo", assets.gameLogo, new Vector2(515f, 320f), new Vector2(540f, 285f), 0.4f, 0.12f);
 
-        AddInteractive(screen, "Local", assets.localButton, new Vector2(-735f, 250f), new Vector2(380f, 116f), () => owner.ShowBotDifficultySelection(), true);
-        AddInteractive(screen, "Online", assets.onlineButton, new Vector2(-735f, 75f), new Vector2(380f, 116f), guestMode ? CreateGuestLockedAction("Online") : () => owner.ShowMultiplayerModeSelection(), true);
-        AddInteractive(screen, "Aram", assets.aramButton, new Vector2(-735f, -100f), new Vector2(390f, 122f), guestMode ? CreateGuestLockedAction("ARAM") : () => LogMenuClick("ARAM"), true);
-        AddInteractive(screen, "Shop", assets.shopButton, new Vector2(-735f, -280f), new Vector2(380f, 118f), guestMode ? CreateGuestLockedAction("Shop") : () => LogMenuClick("Shop"), true);
+        AddInteractive(screen, "Local Gameplay", assets.localGameplayButton, new Vector2(-660f, 270f), new Vector2(475f, 132f), () => owner.ShowBotDifficultySelection(), false, 1.035f);
+        AddInteractive(screen, "Online Play", assets.onlinePlayButton, new Vector2(-660f, 95f), new Vector2(475f, 132f), () => owner.ShowMultiplayerModeSelection(), false, 1.035f);
+        AddInteractive(screen, "ARAM Mode", assets.aramModeButton, new Vector2(-660f, -80f), new Vector2(475f, 132f), CreateAuthenticatedAction("ARAM", () => LogMenuClick("ARAM")), false, 1.035f);
+        AddInteractive(screen, "Shop", assets.shopButton, new Vector2(-660f, -255f), new Vector2(475f, 132f), CreateAuthenticatedAction("Shop", () => LogMenuClick("Shop")), false, 1.035f);
 
-        AddInteractive(screen, "Inventory", assets.inventoryIcon, new Vector2(800f, 125f), new Vector2(125f, 125f), guestMode ? CreateGuestLockedAction("Inventory") : () => LogMenuClick("Inventory"), false);
-        AddInteractive(screen, "Gacha", assets.gachaIcon, new Vector2(800f, -55f), new Vector2(130f, 130f), guestMode ? CreateGuestLockedAction("Gacha") : () => LogMenuClick("Gacha"), false);
-        AddInteractive(screen, "Player Profile", assets.playerProfileIcon, new Vector2(800f, -235f), new Vector2(132f, 132f), guestMode ? CreateGuestLockedAction("Player Profile") : () => LogMenuClick("Player Profile"), false);
-        AddInteractive(screen, "Settings Icon", assets.settingsIcon, new Vector2(500f, -395f), new Vector2(116f, 116f), guestMode ? CreateGuestLockedAction("Settings") : () => LogMenuClick("Settings"), false);
-        AddImage(screen, "Early Access", assets.earlyAccess, new Vector2(735f, -410f), new Vector2(310f, 138f), 0f, 0f);
-        AddBackButton(screen, new Vector2(-820f, -420f), () => ShowMainMenu());
+        AddInteractive(screen, "Inventory", assets.inventoryButton, new Vector2(805f, 130f), new Vector2(132f, 132f), CreateAuthenticatedAction("Inventory", () => LogMenuClick("Inventory")), false, 1.045f);
+        AddInteractive(screen, "Gacha", assets.gachaButton, new Vector2(805f, -50f), new Vector2(132f, 132f), CreateAuthenticatedAction("Gacha", () => LogMenuClick("Gacha")), false, 1.045f);
+        AddInteractive(screen, "Player Profile", assets.playerProfile, new Vector2(805f, -230f), new Vector2(136f, 136f), CreateAuthenticatedAction("Player Profile", () => LogMenuClick("Player Profile")), false, 1.045f);
+        AddInteractive(screen, "Settings Icon", assets.settingsIcon, new Vector2(500f, -398f), new Vector2(118f, 118f), CreateAuthenticatedAction("Settings", () => LogMenuClick("Settings")), false, 1.045f);
+        AddImage(screen, "Game Version", assets.gameVersion, new Vector2(735f, -415f), new Vector2(320f, 142f), 0f, 0f);
+        AddLogoutButton(screen);
     }
 
     private void BuildMultiplayerModeScreen()
@@ -178,11 +174,11 @@ public class HandDrawnMenuView : MonoBehaviour
         if (!assets.HasMultiplayerModeSprites)
             return;
 
-        AddImage(multiplayerModeScreen, "Mode Title", assets.multiplayerModeTitle, new Vector2(0f, 380f), new Vector2(1700f, 220f), 0f, 0f);
+        AddImage(multiplayerModeScreen, "Mode Title", assets.chooseMultiplayerMode, new Vector2(0f, 380f), new Vector2(1700f, 220f), 0f, 0f);
         AddInteractive(
             multiplayerModeScreen,
             "LAN Card",
-            assets.lanCard,
+            assets.lanButton,
             new Vector2(-365f, -105f),
             new Vector2(590f, 785f),
             () => SelectMultiplayerMode("LAN"),
@@ -194,7 +190,7 @@ public class HandDrawnMenuView : MonoBehaviour
         AddInteractive(
             multiplayerModeScreen,
             "Online Card",
-            assets.multiplayerOnlineCard,
+            assets.multiplayerButton,
             new Vector2(365f, -105f),
             new Vector2(590f, 785f),
             () => SelectMultiplayerMode("Multiplayer Online"),
@@ -204,10 +200,10 @@ public class HandDrawnMenuView : MonoBehaviour
             0.965f,
             1.25f);
 
-        AddImage(multiplayerModeScreen, "Stars Left", assets.stars, new Vector2(-615f, 305f), new Vector2(92f, 62f), 0.3f, 0.14f);
-        AddImage(multiplayerModeScreen, "Stars Right", assets.stars, new Vector2(625f, 292f), new Vector2(92f, 62f), 0.3f, 0.14f);
-        AddImage(multiplayerModeScreen, "Hearts Left", assets.hearts, new Vector2(-765f, -338f), new Vector2(92f, 80f), 0.3f, 0.14f);
-        AddImage(multiplayerModeScreen, "Hearts Right", assets.hearts, new Vector2(770f, -338f), new Vector2(92f, 80f), 0.3f, 0.14f);
+        AddImage(multiplayerModeScreen, "Stars Left", assets.backgroundDecoration3, new Vector2(-615f, 305f), new Vector2(92f, 62f), 0.2f, 0.08f);
+        AddImage(multiplayerModeScreen, "Stars Right", assets.backgroundDecoration3, new Vector2(625f, 292f), new Vector2(92f, 62f), 0.2f, 0.08f);
+        AddImage(multiplayerModeScreen, "Hearts Left", assets.backgroundDecoration2, new Vector2(-765f, -338f), new Vector2(92f, 80f), 0.2f, 0.08f);
+        AddImage(multiplayerModeScreen, "Hearts Right", assets.backgroundDecoration2, new Vector2(770f, -338f), new Vector2(92f, 80f), 0.2f, 0.08f);
         AddBackButton(multiplayerModeScreen, new Vector2(-820f, -420f), () => ShowModeSelection());
     }
 
@@ -217,11 +213,11 @@ public class HandDrawnMenuView : MonoBehaviour
 
         AddBattleDoodles(sideScreen, true);
         AddMenuConfetti(sideScreen);
-        AddImage(sideScreen, "Choose Side Title", assets.chooseSideTitle, new Vector2(0f, 365f), new Vector2(880f, 150f), 0f, 0f);
-        AddInteractive(sideScreen, "White Card", assets.whiteCard, new Vector2(-365f, -105f), new Vector2(560f, 745f), () => owner.StartBotGame(PieceTeam.White), true);
-        AddInteractive(sideScreen, "Black Card", assets.blackCard, new Vector2(365f, -105f), new Vector2(560f, 745f), () => owner.StartBotGame(PieceTeam.Black), true);
+        AddImage(sideScreen, "Choose Side Title", assets.chooseYourSide, new Vector2(0f, 365f), new Vector2(880f, 150f), 0f, 0f);
+        AddInteractive(sideScreen, "White Card", assets.whiteSideButton, new Vector2(-365f, -105f), new Vector2(560f, 745f), () => owner.StartBotGame(PieceTeam.White), false, 1.035f);
+        AddInteractive(sideScreen, "Black Card", assets.blackSideButton, new Vector2(365f, -105f), new Vector2(560f, 745f), () => owner.StartBotGame(PieceTeam.Black), false, 1.035f);
         AddImage(sideScreen, "Settings Icon", assets.settingsIcon, new Vector2(-760f, -410f), new Vector2(120f, 120f), 0f, 0f);
-        AddImage(sideScreen, "Early Access", assets.earlyAccess, new Vector2(735f, -420f), new Vector2(330f, 145f), 0f, 0f);
+        AddImage(sideScreen, "Game Version", assets.gameVersion, new Vector2(735f, -420f), new Vector2(330f, 145f), 0f, 0f);
         AddBackButton(sideScreen, new Vector2(-600f, -420f), () => ShowBotDifficultySelection());
     }
 
@@ -338,6 +334,7 @@ public class HandDrawnMenuView : MonoBehaviour
         RectTransform rect = screen.GetComponent<RectTransform>();
         rect.SetParent(transform, false);
         Stretch(rect);
+        screen.AddComponent<ResponsiveSafeArea>();
         return rect;
     }
 
@@ -355,12 +352,12 @@ public class HandDrawnMenuView : MonoBehaviour
 
     private void AddDoodle(RectTransform parent, Vector2 position, float size, float rotation, float alpha, bool animate)
     {
-        if (!assets.punchDoodle)
+        if (!assets.backgroundDecoration1)
             return;
 
         float positionWiggle = animate ? 1.4f : 0f;
         float rotationWiggle = animate ? 0.8f : 0f;
-        Image image = AddImage(parent, "Punch Doodle", assets.punchDoodle, position, new Vector2(size * 1.55f, size), positionWiggle, rotationWiggle);
+        Image image = AddImage(parent, "Battle Doodle", assets.backgroundDecoration1, position, new Vector2(size * 1.55f, size), positionWiggle, rotationWiggle);
         image.color = new Color(1f, 1f, 1f, alpha);
         image.rectTransform.localRotation = Quaternion.Euler(0f, 0f, rotation);
     }
@@ -393,14 +390,14 @@ public class HandDrawnMenuView : MonoBehaviour
 
     private void AddMenuConfetti(RectTransform parent)
     {
-        AddImage(parent, "Stars Logo", assets.stars, new Vector2(695f, 240f), new Vector2(76f, 50f), 0.35f, 0.18f);
-        AddImage(parent, "Stars Mid Left", assets.stars, new Vector2(-300f, 170f), new Vector2(78f, 52f), 0.35f, 0.18f);
-        AddImage(parent, "Stars Center", assets.stars, new Vector2(-20f, 120f), new Vector2(82f, 56f), 0.35f, 0.18f);
-        AddImage(parent, "Stars Lower Right", assets.stars, new Vector2(300f, -390f), new Vector2(64f, 42f), 0.35f, 0.18f);
-        AddImage(parent, "Hearts Button Left", assets.hearts, new Vector2(-910f, -110f), new Vector2(78f, 68f), 0.35f, 0.18f);
-        AddImage(parent, "Hearts Button Right", assets.hearts, new Vector2(-535f, -110f), new Vector2(78f, 68f), 0.35f, 0.18f);
-        AddImage(parent, "Hearts Logo", assets.hearts, new Vector2(650f, 200f), new Vector2(78f, 70f), 0.35f, 0.18f);
-        AddImage(parent, "Crown Doodle", assets.crown, new Vector2(45f, -350f), new Vector2(100f, 78f), 0.3f, 0.15f);
+        AddImage(parent, "Stars Logo", assets.backgroundDecoration3, new Vector2(695f, 240f), new Vector2(76f, 50f), 0.2f, 0.08f);
+        AddImage(parent, "Stars Mid Left", assets.backgroundDecoration3, new Vector2(-300f, 170f), new Vector2(78f, 52f), 0.2f, 0.08f);
+        AddImage(parent, "Stars Center", assets.backgroundDecoration3, new Vector2(-20f, 120f), new Vector2(82f, 56f), 0.2f, 0.08f);
+        AddImage(parent, "Stars Lower Right", assets.backgroundDecoration3, new Vector2(300f, -390f), new Vector2(64f, 42f), 0.2f, 0.08f);
+        AddImage(parent, "Hearts Button Left", assets.backgroundDecoration2, new Vector2(-910f, -110f), new Vector2(78f, 68f), 0.2f, 0.08f);
+        AddImage(parent, "Hearts Button Right", assets.backgroundDecoration2, new Vector2(-535f, -110f), new Vector2(78f, 68f), 0.2f, 0.08f);
+        AddImage(parent, "Hearts Logo", assets.backgroundDecoration2, new Vector2(650f, 200f), new Vector2(78f, 70f), 0.2f, 0.08f);
+        AddImage(parent, "Crown Doodle", assets.backgroundDecoration4, new Vector2(45f, -350f), new Vector2(100f, 78f), 0.2f, 0.08f);
     }
 
     private Button AddInteractive(
@@ -410,7 +407,7 @@ public class HandDrawnMenuView : MonoBehaviour
         Vector2 position,
         Vector2 size,
         UnityAction action,
-        bool addIdleWiggle,
+        bool useHandDrawnTilt,
         float hoverScale = 1.07f,
         Color? hoverTint = null,
         float pressedScale = 0.94f,
@@ -427,15 +424,35 @@ public class HandDrawnMenuView : MonoBehaviour
         pressable.Configure(
             hoverScale,
             pressedScale,
-            rotationAmount,
+            useHandDrawnTilt ? rotationAmount : rotationAmount * 0.35f,
             hoverTint ?? new Color(1f, 0.96f, 0.72f, 1f));
 
-        if (addIdleWiggle)
-        {
-            HandDrawnIdleWiggle wiggle = image.gameObject.AddComponent<HandDrawnIdleWiggle>();
-            wiggle.Configure(1.1f, 0.45f, 0.006f, 0.12f);
-        }
+        return button;
+    }
 
+    private Button AddLogoutButton(RectTransform parent)
+    {
+        if (!assets || !assets.logoutButton)
+            return null;
+
+        Button button = AddInteractive(
+            parent,
+            "Logout",
+            assets.logoutButton,
+            Vector2.zero,
+            new Vector2(285f, 95f),
+            () => owner.LogoutToAuthentication(),
+            false,
+            1.025f,
+            new Color(1f, 0.92f, 0.92f, 1f),
+            0.965f,
+            0.5f);
+
+        RectTransform rect = button.transform as RectTransform;
+        rect.anchorMin = Vector2.zero;
+        rect.anchorMax = Vector2.zero;
+        rect.pivot = Vector2.zero;
+        rect.anchoredPosition = new Vector2(34f, 28f);
         return button;
     }
 
@@ -512,21 +529,25 @@ public class HandDrawnMenuView : MonoBehaviour
         Debug.Log($"[HandDrawnMenu] {label} clicked.");
     }
 
-    private UnityAction CreateGuestLockedAction(string featureLabel)
+    private UnityAction CreateAuthenticatedAction(string featureLabel, UnityAction action)
     {
-        return () => LogGuestLock(featureLabel);
-    }
+        return () =>
+        {
+            if (!PlayerAuthService.CanUseOnlineFeatures)
+            {
+                owner.RequestAuthentication($"{featureLabel} requires a backend account. Please log in or sign up.");
+                return;
+            }
 
-    private void LogGuestLock(string featureLabel)
-    {
-        Debug.Log($"[HandDrawnMenu] {featureLabel} is unavailable for Guest. Local mode only.");
+            action?.Invoke();
+        };
     }
 
     private void SelectMultiplayerMode(string modeLabel)
     {
-        if (PlayerAuthService.IsGuestSession)
+        if (!PlayerAuthService.CanUseOnlineFeatures)
         {
-            LogGuestLock(modeLabel);
+            owner.RequestAuthentication($"{modeLabel} requires a valid login session.");
             return;
         }
 

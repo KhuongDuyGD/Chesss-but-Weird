@@ -5,7 +5,6 @@ using UnityEngine.InputSystem;
 public class AuthController : MonoBehaviour
 {
     private Action authenticatedCallback;
-    private HandDrawnMenuAssets menuAssets;
     private MainMenuAuthUI mainMenuAuthUI;
     private string statusMessage = "Login or create an account on the backend server.";
     private bool requestInFlight;
@@ -15,10 +14,8 @@ public class AuthController : MonoBehaviour
         GameObject root = new GameObject("Chess Auth Controller");
         AuthController controller = root.AddComponent<AuthController>();
         controller.authenticatedCallback = onAuthenticated;
-        controller.menuAssets = root.AddComponent<HandDrawnMenuAssets>();
-        controller.menuAssets.LoadFromResources();
         controller.mainMenuAuthUI = root.AddComponent<MainMenuAuthUI>();
-        controller.mainMenuAuthUI.Initialize(controller.menuAssets, PlayerAuthService.GetLastUsername(), controller.statusMessage);
+        controller.mainMenuAuthUI.Initialize(null, PlayerAuthService.GetLastUsername(), controller.statusMessage);
         controller.mainMenuAuthUI.SubmitRequested += controller.Submit;
         controller.mainMenuAuthUI.GuestRequested += controller.PlayAsGuest;
         return controller;
@@ -80,7 +77,17 @@ public class AuthController : MonoBehaviour
     private void HandleAuthSuccess(BackendApiResponse<BackendAuthResponseDto> response)
     {
         requestInFlight = false;
-        PlayerAuthService.ApplyAuthResponse(response.result);
+        string sessionError = "The server returned an invalid login session. Please try again.";
+        if (response == null || !PlayerAuthService.TryApplyAuthResponse(response.result, out sessionError))
+        {
+            mainMenuAuthUI?.SetInteractable(true);
+            mainMenuAuthUI?.ClearSensitiveFields();
+            SetStatusMessage(string.IsNullOrWhiteSpace(sessionError)
+                ? "The server returned an invalid login session. Please try again."
+                : sessionError);
+            return;
+        }
+
         SetStatusMessage(string.IsNullOrWhiteSpace(response.message) ? "Authenticated." : response.message);
         authenticatedCallback?.Invoke();
         if (mainMenuAuthUI != null)

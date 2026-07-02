@@ -10,10 +10,13 @@ public class ChessTurnSelectionUI : MonoBehaviour
         TurnSelection,
         Playing,
         Promotion,
-        GameOver
+        GameOver,
+        Spectating
     }
 
     private const float TransitionDuration = 0.45f;
+    private const float UiReferenceWidth = 1920f;
+    private const float UiReferenceHeight = 1080f;
 
     private ChessGame chessGame;
     private PieceTeam currentTurn;
@@ -37,10 +40,13 @@ public class ChessTurnSelectionUI : MonoBehaviour
     private ChessLanController lanController;
     private ChessPauseMenu pauseMenu;
     private AnalysisBoardView analysisBoard;
+    private ResultMenuView resultMenu;
     private StockfishBotController botController;
     private StockfishDifficulty selectedBotDifficulty = StockfishDifficulty.Medium;
     private string whitePlayerName;
     private string blackPlayerName;
+    private float uiWidth = UiReferenceWidth;
+    private float uiHeight = UiReferenceHeight;
 
     public static ChessTurnSelectionUI Create(ChessGame chessGame)
     {
@@ -51,6 +57,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
         ui.TryCreateLanController();
         ui.TryCreatePauseMenu();
         ui.TryCreateAnalysisBoard();
+        ui.TryCreateResultMenu();
         ui.TryCreateBotController();
         return ui;
     }
@@ -64,7 +71,10 @@ public class ChessTurnSelectionUI : MonoBehaviour
         showCheckWarning = false;
         state = ScreenState.Playing;
         handDrawnMenu?.HideForPlaying();
+        resultMenu?.Hide();
+        pauseMenu?.SetResultSpectating(false);
         analysisBoard?.SetVisible(true);
+        analysisBoard?.SetInteractionEnabled(true);
     }
 
     public void ShowCheckWarning(PieceTeam newCheckedTeam)
@@ -95,7 +105,10 @@ public class ChessTurnSelectionUI : MonoBehaviour
         state = ScreenState.MainMenu;
         lanController?.HideLanSetup();
         handDrawnMenu?.ShowMainMenu();
+        resultMenu?.Hide();
+        pauseMenu?.SetResultSpectating(false);
         analysisBoard?.SetVisible(false);
+        analysisBoard?.SetInteractionEnabled(true);
         ClearMatchPlayers();
     }
 
@@ -149,9 +162,9 @@ public class ChessTurnSelectionUI : MonoBehaviour
 
     public void ShowMultiplayerModeSelection()
     {
-        if (PlayerAuthService.IsGuestSession)
+        if (!PlayerAuthService.CanUseOnlineFeatures)
         {
-            PromptAuthenticationFromGuest("Multiplayer requires a backend account. Please log in or sign up.");
+            RequestAuthentication("Multiplayer requires a valid backend login. Please log in or sign up.");
             return;
         }
 
@@ -173,23 +186,38 @@ public class ChessTurnSelectionUI : MonoBehaviour
 
     public void ShowOnlineSetup()
     {
-        if (PlayerAuthService.IsGuestSession)
+        if (!PlayerAuthService.CanUseOnlineFeatures)
         {
-            PromptAuthenticationFromGuest("Online play requires a backend account. Please log in or sign up.");
+            RequestAuthentication("Online play requires a valid backend login. Please log in or sign up.");
             return;
         }
 
         ShowLanSetup();
     }
 
-    private void PromptAuthenticationFromGuest(string message)
+    public void RequestAuthentication(string message)
     {
+        LogoutToAuthentication();
+        Debug.Log($"[ChessTurnSelectionUI] Authentication requested. {message}");
+    }
+
+    public void LogoutToAuthentication()
+    {
+        lanController?.ResetForAuthenticationChange();
         PlayerAuthService.Logout();
         lanController?.HideLanSetup();
         analysisBoard?.SetVisible(false);
         handDrawnMenu?.HideForPlaying();
-        AuthController.Create(chessGame, ShowMainMenu);
-        Debug.Log($"[ChessTurnSelectionUI] Guest session cleared. {message}");
+        AuthController.Create(chessGame, HandleAuthenticationCompleted);
+        Debug.Log("[ChessTurnSelectionUI] Session cleared. Returning to login/sign-up.");
+    }
+
+    private void HandleAuthenticationCompleted()
+    {
+        // Rebuild the multiplayer state after the account identity changes so a
+        // previous Guest socket/room can never leak into the new login session.
+        lanController?.ResetForAuthenticationChange(PlayerAuthService.CanUseOnlineFeatures);
+        ShowMainMenu();
     }
 
     public void ShowGameOver(PieceTeam winner, PieceTeam selectedPlayerTeam)
@@ -204,6 +232,9 @@ public class ChessTurnSelectionUI : MonoBehaviour
         state = ScreenState.GameOver;
         handDrawnMenu?.HideForPlaying();
         analysisBoard?.SetVisible(true);
+        analysisBoard?.SetInteractionEnabled(true);
+        pauseMenu?.SetResultSpectating(false);
+        resultMenu?.Show(winningTeam == playerTeam ? ResultMenuView.ResultKind.Win : ResultMenuView.ResultKind.Lose);
     }
 
     public void ShowDraw(PieceTeam selectedPlayerTeam, string reason)
@@ -217,6 +248,36 @@ public class ChessTurnSelectionUI : MonoBehaviour
         state = ScreenState.GameOver;
         handDrawnMenu?.HideForPlaying();
         analysisBoard?.SetVisible(true);
+        analysisBoard?.SetInteractionEnabled(true);
+        pauseMenu?.SetResultSpectating(false);
+        ResultMenuView.ResultKind kind = drawReason.IndexOf("stalemate", StringComparison.OrdinalIgnoreCase) >= 0
+            ? ResultMenuView.ResultKind.Stalemate
+            : ResultMenuView.ResultKind.Draw;
+        resultMenu?.Show(kind);
+    }
+
+    public void SpectateFinishedGame()
+    {
+        state = ScreenState.Spectating;
+        resultMenu?.Hide();
+        analysisBoard?.SetVisible(true);
+        analysisBoard?.SetInteractionEnabled(false);
+        pauseMenu?.SetResultSpectating(true);
+    }
+
+    public void StartNewGameFromResult()
+    {
+        resultMenu?.Hide();
+        pauseMenu?.SetResultSpectating(false);
+        if (!chessGame.RestartCurrentLocalGame())
+            chessGame.RestartToMainMenu();
+    }
+
+    public void ReturnToMainMenuFromResult()
+    {
+        resultMenu?.Hide();
+        pauseMenu?.SetResultSpectating(false);
+        chessGame.RestartToMainMenu();
     }
 
     public void SetMatchPlayers(string whiteName, string blackName)
@@ -239,6 +300,28 @@ public class ChessTurnSelectionUI : MonoBehaviour
     private void OnGUI()
     {
         EnsureStyles();
+
+        Matrix4x4 previousMatrix = GUI.matrix;
+        float scale = ResponsiveUi.GetFitScale(UiReferenceWidth, UiReferenceHeight);
+        uiWidth = Screen.width / scale;
+        uiHeight = Screen.height / scale;
+        GUI.matrix = Matrix4x4.Scale(new Vector3(scale, scale, 1f));
+
+        try
+        {
+            DrawResponsiveGui();
+        }
+        finally
+        {
+            GUI.matrix = previousMatrix;
+        }
+    }
+
+    private void DrawResponsiveGui()
+    {
+
+        if (resultMenu && resultMenu.IsReady && (state == ScreenState.GameOver || state == ScreenState.Spectating))
+            return;
 
         if (handDrawnMenu && handDrawnMenu.IsReady &&
             (state == ScreenState.MainMenu || state == ScreenState.TransitionToTurnSelection || state == ScreenState.TurnSelection))
@@ -278,8 +361,8 @@ public class ChessTurnSelectionUI : MonoBehaviour
     {
         DrawDimBackground(0.78f);
 
-        float panelWidth = Mathf.Clamp(Screen.width * 0.60f, 840f, 1240f);
-        float panelHeight = Mathf.Clamp(Screen.height * 0.48f, 500f, 660f);
+        float panelWidth = Mathf.Clamp(uiWidth * 0.60f, 840f, 1240f);
+        float panelHeight = Mathf.Clamp(uiHeight * 0.48f, 500f, 660f);
         Rect panelRect = GetCenteredRect(panelWidth, panelHeight);
 
         GUI.Box(panelRect, string.Empty);
@@ -313,8 +396,8 @@ public class ChessTurnSelectionUI : MonoBehaviour
     {
         DrawDimBackground(0.35f);
 
-        float panelWidth = Mathf.Clamp(Screen.width * 0.48f, 760f, 1040f);
-        float panelHeight = Mathf.Clamp(Screen.height * 0.34f, 380f, 520f);
+        float panelWidth = Mathf.Clamp(uiWidth * 0.48f, 760f, 1040f);
+        float panelHeight = Mathf.Clamp(uiHeight * 0.34f, 380f, 520f);
         Rect panelRect = GetCenteredRect(panelWidth, panelHeight);
 
         GUI.Box(panelRect, string.Empty);
@@ -339,8 +422,8 @@ public class ChessTurnSelectionUI : MonoBehaviour
     {
         DrawDimBackground(0.48f);
 
-        float panelWidth = Mathf.Clamp(Screen.width * 0.56f, 820f, 1160f);
-        float panelHeight = Mathf.Clamp(Screen.height * 0.34f, 380f, 500f);
+        float panelWidth = Mathf.Clamp(uiWidth * 0.56f, 820f, 1160f);
+        float panelHeight = Mathf.Clamp(uiHeight * 0.34f, 380f, 500f);
         Rect panelRect = GetCenteredRect(panelWidth, panelHeight);
 
         GUI.Box(panelRect, string.Empty);
@@ -373,8 +456,8 @@ public class ChessTurnSelectionUI : MonoBehaviour
     {
         DrawDimBackground(0.62f);
 
-        float panelWidth = Mathf.Clamp(Screen.width * 0.48f, 720f, 980f);
-        float panelHeight = Mathf.Clamp(Screen.height * 0.34f, 380f, 500f);
+        float panelWidth = Mathf.Clamp(uiWidth * 0.48f, 720f, 980f);
+        float panelHeight = Mathf.Clamp(uiHeight * 0.34f, 380f, 500f);
         Rect panelRect = GetCenteredRect(panelWidth, panelHeight);
 
         GUI.Box(panelRect, string.Empty);
@@ -401,8 +484,8 @@ public class ChessTurnSelectionUI : MonoBehaviour
     private Rect GetCenteredRect(float width, float height)
     {
         return new Rect(
-            (Screen.width - width) * 0.5f,
-            (Screen.height - height) * 0.5f,
+            (uiWidth - width) * 0.5f,
+            (uiHeight - height) * 0.5f,
             width,
             height);
     }
@@ -411,7 +494,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
     {
         Color previousColor = GUI.color;
         GUI.color = new Color(0f, 0f, 0f, alpha);
-        GUI.DrawTexture(new Rect(0f, 0f, Screen.width, Screen.height), Texture2D.whiteTexture);
+        GUI.DrawTexture(new Rect(0f, 0f, uiWidth, uiHeight), Texture2D.whiteTexture);
         GUI.color = previousColor;
     }
 
@@ -502,6 +585,12 @@ public class ChessTurnSelectionUI : MonoBehaviour
         if (!analysisBoard)
             analysisBoard = gameObject.AddComponent<AnalysisBoardView>();
         analysisBoard.Initialize(chessGame);
+    }
+
+    private void TryCreateResultMenu()
+    {
+        resultMenu = gameObject.AddComponent<ResultMenuView>();
+        resultMenu.Initialize(this, pauseMenu, chessGame);
     }
 
     private void TryCreateBotController()

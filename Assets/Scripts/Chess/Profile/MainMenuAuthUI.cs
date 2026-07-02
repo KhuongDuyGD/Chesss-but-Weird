@@ -129,10 +129,7 @@ public class MainMenuAuthUI : MonoBehaviour
         canvas.sortingOrder = 60;
 
         CanvasScaler scaler = gameObject.AddComponent<CanvasScaler>();
-        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(ReferenceWidth, ReferenceHeight);
-        scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
-        scaler.matchWidthOrHeight = 0.5f;
+        ResponsiveUi.ConfigureCanvasScaler(scaler, new Vector2(ReferenceWidth, ReferenceHeight));
 
         gameObject.AddComponent<GraphicRaycaster>();
 
@@ -144,6 +141,7 @@ public class MainMenuAuthUI : MonoBehaviour
         Stretch(paper.rectTransform);
 
         RectTransform authMenuGroup = CreateGroup(root, "AuthMenuGroup");
+        authMenuGroup.gameObject.AddComponent<ResponsiveSafeArea>();
         BuildAuthPanels(authMenuGroup);
     }
 
@@ -168,7 +166,9 @@ public class MainMenuAuthUI : MonoBehaviour
             new Vector2(478f, 72f),
             TMP_InputField.ContentType.Standard,
             false,
-            0f);
+            0f,
+            32f,
+            23f);
         loginPasswordField = CreateInputField(
             LoginMenuPanel.transform as RectTransform,
             "LoginPasswordField",
@@ -176,7 +176,9 @@ public class MainMenuAuthUI : MonoBehaviour
             new Vector2(478f, 72f),
             TMP_InputField.ContentType.Password,
             true,
-            0f);
+            0f,
+            32f,
+            23f);
 
         signUpUsernameField = CreateInputField(
             SignUpMenuPanel.transform as RectTransform,
@@ -282,7 +284,9 @@ public class MainMenuAuthUI : MonoBehaviour
         Vector2 size,
         TMP_InputField.ContentType contentType,
         bool password,
-        float textOffsetY)
+        float textOffsetY,
+        float fontSize = 28f,
+        float leftPadding = 18f)
     {
         GameObject root = new GameObject(name, typeof(RectTransform), typeof(Image), typeof(TMP_InputField));
         RectTransform rect = root.GetComponent<RectTransform>();
@@ -310,8 +314,8 @@ public class MainMenuAuthUI : MonoBehaviour
         textAreaRect.SetParent(root.transform, false);
         textAreaRect.anchorMin = Vector2.zero;
         textAreaRect.anchorMax = Vector2.one;
-        textAreaRect.offsetMin = new Vector2(18f, 7f);
-        textAreaRect.offsetMax = new Vector2(-18f, -7f);
+        textAreaRect.offsetMin = new Vector2(leftPadding, 3f);
+        textAreaRect.offsetMax = new Vector2(-18f, -3f);
 
         GameObject placeholder = new GameObject("Placeholder", typeof(RectTransform), typeof(TextMeshProUGUI));
         RectTransform placeholderRect = placeholder.GetComponent<RectTransform>();
@@ -319,7 +323,7 @@ public class MainMenuAuthUI : MonoBehaviour
         ConfigureSingleLineTextRect(placeholderRect, textOffsetY);
         TextMeshProUGUI placeholderText = placeholder.GetComponent<TextMeshProUGUI>();
         MainMenuAuthUI owner = parent.GetComponentInParent<MainMenuAuthUI>();
-        ApplyInputTextStyle(placeholderText, owner != null ? owner.handwrittenFont : null);
+        ApplyInputTextStyle(placeholderText, owner != null ? owner.handwrittenFont : null, fontSize);
         placeholderText.text = string.Empty;
         placeholderText.color = new Color(0f, 0f, 0f, 0.14f);
 
@@ -328,9 +332,10 @@ public class MainMenuAuthUI : MonoBehaviour
         textRect.SetParent(textArea.transform, false);
         ConfigureSingleLineTextRect(textRect, textOffsetY);
         TextMeshProUGUI inputText = text.GetComponent<TextMeshProUGUI>();
-        ApplyInputTextStyle(inputText, owner != null ? owner.handwrittenFont : null);
+        ApplyInputTextStyle(inputText, owner != null ? owner.handwrittenFont : null, fontSize);
         inputText.color = new Color(0.05f, 0.05f, 0.05f, 1f);
         inputText.extraPadding = true;
+        inputText.raycastTarget = false;
 
         inputField.textViewport = textAreaRect;
         inputField.textComponent = inputText;
@@ -364,24 +369,27 @@ public class MainMenuAuthUI : MonoBehaviour
         return label;
     }
 
-    private static void ApplyInputTextStyle(TMP_Text text, TMP_FontAsset font)
+    private static void ApplyInputTextStyle(TMP_Text text, TMP_FontAsset font, float fontSize = 28f)
     {
         text.font = font != null ? font : TMP_Settings.defaultFontAsset;
-        text.fontSize = 28f;
+        text.fontSize = fontSize;
         text.textWrappingMode = TextWrappingModes.NoWrap;
         text.overflowMode = TextOverflowModes.Ellipsis;
-        text.alignment = TextAlignmentOptions.BottomLeft;
+        text.alignment = TextAlignmentOptions.MidlineLeft;
         text.characterSpacing = 0.5f;
         text.margin = Vector4.zero;
     }
 
     private static void ConfigureSingleLineTextRect(RectTransform rect, float textOffsetY)
     {
-        rect.anchorMin = new Vector2(0f, 0f);
-        rect.anchorMax = new Vector2(1f, 0f);
-        rect.pivot = new Vector2(0.5f, 0f);
-        rect.anchoredPosition = new Vector2(0f, 8f + textOffsetY);
-        rect.sizeDelta = new Vector2(0f, 34f);
+        // Stretch to the complete input viewport. The previous fixed 34 px
+        // baseline was clipped by RectMask2D whenever font size or Y offset grew.
+        rect.anchorMin = Vector2.zero;
+        rect.anchorMax = Vector2.one;
+        rect.pivot = new Vector2(0.5f, 0.5f);
+        rect.offsetMin = Vector2.zero;
+        rect.offsetMax = Vector2.zero;
+        rect.anchoredPosition = new Vector2(0f, textOffsetY);
     }
 
     private static void SetFieldInteractable(TMP_InputField field, bool interactable)
@@ -451,32 +459,9 @@ public class MainMenuAuthUI : MonoBehaviour
 
     private static TMP_FontAsset CreateHandwrittenFont()
     {
-        string[] preferredFonts =
-        {
-            "Segoe Print",
-            "Comic Sans MS",
-            "Bradley Hand ITC",
-            "Ink Free"
-        };
-
-        try
-        {
-            Font dynamicFont = Font.CreateDynamicFontFromOSFont(preferredFonts, 36);
-            if (dynamicFont == null)
-                return TMP_Settings.defaultFontAsset;
-
-            TMP_FontAsset fontAsset = TMP_FontAsset.CreateFontAsset(dynamicFont);
-            if (fontAsset != null)
-            {
-                fontAsset.atlasPopulationMode = AtlasPopulationMode.Dynamic;
-                return fontAsset;
-            }
-        }
-        catch (Exception exception)
-        {
-            Debug.LogWarning($"[MainMenuAuthUI] Failed to create handwritten font: {exception.Message}");
-        }
-
+        // OS dynamic fonts such as Segoe Print do not expose font-face data to
+        // TMP reliably and emit "Include Font Data" warnings. Use the imported
+        // project default, which is available consistently in builds.
         return TMP_Settings.defaultFontAsset;
     }
 

@@ -21,6 +21,7 @@ public sealed class ChessPauseMenu : MonoBehaviour
     private bool localPaused;
     private bool opponentPaused;
     private bool quitting;
+    private bool resultSpectating;
     private int lastEscapeFrame = -1;
 
     public void Initialize(ChessGame game, ChessLanController networkController)
@@ -45,7 +46,8 @@ public sealed class ChessPauseMenu : MonoBehaviour
         if (!overlay)
             return;
 
-        if (!chessGame || !chessGame.GameStarted)
+        bool canOpenPauseMenu = chessGame && (chessGame.GameStarted || (resultSpectating && chessGame.GameOver));
+        if (!canOpenPauseMenu)
         {
             if (localPaused || opponentPaused || overlay.activeSelf)
                 ResetPauseState();
@@ -73,7 +75,7 @@ public sealed class ChessPauseMenu : MonoBehaviour
 
     private void TryToggleFromEscape()
     {
-        if (!overlay || !chessGame || !chessGame.GameStarted || quitting || lastEscapeFrame == Time.frameCount)
+        if (!overlay || !chessGame || (!chessGame.GameStarted && !(resultSpectating && chessGame.GameOver)) || quitting || lastEscapeFrame == Time.frameCount)
             return;
 
         lastEscapeFrame = Time.frameCount;
@@ -81,6 +83,13 @@ public sealed class ChessPauseMenu : MonoBehaviour
             ResumeLocalPause();
         else
             PauseLocally();
+    }
+
+    public void SetResultSpectating(bool spectating)
+    {
+        resultSpectating = spectating;
+        if (!spectating && (localPaused || overlay && overlay.activeSelf))
+            ResetPauseState();
     }
 
     private void OnDestroy()
@@ -108,10 +117,7 @@ public sealed class ChessPauseMenu : MonoBehaviour
         canvas.sortingOrder = 2500;
 
         CanvasScaler scaler = canvasRoot.GetComponent<CanvasScaler>();
-        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(ReferenceWidth, ReferenceHeight);
-        scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
-        scaler.matchWidthOrHeight = 0.5f;
+        ResponsiveUi.ConfigureCanvasScaler(scaler, new Vector2(ReferenceWidth, ReferenceHeight));
 
         overlay = CreateRectObject("Pause Overlay", canvasRoot.transform);
         Stretch((RectTransform)overlay.transform);
@@ -119,7 +125,11 @@ public sealed class ChessPauseMenu : MonoBehaviour
         Image dim = CreateImage("Dim Background", overlay.transform, null, new Color(0f, 0f, 0f, 0.62f));
         Stretch(dim.rectTransform);
 
-        Image panel = CreateImage("Settings Menu Blank", overlay.transform,
+        GameObject safeArea = CreateRectObject("Pause Safe Area", overlay.transform);
+        Stretch((RectTransform)safeArea.transform);
+        safeArea.AddComponent<ResponsiveSafeArea>();
+
+        Image panel = CreateImage("Settings Menu Blank", safeArea.transform,
             CreateCroppedSprite(assets.menuBlank, 0.086f, 0.054f, 0.829f, 0.895f), Color.white);
         SetRect(panel.rectTransform, Vector2.zero, new Vector2(700f, 940f));
 
@@ -145,11 +155,17 @@ public sealed class ChessPauseMenu : MonoBehaviour
 
     private void PauseLocally()
     {
-        if (!chessGame || !chessGame.GameStarted)
+        if (!chessGame || (!chessGame.GameStarted && !(resultSpectating && chessGame.GameOver)))
             return;
 
         localPaused = true;
         chessGame.SetPauseLocked(true);
+        if (resultSpectating)
+        {
+            ShowCurrentState();
+            return;
+        }
+
         if (lanController != null && lanController.IsNetworkGameActive)
             lanController.SendPauseState(true);
         else
@@ -176,14 +192,16 @@ public sealed class ChessPauseMenu : MonoBehaviour
 
     private void RestartLocalGame()
     {
-        if (!chessGame || (lanController != null && lanController.IsNetworkGameActive))
+        if (!chessGame)
             return;
 
         Time.timeScale = 1f;
         localPaused = false;
         opponentPaused = false;
         overlay.SetActive(false);
-        chessGame.RestartCurrentLocalGame();
+        if (!chessGame.RestartCurrentLocalGame())
+            chessGame.RestartToMainMenu();
+        resultSpectating = false;
     }
 
     private void QuitGame()
@@ -228,7 +246,7 @@ public sealed class ChessPauseMenu : MonoBehaviour
 
         bool networkGame = lanController != null && lanController.IsNetworkGameActive;
         resumeButton.interactable = localPaused && !quitting;
-        restartButton.interactable = !networkGame && localPaused && !quitting;
+        restartButton.interactable = (resultSpectating || !networkGame) && localPaused && !quitting;
         quitButton.interactable = !quitting;
 
         if (opponentPaused && localPaused)

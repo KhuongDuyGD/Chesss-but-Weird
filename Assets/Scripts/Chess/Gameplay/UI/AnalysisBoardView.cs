@@ -11,12 +11,12 @@ public sealed class AnalysisBoardView : MonoBehaviour
     private const float SourceWidth = 1122f;
     private const float SourceHeight = 1402f;
     private const float PanelWidth = 576f;
-    private const float GameplayViewportWidth = 0.70f;
-    private const float ExpandedCameraFovPadding = 14f;
     private static AnalysisBoardView activeInstance;
 
     private ChessGame chessGame;
     private GameObject canvasObject;
+    private Canvas canvas;
+    private GraphicRaycaster raycaster;
     private RectTransform panel;
     private RectTransform whiteCapturedContainer;
     private RectTransform blackCapturedContainer;
@@ -45,6 +45,8 @@ public sealed class AnalysisBoardView : MonoBehaviour
     private PieceTeam lastDisplayedTurn;
     private bool hasDisplayedTurn;
     private bool ownsCanvas;
+    private Vector2Int lastScreenSize = new Vector2Int(-1, -1);
+    private bool panelPreferenceSet;
 
     public void Initialize(ChessGame game)
     {
@@ -64,8 +66,16 @@ public sealed class AnalysisBoardView : MonoBehaviour
         if (!ownsCanvas || activeInstance != this || !canvasObject)
             return;
         isVisible = visible;
+        if (visible && !panelPreferenceSet)
+            isExpanded = IsWideEnoughForSidePanel();
         canvasObject.SetActive(visible);
         ApplyExpansionState();
+    }
+
+    public void SetInteractionEnabled(bool enabled)
+    {
+        if (raycaster)
+            raycaster.enabled = enabled;
     }
 
     private void OnDestroy()
@@ -98,7 +108,18 @@ public sealed class AnalysisBoardView : MonoBehaviour
 
     private void Update()
     {
-        if (!canvasObject || !canvasObject.activeInHierarchy || chessGame == null || Time.unscaledTime < nextRefreshAt)
+        if (!canvasObject || !canvasObject.activeInHierarchy || chessGame == null)
+            return;
+
+        if (lastScreenSize.x != Screen.width || lastScreenSize.y != Screen.height)
+        {
+            lastScreenSize = new Vector2Int(Screen.width, Screen.height);
+            if (!panelPreferenceSet)
+                isExpanded = IsWideEnoughForSidePanel();
+            ApplyExpansionState();
+        }
+
+        if (Time.unscaledTime < nextRefreshAt)
             return;
 
         nextRefreshAt = Time.unscaledTime + 0.1f;
@@ -120,18 +141,17 @@ public sealed class AnalysisBoardView : MonoBehaviour
         // Chess Game has no Canvas, so this remains an independent root Canvas while its
         // lifetime is tied to the gameplay scene instead of becoming an orphan object.
         canvasObject.transform.SetParent(chessGame.transform, false);
-        Canvas canvas = canvasObject.GetComponent<Canvas>();
+        canvas = canvasObject.GetComponent<Canvas>();
+        raycaster = canvasObject.GetComponent<GraphicRaycaster>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
         canvas.sortingOrder = 18;
 
         CanvasScaler scaler = canvasObject.GetComponent<CanvasScaler>();
-        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(1920f, 1080f);
-        scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
-        // Width-driven scaling keeps the statistics panel at exactly 30% of every aspect ratio.
-        scaler.matchWidthOrHeight = 0f;
+        ResponsiveUi.ConfigureCanvasScaler(scaler, new Vector2(ResponsiveUi.ReferenceWidth, ResponsiveUi.ReferenceHeight));
 
-        panel = CreateRect(canvasObject.transform, "Analysis Board", new Vector2(GameplayViewportWidth, 0f), Vector2.one, new Vector2(1f, 0.5f), Vector2.zero, Vector2.zero);
+        // Fixed virtual width keeps the panel readable without letting it become
+        // oversized on ultrawide displays; it still resolves to 30% at 16:9.
+        panel = CreateRect(canvasObject.transform, "Analysis Board", new Vector2(1f, 0f), Vector2.one, new Vector2(1f, 0.5f), new Vector2(PanelWidth, 0f), Vector2.zero);
         RawImage boardImage = panel.gameObject.AddComponent<RawImage>();
         boardImage.texture = assets.board;
         boardImage.raycastTarget = false;
@@ -284,8 +304,14 @@ public sealed class AnalysisBoardView : MonoBehaviour
 
     private void ToggleExpanded()
     {
+        panelPreferenceSet = true;
         isExpanded = !isExpanded;
         ApplyExpansionState();
+    }
+
+    private static bool IsWideEnoughForSidePanel()
+    {
+        return Screen.height <= 0 || Screen.width / (float)Screen.height >= 1.25f;
     }
 
     private void ApplyExpansionState()
@@ -316,14 +342,27 @@ public sealed class AnalysisBoardView : MonoBehaviour
         {
             EnsureBackgroundCamera();
             backgroundCamera.gameObject.SetActive(true);
-            gameplayCamera.rect = new Rect(0f, 0f, GameplayViewportWidth, 1f);
+            Canvas.ForceUpdateCanvases();
+            gameplayCamera.rect = new Rect(0f, 0f, GetGameplayViewportWidth(), 1f);
             gameplayCamera.lensShift = originalLensShift;
-            gameplayCamera.fieldOfView = Mathf.Min(100f, originalFieldOfView + ExpandedCameraFovPadding);
+            // Changing the viewport width must not change the perceived board
+            // distance. Keep the gameplay camera's original vertical FOV.
+            gameplayCamera.fieldOfView = originalFieldOfView;
         }
         else
         {
             RestoreCameraPresentation();
         }
+    }
+
+    private float GetGameplayViewportWidth()
+    {
+        if (!canvas || Screen.width <= 0)
+            return 0.70f;
+
+        float reservedScreenWidth = panel.rect.width * canvas.scaleFactor;
+        float reservedFraction = Mathf.Clamp(reservedScreenWidth / Screen.width, 0.18f, 0.38f);
+        return 1f - reservedFraction;
     }
 
     private void RestoreCameraPresentation()

@@ -7,7 +7,7 @@ public static class PlayerAuthService
 
     public static PlayerProfile CurrentProfile { get; private set; }
     public static bool IsGuestSession { get; private set; }
-    public static bool IsAuthenticated => CurrentProfile != null && BackendSessionStore.HasToken && !BackendSessionStore.IsTokenExpired;
+    public static bool IsAuthenticated => !IsGuestSession && CurrentProfile != null && BackendSessionStore.HasToken && !BackendSessionStore.IsTokenExpired;
     public static string CurrentDisplayName => CurrentProfile != null ? CurrentProfile.displayName : Environment.MachineName;
     public static string Token => BackendSessionStore.Token;
     public static string UserId => CurrentProfile != null ? CurrentProfile.playerId : string.Empty;
@@ -37,13 +37,34 @@ public static class PlayerAuthService
 
     public static void ApplyAuthResponse(BackendAuthResponseDto auth)
     {
-        if (auth == null || auth.user == null)
-            return;
+        TryApplyAuthResponse(auth, out _);
+    }
+
+    public static bool TryApplyAuthResponse(BackendAuthResponseDto auth, out string error)
+    {
+        if (auth == null || auth.user == null || string.IsNullOrWhiteSpace(auth.token) ||
+            string.IsNullOrWhiteSpace(auth.user.id) || string.IsNullOrWhiteSpace(auth.user.username))
+        {
+            Logout();
+            error = "The server returned an incomplete login session. Please try again.";
+            return false;
+        }
 
         ClearGuestSessionInternal(false);
+        BackendSessionStore.Clear();
         BackendSessionStore.SaveAuth(auth);
         IsGuestSession = false;
         ApplyUser(auth.user);
+
+        if (!IsAuthenticated)
+        {
+            Logout();
+            error = "The login token is missing or already expired. Please sign in again.";
+            return false;
+        }
+
+        error = string.Empty;
+        return true;
     }
 
     public static void UpdateProfile(BackendUserProfileDto user)

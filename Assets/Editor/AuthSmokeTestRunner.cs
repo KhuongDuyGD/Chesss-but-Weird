@@ -14,10 +14,19 @@ public static class AuthSmokeTestRunner
 
             AssertFalse(PlayerAuthService.IsAuthenticated, "Expected logged-out state after clearing session.");
 
+            PlayerAuthService.BeginGuestSession();
+            AssertTrue(PlayerAuthService.IsGuestSession, "Guest session should be active.");
+            AssertFalse(PlayerAuthService.CanUseOnlineFeatures, "Guest must not have online access.");
+            PlayerAuthService.Logout();
+            AssertFalse(PlayerAuthService.IsGuestSession, "Logout should clear the Guest flag.");
+
             BackendAuthResponseDto auth = new BackendAuthResponseDto
             {
                 token = "smoke-token",
-                expiresInSeconds = 600,
+                // Zero reproduces a server response that omitted the optional
+                // lifetime. The client should apply its safe default instead of
+                // expiring an otherwise valid login immediately.
+                expiresInSeconds = 0,
                 user = new BackendUserProfileDto
                 {
                     id = "smoke-user-id",
@@ -29,6 +38,8 @@ public static class AuthSmokeTestRunner
 
             PlayerAuthService.ApplyAuthResponse(auth);
             AssertTrue(PlayerAuthService.IsAuthenticated, "ApplyAuthResponse should authenticate the player.");
+            AssertTrue(PlayerAuthService.CanUseOnlineFeatures, "Guest -> logout -> backend login should unlock multiplayer.");
+            AssertFalse(PlayerAuthService.IsGuestSession, "Backend login must replace stale Guest state.");
             AssertEqual("smoke_player", PlayerAuthService.Username, "Username mismatch.");
             AssertEqual("smoke_player", PlayerAuthService.CurrentDisplayName, "Display name mismatch.");
             AssertEqual(1337, PlayerAuthService.CurrentProfile.rating, "Rating mismatch.");

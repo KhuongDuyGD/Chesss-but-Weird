@@ -148,6 +148,19 @@ public class ChessLanController : MonoBehaviour
             ApplyLobbyCameraState(immediate: false);
     }
 
+    public void ResetForAuthenticationChange(bool authenticated = false)
+    {
+        showLanPanel = false;
+        ResetRoomState(clearRoomIdentity: true);
+        DisconnectSocketIntentional();
+        recentMatches.Clear();
+        roomCodeInput = string.Empty;
+        statusMessage = authenticated
+            ? "Signed in. Online multiplayer is ready."
+            : "Sign in to use online multiplayer.";
+        ApplyLobbyCameraState(immediate: false);
+    }
+
     private void DrawLanPanel(float guiWidth, float guiHeight)
     {
         float panelWidth = Mathf.Clamp(guiWidth * 0.54f, 860f, 1120f);
@@ -1017,9 +1030,7 @@ public class ChessLanController : MonoBehaviour
 
     private static float GetGuiScale()
     {
-        float widthScale = Screen.width / ReferenceWidth;
-        float heightScale = Screen.height / ReferenceHeight;
-        return Mathf.Clamp(Mathf.Min(widthScale, heightScale), 1f, 2f);
+        return ResponsiveUi.GetFitScale(ReferenceWidth, ReferenceHeight);
     }
 
     private static Texture2D LoadProjectTexture(string projectRelativePath)

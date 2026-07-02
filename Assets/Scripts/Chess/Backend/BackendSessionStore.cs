@@ -3,6 +3,7 @@ using UnityEngine;
 
 public static class BackendSessionStore
 {
+    private const long DefaultTokenLifetimeSeconds = 1800;
     private const string TokenKey = "backend.token";
     private const string TokenExpiryKey = "backend.token.expiryUtc";
     private const string UserIdKey = "backend.user.id";
@@ -33,11 +34,12 @@ public static class BackendSessionStore
 
     public static void SaveAuth(BackendAuthResponseDto auth)
     {
-        if (auth == null || auth.user == null)
+        if (auth == null || auth.user == null || string.IsNullOrWhiteSpace(auth.token))
             return;
 
         Token = auth.token ?? string.Empty;
-        TokenExpiryUtc = DateTime.UtcNow.AddSeconds(Math.Max(0, auth.expiresInSeconds - 5));
+        long lifetimeSeconds = auth.expiresInSeconds > 0 ? auth.expiresInSeconds : DefaultTokenLifetimeSeconds;
+        TokenExpiryUtc = DateTime.UtcNow.AddSeconds(Math.Max(1, lifetimeSeconds - 5));
         PlayerPrefs.SetString(UserIdKey, auth.user.id ?? string.Empty);
         PlayerPrefs.SetString(UsernameKey, auth.user.username ?? string.Empty);
         PlayerPrefs.SetInt(EloKey, auth.user.elo);

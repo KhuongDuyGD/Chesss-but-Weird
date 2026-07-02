@@ -11,7 +11,7 @@ public class HandDrawnIdleWiggle : MonoBehaviour
     private Vector2 basePosition;
     private Quaternion baseRotation;
     private Vector3 baseScale;
-    private float timer;
+    private float phase;
 
     private void Awake()
     {
@@ -22,12 +22,12 @@ public class HandDrawnIdleWiggle : MonoBehaviour
         basePosition = rectTransform.anchoredPosition;
         baseRotation = rectTransform.localRotation;
         baseScale = rectTransform.localScale;
-        timer = Random.Range(0f, interval);
+        phase = Random.Range(0f, Mathf.PI * 2f);
     }
 
     private void OnEnable()
     {
-        timer = Random.Range(0f, interval);
+        phase = Random.Range(0f, Mathf.PI * 2f);
     }
 
     private void OnDisable()
@@ -45,14 +45,11 @@ public class HandDrawnIdleWiggle : MonoBehaviour
         if (!rectTransform)
             return;
 
-        timer -= Time.unscaledDeltaTime;
-        if (timer > 0f)
-            return;
-
-        timer = interval;
-        rectTransform.anchoredPosition = basePosition + Random.insideUnitCircle * positionAmount;
-        rectTransform.localRotation = baseRotation * Quaternion.Euler(0f, 0f, Random.Range(-rotationAmount, rotationAmount));
-        float scale = 1f + Random.Range(-scaleAmount, scaleAmount);
+        float speed = Mathf.Max(0.01f, interval) * 8f;
+        float time = Time.unscaledTime * speed + phase;
+        rectTransform.anchoredPosition = basePosition + new Vector2(Mathf.Sin(time), Mathf.Cos(time * 0.83f)) * positionAmount;
+        rectTransform.localRotation = baseRotation * Quaternion.Euler(0f, 0f, Mathf.Sin(time * 0.71f) * rotationAmount);
+        float scale = 1f + Mathf.Sin(time * 0.57f) * scaleAmount;
         rectTransform.localScale = baseScale * scale;
     }
 

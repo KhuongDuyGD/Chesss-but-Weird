@@ -8,7 +8,7 @@ public class HandDrawnPressable : MonoBehaviour, IPointerEnterHandler, IPointerE
     [SerializeField] private float hoverScale = 1.07f;
     [SerializeField] private float pressedScale = 0.94f;
     [SerializeField] private float rotationAmount = 2.2f;
-    [SerializeField] private float responseSpeed = 14f;
+    [SerializeField] private float responseSpeed = 10f;
     [SerializeField] private Graphic tintTarget;
     [SerializeField] private Color hoverTint = new Color(1f, 0.96f, 0.72f, 1f);
 
@@ -18,6 +18,7 @@ public class HandDrawnPressable : MonoBehaviour, IPointerEnterHandler, IPointerE
     private Color baseColor = Color.white;
     private bool hovering;
     private bool pressing;
+    private float hoverDirection = 1f;
 
     public void Configure(float newHoverScale, float newPressedScale, float newRotationAmount, Color newHoverTint)
     {
@@ -43,17 +44,19 @@ public class HandDrawnPressable : MonoBehaviour, IPointerEnterHandler, IPointerE
     private void Update()
     {
         float targetScale = pressing ? pressedScale : hovering ? hoverScale : 1f;
-        float targetRotation = hovering ? Mathf.Sin(Time.unscaledTime * 18f) * rotationAmount : 0f;
+        float targetRotation = hovering ? hoverDirection * rotationAmount : 0f;
+        float blend = 1f - Mathf.Exp(-responseSpeed * Time.unscaledDeltaTime);
 
-        rectTransform.localScale = Vector3.Lerp(rectTransform.localScale, baseScale * targetScale, Time.unscaledDeltaTime * responseSpeed);
-        rectTransform.localRotation = Quaternion.Lerp(rectTransform.localRotation, baseRotation * Quaternion.Euler(0f, 0f, targetRotation), Time.unscaledDeltaTime * responseSpeed);
+        rectTransform.localScale = Vector3.Lerp(rectTransform.localScale, baseScale * targetScale, blend);
+        rectTransform.localRotation = Quaternion.Slerp(rectTransform.localRotation, baseRotation * Quaternion.Euler(0f, 0f, targetRotation), blend);
 
         if (tintTarget)
-            tintTarget.color = Color.Lerp(tintTarget.color, hovering ? hoverTint : baseColor, Time.unscaledDeltaTime * responseSpeed);
+            tintTarget.color = Color.Lerp(tintTarget.color, hovering ? hoverTint : baseColor, blend);
     }
 
     public void OnPointerEnter(PointerEventData eventData)
     {
+        hoverDirection = Random.value < 0.5f ? -1f : 1f;
         hovering = true;
     }
 
