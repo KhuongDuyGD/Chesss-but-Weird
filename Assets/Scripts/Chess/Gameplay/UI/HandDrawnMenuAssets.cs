@@ -4,6 +4,7 @@ using UnityEngine;
 public class HandDrawnMenuAssets : MonoBehaviour
 {
     private const string MainMenuAssetFolder = "Assets/Materials/Main_Menu";
+    private const string GachaMenuAssetFolder = "Assets/Materials/Gacha_menu";
 
     [Header("Shared Main Menu Artwork")]
     public Sprite gameLogo;
@@ -36,6 +37,16 @@ public class HandDrawnMenuAssets : MonoBehaviour
     public Sprite chooseMultiplayerMode;
     public Sprite lanButton;
     public Sprite multiplayerButton;
+
+    [Header("Gacha Menu")]
+    public Sprite gachaBackground;
+    public Sprite gachaTitle1;
+    public Sprite gachaTitle2;
+    public Sprite gachaTitle3;
+    public Sprite gachaCoinsAmount;
+    public Sprite gachaBackButton;
+    public Sprite gachaStandardBanner;
+    public Sprite gachaDetails;
 
     [Header("Side Select")]
     public Sprite chooseYourSide;
@@ -81,6 +92,15 @@ public class HandDrawnMenuAssets : MonoBehaviour
         lanButton = LoadRenamedSprite("LANButton.png", "lan_card", new SpriteCrop(1086f, 1448f, 36f, 112f, 1010f, 1250f));
         multiplayerButton = LoadRenamedSprite("MultiplayerButton.png", "multiplayer_online_card", new SpriteCrop(1086f, 1448f, 36f, 112f, 1010f, 1250f));
 
+        gachaBackground = LoadProjectSprite(Path.Combine(GachaMenuAssetFolder, "Gacha_background.png"));
+        gachaTitle1 = LoadProjectSprite(Path.Combine(GachaMenuAssetFolder, "Gacha_title1.png"));
+        gachaTitle2 = LoadProjectSprite(Path.Combine(GachaMenuAssetFolder, "Gacha_title2.png"));
+        gachaTitle3 = LoadProjectSprite(Path.Combine(GachaMenuAssetFolder, "Gacha_title3.png"));
+        gachaCoinsAmount = LoadProjectSprite(Path.Combine(GachaMenuAssetFolder, "Coins_amount.png"));
+        gachaBackButton = LoadProjectSprite(Path.Combine(GachaMenuAssetFolder, "Back.png"));
+        gachaStandardBanner = LoadProjectSprite(Path.Combine(GachaMenuAssetFolder, "Standard_banner.png"));
+        gachaDetails = LoadProjectSprite(Path.Combine(GachaMenuAssetFolder, "Details.png"));
+
         chooseYourSide = LoadRenamedSprite("ChooseYourSide.png", "choose_side_title", new SpriteCrop(2172f, 724f, 216f, 218f, 1797f, 253f));
         whiteSideButton = LoadRenamedSprite("WhiteSideButton.png", "white_card", new SpriteCrop(1086f, 1448f, 109f, 167f, 876f, 1093f));
         blackSideButton = LoadRenamedSprite("BlackSideButton.png", "black_card", new SpriteCrop(1086f, 1448f, 151f, 176f, 811f, 1002f));
@@ -112,6 +132,16 @@ public class HandDrawnMenuAssets : MonoBehaviour
             ? legacyCrop.Value.ToUnityRect(texture.width, texture.height)
             : new Rect(0f, 0f, texture.width, texture.height);
         return Sprite.Create(texture, sourceRect, new Vector2(0.5f, 0.5f), 100f, 0u, SpriteMeshType.FullRect);
+    }
+
+    private static Sprite LoadProjectSprite(string projectRelativePath)
+    {
+        Texture2D texture = LoadTextureFromProjectFile(projectRelativePath);
+        if (!texture)
+            return null;
+
+        texture.filterMode = FilterMode.Bilinear;
+        return Sprite.Create(texture, new Rect(0f, 0f, texture.width, texture.height), new Vector2(0.5f, 0.5f), 100f, 0u, SpriteMeshType.FullRect);
     }
 
     private static Texture2D LoadTextureFromProjectFile(string projectRelativePath)

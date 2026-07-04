@@ -459,10 +459,7 @@ public class MainMenuAuthUI : MonoBehaviour
 
     private static TMP_FontAsset CreateHandwrittenFont()
     {
-        // OS dynamic fonts such as Segoe Print do not expose font-face data to
-        // TMP reliably and emit "Include Font Data" warnings. Use the imported
-        // project default, which is available consistently in builds.
-        return TMP_Settings.defaultFontAsset;
+        return ChessFontCatalog.TmpFont;
     }
 
     private void LoadActionSprites()

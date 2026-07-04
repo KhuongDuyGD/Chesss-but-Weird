@@ -487,9 +487,7 @@ public sealed class AnalysisBoardView : MonoBehaviour
     private static Font GetRuntimeFont()
     {
         if (!runtimeFont)
-            runtimeFont = Font.CreateDynamicFontFromOSFont(new[] { "Segoe Print", "Comic Sans MS", "Arial" }, 32);
-        if (!runtimeFont)
-            runtimeFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            runtimeFont = ChessFontCatalog.RuntimeFont;
         return runtimeFont;
     }
 

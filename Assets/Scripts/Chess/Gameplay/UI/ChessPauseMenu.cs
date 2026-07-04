@@ -302,7 +302,7 @@ public sealed class ChessPauseMenu : MonoBehaviour
         GameObject textObject = new GameObject("Pause Status", typeof(RectTransform), typeof(Text));
         textObject.transform.SetParent(parent, false);
         Text text = textObject.GetComponent<Text>();
-        text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        text.font = ChessFontCatalog.RuntimeFont;
         text.fontSize = 30;
         text.fontStyle = FontStyle.Bold;
         text.alignment = TextAnchor.MiddleCenter;

@@ -18,6 +18,7 @@ public class HandDrawnMenuView : MonoBehaviour
     private RectTransform mainScreen;
     private RectTransform modeScreen;
     private RectTransform multiplayerModeScreen;
+    private RectTransform gachaScreen;
     private RectTransform botDifficultyScreen;
     private RectTransform sideScreen;
     private readonly List<Sprite> runtimeSprites = new List<Sprite>();
@@ -38,6 +39,7 @@ public class HandDrawnMenuView : MonoBehaviour
         BuildMainScreen();
         BuildModeScreen();
         BuildMultiplayerModeScreen();
+        BuildGachaScreen();
         BuildBotDifficultyScreen();
         BuildSideScreen();
         ShowMainMenu();
@@ -82,6 +84,13 @@ public class HandDrawnMenuView : MonoBehaviour
         SetVisible(true);
         SetInputEnabled(true);
         SetScreen(multiplayerModeScreen);
+    }
+
+    public void ShowGachaMenu()
+    {
+        SetVisible(true);
+        SetInputEnabled(true);
+        SetScreen(gachaScreen);
     }
 
     public void HideForPlaying()
@@ -160,7 +169,7 @@ public class HandDrawnMenuView : MonoBehaviour
         AddInteractive(screen, "Shop", assets.shopButton, new Vector2(-660f, -255f), new Vector2(475f, 132f), CreateAuthenticatedAction("Shop", () => LogMenuClick("Shop")), false, 1.035f);
 
         AddInteractive(screen, "Inventory", assets.inventoryButton, new Vector2(805f, 130f), new Vector2(132f, 132f), CreateAuthenticatedAction("Inventory", () => LogMenuClick("Inventory")), false, 1.045f);
-        AddInteractive(screen, "Gacha", assets.gachaButton, new Vector2(805f, -50f), new Vector2(132f, 132f), CreateAuthenticatedAction("Gacha", () => LogMenuClick("Gacha")), false, 1.045f);
+        AddInteractive(screen, "Gacha", assets.gachaButton, new Vector2(805f, -50f), new Vector2(132f, 132f), CreateAuthenticatedAction("Gacha", ShowGachaMenu), false, 1.045f);
         AddInteractive(screen, "Player Profile", assets.playerProfile, new Vector2(805f, -230f), new Vector2(136f, 136f), CreateAuthenticatedAction("Player Profile", () => LogMenuClick("Player Profile")), false, 1.045f);
         AddInteractive(screen, "Settings Icon", assets.settingsIcon, new Vector2(500f, -398f), new Vector2(118f, 118f), CreateAuthenticatedAction("Settings", () => LogMenuClick("Settings")), false, 1.045f);
         AddImage(screen, "Game Version", assets.gameVersion, new Vector2(735f, -415f), new Vector2(320f, 142f), 0f, 0f);
@@ -205,6 +214,32 @@ public class HandDrawnMenuView : MonoBehaviour
         AddImage(multiplayerModeScreen, "Hearts Left", assets.backgroundDecoration2, new Vector2(-765f, -338f), new Vector2(92f, 80f), 0.2f, 0.08f);
         AddImage(multiplayerModeScreen, "Hearts Right", assets.backgroundDecoration2, new Vector2(770f, -338f), new Vector2(92f, 80f), 0.2f, 0.08f);
         AddBackButton(multiplayerModeScreen, new Vector2(-820f, -420f), () => ShowModeSelection());
+    }
+
+    private void BuildGachaScreen()
+    {
+        gachaScreen = CreateScreen("Gacha Menu");
+
+        if (!assets || !assets.gachaBackground)
+            return;
+
+        Image background = CreateImage(
+            gachaScreen,
+            "Gacha Background",
+            assets.gachaBackground,
+            Vector2.zero,
+            new Vector2(ReferenceWidth, ReferenceHeight));
+        background.preserveAspect = false;
+
+        AddImage(gachaScreen, "Gacha Title 1", assets.gachaTitle1, new Vector2(0f, 415f), new Vector2(840f, 154f), 0f, 0f);
+        AddImage(gachaScreen, "Gacha Title 2", assets.gachaTitle2, new Vector2(0f, 295f), new Vector2(1008f, 231f), 0f, 0f);
+        AddImage(gachaScreen, "Coins Amount", assets.gachaCoinsAmount, new Vector2(690f, 418f), new Vector2(360f, 150f), 0f, 0f);
+
+        AddImage(gachaScreen, "Standard Banner", assets.gachaStandardBanner, new Vector2(-625f, 130f), new Vector2(377f, 162f), 0f, 0f);
+        AddImage(gachaScreen, "Details", assets.gachaDetails, new Vector2(-250f, -360f), new Vector2(315f, 120f), 0f, 0f);
+
+        AddImage(gachaScreen, "Gacha Footer", assets.gachaTitle3, new Vector2(0f, -435f), new Vector2(700f, 140f), 0f, 0f);
+        AddGachaBackButton(gachaScreen, new Vector2(-760f, -430f), () => ShowModeSelection());
     }
 
     private void BuildSideScreen()
@@ -475,6 +510,25 @@ public class HandDrawnMenuView : MonoBehaviour
             1.4f);
     }
 
+    private Button AddGachaBackButton(RectTransform parent, Vector2 position, UnityAction action)
+    {
+        if (!assets || !assets.gachaBackButton)
+            return AddBackButton(parent, position, action);
+
+        return AddInteractive(
+            parent,
+            "Gacha Back Button",
+            assets.gachaBackButton,
+            position,
+            new Vector2(240f, 110f),
+            action,
+            true,
+            1.04f,
+            new Color(1f, 0.95f, 0.78f, 1f),
+            0.95f,
+            1.4f);
+    }
+
     private Image CreateImage(Transform parent, string imageName, Sprite sprite, Vector2 position, Vector2 size)
     {
         GameObject imageObject = new GameObject(imageName, typeof(RectTransform), typeof(Image));
@@ -494,12 +548,13 @@ public class HandDrawnMenuView : MonoBehaviour
 
     private void SetScreen(RectTransform activeScreen)
     {
-        if (!mainScreen || !modeScreen || !multiplayerModeScreen || !botDifficultyScreen || !sideScreen || !activeScreen)
+        if (!mainScreen || !modeScreen || !multiplayerModeScreen || !gachaScreen || !botDifficultyScreen || !sideScreen || !activeScreen)
             return;
 
         mainScreen.gameObject.SetActive(activeScreen == mainScreen);
         modeScreen.gameObject.SetActive(activeScreen == modeScreen);
         multiplayerModeScreen.gameObject.SetActive(activeScreen == multiplayerModeScreen);
+        gachaScreen.gameObject.SetActive(activeScreen == gachaScreen);
         botDifficultyScreen.gameObject.SetActive(activeScreen == botDifficultyScreen);
         sideScreen.gameObject.SetActive(activeScreen == sideScreen);
     }
@@ -512,6 +567,8 @@ public class HandDrawnMenuView : MonoBehaviour
             modeScreen.gameObject.SetActive(active);
         if (multiplayerModeScreen)
             multiplayerModeScreen.gameObject.SetActive(active);
+        if (gachaScreen)
+            gachaScreen.gameObject.SetActive(active);
         if (botDifficultyScreen)
             botDifficultyScreen.gameObject.SetActive(active);
         if (sideScreen)
