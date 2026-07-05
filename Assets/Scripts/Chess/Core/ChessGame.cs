@@ -5,6 +5,9 @@ using System.Text;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 public class ChessGame : MonoBehaviour
 {
@@ -87,6 +90,8 @@ public class ChessGame : MonoBehaviour
     private string lastMoveSummary = "No moves yet.";
     private PieceTeam moveHistoryFirstTurn = PieceTeam.White;
     private ChessOrbitCamera orbitCamera;
+    private string whitePieceSkinId = PieceSkinCatalog.DefaultSkinId;
+    private string blackPieceSkinId = PieceSkinCatalog.DefaultSkinId;
     public PieceTeam CurrentTurn => currentTurn;
     public ChessPiece SelectedPiece => selectedPiece;
     public bool GameStarted => gameStarted;
@@ -276,6 +281,41 @@ public class ChessGame : MonoBehaviour
         BeginGameInternal(PieceTeam.White, localPlayerTeam, true, PieceTeam.White);
     }
 
+    public void ConfigurePieceSkinsForBot(PieceTeam playerSide, string playerSkinId)
+    {
+        whitePieceSkinId = PieceSkinCatalog.DefaultSkinId;
+        blackPieceSkinId = PieceSkinCatalog.DefaultSkinId;
+        SetPieceSkinId(playerSide, playerSkinId);
+        ApplyPieceSkinsToRuntimePieces();
+    }
+
+    public void ConfigurePieceSkinsForLocalPlayers(string whiteSkinId, string blackSkinId)
+    {
+        whitePieceSkinId = PieceSkinCatalog.NormalizeId(whiteSkinId);
+        blackPieceSkinId = PieceSkinCatalog.NormalizeId(blackSkinId);
+
+        if (!PieceSkinCatalog.IsDefault(whitePieceSkinId) &&
+            string.Equals(whitePieceSkinId, blackPieceSkinId, StringComparison.OrdinalIgnoreCase))
+        {
+            blackPieceSkinId = PieceSkinCatalog.DefaultSkinId;
+        }
+
+        ApplyPieceSkinsToRuntimePieces();
+    }
+
+    public string GetPieceSkinId(PieceTeam team)
+    {
+        return team == PieceTeam.White ? whitePieceSkinId : blackPieceSkinId;
+    }
+
+    private void SetPieceSkinId(PieceTeam team, string skinId)
+    {
+        if (team == PieceTeam.White)
+            whitePieceSkinId = PieceSkinCatalog.NormalizeId(skinId);
+        else
+            blackPieceSkinId = PieceSkinCatalog.NormalizeId(skinId);
+    }
+
     private void BeginGameInternal(PieceTeam firstTurn, PieceTeam localPlayerTeam, bool restrictInput, PieceTeam frontTeam)
     {
         currentTurn = firstTurn;
@@ -298,6 +338,7 @@ public class ChessGame : MonoBehaviour
         blackCapturedPieces.Clear();
         ResetDrawTracking();
         ArrangePiecesForFirstTurn(frontTeam);
+        ApplyPieceSkinsToRuntimePieces();
         SetRuntimePiecesVisible(true);
         RefreshPieceMap();
         RecordCurrentPosition();
@@ -551,6 +592,7 @@ public class ChessGame : MonoBehaviour
 
         RefreshPieceMap();
         AlignAllPiecesToBoard();
+        ApplyPieceSkinsToRuntimePieces();
         SetRuntimePiecesVisible(false);
         chessboard?.SetPresentationVisible(false);
         chessboard?.SetInteractionEnabled(false);
@@ -1305,6 +1347,8 @@ public class ChessGame : MonoBehaviour
         promotedPiece.Initialize(team, boardPosition, forwardDirection);
         promotedPiece.MarkMoved();
         promotedPiece.gameObject.name = $"{team} {promotionType} {boardPosition.x},{boardPosition.y}";
+        ApplySkinToPiece(promotedPiece);
+        EnsurePieceCollider(promotedPiece.gameObject);
         MovePieceToTile(promotedPiece, boardPosition, 0f);
         pieces[boardPosition.x, boardPosition.y] = promotedPiece;
         lastMovedPiece = promotedPiece;
@@ -1346,7 +1390,6 @@ public class ChessGame : MonoBehaviour
         meshRenderer.sharedMaterials = sourceRenderer.sharedMaterials;
 
         ChessPiece promotedPiece = AddPieceComponent(promotedObject, promotionType);
-        EnsurePieceCollider(promotedObject);
         return promotedPiece;
     }
 
@@ -1373,8 +1416,64 @@ public class ChessGame : MonoBehaviour
         }
 
         ChessPiece promotedPiece = AddPieceComponent(promotedObject, promotionType);
-        EnsurePieceCollider(promotedObject);
         return promotedPiece;
+    }
+
+    private void ApplyPieceSkinsToRuntimePieces()
+    {
+        if (!runtimePiecesRoot)
+            return;
+
+        ChessPiece[] scenePieces = runtimePiecesRoot.GetComponentsInChildren<ChessPiece>(true);
+        for (int i = 0; i < scenePieces.Length; i++)
+            ApplySkinToPiece(scenePieces[i]);
+    }
+
+    private void ApplySkinToPiece(ChessPiece piece)
+    {
+        if (!piece)
+            return;
+
+        PieceSkinDefinition skin = PieceSkinCatalog.Get(GetPieceSkinId(piece.Team));
+        PieceSkinVisualState skinState = piece.GetComponent<PieceSkinVisualState>();
+        if (!skinState)
+            skinState = piece.gameObject.AddComponent<PieceSkinVisualState>();
+        skinState.CaptureOriginalRenderers(piece.transform);
+
+        if (skin.IsDefault || !TryLoadPieceSkinPrefab(skin, piece.Type, out GameObject prefab))
+        {
+            skinState.ApplyDefault();
+            UpdatePieceRootColliderFromVisibleRenderers(piece.gameObject);
+            return;
+        }
+
+        skinState.ApplyPrefabSkin(prefab, skin.Id, piece.Type, skin.GetTuning(piece.Type), piece.transform);
+        UpdatePieceRootColliderFromVisibleRenderers(piece.gameObject);
+    }
+
+    private bool TryLoadPieceSkinPrefab(PieceSkinDefinition skin, PieceType pieceType, out GameObject prefab)
+    {
+        prefab = null;
+        if (skin == null || skin.IsDefault)
+            return false;
+
+        string resourcePath = skin.GetResourcePath(pieceType);
+        if (!string.IsNullOrWhiteSpace(resourcePath))
+            prefab = Resources.Load<GameObject>(resourcePath);
+
+#if UNITY_EDITOR
+        if (!prefab)
+        {
+            string assetPath = skin.GetPrefabAssetPath(pieceType);
+            if (!string.IsNullOrWhiteSpace(assetPath))
+                prefab = AssetDatabase.LoadAssetAtPath<GameObject>(assetPath);
+        }
+#endif
+
+        if (!prefab)
+            Debug.LogWarning($"[PieceSkin] Missing prefab for skin '{skin.DisplayName}' and piece '{pieceType}'. Using default model.");
+
+        return prefab != null;
     }
 
     private string GetVisualSourceName(PieceTeam team, PieceType pieceType)
@@ -1549,6 +1648,7 @@ public class ChessGame : MonoBehaviour
 
             T piece = pieceObject.AddComponent<T>();
             piece.Initialize(team, boardPosition, team == PieceTeam.White ? 1 : -1);
+            ApplySkinToPiece(piece);
             EnsurePieceCollider(pieceObject);
             MovePieceToTile(piece, boardPosition, 0f);
         }
@@ -1586,19 +1686,49 @@ public class ChessGame : MonoBehaviour
         if (pieceObject.GetComponentInChildren<Collider>())
             return;
 
-        Renderer[] renderers = pieceObject.GetComponentsInChildren<Renderer>(true);
-        if (renderers.Length == 0)
+        UpdatePieceRootColliderFromVisibleRenderers(pieceObject);
+    }
+
+    private void UpdatePieceRootColliderFromVisibleRenderers(GameObject pieceObject)
+    {
+        if (!pieceObject)
             return;
 
-        Bounds bounds = renderers[0].bounds;
-        for (int i = 1; i < renderers.Length; i++)
-            bounds.Encapsulate(renderers[i].bounds);
+        Renderer[] renderers = pieceObject.GetComponentsInChildren<Renderer>(true);
+        if (!TryGetVisibleRendererBounds(renderers, out Bounds bounds))
+            return;
 
-        BoxCollider collider = pieceObject.AddComponent<BoxCollider>();
+        BoxCollider collider = pieceObject.GetComponent<BoxCollider>();
+        if (!collider)
+            collider = pieceObject.AddComponent<BoxCollider>();
         collider.center = pieceObject.transform.InverseTransformPoint(bounds.center);
 
         Vector3 localSize = pieceObject.transform.InverseTransformVector(bounds.size);
         collider.size = new Vector3(Mathf.Abs(localSize.x), Mathf.Abs(localSize.y), Mathf.Abs(localSize.z));
+    }
+
+    private bool TryGetVisibleRendererBounds(Renderer[] renderers, out Bounds bounds)
+    {
+        bounds = default;
+        bool hasBounds = false;
+        for (int i = 0; i < renderers.Length; i++)
+        {
+            Renderer currentRenderer = renderers[i];
+            if (!currentRenderer || !currentRenderer.enabled || !currentRenderer.gameObject.activeInHierarchy)
+                continue;
+
+            if (!hasBounds)
+            {
+                bounds = currentRenderer.bounds;
+                hasBounds = true;
+            }
+            else
+            {
+                bounds.Encapsulate(currentRenderer.bounds);
+            }
+        }
+
+        return hasBounds;
     }
 
     private void SetLayerRecursively(Transform root, int layer)
@@ -1873,9 +2003,24 @@ public class ChessGame : MonoBehaviour
         if (!runtimePiecesRoot)
             return;
 
-        Renderer[] renderers = runtimePiecesRoot.GetComponentsInChildren<Renderer>(true);
-        for (int i = 0; i < renderers.Length; i++)
-            renderers[i].enabled = visible;
+        ChessPiece[] scenePieces = runtimePiecesRoot.GetComponentsInChildren<ChessPiece>(true);
+        for (int i = 0; i < scenePieces.Length; i++)
+        {
+            ChessPiece piece = scenePieces[i];
+            if (!piece)
+                continue;
+
+            PieceSkinVisualState skinState = piece.GetComponent<PieceSkinVisualState>();
+            if (skinState)
+            {
+                skinState.SetRuntimeVisible(visible);
+                continue;
+            }
+
+            Renderer[] renderers = piece.GetComponentsInChildren<Renderer>(true);
+            for (int rendererIndex = 0; rendererIndex < renderers.Length; rendererIndex++)
+                renderers[rendererIndex].enabled = visible;
+        }
 
         Collider[] colliders = runtimePiecesRoot.GetComponentsInChildren<Collider>(true);
         for (int i = 0; i < colliders.Length; i++)
@@ -2477,8 +2622,9 @@ public class ChessGame : MonoBehaviour
         }
 
         ChessPiece piece = AddPieceComponent(pieceObject, pieceType);
-        EnsurePieceCollider(pieceObject);
         piece.Initialize(team, boardPosition, forwardDirection);
+        ApplySkinToPiece(piece);
+        EnsurePieceCollider(pieceObject);
         return piece;
     }
 

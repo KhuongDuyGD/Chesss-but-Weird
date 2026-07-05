@@ -146,13 +146,58 @@ public class ChessTurnSelectionUI : MonoBehaviour
         handDrawnMenu?.ShowBotDifficultySelection();
     }
 
+    public void ShowLocalModeSelection()
+    {
+        showCheckWarning = false;
+        lanController?.HideLanSetup();
+        state = ScreenState.TurnSelection;
+        analysisBoard?.SetVisible(false);
+        handDrawnMenu?.ShowLocalModeSelection();
+    }
+
     public void SelectBotDifficulty(StockfishDifficulty difficulty)
     {
         selectedBotDifficulty = difficulty;
         ShowSideSelection();
     }
 
+    public void ShowBotSkinSelection(PieceTeam selectedPlayerTeam)
+    {
+        showCheckWarning = false;
+        lanController?.HideLanSetup();
+        state = ScreenState.TurnSelection;
+        analysisBoard?.SetVisible(false);
+        handDrawnMenu?.ShowPieceSkinSelection(true, selectedPlayerTeam);
+    }
+
+    public void ShowTwoPlayerSkinSelection()
+    {
+        showCheckWarning = false;
+        lanController?.HideLanSetup();
+        state = ScreenState.TurnSelection;
+        analysisBoard?.SetVisible(false);
+        handDrawnMenu?.ShowPieceSkinSelection(false, PieceTeam.White);
+    }
+
     public void StartBotGame(PieceTeam playerTeam)
+    {
+        chessGame.ConfigurePieceSkinsForBot(playerTeam, PieceSkinCatalog.DefaultSkinId);
+        StartBotGameWithConfiguredSkins(playerTeam);
+    }
+
+    public void StartBotGameWithSkin(PieceTeam playerTeam, string playerSkinId)
+    {
+        chessGame.ConfigurePieceSkinsForBot(playerTeam, playerSkinId);
+        StartBotGameWithConfiguredSkins(playerTeam);
+    }
+
+    public void StartLocalTwoPlayerGameWithSkins(string whiteSkinId, string blackSkinId)
+    {
+        chessGame.ConfigurePieceSkinsForLocalPlayers(whiteSkinId, blackSkinId);
+        chessGame.BeginGame(PieceTeam.White);
+    }
+
+    private void StartBotGameWithConfiguredSkins(PieceTeam playerTeam)
     {
         if (botController)
             botController.StartBotGame(playerTeam, selectedBotDifficulty);

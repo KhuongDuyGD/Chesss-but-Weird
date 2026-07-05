@@ -17,11 +17,20 @@ public class HandDrawnMenuView : MonoBehaviour
     private GraphicRaycaster raycaster;
     private RectTransform mainScreen;
     private RectTransform modeScreen;
+    private RectTransform localModeScreen;
     private RectTransform multiplayerModeScreen;
     private RectTransform gachaScreen;
     private RectTransform botDifficultyScreen;
     private RectTransform sideScreen;
+    private RectTransform skinScreen;
+    private Text skinMessageText;
     private readonly List<Sprite> runtimeSprites = new List<Sprite>();
+    private readonly List<SkinOptionButton> skinOptionButtons = new List<SkinOptionButton>();
+    private string selectedWhiteSkinId = PieceSkinCatalog.DefaultSkinId;
+    private string selectedBlackSkinId = PieceSkinCatalog.DefaultSkinId;
+    private bool skinSelectionVsBot;
+    private PieceTeam skinSelectionPlayerTeam = PieceTeam.White;
+    private static Font uiFont;
 
     public bool IsReady => assets != null && assets.HasRequiredSprites && canvas != null;
 
@@ -38,10 +47,12 @@ public class HandDrawnMenuView : MonoBehaviour
         BuildCanvas();
         BuildMainScreen();
         BuildModeScreen();
+        BuildLocalModeScreen();
         BuildMultiplayerModeScreen();
         BuildGachaScreen();
         BuildBotDifficultyScreen();
         BuildSideScreen();
+        BuildSkinScreen();
         ShowMainMenu();
     }
 
@@ -71,6 +82,33 @@ public class HandDrawnMenuView : MonoBehaviour
         SetVisible(true);
         SetInputEnabled(true);
         SetScreen(botDifficultyScreen);
+    }
+
+    public void ShowLocalModeSelection()
+    {
+        SetVisible(true);
+        SetInputEnabled(true);
+        SetScreen(localModeScreen);
+    }
+
+    public void ShowPieceSkinSelection(bool vsBot, PieceTeam playerTeam)
+    {
+        skinSelectionVsBot = vsBot;
+        skinSelectionPlayerTeam = playerTeam;
+        selectedWhiteSkinId = chessGame ? chessGame.GetPieceSkinId(PieceTeam.White) : PieceSkinCatalog.DefaultSkinId;
+        selectedBlackSkinId = chessGame ? chessGame.GetPieceSkinId(PieceTeam.Black) : PieceSkinCatalog.DefaultSkinId;
+
+        if (vsBot)
+        {
+            selectedWhiteSkinId = PieceSkinCatalog.DefaultSkinId;
+            selectedBlackSkinId = PieceSkinCatalog.DefaultSkinId;
+            SetSelectedSkinId(playerTeam, PieceSkinCatalog.DefaultSkinId);
+        }
+
+        RebuildSkinScreen();
+        SetVisible(true);
+        SetInputEnabled(true);
+        SetScreen(skinScreen);
     }
 
     public void ShowMultiplayerModeSelection()
@@ -154,6 +192,18 @@ public class HandDrawnMenuView : MonoBehaviour
         BuildPlayHub(modeScreen);
     }
 
+    private void BuildLocalModeScreen()
+    {
+        localModeScreen = CreateScreen("Local Mode");
+
+        AddBattleDoodles(localModeScreen, true);
+        AddMenuConfetti(localModeScreen);
+        AddText(localModeScreen, "Local Mode Title", "Local Mode", new Vector2(0f, 340f), new Vector2(720f, 130f), 76, TextAnchor.MiddleCenter, new Color(0.12f, 0.1f, 0.08f, 1f));
+        AddTextButton(localModeScreen, "Vs Bot", "Vs Bot", new Vector2(-315f, 10f), new Vector2(470f, 180f), () => owner.ShowBotDifficultySelection(), new Color(0.96f, 0.86f, 0.48f, 1f));
+        AddTextButton(localModeScreen, "Two Players", "2 Players", new Vector2(315f, 10f), new Vector2(470f, 180f), () => owner.ShowTwoPlayerSkinSelection(), new Color(0.6f, 0.84f, 0.94f, 1f));
+        AddBackButton(localModeScreen, new Vector2(-820f, -420f), () => ShowModeSelection());
+    }
+
     private void BuildPlayHub(RectTransform screen)
     {
         AddBattleDoodles(screen, true);
@@ -163,7 +213,7 @@ public class HandDrawnMenuView : MonoBehaviour
         AddImage(screen, "Game Slogan", assets.gameSlogan, new Vector2(-240f, 438f), new Vector2(755f, 98f), 0.2f, 0.08f);
         AddImage(screen, "Game Logo", assets.gameLogo, new Vector2(515f, 320f), new Vector2(540f, 285f), 0.4f, 0.12f);
 
-        AddInteractive(screen, "Local Gameplay", assets.localGameplayButton, new Vector2(-660f, 270f), new Vector2(475f, 132f), () => owner.ShowBotDifficultySelection(), false, 1.035f);
+        AddInteractive(screen, "Local Gameplay", assets.localGameplayButton, new Vector2(-660f, 270f), new Vector2(475f, 132f), () => owner.ShowLocalModeSelection(), false, 1.035f);
         AddInteractive(screen, "Online Play", assets.onlinePlayButton, new Vector2(-660f, 95f), new Vector2(475f, 132f), () => owner.ShowMultiplayerModeSelection(), false, 1.035f);
         AddInteractive(screen, "ARAM Mode", assets.aramModeButton, new Vector2(-660f, -80f), new Vector2(475f, 132f), CreateAuthenticatedAction("ARAM", () => LogMenuClick("ARAM")), false, 1.035f);
         AddInteractive(screen, "Shop", assets.shopButton, new Vector2(-660f, -255f), new Vector2(475f, 132f), CreateAuthenticatedAction("Shop", () => LogMenuClick("Shop")), false, 1.035f);
@@ -249,11 +299,175 @@ public class HandDrawnMenuView : MonoBehaviour
         AddBattleDoodles(sideScreen, true);
         AddMenuConfetti(sideScreen);
         AddImage(sideScreen, "Choose Side Title", assets.chooseYourSide, new Vector2(0f, 365f), new Vector2(880f, 150f), 0f, 0f);
-        AddInteractive(sideScreen, "White Card", assets.whiteSideButton, new Vector2(-365f, -105f), new Vector2(560f, 745f), () => owner.StartBotGame(PieceTeam.White), false, 1.035f);
-        AddInteractive(sideScreen, "Black Card", assets.blackSideButton, new Vector2(365f, -105f), new Vector2(560f, 745f), () => owner.StartBotGame(PieceTeam.Black), false, 1.035f);
+        AddInteractive(sideScreen, "White Card", assets.whiteSideButton, new Vector2(-365f, -105f), new Vector2(560f, 745f), () => owner.ShowBotSkinSelection(PieceTeam.White), false, 1.035f);
+        AddInteractive(sideScreen, "Black Card", assets.blackSideButton, new Vector2(365f, -105f), new Vector2(560f, 745f), () => owner.ShowBotSkinSelection(PieceTeam.Black), false, 1.035f);
         AddImage(sideScreen, "Settings Icon", assets.settingsIcon, new Vector2(-760f, -410f), new Vector2(120f, 120f), 0f, 0f);
         AddImage(sideScreen, "Game Version", assets.gameVersion, new Vector2(735f, -420f), new Vector2(330f, 145f), 0f, 0f);
         AddBackButton(sideScreen, new Vector2(-600f, -420f), () => ShowBotDifficultySelection());
+    }
+
+    private void BuildSkinScreen()
+    {
+        skinScreen = CreateScreen("Piece Skin Select");
+    }
+
+    private void RebuildSkinScreen()
+    {
+        ClearSkinScreen();
+        skinOptionButtons.Clear();
+
+        AddBattleDoodles(skinScreen, true);
+        AddMenuConfetti(skinScreen);
+        AddText(skinScreen, "Skin Title", "Choose Piece Skin", new Vector2(0f, 410f), new Vector2(980f, 110f), 66, TextAnchor.MiddleCenter, new Color(0.12f, 0.1f, 0.08f, 1f));
+
+        if (skinSelectionVsBot)
+        {
+            AddSkinSection(skinSelectionPlayerTeam, new Vector2(0f, 90f), $"{skinSelectionPlayerTeam} Player");
+            AddTextButton(skinScreen, "Start Bot Match", "Start", new Vector2(0f, -410f), new Vector2(330f, 115f), StartSelectedSkinMatch, new Color(0.98f, 0.83f, 0.32f, 1f));
+            AddBackButton(skinScreen, new Vector2(-820f, -420f), () => ShowSideSelection());
+        }
+        else
+        {
+            AddSkinSection(PieceTeam.White, new Vector2(-470f, 65f), "White Player");
+            AddSkinSection(PieceTeam.Black, new Vector2(470f, 65f), "Black Player");
+            AddTextButton(skinScreen, "Start Local Match", "Start", new Vector2(0f, -430f), new Vector2(330f, 105f), StartSelectedSkinMatch, new Color(0.98f, 0.83f, 0.32f, 1f));
+            AddBackButton(skinScreen, new Vector2(-820f, -430f), () => ShowLocalModeSelection());
+        }
+
+        skinMessageText = AddText(
+            skinScreen,
+            "Skin Message",
+            string.Empty,
+            new Vector2(0f, -325f),
+            new Vector2(1250f, 58f),
+            34,
+            TextAnchor.MiddleCenter,
+            new Color(0.78f, 0.12f, 0.08f, 1f));
+
+        RefreshSkinOptionStates();
+    }
+
+    private void ClearSkinScreen()
+    {
+        if (!skinScreen)
+            return;
+
+        for (int i = skinScreen.childCount - 1; i >= 0; i--)
+            Destroy(skinScreen.GetChild(i).gameObject);
+    }
+
+    private void AddSkinSection(PieceTeam team, Vector2 center, string title)
+    {
+        AddText(skinScreen, $"{team} Skin Section Title", title, center + new Vector2(0f, 215f), new Vector2(520f, 65f), 42, TextAnchor.MiddleCenter, new Color(0.12f, 0.1f, 0.08f, 1f));
+
+        IReadOnlyList<PieceSkinDefinition> skins = PieceSkinCatalog.All;
+        float startX = center.x - 135f;
+        float startY = center.y + 108f;
+        for (int i = 0; i < skins.Count; i++)
+        {
+            int column = i % 2;
+            int row = i / 2;
+            Vector2 position = new Vector2(startX + column * 270f, startY - row * 105f);
+            AddSkinOption(team, skins[i], position);
+        }
+    }
+
+    private void AddSkinOption(PieceTeam team, PieceSkinDefinition skin, Vector2 position)
+    {
+        GameObject optionObject = new GameObject($"{team} {skin.DisplayName}", typeof(RectTransform), typeof(Image), typeof(Button), typeof(CanvasGroup), typeof(Outline));
+        RectTransform rect = optionObject.GetComponent<RectTransform>();
+        rect.SetParent(skinScreen, false);
+        rect.anchorMin = new Vector2(0.5f, 0.5f);
+        rect.anchorMax = new Vector2(0.5f, 0.5f);
+        rect.anchoredPosition = position;
+        rect.sizeDelta = new Vector2(245f, 82f);
+
+        Image background = optionObject.GetComponent<Image>();
+        background.raycastTarget = true;
+
+        Button button = optionObject.GetComponent<Button>();
+        button.transition = Selectable.Transition.None;
+        button.targetGraphic = background;
+        button.onClick.AddListener(() => SelectSkinOption(team, skin));
+
+        Outline outline = optionObject.GetComponent<Outline>();
+        outline.effectDistance = new Vector2(5f, -5f);
+
+        Text label = AddText(rect, "Label", skin.DisplayName, Vector2.zero, rect.sizeDelta, 28, TextAnchor.MiddleCenter, Color.black);
+        label.fontStyle = FontStyle.Bold;
+
+        skinOptionButtons.Add(new SkinOptionButton
+        {
+            Team = team,
+            Skin = skin,
+            Button = button,
+            Background = background,
+            Label = label,
+            CanvasGroup = optionObject.GetComponent<CanvasGroup>(),
+            Outline = outline
+        });
+    }
+
+    private void SelectSkinOption(PieceTeam team, PieceSkinDefinition skin)
+    {
+        if (IsSkinLockedForTeam(team, skin.Id))
+        {
+            if (skinMessageText)
+                skinMessageText.text = "Skin n\u00e0y \u0111\u00e3 \u0111\u01b0\u1ee3c ng\u01b0\u1eddi ch\u01a1i c\u00f2n l\u1ea1i ch\u1ecdn.";
+            return;
+        }
+
+        SetSelectedSkinId(team, skin.Id);
+        if (skinMessageText)
+            skinMessageText.text = string.Empty;
+        RefreshSkinOptionStates();
+    }
+
+    private void RefreshSkinOptionStates()
+    {
+        for (int i = 0; i < skinOptionButtons.Count; i++)
+        {
+            SkinOptionButton option = skinOptionButtons[i];
+            bool selected = string.Equals(GetSelectedSkinId(option.Team), option.Skin.Id, System.StringComparison.OrdinalIgnoreCase);
+            bool locked = IsSkinLockedForTeam(option.Team, option.Skin.Id);
+            Color backgroundColor = option.Skin.SwatchColor;
+
+            option.Background.color = locked ? new Color(0.42f, 0.42f, 0.42f, 0.8f) : backgroundColor;
+            option.Label.color = locked ? new Color(0.8f, 0.8f, 0.8f, 1f) : GetReadableTextColor(backgroundColor);
+            option.CanvasGroup.alpha = locked ? 0.48f : 1f;
+            option.Outline.effectColor = selected ? new Color(1f, 0.72f, 0.08f, 1f) : new Color(0f, 0f, 0f, 0f);
+            option.Button.interactable = true;
+        }
+    }
+
+    private bool IsSkinLockedForTeam(PieceTeam team, string skinId)
+    {
+        if (PieceSkinCatalog.IsDefault(skinId))
+            return false;
+
+        PieceTeam otherTeam = team == PieceTeam.White ? PieceTeam.Black : PieceTeam.White;
+        return string.Equals(GetSelectedSkinId(otherTeam), skinId, System.StringComparison.OrdinalIgnoreCase);
+    }
+
+    private string GetSelectedSkinId(PieceTeam team)
+    {
+        return team == PieceTeam.White ? selectedWhiteSkinId : selectedBlackSkinId;
+    }
+
+    private void SetSelectedSkinId(PieceTeam team, string skinId)
+    {
+        if (team == PieceTeam.White)
+            selectedWhiteSkinId = PieceSkinCatalog.NormalizeId(skinId);
+        else
+            selectedBlackSkinId = PieceSkinCatalog.NormalizeId(skinId);
+    }
+
+    private void StartSelectedSkinMatch()
+    {
+        if (skinSelectionVsBot)
+            owner.StartBotGameWithSkin(skinSelectionPlayerTeam, GetSelectedSkinId(skinSelectionPlayerTeam));
+        else
+            owner.StartLocalTwoPlayerGameWithSkins(selectedWhiteSkinId, selectedBlackSkinId);
     }
 
     private void BuildBotDifficultyScreen()
@@ -465,6 +679,78 @@ public class HandDrawnMenuView : MonoBehaviour
         return button;
     }
 
+    private Button AddTextButton(RectTransform parent, string buttonName, string label, Vector2 position, Vector2 size, UnityAction action, Color backgroundColor)
+    {
+        GameObject buttonObject = new GameObject(buttonName, typeof(RectTransform), typeof(Image), typeof(Button), typeof(Outline));
+        RectTransform rect = buttonObject.GetComponent<RectTransform>();
+        rect.SetParent(parent, false);
+        rect.anchorMin = new Vector2(0.5f, 0.5f);
+        rect.anchorMax = new Vector2(0.5f, 0.5f);
+        rect.anchoredPosition = position;
+        rect.sizeDelta = size;
+
+        Image image = buttonObject.GetComponent<Image>();
+        image.color = backgroundColor;
+        image.raycastTarget = true;
+
+        Button button = buttonObject.GetComponent<Button>();
+        button.transition = Selectable.Transition.None;
+        button.targetGraphic = image;
+        button.onClick.AddListener(action);
+
+        Outline outline = buttonObject.GetComponent<Outline>();
+        outline.effectColor = new Color(0.1f, 0.08f, 0.05f, 0.75f);
+        outline.effectDistance = new Vector2(4f, -4f);
+
+        Text text = AddText(rect, "Label", label, Vector2.zero, size, 42, TextAnchor.MiddleCenter, GetReadableTextColor(backgroundColor));
+        text.fontStyle = FontStyle.Bold;
+
+        HandDrawnPressable pressable = buttonObject.AddComponent<HandDrawnPressable>();
+        pressable.Configure(1.035f, 0.95f, 1.1f, Color.Lerp(backgroundColor, Color.white, 0.26f));
+        return button;
+    }
+
+    private Text AddText(Transform parent, string textName, string textValue, Vector2 position, Vector2 size, int fontSize, TextAnchor alignment, Color color)
+    {
+        GameObject textObject = new GameObject(textName, typeof(RectTransform), typeof(Text));
+        RectTransform rect = textObject.GetComponent<RectTransform>();
+        rect.SetParent(parent, false);
+        rect.anchorMin = new Vector2(0.5f, 0.5f);
+        rect.anchorMax = new Vector2(0.5f, 0.5f);
+        rect.anchoredPosition = position;
+        rect.sizeDelta = size;
+
+        Text text = textObject.GetComponent<Text>();
+        text.text = textValue;
+        text.font = GetUiFont();
+        text.fontSize = fontSize;
+        text.alignment = alignment;
+        text.color = color;
+        text.raycastTarget = false;
+        text.resizeTextForBestFit = true;
+        text.resizeTextMinSize = Mathf.Max(14, Mathf.RoundToInt(fontSize * 0.55f));
+        text.resizeTextMaxSize = fontSize;
+        return text;
+    }
+
+    private static Font GetUiFont()
+    {
+        if (uiFont)
+            return uiFont;
+
+        uiFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        if (!uiFont)
+            uiFont = Resources.GetBuiltinResource<Font>("Arial.ttf");
+
+        return uiFont;
+    }
+
+    private static Color GetReadableTextColor(Color backgroundColor)
+    {
+        float brightness = backgroundColor.r * 0.299f + backgroundColor.g * 0.587f + backgroundColor.b * 0.114f;
+        return brightness > 0.58f ? new Color(0.12f, 0.1f, 0.08f, 1f) : Color.white;
+    }
+
     private Button AddLogoutButton(RectTransform parent)
     {
         if (!assets || !assets.logoutButton)
@@ -548,15 +834,17 @@ public class HandDrawnMenuView : MonoBehaviour
 
     private void SetScreen(RectTransform activeScreen)
     {
-        if (!mainScreen || !modeScreen || !multiplayerModeScreen || !gachaScreen || !botDifficultyScreen || !sideScreen || !activeScreen)
+        if (!mainScreen || !modeScreen || !localModeScreen || !multiplayerModeScreen || !gachaScreen || !botDifficultyScreen || !sideScreen || !skinScreen || !activeScreen)
             return;
 
         mainScreen.gameObject.SetActive(activeScreen == mainScreen);
         modeScreen.gameObject.SetActive(activeScreen == modeScreen);
+        localModeScreen.gameObject.SetActive(activeScreen == localModeScreen);
         multiplayerModeScreen.gameObject.SetActive(activeScreen == multiplayerModeScreen);
         gachaScreen.gameObject.SetActive(activeScreen == gachaScreen);
         botDifficultyScreen.gameObject.SetActive(activeScreen == botDifficultyScreen);
         sideScreen.gameObject.SetActive(activeScreen == sideScreen);
+        skinScreen.gameObject.SetActive(activeScreen == skinScreen);
     }
 
     private void SetAllScreensActive(bool active)
@@ -565,6 +853,8 @@ public class HandDrawnMenuView : MonoBehaviour
             mainScreen.gameObject.SetActive(active);
         if (modeScreen)
             modeScreen.gameObject.SetActive(active);
+        if (localModeScreen)
+            localModeScreen.gameObject.SetActive(active);
         if (multiplayerModeScreen)
             multiplayerModeScreen.gameObject.SetActive(active);
         if (gachaScreen)
@@ -573,6 +863,8 @@ public class HandDrawnMenuView : MonoBehaviour
             botDifficultyScreen.gameObject.SetActive(active);
         if (sideScreen)
             sideScreen.gameObject.SetActive(active);
+        if (skinScreen)
+            skinScreen.gameObject.SetActive(active);
     }
 
     private void SetVisible(bool visible)
@@ -640,6 +932,17 @@ public class HandDrawnMenuView : MonoBehaviour
 
         if (!eventSystem.GetComponent<InputSystemUIInputModule>())
             eventSystem.gameObject.AddComponent<InputSystemUIInputModule>();
+    }
+
+    private sealed class SkinOptionButton
+    {
+        public PieceTeam Team;
+        public PieceSkinDefinition Skin;
+        public Button Button;
+        public Image Background;
+        public Text Label;
+        public CanvasGroup CanvasGroup;
+        public Outline Outline;
     }
 
     private void OnDestroy()
