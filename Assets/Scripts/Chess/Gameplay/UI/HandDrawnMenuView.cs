@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using TMPro;
@@ -8,6 +9,9 @@ using UnityEngine.EventSystems;
 using UnityEngine.InputSystem.UI;
 using UnityEngine.UI;
 using UnityEngine.Video;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 public class HandDrawnMenuView : MonoBehaviour
 {
@@ -23,9 +27,12 @@ public class HandDrawnMenuView : MonoBehaviour
     private RectTransform modeScreen;
     private RectTransform multiplayerModeScreen;
     private RectTransform gachaScreen;
+    private RectTransform inventoryOverlay;
     private RectTransform botDifficultyScreen;
     private RectTransform sideScreen;
     private GachaMenuController gachaController;
+    private InventoryMenuController inventoryController;
+    private readonly Dictionary<Selectable, bool> inventoryBlockedSelectables = new Dictionary<Selectable, bool>();
     private readonly List<Sprite> runtimeSprites = new List<Sprite>();
 
     public bool IsReady => assets != null && assets.HasRequiredSprites && canvas != null;
@@ -52,6 +59,7 @@ public class HandDrawnMenuView : MonoBehaviour
 
     public void ShowMainMenu()
     {
+        GameMusicManager.PlayMainMenuPrimaryMusic();
         SetVisible(true);
         SetInputEnabled(true);
         SetScreen(mainScreen);
@@ -59,13 +67,16 @@ public class HandDrawnMenuView : MonoBehaviour
 
     public void ShowModeSelection()
     {
+        GameMusicManager.PlayMainMenuHubMusic();
         SetVisible(true);
         SetInputEnabled(true);
         SetScreen(modeScreen);
+        CloseInventoryMenu();
     }
 
     public void ShowSideSelection()
     {
+        GameMusicManager.PlayMainMenuHubMusic();
         SetVisible(true);
         SetInputEnabled(true);
         SetScreen(sideScreen);
@@ -73,6 +84,7 @@ public class HandDrawnMenuView : MonoBehaviour
 
     public void ShowBotDifficultySelection()
     {
+        GameMusicManager.PlayMainMenuHubMusic();
         SetVisible(true);
         SetInputEnabled(true);
         SetScreen(botDifficultyScreen);
@@ -80,6 +92,7 @@ public class HandDrawnMenuView : MonoBehaviour
 
     public void ShowMultiplayerModeSelection()
     {
+        GameMusicManager.PlayMainMenuHubMusic();
         if (!assets || !assets.HasMultiplayerModeSprites)
         {
             ShowSideSelection();
@@ -93,6 +106,7 @@ public class HandDrawnMenuView : MonoBehaviour
 
     public void ShowGachaMenu()
     {
+        GameMusicManager.PlayGachaMusic();
         SetVisible(true);
         SetInputEnabled(true);
         gachaController?.OpenMainScreen();
@@ -101,6 +115,7 @@ public class HandDrawnMenuView : MonoBehaviour
 
     public void HideForPlaying()
     {
+        CloseInventoryMenu();
         SetVisible(false);
         SetInputEnabled(false);
         SetAllScreensActive(false);
@@ -158,6 +173,7 @@ public class HandDrawnMenuView : MonoBehaviour
     {
         modeScreen = CreateScreen("Mode Select");
         BuildPlayHub(modeScreen);
+        BuildInventoryOverlay();
     }
 
     private void BuildPlayHub(RectTransform screen)
@@ -174,12 +190,76 @@ public class HandDrawnMenuView : MonoBehaviour
         AddInteractive(screen, "ARAM Mode", assets.aramModeButton, new Vector2(-660f, -80f), new Vector2(475f, 132f), CreateAuthenticatedAction("ARAM", () => LogMenuClick("ARAM")), false, 1.035f);
         AddInteractive(screen, "Shop", assets.shopButton, new Vector2(-660f, -255f), new Vector2(475f, 132f), CreateAuthenticatedAction("Shop", () => LogMenuClick("Shop")), false, 1.035f);
 
-        AddInteractive(screen, "Inventory", assets.inventoryButton, new Vector2(805f, 130f), new Vector2(132f, 132f), CreateAuthenticatedAction("Inventory", () => LogMenuClick("Inventory")), false, 1.045f);
+        AddInteractive(screen, "Inventory", assets.inventoryButton, new Vector2(805f, 130f), new Vector2(132f, 132f), CreateAuthenticatedAction("Inventory", ShowInventoryMenu), false, 1.045f);
         AddInteractive(screen, "Gacha", assets.gachaButton, new Vector2(805f, -50f), new Vector2(132f, 132f), CreateAuthenticatedAction("Gacha", ShowGachaMenu), false, 1.045f);
         AddInteractive(screen, "Player Profile", assets.playerProfile, new Vector2(805f, -230f), new Vector2(136f, 136f), CreateAuthenticatedAction("Player Profile", () => LogMenuClick("Player Profile")), false, 1.045f);
         AddInteractive(screen, "Settings Icon", assets.settingsIcon, new Vector2(500f, -398f), new Vector2(118f, 118f), CreateAuthenticatedAction("Settings", () => LogMenuClick("Settings")), false, 1.045f);
         AddImage(screen, "Game Version", assets.gameVersion, new Vector2(735f, -415f), new Vector2(320f, 142f), 0f, 0f);
         AddLogoutButton(screen);
+    }
+
+    private void BuildInventoryOverlay()
+    {
+        GameObject overlay = new GameObject("Inventory Overlay", typeof(RectTransform));
+        inventoryOverlay = overlay.GetComponent<RectTransform>();
+        inventoryOverlay.SetParent(modeScreen, false);
+        Stretch(inventoryOverlay);
+        inventoryOverlay.SetAsLastSibling();
+
+        inventoryController = overlay.AddComponent<InventoryMenuController>();
+        inventoryController.Initialize(inventoryOverlay, CloseInventoryMenu);
+        overlay.SetActive(false);
+    }
+
+    private void ShowInventoryMenu()
+    {
+        if (!inventoryOverlay)
+            return;
+
+        SetVisible(true);
+        SetInputEnabled(true);
+        SetScreen(modeScreen);
+        SetModeScreenBackgroundInteractable(false);
+        inventoryOverlay.SetAsLastSibling();
+        inventoryController?.Open();
+        inventoryOverlay.gameObject.SetActive(true);
+    }
+
+    private void CloseInventoryMenu()
+    {
+        if (inventoryOverlay)
+            inventoryOverlay.gameObject.SetActive(false);
+
+        SetModeScreenBackgroundInteractable(true);
+    }
+
+    private void SetModeScreenBackgroundInteractable(bool interactable)
+    {
+        if (!modeScreen)
+            return;
+
+        if (!interactable)
+        {
+            if (inventoryBlockedSelectables.Count > 0)
+                return;
+
+            Selectable[] selectables = modeScreen.GetComponentsInChildren<Selectable>(true);
+            for (int i = 0; i < selectables.Length; i++)
+            {
+                Selectable selectable = selectables[i];
+                if (!selectable || (inventoryOverlay && selectable.transform.IsChildOf(inventoryOverlay)))
+                    continue;
+
+                inventoryBlockedSelectables[selectable] = selectable.interactable;
+                selectable.interactable = false;
+            }
+            return;
+        }
+
+        foreach (KeyValuePair<Selectable, bool> entry in inventoryBlockedSelectables)
+            if (entry.Key)
+                entry.Key.interactable = entry.Value;
+        inventoryBlockedSelectables.Clear();
     }
 
     private void BuildMultiplayerModeScreen()
@@ -538,6 +618,9 @@ public class HandDrawnMenuView : MonoBehaviour
         if (!mainScreen || !modeScreen || !multiplayerModeScreen || !gachaScreen || !botDifficultyScreen || !sideScreen || !activeScreen)
             return;
 
+        if (activeScreen != modeScreen)
+            CloseInventoryMenu();
+
         mainScreen.gameObject.SetActive(activeScreen == mainScreen);
         modeScreen.gameObject.SetActive(activeScreen == modeScreen);
         multiplayerModeScreen.gameObject.SetActive(activeScreen == multiplayerModeScreen);
@@ -654,6 +737,7 @@ public sealed class GachaMenuController : MonoBehaviour
     private readonly List<TextMeshProUGUI> ticketLabels = new List<TextMeshProUGUI>();
 
     private RectTransform root;
+    private RectTransform contentRoot;
     private RectTransform mainScreen;
     private RectTransform resultScreen;
     private RectTransform resultGrid;
@@ -667,10 +751,11 @@ public sealed class GachaMenuController : MonoBehaviour
     private RawImage videoImage;
     private VideoPlayer videoPlayer;
     private RenderTexture videoTexture;
+    private Coroutine videoCoroutine;
     private UnityAction backToModeSelection;
     private GachaSaveData saveData;
     private List<GachaReward> pendingResults = new List<GachaReward>();
-    private bool usingLoopVideo;
+    private bool awaitingVideoResult;
 
     public void Initialize(RectTransform newRoot, UnityAction newBackToModeSelection)
     {
@@ -678,6 +763,7 @@ public sealed class GachaMenuController : MonoBehaviour
         backToModeSelection = newBackToModeSelection;
         LoadSprites();
         LoadSave();
+        BuildContentRoot();
         BuildMainScreen();
         BuildResultScreen();
         BuildVideoOverlay();
@@ -700,25 +786,29 @@ public sealed class GachaMenuController : MonoBehaviour
     private void BuildMainScreen()
     {
         mainScreen = CreateLayer("Gacha Main");
-        AddFullImage(mainScreen, "Gacha Menu Blank", GetSprite("GachaMenuDesignBlank.png"));
-        AddFullImage(mainScreen, "Gacha Title", GetSprite("GachaTitle.png"));
+        AddFullImage(mainScreen, "Gacha Menu Design", GetSprite("GachaMenuDesign.png"));
         AddResourceBars(mainScreen);
-        AddButton(mainScreen, "Back Gacha", GetSprite("BackGacha.png"), D(230f, 76f), new Vector2(90f, 90f), BackToModeSelection, 1.04f);
+        AddButton(mainScreen, "Back Gacha", GetSprite("BackGacha.png"), D(230f, 76f), S(90f, 90f), BackToModeSelection, 1.04f);
 
-        AddImage(mainScreen, "Standard Gacha", GetSprite("StandardGacha.png"), D(274f, 362f), new Vector2(365f, 126f));
         AddPityPanel(mainScreen);
-        AddRewardButton(mainScreen, "Gold Reward", GetSprite("GoldPR.png"), D(220f, 792f), new Vector2(122f, 122f), "Gold rewards: 100, 250, 500, 1,000, or jackpot 4,500 gold.");
-        AddRewardButton(mainScreen, "Diamond Reward", GetSprite("DiamondPR.png"), D(360f, 792f), new Vector2(122f, 122f), "Diamond rewards: 10, 30, 80, 120, or jackpot 1,200 diamonds.");
-        AddRewardButton(mainScreen, "Ticket Reward", GetSprite("SummonTicketPR.png"), D(501f, 792f), new Vector2(122f, 122f), "Ticket rewards: 1, 2, 5, or jackpot 10 summon tickets.");
-        AddRewardButton(mainScreen, "Skin Reward", GetSprite("Skin5StarPR.png"), D(641f, 792f), new Vector2(122f, 122f), "5-star skin reward rate is reserved for a later skin pool. Skin rolls are disabled for now.");
+        AddRewardButton(mainScreen, "Gold Reward", D(220f, 792f), S(122f, 122f), "Gold rewards: 100, 250, 500, 1,000, or jackpot 4,500 gold.");
+        AddRewardButton(mainScreen, "Diamond Reward", D(360f, 792f), S(122f, 122f), "Diamond rewards: 10, 30, 80, 120, or jackpot 1,200 diamonds.");
+        AddRewardButton(mainScreen, "Ticket Reward", D(501f, 792f), S(122f, 122f), "Ticket rewards: 1, 2, 5, or jackpot 10 summon tickets.");
+        AddRewardButton(mainScreen, "Skin Reward", D(641f, 792f), S(122f, 122f), "5-star skin reward rate is reserved for a later skin pool. Skin rolls are disabled for now.");
 
-        AddButton(mainScreen, "Summon x1", GetSprite("SummonX1.png"), D(966f, 707f), new Vector2(315f, 115f), () => StartSummon(1), 1.035f);
-        AddButton(mainScreen, "Summon x10", GetSprite("SummonX10.png"), D(1322f, 708f), new Vector2(315f, 115f), () => StartSummon(10), 1.035f);
-        AddButton(mainScreen, "History", GetSprite("HistoryButton.png"), D(955f, 861f), new Vector2(260f, 72f), ShowHistory, 1.03f);
+        AddInvisibleButton(mainScreen, "Summon x1", D(966f, 707f), S(315f, 115f), () => StartSummon(1));
+        AddInvisibleButton(mainScreen, "Summon x10", D(1322f, 708f), S(315f, 115f), () => StartSummon(10));
+        AddInvisibleButton(mainScreen, "History", D(955f, 861f), S(260f, 72f), ShowHistory);
 
-        statusLabel = AddText(mainScreen, "Gacha Status", D(1145f, 858f), new Vector2(760f, 48f), 28f, TextAlignmentOptions.Center, new Color(0.16f, 0.13f, 0.1f, 1f));
+        statusLabel = AddText(mainScreen, "Gacha Status", D(1145f, 858f), S(760f, 48f), F(28f), TextAlignmentOptions.Center, new Color(0.16f, 0.13f, 0.1f, 1f));
         BuildTooltip(mainScreen);
         BuildHistory(mainScreen);
+    }
+
+    private void BuildContentRoot()
+    {
+        contentRoot = CreateChild(root, "Gacha Content Root", Vector2.zero, new Vector2(DesignWidth, DesignHeight));
+        contentRoot.gameObject.AddComponent<GachaContentRootFitter>().Configure(DesignWidth, DesignHeight);
     }
 
     private void BuildResultScreen()
@@ -726,11 +816,11 @@ public sealed class GachaMenuController : MonoBehaviour
         resultScreen = CreateLayer("Gacha Result");
         AddFullImage(resultScreen, "Gacha Result Blank", GetSprite("GachaResultBlank.png"));
         AddResourceBars(resultScreen);
-        resultSummaryLabel = AddText(resultScreen, "Result Summary", D(836f, 392f), new Vector2(880f, 55f), 34f, TextAlignmentOptions.Center, new Color(0.13f, 0.1f, 0.08f, 1f));
-        resultGrid = CreateChild(resultScreen, "Result Grid", D(836f, 570f), new Vector2(1120f, 330f));
-        AddButton(resultScreen, "Result Summon x1", GetSprite("SummonX1.png"), D(463f, 848f), new Vector2(330f, 116f), () => StartSummon(1), 1.035f);
-        AddButton(resultScreen, "Result Summon x10", GetSprite("SummonX10.png"), D(858f, 848f), new Vector2(330f, 116f), () => StartSummon(10), 1.035f);
-        AddButton(resultScreen, "Result Back", GetSprite("BackButton.png"), D(1226f, 848f), new Vector2(255f, 90f), ShowMainScreen, 1.035f);
+        resultSummaryLabel = AddText(resultScreen, "Result Summary", D(836f, 392f), S(880f, 55f), F(34f), TextAlignmentOptions.Center, new Color(0.13f, 0.1f, 0.08f, 1f));
+        resultGrid = CreateChild(resultScreen, "Result Grid", D(836f, 570f), S(1120f, 330f));
+        AddButton(resultScreen, "Result Summon x1", GetSprite("SummonX1.png"), D(463f, 848f), S(330f, 116f), () => StartSummon(1), 1.035f);
+        AddButton(resultScreen, "Result Summon x10", GetSprite("SummonX10.png"), D(858f, 848f), S(330f, 116f), () => StartSummon(10), 1.035f);
+        AddButton(resultScreen, "Result Back", GetSprite("BackButton.png"), D(1226f, 848f), S(255f, 90f), ShowMainScreen, 1.035f);
     }
 
     private void BuildVideoOverlay()
@@ -738,12 +828,12 @@ public sealed class GachaMenuController : MonoBehaviour
         RectTransform overlay = CreateLayer("Gacha Video Overlay");
         overlay.SetAsLastSibling();
         videoImage = overlay.gameObject.AddComponent<RawImage>();
-        videoImage.color = Color.black;
+        videoImage.color = Color.white;
         videoImage.raycastTarget = true;
 
         Button skipButton = overlay.gameObject.AddComponent<Button>();
         skipButton.transition = Selectable.Transition.None;
-        skipButton.onClick.AddListener(ShowPendingResults);
+        skipButton.onClick.AddListener(SkipVideoPlayback);
 
         videoTexture = new RenderTexture(1920, 1080, 0, RenderTextureFormat.ARGB32);
         videoTexture.name = "Gacha Animation RenderTexture";
@@ -754,53 +844,55 @@ public sealed class GachaMenuController : MonoBehaviour
         videoPlayer.renderMode = VideoRenderMode.RenderTexture;
         videoPlayer.targetTexture = videoTexture;
         videoPlayer.audioOutputMode = VideoAudioOutputMode.None;
+        videoPlayer.waitForFirstFrame = true;
+        videoPlayer.skipOnDrop = true;
         videoPlayer.loopPointReached += HandleVideoLoopPointReached;
-        AddText(overlay, "Skip Hint", new Vector2(0f, -470f), new Vector2(900f, 42f), 24f, TextAlignmentOptions.Center, new Color(1f, 0.96f, 0.82f, 0.88f)).text = "Click anywhere to skip";
+        videoPlayer.errorReceived += HandleVideoError;
         overlay.gameObject.SetActive(false);
     }
 
     private void AddResourceBars(RectTransform parent)
     {
-        RectTransform gold = AddImage(parent, "Gold Counter", GetSprite("GoldGacha.png"), D(654f, 74f), new Vector2(335f, 92f)).rectTransform;
-        RectTransform diamond = AddImage(parent, "Diamond Counter", GetSprite("DiamondGacha.png"), D(976f, 74f), new Vector2(335f, 92f)).rectTransform;
-        RectTransform ticket = AddImage(parent, "Ticket Counter", GetSprite("SummonTicket.png"), D(1257f, 74f), new Vector2(260f, 92f)).rectTransform;
-        goldLabels.Add(AddText(gold, "Gold Amount", new Vector2(42f, 0f), new Vector2(178f, 54f), 39f, TextAlignmentOptions.Center, Color.black));
-        diamondLabels.Add(AddText(diamond, "Diamond Amount", new Vector2(45f, 0f), new Vector2(178f, 54f), 39f, TextAlignmentOptions.Center, Color.black));
-        ticketLabels.Add(AddText(ticket, "Ticket Amount", new Vector2(42f, 0f), new Vector2(95f, 54f), 39f, TextAlignmentOptions.Center, Color.black));
+        RectTransform gold = AddImage(parent, "Gold Counter", GetSprite("GoldGacha.png"), D(654f, 74f), S(335f, 92f)).rectTransform;
+        RectTransform diamond = AddImage(parent, "Diamond Counter", GetSprite("DiamondGacha.png"), D(976f, 74f), S(335f, 92f)).rectTransform;
+        RectTransform ticket = AddImage(parent, "Ticket Counter", GetSprite("SummonTicket.png"), D(1257f, 74f), S(260f, 92f)).rectTransform;
+        goldLabels.Add(AddText(gold, "Gold Amount", L(42f, 0f), S(178f, 54f), F(39f), TextAlignmentOptions.Center, Color.black));
+        diamondLabels.Add(AddText(diamond, "Diamond Amount", L(45f, 0f), S(178f, 54f), F(39f), TextAlignmentOptions.Center, Color.black));
+        ticketLabels.Add(AddText(ticket, "Ticket Amount", L(42f, 0f), S(95f, 54f), F(39f), TextAlignmentOptions.Center, Color.black));
     }
 
     private void AddPityPanel(RectTransform parent)
     {
-        RectTransform pity = AddImage(parent, "Pity Panel", GetSprite("PityGacha.png"), D(275f, 575f), new Vector2(360f, 205f)).rectTransform;
-        pityLabel = AddText(pity, "Pity Text", new Vector2(74f, 54f), new Vector2(105f, 42f), 35f, TextAlignmentOptions.Center, Color.black);
-        Image fill = CreatePlainImage(pity, "Pity Fill", new Color(1f, 0.78f, 0.08f, 1f), new Vector2(-106f, 7f), new Vector2(1f, 26f));
+        RectTransform pity = AddImage(parent, "Pity Panel", GetSprite("PityGacha.png"), D(275f, 575f), S(360f, 205f)).rectTransform;
+        pityLabel = AddText(pity, "Pity Text", L(74f, 54f), S(105f, 42f), F(35f), TextAlignmentOptions.Center, Color.black);
+        Image fill = CreatePlainImage(pity, "Pity Fill", new Color(1f, 0.78f, 0.08f, 1f), L(-106f, 7f), S(1f, 26f));
         pityFill = fill.rectTransform;
         pityFill.pivot = new Vector2(0f, 0.5f);
     }
 
     private void BuildTooltip(RectTransform parent)
     {
-        tooltipPanel = CreateChild(parent, "Reward Tooltip", D(835f, 884f), new Vector2(760f, 76f));
+        tooltipPanel = CreateChild(parent, "Reward Tooltip", D(835f, 884f), S(760f, 76f));
         Image backing = tooltipPanel.gameObject.AddComponent<Image>();
         backing.color = new Color(1f, 0.98f, 0.9f, 0.97f);
         backing.raycastTarget = false;
         Outline outline = tooltipPanel.gameObject.AddComponent<Outline>();
         outline.effectColor = new Color(0f, 0f, 0f, 0.7f);
         outline.effectDistance = new Vector2(2f, -2f);
-        tooltipLabel = AddText(tooltipPanel, "Tooltip Text", Vector2.zero, new Vector2(720f, 60f), 24f, TextAlignmentOptions.Center, Color.black);
+        tooltipLabel = AddText(tooltipPanel, "Tooltip Text", Vector2.zero, S(720f, 60f), F(24f), TextAlignmentOptions.Center, Color.black);
         tooltipPanel.gameObject.SetActive(false);
     }
 
     private void BuildHistory(RectTransform parent)
     {
-        historyPanel = CreateChild(parent, "History Panel", D(836f, 535f), new Vector2(780f, 610f));
+        historyPanel = CreateChild(parent, "History Panel", D(836f, 535f), S(780f, 610f));
         Image panel = historyPanel.gameObject.AddComponent<Image>();
         panel.color = new Color(1f, 0.98f, 0.91f, 0.98f);
         Outline outline = historyPanel.gameObject.AddComponent<Outline>();
         outline.effectColor = new Color(0f, 0f, 0f, 0.78f);
         outline.effectDistance = new Vector2(3f, -3f);
-        AddText(historyPanel, "History Title", new Vector2(0f, 252f), new Vector2(650f, 50f), 34f, TextAlignmentOptions.Center, Color.black).text = "Summon History";
-        AddButton(historyPanel, "Close History", GetSprite("BackButton.png"), new Vector2(0f, -252f), new Vector2(215f, 76f), HideHistory, 1.025f);
+        AddText(historyPanel, "History Title", L(0f, 252f), S(650f, 50f), F(34f), TextAlignmentOptions.Center, Color.black).text = "Summon History";
+        AddButton(historyPanel, "Close History", GetSprite("BackButton.png"), L(0f, -252f), S(215f, 76f), HideHistory, 1.025f);
         historyPanel.gameObject.SetActive(false);
     }
 
@@ -808,19 +900,24 @@ public sealed class GachaMenuController : MonoBehaviour
     {
         HideHistory();
         HideTooltip();
+        Debug.Log($"[GachaMenu] Summon requested. count={count}, gold={saveData.gold}, diamonds={saveData.diamonds}, tickets={saveData.tickets}, pity={saveData.pityPulls}/{PityLimit}");
         if (!TrySpendForSummon(count, out string paymentMessage))
         {
+            Debug.LogWarning($"[GachaMenu] Summon rejected. count={count}, gold={saveData.gold}, diamonds={saveData.diamonds}, tickets={saveData.tickets}");
             SetStatus("Not enough summon tickets, gold, or diamonds.");
             return;
         }
 
         pendingResults = RollRewards(count);
+        bool topRewardAnimation = HasTopAnimationReward(pendingResults);
+        Debug.Log($"[GachaMenu] Summon rolled. count={count}, payment=\"{paymentMessage}\", topRewardAnimation={topRewardAnimation}, rewards={DescribeRewardsForLog(pendingResults)}");
         ApplyRewards(pendingResults);
         saveData.pityPulls = Mathf.Clamp(saveData.pityPulls + count, 0, PityLimit);
         AddHistory(count, paymentMessage, pendingResults);
         Save();
         RefreshAll();
-        PlayAnimation(HasTopReward(pendingResults));
+        SetStatus(topRewardAnimation ? "Playing top reward summon animation..." : "Playing summon animation...");
+        PlayAnimation(topRewardAnimation);
     }
 
     private bool TrySpendForSummon(int count, out string paymentMessage)
@@ -953,58 +1050,148 @@ public sealed class GachaMenuController : MonoBehaviour
         return parts.Count == 0 ? "No reward" : string.Join(", ", parts);
     }
 
-    private bool HasTopReward(List<GachaReward> rewards)
+    private bool HasTopAnimationReward(List<GachaReward> rewards)
     {
         for (int i = 0; i < rewards.Count; i++)
-            if (rewards[i].isTopReward)
+            if (IsTopAnimationReward(rewards[i]))
                 return true;
         return false;
     }
 
-    private void PlayAnimation(bool goldAnimation)
+    private bool IsTopAnimationReward(GachaReward reward)
     {
-        string intro = goldAnimation ? "Gacha animation gold.mp4" : "Gacha animation.mp4";
-        string loop = goldAnimation ? "Gacha animation gold gif.mp4" : "Gacha animation gif.mp4";
-        string introPath = FullAssetPath(intro);
-        if (!File.Exists(introPath))
+        return reward.isTopReward || (reward.type == GachaRewardType.Skin && reward.rarity >= 5);
+    }
+
+    private string DescribeRewardsForLog(List<GachaReward> rewards)
+    {
+        if (rewards == null || rewards.Count == 0)
+            return "none";
+
+        List<string> parts = new List<string>(rewards.Count);
+        for (int i = 0; i < rewards.Count; i++)
         {
+            GachaReward reward = rewards[i];
+            parts.Add($"{reward.rarity}* {reward.type} x{reward.amount} top={reward.isTopReward}");
+        }
+        return string.Join("; ", parts);
+    }
+
+    private void PlayAnimation(bool topRewardAnimation)
+    {
+        if (!videoPlayer)
+        {
+            Debug.LogWarning("[GachaMenu] Missing VideoPlayer component; showing results.");
             ShowPendingResults();
             return;
         }
 
-        usingLoopVideo = false;
+        string intro = topRewardAnimation ? "Gacha animation gold gif.mp4" : "Gacha animation gif.mp4";
+        string introPath = FullAssetPath(intro);
+        VideoClip editorClip = LoadEditorVideoClip(intro);
+        if (!editorClip && !File.Exists(introPath))
+        {
+            Debug.LogWarning($"[GachaMenu] Missing video file: {introPath}");
+            ShowPendingResults();
+            return;
+        }
+
+        Debug.Log($"[GachaMenu] Starting video. topRewardAnimation={topRewardAnimation}, file=\"{intro}\", editorClip={(editorClip ? editorClip.name : "null")}, path={introPath}");
+        awaitingVideoResult = true;
         videoPlayer.gameObject.SetActive(true);
         videoPlayer.Stop();
-        videoPlayer.isLooping = false;
-        videoPlayer.url = PathToUrl(introPath);
-        videoPlayer.clip = null;
-        videoPlayer.Play();
+        videoPlayer.isLooping = true;
+        if (editorClip)
+        {
+            videoPlayer.source = VideoSource.VideoClip;
+            videoPlayer.clip = editorClip;
+            videoPlayer.url = string.Empty;
+        }
+        else
+        {
+            videoPlayer.source = VideoSource.Url;
+            videoPlayer.clip = null;
+            videoPlayer.url = PathToUrl(introPath);
+        }
 
-        if (!File.Exists(FullAssetPath(loop)))
-            usingLoopVideo = true;
+        if (videoCoroutine != null)
+            StopCoroutine(videoCoroutine);
+        videoCoroutine = StartCoroutine(PlayVideoThenShowResults());
     }
 
     private void HandleVideoLoopPointReached(VideoPlayer source)
     {
-        if (usingLoopVideo)
+        if (!awaitingVideoResult)
             return;
 
-        string loopName = source.url.IndexOf("gold", StringComparison.OrdinalIgnoreCase) >= 0
-            ? "Gacha animation gold gif.mp4"
-            : "Gacha animation gif.mp4";
-        string loopPath = FullAssetPath(loopName);
-        if (!File.Exists(loopPath))
+        Debug.Log("[GachaMenu] Video loopPointReached; looping animation.");
+    }
+
+    private void HandleVideoError(VideoPlayer source, string message)
+    {
+        Debug.LogWarning($"[GachaMenu] Video playback failed: {message}");
+        if (awaitingVideoResult)
+            ShowPendingResults();
+    }
+
+    private IEnumerator PlayVideoThenShowResults()
+    {
+        Debug.Log($"[GachaMenu] Prepare video source={videoPlayer.source}, clip={(videoPlayer.clip ? videoPlayer.clip.name : "null")}, url={videoPlayer.url}");
+        videoPlayer.Prepare();
+
+        float prepareDeadline = Time.unscaledTime + 5f;
+        while (awaitingVideoResult && videoPlayer && !videoPlayer.isPrepared && Time.unscaledTime < prepareDeadline)
+            yield return null;
+
+        if (!awaitingVideoResult)
+            yield break;
+
+        if (!videoPlayer || !videoPlayer.isPrepared)
+        {
+            Debug.LogWarning("[GachaMenu] Video prepare timed out; showing results.");
+            ShowPendingResults();
+            yield break;
+        }
+
+        Debug.Log($"[GachaMenu] Prepared. length={videoPlayer.length:0.###}, frameCount={videoPlayer.frameCount}, frameRate={videoPlayer.frameRate:0.###}");
+        videoPlayer.Play();
+        Debug.Log($"[GachaMenu] Play called. isPlaying={videoPlayer.isPlaying}, canSetTime={videoPlayer.canSetTime}");
+
+        bool started = false;
+        float startDeadline = Time.unscaledTime + 3f;
+        while (awaitingVideoResult && videoPlayer && Time.unscaledTime < startDeadline)
+        {
+            if (videoPlayer.isPlaying)
+            {
+                started = true;
+                break;
+            }
+            yield return null;
+        }
+
+        if (awaitingVideoResult && !started)
+        {
+            Debug.LogWarning($"[GachaMenu] Video playback start timed out. isPlaying={(videoPlayer ? videoPlayer.isPlaying : false)}, time={(videoPlayer ? videoPlayer.time : 0):0.###}");
+            ShowPendingResults();
+            yield break;
+        }
+
+        videoCoroutine = null;
+    }
+
+    private void SkipVideoPlayback()
+    {
+        if (!awaitingVideoResult)
             return;
 
-        usingLoopVideo = true;
-        source.Stop();
-        source.url = PathToUrl(loopPath);
-        source.isLooping = true;
-        source.Play();
+        Debug.Log("[GachaMenu] Video skipped by click.");
+        ShowPendingResults();
     }
 
     private void ShowPendingResults()
     {
+        awaitingVideoResult = false;
+        videoCoroutine = null;
         if (videoPlayer)
         {
             videoPlayer.Stop();
@@ -1058,8 +1245,7 @@ public sealed class GachaMenuController : MonoBehaviour
     {
         HideHistory();
         HideTooltip();
-        if (videoPlayer)
-            videoPlayer.gameObject.SetActive(false);
+        CancelVideoPlayback();
         mainScreen.gameObject.SetActive(true);
         resultScreen.gameObject.SetActive(false);
         RefreshAll();
@@ -1069,7 +1255,23 @@ public sealed class GachaMenuController : MonoBehaviour
     {
         HideHistory();
         HideTooltip();
+        CancelVideoPlayback();
         backToModeSelection?.Invoke();
+    }
+
+    private void CancelVideoPlayback()
+    {
+        awaitingVideoResult = false;
+        if (videoCoroutine != null)
+        {
+            StopCoroutine(videoCoroutine);
+            videoCoroutine = null;
+        }
+        if (videoPlayer)
+        {
+            videoPlayer.Stop();
+            videoPlayer.gameObject.SetActive(false);
+        }
     }
 
     private void ShowHistory()
@@ -1086,7 +1288,7 @@ public sealed class GachaMenuController : MonoBehaviour
 
         if (saveData.history == null || saveData.history.Count == 0)
         {
-            AddText(historyPanel, "History Row Empty", new Vector2(0f, 120f), new Vector2(650f, 44f), 26f, TextAlignmentOptions.Center, Color.black).text = "No summons yet.";
+            AddText(historyPanel, "History Row Empty", L(0f, 120f), S(650f, 44f), F(26f), TextAlignmentOptions.Center, Color.black).text = "No summons yet.";
         }
         else
         {
@@ -1094,7 +1296,7 @@ public sealed class GachaMenuController : MonoBehaviour
             for (int i = 0; i < visible; i++)
             {
                 GachaHistoryEntry entry = saveData.history[i];
-                TextMeshProUGUI row = AddText(historyPanel, $"History Row {i}", new Vector2(0f, 180f - i * 48f), new Vector2(680f, 42f), 21f, TextAlignmentOptions.Left, Color.black);
+                TextMeshProUGUI row = AddText(historyPanel, $"History Row {i}", L(0f, 180f - i * 48f), S(680f, 42f), F(21f), TextAlignmentOptions.Left, Color.black);
                 row.text = $"{entry.timestampUtc}  x{entry.pullCount}  {entry.payment}  ->  {entry.rewards}";
             }
         }
@@ -1134,7 +1336,7 @@ public sealed class GachaMenuController : MonoBehaviour
         if (pityLabel)
             pityLabel.text = remaining.ToString();
         if (pityFill)
-            pityFill.sizeDelta = new Vector2(Mathf.Lerp(26f, 265f, saveData.pityPulls / (float)PityLimit), 26f);
+            pityFill.sizeDelta = S(Mathf.Lerp(26f, 265f, saveData.pityPulls / (float)PityLimit), 26f);
     }
 
     private void SetStatus(string message)
@@ -1143,11 +1345,22 @@ public sealed class GachaMenuController : MonoBehaviour
             statusLabel.text = message;
     }
 
-    private Button AddRewardButton(RectTransform parent, string name, Sprite sprite, Vector2 position, Vector2 size, string tooltip)
+    private Button AddRewardButton(RectTransform parent, string name, Vector2 position, Vector2 size, string tooltip)
     {
-        Button button = AddButton(parent, name, sprite, position, size, () => ShowTooltip(tooltip), 1.035f);
+        Button button = AddInvisibleButton(parent, name, position, size, () => ShowTooltip(tooltip));
         GachaRewardHoverTarget hover = button.gameObject.AddComponent<GachaRewardHoverTarget>();
         hover.Initialize(() => ShowTooltip(tooltip), HideTooltip);
+        return button;
+    }
+
+    private Button AddInvisibleButton(RectTransform parent, string name, Vector2 position, Vector2 size, UnityAction action)
+    {
+        Image image = CreatePlainImage(parent, name, new Color(1f, 1f, 1f, 0f), position, size);
+        image.raycastTarget = true;
+        Button button = image.gameObject.AddComponent<Button>();
+        button.transition = Selectable.Transition.None;
+        button.targetGraphic = image;
+        button.onClick.AddListener(action);
         return button;
     }
 
@@ -1183,7 +1396,7 @@ public sealed class GachaMenuController : MonoBehaviour
 
     private Image AddFullImage(RectTransform parent, string name, Sprite sprite)
     {
-        Image image = AddImage(parent, name, sprite, Vector2.zero, new Vector2(ReferenceWidth, ReferenceHeight));
+        Image image = AddImage(parent, name, sprite, Vector2.zero, new Vector2(DesignWidth, DesignHeight));
         image.preserveAspect = false;
         return image;
     }
@@ -1220,7 +1433,7 @@ public sealed class GachaMenuController : MonoBehaviour
 
     private RectTransform CreateLayer(string name)
     {
-        RectTransform layer = CreateChild(root, name, Vector2.zero, new Vector2(ReferenceWidth, ReferenceHeight));
+        RectTransform layer = CreateChild(contentRoot ? contentRoot : root, name, Vector2.zero, new Vector2(DesignWidth, DesignHeight));
         Stretch(layer);
         return layer;
     }
@@ -1239,9 +1452,22 @@ public sealed class GachaMenuController : MonoBehaviour
 
     private Vector2 D(float x, float y)
     {
-        float scaleX = ReferenceWidth / DesignWidth;
-        float scaleY = ReferenceHeight / DesignHeight;
-        return new Vector2((x - DesignWidth * 0.5f) * scaleX, (DesignHeight * 0.5f - y) * scaleY);
+        return new Vector2(x - DesignWidth * 0.5f, DesignHeight * 0.5f - y);
+    }
+
+    private Vector2 S(float width, float height)
+    {
+        return new Vector2(width * DesignWidth / ReferenceWidth, height * DesignHeight / ReferenceHeight);
+    }
+
+    private Vector2 L(float x, float y)
+    {
+        return new Vector2(x * DesignWidth / ReferenceWidth, y * DesignHeight / ReferenceHeight);
+    }
+
+    private float F(float fontSize)
+    {
+        return fontSize * DesignHeight / ReferenceHeight;
     }
 
     private Sprite GetRewardSprite(GachaRewardType type)
@@ -1266,6 +1492,7 @@ public sealed class GachaMenuController : MonoBehaviour
 
     private void LoadSprites()
     {
+        LoadSpriteToCache("GachaMenuDesign.png", false);
         LoadSpriteToCache("GachaMenuDesignBlank.png", false);
         LoadSpriteToCache("GachaResultBlank.png", false);
         LoadSpriteToCache("GachaTitle.png", false);
@@ -1385,12 +1612,25 @@ public sealed class GachaMenuController : MonoBehaviour
 
     private static string FullAssetPath(string fileName)
     {
-        return Path.Combine(Directory.GetCurrentDirectory(), AssetFolder, fileName);
+        return Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), AssetFolder, fileName));
     }
 
     private static string PathToUrl(string path)
     {
         return new Uri(path).AbsoluteUri;
+    }
+
+    private static VideoClip LoadEditorVideoClip(string fileName)
+    {
+#if UNITY_EDITOR
+        string assetPath = Path.Combine(AssetFolder, fileName).Replace('\\', '/');
+        VideoClip clip = AssetDatabase.LoadAssetAtPath<VideoClip>(assetPath);
+        if (!clip)
+            Debug.LogWarning($"[GachaMenu] AssetDatabase could not load VideoClip at {assetPath}; falling back to URL playback.");
+        return clip;
+#else
+        return null;
+#endif
     }
 
     private static void Stretch(RectTransform rect)
@@ -1405,6 +1645,8 @@ public sealed class GachaMenuController : MonoBehaviour
     {
         if (videoPlayer)
             videoPlayer.loopPointReached -= HandleVideoLoopPointReached;
+        if (videoPlayer)
+            videoPlayer.errorReceived -= HandleVideoError;
         if (videoTexture)
         {
             videoTexture.Release();
@@ -1448,6 +1690,58 @@ public sealed class GachaMenuController : MonoBehaviour
         new RewardDrop(GachaRewardType.Ticket, 5, 4, 4f, false),
         new RewardDrop(GachaRewardType.Ticket, 10, 5, 1f, true)
     };
+}
+
+public sealed class GachaContentRootFitter : MonoBehaviour
+{
+    private RectTransform rectTransform;
+    private float referenceWidth = 1920f;
+    private float referenceHeight = 1080f;
+
+    public void Configure(float width, float height)
+    {
+        referenceWidth = Mathf.Max(1f, width);
+        referenceHeight = Mathf.Max(1f, height);
+        Apply();
+    }
+
+    private void Awake()
+    {
+        rectTransform = transform as RectTransform;
+    }
+
+    private void OnEnable()
+    {
+        Apply();
+    }
+
+    private void Update()
+    {
+        Apply();
+    }
+
+    private void Apply()
+    {
+        if (!rectTransform)
+            rectTransform = transform as RectTransform;
+        if (!rectTransform)
+            return;
+
+        RectTransform parent = rectTransform.parent as RectTransform;
+        if (!parent)
+            return;
+
+        rectTransform.anchorMin = new Vector2(0.5f, 0.5f);
+        rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+        rectTransform.pivot = new Vector2(0.5f, 0.5f);
+        rectTransform.anchoredPosition = Vector2.zero;
+        rectTransform.sizeDelta = new Vector2(referenceWidth, referenceHeight);
+
+        float scale = Mathf.Min(parent.rect.width / referenceWidth, parent.rect.height / referenceHeight);
+        if (scale <= 0f || float.IsNaN(scale) || float.IsInfinity(scale))
+            scale = 1f;
+        rectTransform.localScale = new Vector3(scale, scale, 1f);
+    }
 }
 
 [Serializable]

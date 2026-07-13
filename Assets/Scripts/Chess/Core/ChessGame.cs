@@ -259,6 +259,7 @@ public class ChessGame : MonoBehaviour
     {
         serverAuthoritativeMode = false;
         botMode = false;
+        GameMusicManager.PlayInGameMusic(false, StockfishDifficulty.Medium);
         BeginGameInternal(firstTurn, firstTurn, false, firstTurn);
     }
 
@@ -266,6 +267,7 @@ public class ChessGame : MonoBehaviour
     {
         serverAuthoritativeMode = true;
         botMode = false;
+        GameMusicManager.PlayInGameMusic(false, StockfishDifficulty.Medium);
         BeginGameInternal(firstTurn, localPlayerTeam, true, PieceTeam.White);
     }
 
