@@ -264,6 +264,7 @@ public class ChessGame : MonoBehaviour
     {
         serverAuthoritativeMode = false;
         botMode = false;
+        GameMusicManager.PlayInGameMusic(false, StockfishDifficulty.Medium);
         BeginGameInternal(firstTurn, firstTurn, false, firstTurn);
     }
 
@@ -271,6 +272,7 @@ public class ChessGame : MonoBehaviour
     {
         serverAuthoritativeMode = true;
         botMode = false;
+        GameMusicManager.PlayInGameMusic(false, StockfishDifficulty.Medium);
         BeginGameInternal(firstTurn, localPlayerTeam, true, PieceTeam.White);
     }
 
@@ -2155,7 +2157,13 @@ public class ChessGame : MonoBehaviour
         status = ChessGameStatus.Win;
         winningTeam = winner;
         frozenMatchDurationSeconds = MatchElapsedSeconds;
-        PlayerAuthService.RecordGameResult(winner == playerTeam, winner != playerTeam, false);
+        PlayerAuthService.RecordGameResult(
+            winner == playerTeam,
+            winner != playerTeam,
+            false,
+            GetProfileMatchMode(),
+            GetProfileOpponentName(),
+            $"{winner} won");
         PlaySound(winSound);
         drawReason = string.Empty;
         selectedPiece = null;
@@ -2172,7 +2180,7 @@ public class ChessGame : MonoBehaviour
         StopCheckWarning();
         status = ChessGameStatus.Draw;
         frozenMatchDurationSeconds = MatchElapsedSeconds;
-        PlayerAuthService.RecordGameResult(false, false, true);
+        PlayerAuthService.RecordGameResult(false, false, true, GetProfileMatchMode(), GetProfileOpponentName(), reason);
         drawReason = reason;
         selectedPiece = null;
         gameStarted = false;
@@ -2181,6 +2189,24 @@ public class ChessGame : MonoBehaviour
         chessboard?.ClearLegalMoveHighlights();
         RefreshLocalInteractionState();
         turnSelectionUI?.ShowDraw(playerTeam, drawReason);
+    }
+
+    private string GetProfileMatchMode()
+    {
+        if (botMode)
+            return "Bot";
+        if (serverAuthoritativeMode)
+            return "Online";
+        if (restrictInputToControlledTeam)
+            return "Multiplayer";
+        return "Local";
+    }
+
+    private string GetProfileOpponentName()
+    {
+        if (botMode)
+            return "Bot";
+        return "Player";
     }
 
     public bool ApplyNetworkMove(ChessLanMove move)
