@@ -28,10 +28,13 @@ public class HandDrawnMenuView : MonoBehaviour
     private RectTransform multiplayerModeScreen;
     private RectTransform gachaScreen;
     private RectTransform inventoryOverlay;
+    private RectTransform profileOverlay;
     private RectTransform botDifficultyScreen;
     private RectTransform sideScreen;
+    private Button modeLogoutButton;
     private GachaMenuController gachaController;
     private InventoryMenuController inventoryController;
+    private PlayerProfileMenuController profileController;
     private readonly Dictionary<Selectable, bool> inventoryBlockedSelectables = new Dictionary<Selectable, bool>();
     private readonly List<Sprite> runtimeSprites = new List<Sprite>();
 
@@ -72,6 +75,7 @@ public class HandDrawnMenuView : MonoBehaviour
         SetInputEnabled(true);
         SetScreen(modeScreen);
         CloseInventoryMenu();
+        CloseProfileMenu();
     }
 
     public void ShowSideSelection()
@@ -116,6 +120,7 @@ public class HandDrawnMenuView : MonoBehaviour
     public void HideForPlaying()
     {
         CloseInventoryMenu();
+        CloseProfileMenu();
         SetVisible(false);
         SetInputEnabled(false);
         SetAllScreensActive(false);
@@ -155,7 +160,7 @@ public class HandDrawnMenuView : MonoBehaviour
 
         AddBattleDoodles(mainScreen, false);
         AddImage(mainScreen, "Doodle Face", assets.doodleFaceDecoration, new Vector2(-835f, 425f), new Vector2(225f, 178f), 1.2f, 0.45f);
-        AddImage(mainScreen, "Game Logo", assets.gameLogo, new Vector2(0f, 295f), new Vector2(760f, 420f), 0.6f, 0.2f);
+        AddImage(mainScreen, "Game Logo", assets.gameLogo, new Vector2(0f, 345f), new Vector2(720f, 398f), 0.6f, 0.2f);
         AddInteractive(mainScreen, "Start", assets.startButton, new Vector2(0f, 42f), new Vector2(660f, 158f), () => chessGame.OpenTurnSelection(), false, 1.035f);
         AddInteractive(mainScreen, "Settings", assets.settingsButton, new Vector2(0f, -142f), new Vector2(660f, 148f), () => LogMenuClick("Settings"), false, 1.035f);
         AddInteractive(mainScreen, "Credits", assets.creditsButton, new Vector2(0f, -326f), new Vector2(660f, 158f), () => LogMenuClick("Credits"), false, 1.035f);
@@ -174,6 +179,7 @@ public class HandDrawnMenuView : MonoBehaviour
         modeScreen = CreateScreen("Mode Select");
         BuildPlayHub(modeScreen);
         BuildInventoryOverlay();
+        BuildProfileOverlay();
     }
 
     private void BuildPlayHub(RectTransform screen)
@@ -192,10 +198,10 @@ public class HandDrawnMenuView : MonoBehaviour
 
         AddInteractive(screen, "Inventory", assets.inventoryButton, new Vector2(805f, 130f), new Vector2(132f, 132f), CreateAuthenticatedAction("Inventory", ShowInventoryMenu), false, 1.045f);
         AddInteractive(screen, "Gacha", assets.gachaButton, new Vector2(805f, -50f), new Vector2(132f, 132f), CreateAuthenticatedAction("Gacha", ShowGachaMenu), false, 1.045f);
-        AddInteractive(screen, "Player Profile", assets.playerProfile, new Vector2(805f, -230f), new Vector2(136f, 136f), CreateAuthenticatedAction("Player Profile", () => LogMenuClick("Player Profile")), false, 1.045f);
+        AddInteractive(screen, "Player Profile", assets.playerProfile, new Vector2(805f, -230f), new Vector2(136f, 136f), CreateAuthenticatedAction("Player Profile", ShowProfileMenu), false, 1.045f);
         AddInteractive(screen, "Settings Icon", assets.settingsIcon, new Vector2(500f, -398f), new Vector2(118f, 118f), CreateAuthenticatedAction("Settings", () => LogMenuClick("Settings")), false, 1.045f);
         AddImage(screen, "Game Version", assets.gameVersion, new Vector2(735f, -415f), new Vector2(320f, 142f), 0f, 0f);
-        AddLogoutButton(screen);
+        modeLogoutButton = AddLogoutButton(screen);
     }
 
     private void BuildInventoryOverlay()
@@ -208,6 +214,19 @@ public class HandDrawnMenuView : MonoBehaviour
 
         inventoryController = overlay.AddComponent<InventoryMenuController>();
         inventoryController.Initialize(inventoryOverlay, CloseInventoryMenu);
+        overlay.SetActive(false);
+    }
+
+    private void BuildProfileOverlay()
+    {
+        GameObject overlay = new GameObject("Player Profile Overlay", typeof(RectTransform));
+        profileOverlay = overlay.GetComponent<RectTransform>();
+        profileOverlay.SetParent(modeScreen, false);
+        Stretch(profileOverlay);
+        profileOverlay.SetAsLastSibling();
+
+        profileController = overlay.AddComponent<PlayerProfileMenuController>();
+        profileController.Initialize(profileOverlay, CloseProfileMenu);
         overlay.SetActive(false);
     }
 
@@ -230,8 +249,38 @@ public class HandDrawnMenuView : MonoBehaviour
         if (inventoryOverlay)
             inventoryOverlay.gameObject.SetActive(false);
 
-        SetModeScreenBackgroundInteractable(true);
+        if (!IsProfileOpen)
+            SetModeScreenBackgroundInteractable(true);
     }
+
+    private void ShowProfileMenu()
+    {
+        if (!profileOverlay)
+            return;
+
+        SetVisible(true);
+        SetInputEnabled(true);
+        SetScreen(modeScreen);
+        SetModeScreenBackgroundInteractable(false);
+        profileOverlay.SetAsLastSibling();
+        profileController?.Open();
+        profileOverlay.gameObject.SetActive(true);
+        SetModeLogoutVisible(false);
+    }
+
+    private void CloseProfileMenu()
+    {
+        if (profileOverlay)
+            profileOverlay.gameObject.SetActive(false);
+
+        SetModeLogoutVisible(true);
+
+        if (!IsInventoryOpen)
+            SetModeScreenBackgroundInteractable(true);
+    }
+
+    private bool IsInventoryOpen => inventoryOverlay && inventoryOverlay.gameObject.activeSelf;
+    private bool IsProfileOpen => profileOverlay && profileOverlay.gameObject.activeSelf;
 
     private void SetModeScreenBackgroundInteractable(bool interactable)
     {
@@ -247,7 +296,9 @@ public class HandDrawnMenuView : MonoBehaviour
             for (int i = 0; i < selectables.Length; i++)
             {
                 Selectable selectable = selectables[i];
-                if (!selectable || (inventoryOverlay && selectable.transform.IsChildOf(inventoryOverlay)))
+                if (!selectable ||
+                    (inventoryOverlay && selectable.transform.IsChildOf(inventoryOverlay)) ||
+                    (profileOverlay && selectable.transform.IsChildOf(profileOverlay)))
                     continue;
 
                 inventoryBlockedSelectables[selectable] = selectable.interactable;
@@ -260,6 +311,12 @@ public class HandDrawnMenuView : MonoBehaviour
             if (entry.Key)
                 entry.Key.interactable = entry.Value;
         inventoryBlockedSelectables.Clear();
+    }
+
+    private void SetModeLogoutVisible(bool visible)
+    {
+        if (modeLogoutButton)
+            modeLogoutButton.gameObject.SetActive(visible);
     }
 
     private void BuildMultiplayerModeScreen()
@@ -318,9 +375,8 @@ public class HandDrawnMenuView : MonoBehaviour
         AddImage(sideScreen, "Choose Side Title", assets.chooseYourSide, new Vector2(0f, 365f), new Vector2(880f, 150f), 0f, 0f);
         AddInteractive(sideScreen, "White Card", assets.whiteSideButton, new Vector2(-365f, -105f), new Vector2(560f, 745f), () => owner.StartBotGame(PieceTeam.White), false, 1.035f);
         AddInteractive(sideScreen, "Black Card", assets.blackSideButton, new Vector2(365f, -105f), new Vector2(560f, 745f), () => owner.StartBotGame(PieceTeam.Black), false, 1.035f);
-        AddImage(sideScreen, "Settings Icon", assets.settingsIcon, new Vector2(-760f, -410f), new Vector2(120f, 120f), 0f, 0f);
         AddImage(sideScreen, "Game Version", assets.gameVersion, new Vector2(735f, -420f), new Vector2(330f, 145f), 0f, 0f);
-        AddBackButton(sideScreen, new Vector2(-600f, -420f), () => ShowBotDifficultySelection());
+        AddBackButton(sideScreen, new Vector2(-820f, -455f), () => ShowBotDifficultySelection(), new Vector2(300f, 125f));
     }
 
     private void BuildBotDifficultyScreen()
@@ -558,17 +614,18 @@ public class HandDrawnMenuView : MonoBehaviour
         return button;
     }
 
-    private Button AddBackButton(RectTransform parent, Vector2 position, UnityAction action)
+    private Button AddBackButton(RectTransform parent, Vector2 position, UnityAction action, Vector2? size = null)
     {
         if (!assets || !assets.backButton)
             return null;
 
+        Vector2 buttonSize = size ?? new Vector2(250f, 110f);
         return AddInteractive(
             parent,
             "Back Button",
             assets.backButton,
             position,
-            new Vector2(250f, 110f),
+            buttonSize,
             action,
             true,
             1.04f,
@@ -619,7 +676,10 @@ public class HandDrawnMenuView : MonoBehaviour
             return;
 
         if (activeScreen != modeScreen)
+        {
             CloseInventoryMenu();
+            CloseProfileMenu();
+        }
 
         mainScreen.gameObject.SetActive(activeScreen == mainScreen);
         modeScreen.gameObject.SetActive(activeScreen == modeScreen);
@@ -1593,12 +1653,30 @@ public sealed class GachaMenuController : MonoBehaviour
             saveData = GachaSaveData.CreateDefault();
         if (saveData.history == null)
             saveData.history = new List<GachaHistoryEntry>();
+        SyncCurrencyFromProfile();
     }
 
     private void Save()
     {
+        SyncCurrencyToProfile();
         PlayerPrefs.SetString(SaveKey, JsonUtility.ToJson(saveData));
         PlayerPrefs.Save();
+    }
+
+    private void SyncCurrencyFromProfile()
+    {
+        PlayerProfileSaveData profile = PlayerProfileStore.Data;
+        saveData.gold = profile.gold;
+        saveData.diamonds = profile.diamonds;
+        saveData.tickets = profile.tickets;
+    }
+
+    private void SyncCurrencyToProfile()
+    {
+        if (saveData == null)
+            return;
+
+        PlayerProfileStore.SetCurrency(saveData.gold, saveData.diamonds, saveData.tickets);
     }
 
     private string SaveKey

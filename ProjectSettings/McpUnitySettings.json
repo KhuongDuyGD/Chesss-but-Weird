@@ -1,5 +1,5 @@
 {
-    "Port": 6500,
+    "Port": 6501,
     "AutoSelectAvailablePort": true,
     "PreferredPort": 17806,
     "PortSearchRange": 30,

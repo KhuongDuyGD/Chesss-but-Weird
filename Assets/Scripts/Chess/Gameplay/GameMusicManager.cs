@@ -12,7 +12,9 @@ public enum GameMusicPack
 {
     Default,
     AngryBirdsEpic,
-    EpicSeven
+    EpicSeven,
+    CounterStrikeGO,
+    EyeOfTheDragon
 }
 
 public enum GameMusicContext
@@ -28,18 +30,21 @@ public enum GameMusicContext
 public sealed class GameMusicManager : MonoBehaviour
 {
     private const string SaveKey = "chess_but_weird_music_pack";
-    private const float TargetVolume = 0.72f;
+    private const float MenuVolume = 0.72f;
+    private const float InGameVolume = 0.44f;
     private const float TransitionFadeSeconds = 0.45f;
     private const float EndFadeSeconds = 1.5f;
     private const string MusicRoot = "Assets/Audio/MusicPackage";
     private const string DefaultFolder = "DefaultMusic";
     private const string AngryBirdsFolder = "AngryBirdsCollab";
     private const string EpicSevenFolder = "EpicSevenCollab";
+    private const string CsgoFolder = "CSGOcollab";
 
     private static GameMusicManager instance;
 
     private readonly Dictionary<string, AudioClip> clipCache = new Dictionary<string, AudioClip>(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, int> playlistIndices = new Dictionary<string, int>(StringComparer.Ordinal);
+    private readonly Dictionary<string, string> lastRandomTracks = new Dictionary<string, string>(StringComparer.Ordinal);
     private AudioSource source;
     private Coroutine transitionCoroutine;
     private Coroutine playbackCoroutine;
@@ -83,6 +88,21 @@ public sealed class GameMusicManager : MonoBehaviour
             return true;
         }
 
+        if (string.Equals(packId, "csgo", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(packId, "counter_strike_go", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(packId, "counterstrikego", StringComparison.OrdinalIgnoreCase))
+        {
+            pack = GameMusicPack.CounterStrikeGO;
+            return true;
+        }
+
+        if (string.Equals(packId, "eye_of_the_dragon", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(packId, "eyeofthedragon", StringComparison.OrdinalIgnoreCase))
+        {
+            pack = GameMusicPack.EyeOfTheDragon;
+            return true;
+        }
+
         pack = GameMusicPack.Default;
         return false;
     }
@@ -95,6 +115,10 @@ public sealed class GameMusicManager : MonoBehaviour
                 return "Angry Birds Epic";
             case GameMusicPack.EpicSeven:
                 return "Epic Seven";
+            case GameMusicPack.CounterStrikeGO:
+                return "CSGO Main Theme";
+            case GameMusicPack.EyeOfTheDragon:
+                return "Eye of the Dragon";
             default:
                 return "CBW Official";
         }
@@ -183,8 +207,22 @@ public sealed class GameMusicManager : MonoBehaviour
     private void Play(MusicRequest request, bool forceRestart = false)
     {
         Initialize();
-        if (!forceRestart && request.Equals(currentRequest) && source && source.isPlaying)
-            return;
+        if (!forceRestart && request.Equals(currentRequest))
+        {
+            currentRequest = request;
+            if (IsPlaybackBusy)
+            {
+                ResumeCurrentClipIfNeeded(request);
+                return;
+            }
+
+            if (source && source.clip)
+            {
+                ResumeCurrentClipIfNeeded(request);
+                playbackCoroutine = StartCoroutine(WatchClipEnd(request));
+                return;
+            }
+        }
 
         currentRequest = request;
 
@@ -201,6 +239,7 @@ public sealed class GameMusicManager : MonoBehaviour
 
     private IEnumerator SwitchToRequest(MusicRequest request)
     {
+        float targetVolume = GetTargetVolume(request);
         if (source && source.isPlaying)
             yield return FadeSource(source.volume, 0f, TransitionFadeSeconds);
 
@@ -211,8 +250,18 @@ public sealed class GameMusicManager : MonoBehaviour
         if (!clip)
         {
             Debug.LogWarning($"[GameMusic] Missing music clip: {track.AssetPath}");
-            transitionCoroutine = null;
-            yield break;
+            if (TryGetFallbackTrack(request, track, out MusicTrack fallbackTrack))
+            {
+                Debug.LogWarning($"[GameMusic] Falling back to default music clip: {fallbackTrack.AssetPath}");
+                track = fallbackTrack;
+                yield return LoadClip(track, loaded => clip = loaded);
+            }
+
+            if (!clip)
+            {
+                transitionCoroutine = null;
+                yield break;
+            }
         }
 
         source.Stop();
@@ -222,18 +271,37 @@ public sealed class GameMusicManager : MonoBehaviour
         source.Play();
         Debug.Log($"[GameMusic] Playing pack={activePack}, context={request.context}, clip=\"{track.fileName}\"");
 
-        yield return FadeSource(0f, TargetVolume, TransitionFadeSeconds);
+        yield return FadeSource(0f, targetVolume, TransitionFadeSeconds);
         transitionCoroutine = null;
         playbackCoroutine = StartCoroutine(WatchClipEnd(request));
     }
 
     private IEnumerator WatchClipEnd(MusicRequest request)
     {
-        while (source && source.clip && source.isPlaying && source.clip.length > EndFadeSeconds)
+        float targetVolume = GetTargetVolume(request);
+        while (request.Equals(currentRequest))
         {
+            if (!source || !source.clip)
+            {
+                playbackCoroutine = null;
+                yield break;
+            }
+
+            if (!source.isPlaying)
+            {
+                yield return null;
+                continue;
+            }
+
+            if (source.clip.length <= EndFadeSeconds)
+                break;
+
             float remaining = source.clip.length - source.time;
             if (remaining <= EndFadeSeconds)
                 break;
+
+            if (Mathf.Abs(source.volume - targetVolume) > 0.01f)
+                source.volume = Mathf.MoveTowards(source.volume, targetVolume, Time.unscaledDeltaTime);
             yield return null;
         }
 
@@ -252,6 +320,35 @@ public sealed class GameMusicManager : MonoBehaviour
 
         playbackCoroutine = null;
         Play(request, true);
+    }
+
+    private bool IsPlaybackBusy => source && (source.isPlaying || transitionCoroutine != null || playbackCoroutine != null);
+
+    private void OnApplicationFocus(bool hasFocus)
+    {
+        if (hasFocus)
+            ResumeCurrentClipIfNeeded(currentRequest);
+    }
+
+    private void OnApplicationPause(bool pauseStatus)
+    {
+        if (!pauseStatus)
+            ResumeCurrentClipIfNeeded(currentRequest);
+    }
+
+    private void ResumeCurrentClipIfNeeded(MusicRequest request)
+    {
+        if (!source || !source.clip || string.IsNullOrEmpty(request.key))
+            return;
+
+        source.volume = GetTargetVolume(request);
+        if (!source.isPlaying)
+            source.Play();
+    }
+
+    private static float GetTargetVolume(MusicRequest request)
+    {
+        return request.context == GameMusicContext.InGame ? InGameVolume : MenuVolume;
     }
 
     private IEnumerator FadeSource(float from, float to, float duration)
@@ -295,7 +392,35 @@ public sealed class GameMusicManager : MonoBehaviour
             return track;
         }
 
-        return playlist[UnityEngine.Random.Range(0, playlist.Length)];
+        return PickRandomTrack(playlist, $"{activePack}:{request.key}");
+    }
+
+    private MusicTrack PickRandomTrack(MusicTrack[] playlist, string key)
+    {
+        if (playlist == null || playlist.Length == 0)
+            return MusicTrack.Default("CBW_MainMenuTheme1.mp3");
+        if (playlist.Length == 1)
+            return playlist[0];
+
+        string lastPath = lastRandomTracks.TryGetValue(key, out string rememberedPath) ? rememberedPath : null;
+        MusicTrack track = playlist[UnityEngine.Random.Range(0, playlist.Length)];
+        for (int attempt = 0; attempt < 6 && string.Equals(track.AssetPath, lastPath, StringComparison.OrdinalIgnoreCase); attempt++)
+            track = playlist[UnityEngine.Random.Range(0, playlist.Length)];
+
+        if (string.Equals(track.AssetPath, lastPath, StringComparison.OrdinalIgnoreCase))
+        {
+            for (int i = 0; i < playlist.Length; i++)
+            {
+                if (!string.Equals(playlist[i].AssetPath, lastPath, StringComparison.OrdinalIgnoreCase))
+                {
+                    track = playlist[i];
+                    break;
+                }
+            }
+        }
+
+        lastRandomTracks[key] = track.AssetPath;
+        return track;
     }
 
     private MusicTrack[] GetPlaylist(MusicRequest request)
@@ -306,6 +431,10 @@ public sealed class GameMusicManager : MonoBehaviour
                 return GetAngryBirdsPlaylist(request);
             case GameMusicPack.EpicSeven:
                 return GetEpicSevenPlaylist(request);
+            case GameMusicPack.CounterStrikeGO:
+                return GetCounterStrikePlaylist(request);
+            case GameMusicPack.EyeOfTheDragon:
+                return GetEyeOfTheDragonPlaylist(request);
             default:
                 return GetDefaultPlaylist(request);
         }
@@ -315,6 +444,11 @@ public sealed class GameMusicManager : MonoBehaviour
     {
         switch (request.context)
         {
+            case GameMusicContext.Auth:
+            case GameMusicContext.MainMenuPrimary:
+                return One(MusicTrack.Default("CBW_MainMenuTheme1.mp3"));
+            case GameMusicContext.MainMenuHub:
+                return One(MusicTrack.Default("CBW_MainMenuTheme2.mp3"));
             case GameMusicContext.Gacha:
                 return One(MusicTrack.Default("CBW_GachaMenu.mp3"));
             case GameMusicContext.InGame:
@@ -326,13 +460,22 @@ public sealed class GameMusicManager : MonoBehaviour
                     return One(MusicTrack.Default("CBW_LoseTheme.mp3"));
                 return One(MusicTrack.Default("CBW_DrawTheme.mp3"));
             default:
-                request.sequential = true;
-                return new[]
-                {
-                    MusicTrack.Default("CBW_MainMenuTheme1.mp3"),
-                    MusicTrack.Default("CBW_MainMenuTheme2.mp3")
-                };
+                return One(MusicTrack.Default("CBW_MainMenuTheme1.mp3"));
         }
+    }
+
+    private bool TryGetFallbackTrack(MusicRequest request, MusicTrack failedTrack, out MusicTrack fallbackTrack)
+    {
+        fallbackTrack = default;
+        if (activePack == GameMusicPack.Default || string.Equals(failedTrack.folder, DefaultFolder, StringComparison.Ordinal))
+            return false;
+
+        MusicTrack[] fallbackPlaylist = GetDefaultPlaylist(request);
+        if (fallbackPlaylist == null || fallbackPlaylist.Length == 0)
+            return false;
+
+        fallbackTrack = fallbackPlaylist[0];
+        return true;
     }
 
     private MusicTrack[] GetAngryBirdsPlaylist(MusicRequest request)
@@ -341,23 +484,23 @@ public sealed class GameMusicManager : MonoBehaviour
         {
             case GameMusicContext.Auth:
             case GameMusicContext.MainMenuPrimary:
-                return One(MusicTrack.AngryBirds("Angry Birds Epic music - Main theme.m4a"));
+                return One(MusicTrack.AngryBirds("Angry Birds Epic music - Main theme.mp3"));
             case GameMusicContext.MainMenuHub:
-                return One(MusicTrack.AngryBirds("Angry Birds Epic music extended - Map of Piggy Island (Map 2).m4a"));
+                return One(MusicTrack.AngryBirds("Angry Birds Epic music extended - Map of Piggy Island Map 2.mp3"));
             case GameMusicContext.Gacha:
-                return One(MusicTrack.AngryBirds("Angry Birds Epic music extended - Camp Ca- Caw.m4a"));
+                return One(MusicTrack.AngryBirds("Angry Birds Epic music extended - Camp Ca- Caw.mp3"));
             case GameMusicContext.InGame:
                 if (request.isBotGame && request.difficulty == StockfishDifficulty.Expert)
-                    return One(MusicTrack.AngryBirds("Angry Birds Epic music extended - King Pig and His Manic Minions (Boss battle).m4a"));
+                    return One(MusicTrack.AngryBirds("Angry Birds Epic music extended - King Pig and His Manic Minions Boss battle.mp3"));
                 return new[]
                 {
-                    MusicTrack.AngryBirds("Angry Birds Epic music extended - Battle of Birds and Pigs (Battle 2).m4a"),
-                    MusicTrack.AngryBirds("Angry Birds Epic music extended - You Call THAT a Stick (Battle 1).m4a"),
-                    MusicTrack.AngryBirds("Angry Birds Epic music extended - Moar boars! (Battle 3).m4a")
+                    MusicTrack.AngryBirds("Angry Birds Epic music extended - Battle of Birds and Pigs Battle 2.mp3"),
+                    MusicTrack.AngryBirds("Angry Birds Epic music extended - You Call THAT a Stick Battle 1.mp3"),
+                    MusicTrack.AngryBirds("Angry Birds Epic music extended - Moar boars! Battle 3.mp3")
                 };
             case GameMusicContext.Result:
                 if (request.resultKind == ResultMenuView.ResultKind.Win)
-                    return One(MusicTrack.AngryBirds("Angry Birds Epic music - win.m4a"));
+                    return One(MusicTrack.AngryBirds("Angry Birds Epic music - win.mp3"));
                 if (request.resultKind == ResultMenuView.ResultKind.Lose)
                     return One(MusicTrack.Default("CBW_LoseTheme.mp3"));
                 return One(MusicTrack.Default("CBW_DrawTheme.mp3"));
@@ -384,24 +527,81 @@ public sealed class GameMusicManager : MonoBehaviour
                 return One(MusicTrack.EpicSeven("Epic Seven OST Summon Theme 1 - Osvald.mp3"));
             case GameMusicContext.InGame:
                 if (request.isBotGame && request.difficulty == StockfishDifficulty.Expert)
-                    return One(MusicTrack.EpicSeven("Epic Seven OST Notos  Theme - Osvald.mp3"));
+                    return One(MusicTrack.EpicSeven("Epic Seven OST Notos Theme - Osvald.mp3"));
                 if (request.isBotGame && request.difficulty >= StockfishDifficulty.Hard)
                 {
                     return new[]
                     {
-                        MusicTrack.EpicSeven("Epic Seven OST World Arena (RTA)  Battle Theme 13.m4a"),
-                        MusicTrack.EpicSeven("Epic Seven OST World Arena (RTA)  Battle Theme 12.m4a")
+                        MusicTrack.EpicSeven("Epic Seven OST World Arena RTA  Battle Theme 13.mp3"),
+                        MusicTrack.EpicSeven("Epic Seven OST World Arena RTA  Battle Theme 12.mp3")
                     };
                 }
                 return new[]
                 {
-                    MusicTrack.EpicSeven("Epic Seven OST Salome\u00b4s Theme - Episode 6 Theme 2.m4a"),
-                    MusicTrack.EpicSeven("Epic Seven OST Rhianna and Luciella\u00b4 Theme - Episode 6 Theme 6.m4a")
+                    MusicTrack.EpicSeven("Epic Seven OST Salome Theme - Episode 6 Theme 2.mp3"),
+                    MusicTrack.EpicSeven("Epic Seven OST Rhianna and Luciella Theme - Episode 6 Theme 6.mp3")
                 };
             case GameMusicContext.Result:
                 return One(MusicTrack.EpicSeven("Epic Seven OST Battle Results Theme - TheOrang.mp3"));
             default:
                 return GetDefaultPlaylist(request);
+        }
+    }
+
+    private MusicTrack[] GetCounterStrikePlaylist(MusicRequest request)
+    {
+        switch (request.context)
+        {
+            case GameMusicContext.Auth:
+            case GameMusicContext.MainMenuPrimary:
+                return One(MusicTrack.Csgo("Counter-Strike- Global Offensive Main Menu.mp3"));
+            case GameMusicContext.MainMenuHub:
+                return One(MusicTrack.Csgo("Counter-Strike- Global Offensive main menu 2.mp3"));
+            case GameMusicContext.Gacha:
+                return new[]
+                {
+                    MusicTrack.Csgo("Counter-Strike- Global Offensive Gacha.mp3"),
+                    MusicTrack.Csgo("Counter-Strike- Global Offensive gacha 2.mp3")
+                };
+            case GameMusicContext.InGame:
+                return GetDefaultPlaylist(request);
+            case GameMusicContext.Result:
+                if (request.resultKind == ResultMenuView.ResultKind.Win)
+                {
+                    return new[]
+                    {
+                        MusicTrack.Csgo("Counter-Strike- Global Offensive Win.mp3"),
+                        MusicTrack.Csgo("Counter-Strike- Global Offensive win 2.mp3")
+                    };
+                }
+                if (request.resultKind == ResultMenuView.ResultKind.Lose)
+                {
+                    return new[]
+                    {
+                        MusicTrack.Csgo("Counter-Strike- Global Offensive Lose.mp3"),
+                        MusicTrack.Csgo("Counter-Strike- Global Offensive lose 2.mp3")
+                    };
+                }
+                return One(MusicTrack.Csgo("Counter-Strike- Global Offensive main menu 2.mp3"));
+            default:
+                return One(MusicTrack.Csgo("Counter-Strike- Global Offensive main menu 2.mp3"));
+        }
+    }
+
+    private MusicTrack[] GetEyeOfTheDragonPlaylist(MusicRequest request)
+    {
+        switch (request.context)
+        {
+            case GameMusicContext.InGame:
+                return GetDefaultPlaylist(request);
+            case GameMusicContext.Result:
+                if (request.resultKind == ResultMenuView.ResultKind.Win)
+                    return One(MusicTrack.Csgo("Eyes of the dragon win.mp3"));
+                if (request.resultKind == ResultMenuView.ResultKind.Lose)
+                    return One(MusicTrack.Csgo("Eyes of the dragon lose.mp3"));
+                return One(MusicTrack.Csgo("Eyes of the dragon main menu.mp3"));
+            default:
+                return One(MusicTrack.Csgo("Eyes of the dragon main menu.mp3"));
         }
     }
 
@@ -436,7 +636,8 @@ public sealed class GameMusicManager : MonoBehaviour
             yield break;
         }
 
-        using (UnityWebRequest request = UnityWebRequestMultimedia.GetAudioClip(new Uri(fullPath).AbsoluteUri, AudioType.UNKNOWN))
+        AudioType audioType = GetAudioTypeForPath(fullPath);
+        using (UnityWebRequest request = UnityWebRequestMultimedia.GetAudioClip(new Uri(fullPath).AbsoluteUri, audioType))
         {
             yield return request.SendWebRequest();
             if (request.result != UnityWebRequest.Result.Success)
@@ -446,13 +647,46 @@ public sealed class GameMusicManager : MonoBehaviour
                 yield break;
             }
 
-            AudioClip clip = DownloadHandlerAudioClip.GetContent(request);
+            AudioClip clip = null;
+            try
+            {
+                clip = DownloadHandlerAudioClip.GetContent(request);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning($"[GameMusic] Failed to decode audio as {audioType}: {exception.Message} ({fullPath})");
+                callback(null);
+                yield break;
+            }
+
             if (clip)
             {
                 clip.name = Path.GetFileNameWithoutExtension(fullPath);
                 clipCache[assetPath] = clip;
             }
             callback(clip);
+        }
+    }
+
+    private static AudioType GetAudioTypeForPath(string path)
+    {
+        string extension = Path.GetExtension(path).ToLowerInvariant();
+        switch (extension)
+        {
+            case ".mp3":
+                return AudioType.MPEG;
+            case ".m4a":
+            case ".aac":
+                return AudioType.ACC;
+            case ".wav":
+                return AudioType.WAV;
+            case ".ogg":
+                return AudioType.OGGVORBIS;
+            case ".aif":
+            case ".aiff":
+                return AudioType.AIFF;
+            default:
+                return AudioType.UNKNOWN;
         }
     }
 
@@ -483,6 +717,11 @@ public sealed class GameMusicManager : MonoBehaviour
         {
             return new MusicTrack(EpicSevenFolder, fileName);
         }
+
+        public static MusicTrack Csgo(string fileName)
+        {
+            return new MusicTrack(CsgoFolder, fileName);
+        }
     }
 
     private struct MusicRequest : IEquatable<MusicRequest>
@@ -496,14 +735,15 @@ public sealed class GameMusicManager : MonoBehaviour
 
         public static MusicRequest For(GameMusicContext context)
         {
-            bool isMainMenu = context == GameMusicContext.MainMenuPrimary || context == GameMusicContext.MainMenuHub;
+            bool isMainMenuHub = context == GameMusicContext.MainMenuHub;
+            bool isAuthOrPrimaryMenu = context == GameMusicContext.Auth || context == GameMusicContext.MainMenuPrimary;
             return new MusicRequest
             {
                 context = context,
                 difficulty = StockfishDifficulty.Medium,
                 resultKind = ResultMenuView.ResultKind.Draw,
-                sequential = isMainMenu,
-                key = isMainMenu ? "MainMenu" : context.ToString()
+                sequential = isMainMenuHub,
+                key = isAuthOrPrimaryMenu ? "AuthMainMenuPrimary" : context.ToString()
             };
         }
 
@@ -532,8 +772,7 @@ public sealed class GameMusicManager : MonoBehaviour
 
         public bool Equals(MusicRequest other)
         {
-            return context == other.context &&
-                   isBotGame == other.isBotGame &&
+            return isBotGame == other.isBotGame &&
                    difficulty == other.difficulty &&
                    resultKind == other.resultKind &&
                    string.Equals(key, other.key, StringComparison.Ordinal);

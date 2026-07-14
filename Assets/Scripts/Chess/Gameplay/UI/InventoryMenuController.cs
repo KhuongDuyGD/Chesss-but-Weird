@@ -50,6 +50,18 @@ public sealed class InventoryMenuController : MonoBehaviour
             musicPackId = "epic_seven",
             imageAssetPath = "Assets/Audio/MusicPackage/EpicSevenCollab/CBWEpicSevenDisco.png",
             builtIn = true
+        },
+        new InventoryItemData("music_pack_csgo", "CSGO Main Theme", InventoryItemCategory.Music, 5, "Collab")
+        {
+            musicPackId = "csgo",
+            imageAssetPath = "Assets/Audio/MusicPackage/CSGOcollab/CBWCCSGODisco.png",
+            builtIn = true
+        },
+        new InventoryItemData("music_pack_eye_of_the_dragon", "Eye of the Dragon", InventoryItemCategory.Music, 5, "Collab")
+        {
+            musicPackId = "eye_of_the_dragon",
+            imageAssetPath = "Assets/Audio/MusicPackage/CSGOcollab/CBWEyeOfTheDragonDisco.png",
+            builtIn = true
         }
     };
 
@@ -200,12 +212,17 @@ public sealed class InventoryMenuController : MonoBehaviour
     private void AddMusicPackCard(RectTransform parent, InventoryItemData item, GameMusicPack pack, Vector2 position, Vector2 size)
     {
         RectTransform card = CreateChild(parent, item.displayName, position, size);
-        Sprite cover = GetSpriteFromProjectPath(item.imageAssetPath, false);
-        Image image = AddImage(card, "Music Pack Cover", cover, Vector2.zero, size);
-        image.preserveAspect = false;
-        image.raycastTarget = true;
+        Image background = card.gameObject.AddComponent<Image>();
+        background.color = RarityColor(item.rarity, 0.34f);
+        background.raycastTarget = true;
 
-        Outline outline = image.gameObject.AddComponent<Outline>();
+        Sprite cover = GetSpriteFromProjectPath(item.imageAssetPath, false);
+        Vector2 coverSize = new Vector2(size.x - 14f, size.y - 10f);
+        Image image = AddImage(card, "Music Pack Cover", cover, Vector2.zero, coverSize);
+        image.preserveAspect = true;
+        image.raycastTarget = false;
+
+        Outline outline = card.gameObject.AddComponent<Outline>();
         bool selected = GameMusicManager.ActivePack == pack;
         outline.effectColor = selected ? new Color(1f, 0.92f, 0.22f, 0.95f) : RarityColor(item.rarity, 0.78f);
         outline.effectDistance = selected ? new Vector2(4f, -4f) : new Vector2(2f, -2f);
@@ -217,12 +234,12 @@ public sealed class InventoryMenuController : MonoBehaviour
         AddText(card, "Music Pack Name", new Vector2(0f, -44f), new Vector2(size.x - 18f, 42f), 21f, TextAlignmentOptions.Center, Color.white).text =
             selected ? $"{item.displayName} - Active" : item.displayName;
 
-        Button button = image.gameObject.AddComponent<Button>();
+        Button button = card.gameObject.AddComponent<Button>();
         button.transition = Selectable.Transition.None;
-        button.targetGraphic = image;
+        button.targetGraphic = background;
         button.onClick.AddListener(() => SelectMusicPack(pack));
 
-        HandDrawnPressable pressable = image.gameObject.AddComponent<HandDrawnPressable>();
+        HandDrawnPressable pressable = card.gameObject.AddComponent<HandDrawnPressable>();
         pressable.Configure(1.035f, 0.95f, 0.85f, new Color(1f, 0.97f, 0.86f, 1f));
     }
 
@@ -389,7 +406,7 @@ public sealed class InventoryMenuController : MonoBehaviour
         }
 
         byte[] bytes = File.ReadAllBytes(path);
-        Texture2D texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+        Texture2D texture = new Texture2D(2, 2, TextureFormat.RGBA32, true);
         if (!texture.LoadImage(bytes))
         {
             Destroy(texture);
@@ -397,7 +414,9 @@ public sealed class InventoryMenuController : MonoBehaviour
         }
 
         texture.name = Path.GetFileNameWithoutExtension(path);
-        texture.filterMode = FilterMode.Bilinear;
+        texture.Apply(true, false);
+        texture.filterMode = FilterMode.Trilinear;
+        texture.anisoLevel = 4;
         Rect rect = trimTransparent ? FindOpaqueBounds(texture) : new Rect(0f, 0f, texture.width, texture.height);
         Sprite sprite = Sprite.Create(texture, rect, new Vector2(0.5f, 0.5f), 100f, 0u, SpriteMeshType.FullRect);
         runtimeSprites.Add(sprite);
