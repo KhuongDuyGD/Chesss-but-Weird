@@ -37,7 +37,7 @@ public sealed class StockfishBotController : MonoBehaviour
         difficulty = selectedDifficulty;
         botTeam = playerTeam == PieceTeam.White ? PieceTeam.Black : PieceTeam.White;
         GameMusicManager.PlayInGameMusic(true, difficulty);
-        chessGame.BeginBotGame(playerTeam);
+        chessGame.BeginBotGame(playerTeam, difficulty);
         QueueBotTurnIfNeeded();
     }
 

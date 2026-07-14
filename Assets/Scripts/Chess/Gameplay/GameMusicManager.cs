@@ -154,6 +154,15 @@ public sealed class GameMusicManager : MonoBehaviour
         Ensure().Play(MusicRequest.ForResult(resultKind));
     }
 
+    public static void RefreshVolumeFromSettings()
+    {
+        GameMusicManager manager = Ensure();
+        if (!manager.source)
+            return;
+
+        manager.source.volume = GetTargetVolume(manager.currentRequest);
+    }
+
     private static GameMusicManager Ensure()
     {
         if (instance)
@@ -348,7 +357,8 @@ public sealed class GameMusicManager : MonoBehaviour
 
     private static float GetTargetVolume(MusicRequest request)
     {
-        return request.context == GameMusicContext.InGame ? InGameVolume : MenuVolume;
+        float contextVolume = request.context == GameMusicContext.InGame ? InGameVolume : MenuVolume;
+        return contextVolume * GameRuntimeSettings.MusicVolume01;
     }
 
     private IEnumerator FadeSource(float from, float to, float duration)

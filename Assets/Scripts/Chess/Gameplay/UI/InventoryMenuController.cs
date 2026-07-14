@@ -65,6 +65,8 @@ public sealed class InventoryMenuController : MonoBehaviour
         }
     };
 
+    private static readonly InventoryItemData[] BuiltInSkinItems = CreateBuiltInSkinItems();
+
     private static readonly InventoryButtonLayout[] ButtonLayouts =
     {
         new InventoryButtonLayout("Music Inventory", "MusicButton.png", InventoryButtonAction.Music, new Vector2(164f, 137f), new Vector2(225f, 160f), 1.045f, new Color(0.95f, 0.86f, 1f, 1f)),
@@ -173,6 +175,8 @@ public sealed class InventoryMenuController : MonoBehaviour
         List<InventoryItemData> visibleItems = new List<InventoryItemData>();
         if (!activeCategory.HasValue || activeCategory.Value == InventoryItemCategory.Music)
             visibleItems.AddRange(BuiltInMusicItems);
+        if (!activeCategory.HasValue || activeCategory.Value == InventoryItemCategory.Skin)
+            visibleItems.AddRange(BuiltInSkinItems);
 
         if (saveData.items == null)
             return visibleItems;
@@ -191,6 +195,12 @@ public sealed class InventoryMenuController : MonoBehaviour
         if (item != null && item.category == InventoryItemCategory.Music && TryGetMusicPack(item, out GameMusicPack pack))
         {
             AddMusicPackCard(parent, item, pack, position, size);
+            return;
+        }
+
+        if (item != null && item.category == InventoryItemCategory.Skin && TryGetPieceSkin(item, out PieceSkinDefinition skin))
+        {
+            AddPieceSkinCard(parent, item, skin, position, size);
             return;
         }
 
@@ -238,6 +248,40 @@ public sealed class InventoryMenuController : MonoBehaviour
         button.transition = Selectable.Transition.None;
         button.targetGraphic = background;
         button.onClick.AddListener(() => SelectMusicPack(pack));
+
+        HandDrawnPressable pressable = card.gameObject.AddComponent<HandDrawnPressable>();
+        pressable.Configure(1.035f, 0.95f, 0.85f, new Color(1f, 0.97f, 0.86f, 1f));
+    }
+
+    private void AddPieceSkinCard(RectTransform parent, InventoryItemData item, PieceSkinDefinition skin, Vector2 position, Vector2 size)
+    {
+        RectTransform card = CreateChild(parent, item.displayName, position, size);
+        Image background = card.gameObject.AddComponent<Image>();
+        background.color = new Color(1f, 0.98f, 0.9f, 0.88f);
+        background.raycastTarget = true;
+
+        Outline outline = card.gameObject.AddComponent<Outline>();
+        outline.effectColor = skin.IsDefault ? new Color(0f, 0f, 0f, 0.42f) : skin.SwatchColor;
+        outline.effectDistance = new Vector2(3f, -3f);
+
+        Image swatch = AddImage(card, "Skin Swatch", null, new Vector2(-68f, 10f), new Vector2(64f, 64f));
+        swatch.color = skin.SwatchColor;
+        swatch.preserveAspect = false;
+
+        Outline swatchOutline = swatch.gameObject.AddComponent<Outline>();
+        swatchOutline.effectColor = Color.black;
+        swatchOutline.effectDistance = new Vector2(2f, -2f);
+
+        AddText(card, "Rarity", new Vector2(-82f, 42f), new Vector2(60f, 30f), 23f, TextAlignmentOptions.Center, Color.black).text = $"{item.rarity}*";
+        AddText(card, "Category", new Vector2(50f, 42f), new Vector2(118f, 30f), 18f, TextAlignmentOptions.Right, new Color(0.16f, 0.12f, 0.08f, 0.9f)).text = "Skin";
+        AddText(card, "Skin Name", new Vector2(38f, 8f), new Vector2(130f, 42f), 24f, TextAlignmentOptions.Center, GetReadableTextColor(new Color(1f, 0.98f, 0.9f, 1f))).text = skin.DisplayName;
+        AddText(card, "Skin Status", new Vector2(38f, -38f), new Vector2(138f, 28f), 16f, TextAlignmentOptions.Center, new Color(0.18f, 0.14f, 0.1f, 0.85f)).text =
+            skin.IsDefault ? "Always owned" : "Available";
+
+        Button button = card.gameObject.AddComponent<Button>();
+        button.transition = Selectable.Transition.None;
+        button.targetGraphic = background;
+        button.onClick.AddListener(() => SetStatus($"Skin: {skin.DisplayName}. Select it before starting a match."));
 
         HandDrawnPressable pressable = card.gameObject.AddComponent<HandDrawnPressable>();
         pressable.Configure(1.035f, 0.95f, 0.85f, new Color(1f, 0.97f, 0.86f, 1f));
@@ -513,6 +557,35 @@ public sealed class InventoryMenuController : MonoBehaviour
         return false;
     }
 
+    private static InventoryItemData[] CreateBuiltInSkinItems()
+    {
+        IReadOnlyList<PieceSkinDefinition> skins = PieceSkinCatalog.All;
+        InventoryItemData[] items = new InventoryItemData[skins.Count];
+        for (int i = 0; i < skins.Count; i++)
+        {
+            PieceSkinDefinition skin = skins[i];
+            items[i] = new InventoryItemData($"piece_skin_{skin.Id}", skin.DisplayName, InventoryItemCategory.Skin, skin.IsDefault ? 3 : 5, "Built-in")
+            {
+                skinId = skin.Id,
+                builtIn = true
+            };
+        }
+
+        return items;
+    }
+
+    private static bool TryGetPieceSkin(InventoryItemData item, out PieceSkinDefinition skin)
+    {
+        if (item != null && !string.IsNullOrWhiteSpace(item.skinId))
+        {
+            skin = PieceSkinCatalog.Get(item.skinId);
+            return true;
+        }
+
+        skin = PieceSkinCatalog.Get(PieceSkinCatalog.DefaultSkinId);
+        return false;
+    }
+
     private void SelectMusicPack(GameMusicPack pack)
     {
         GameMusicManager.SetActivePack(pack);
@@ -562,6 +635,12 @@ public sealed class InventoryMenuController : MonoBehaviour
         if (rarity >= 3)
             return new Color(0.58f, 0.8f, 1f, alpha);
         return new Color(0.74f, 0.9f, 0.68f, alpha);
+    }
+
+    private static Color GetReadableTextColor(Color background)
+    {
+        float luminance = background.r * 0.299f + background.g * 0.587f + background.b * 0.114f;
+        return luminance < 0.45f ? Color.white : Color.black;
     }
 
     private void OnDestroy()
@@ -688,6 +767,7 @@ public sealed class InventoryItemData
     public int rarity;
     public string ownedAtUtc;
     public string musicPackId;
+    public string skinId;
     public string imageAssetPath;
     public bool builtIn;
 

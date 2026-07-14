@@ -54,6 +54,21 @@ public class HandDrawnPressable : MonoBehaviour, IPointerEnterHandler, IPointerE
             tintTarget.color = Color.Lerp(tintTarget.color, hovering ? hoverTint : baseColor, blend);
     }
 
+    private void OnDisable()
+    {
+        hovering = false;
+        pressing = false;
+
+        if (rectTransform)
+        {
+            rectTransform.localScale = baseScale;
+            rectTransform.localRotation = baseRotation;
+        }
+
+        if (tintTarget)
+            tintTarget.color = baseColor;
+    }
+
     public void OnPointerEnter(PointerEventData eventData)
     {
         hoverDirection = Random.value < 0.5f ? -1f : 1f;

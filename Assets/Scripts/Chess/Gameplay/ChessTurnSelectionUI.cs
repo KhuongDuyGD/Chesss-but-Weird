@@ -244,7 +244,12 @@ public class ChessTurnSelectionUI : MonoBehaviour
             return;
         }
 
-        ShowLanSetup();
+        GameMusicManager.PlayMainMenuHubMusic();
+        showCheckWarning = false;
+        state = ScreenState.TurnSelection;
+        handDrawnMenu?.HideForPlaying();
+        analysisBoard?.SetVisible(false);
+        lanController?.ShowMultiplayerSetup();
     }
 
     public void RequestAuthentication(string message)

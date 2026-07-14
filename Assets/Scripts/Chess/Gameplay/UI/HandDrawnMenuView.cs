@@ -8,15 +8,14 @@ using UnityEngine.Events;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem.UI;
 using UnityEngine.UI;
-using UnityEngine.Video;
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
 
 public class HandDrawnMenuView : MonoBehaviour
 {
     private const float ReferenceWidth = 1920f;
     private const float ReferenceHeight = 1080f;
+    private const float ScreenTransitionDuration = 0.42f;
+    private const float ScreenTransitionOffset = 54f;
+    private const float OverlayTransitionDuration = 0.22f;
 
     private ChessTurnSelectionUI owner;
     private ChessGame chessGame;
@@ -30,15 +29,26 @@ public class HandDrawnMenuView : MonoBehaviour
     private RectTransform gachaScreen;
     private RectTransform inventoryOverlay;
     private RectTransform profileOverlay;
+    private RectTransform settingsOverlay;
     private RectTransform botDifficultyScreen;
     private RectTransform sideScreen;
     private RectTransform skinScreen;
     private Text skinMessageText;
+    private RectTransform transitionVeil;
+    private RectTransform transitionProgressFill;
+    private TextMeshProUGUI transitionLabel;
+    private CanvasGroup transitionVeilGroup;
+    private RectTransform currentScreen;
     private Button modeLogoutButton;
     private GachaMenuController gachaController;
     private InventoryMenuController inventoryController;
     private PlayerProfileMenuController profileController;
-    private readonly Dictionary<Selectable, bool> inventoryBlockedSelectables = new Dictionary<Selectable, bool>();
+    private SettingsMenuController settingsController;
+    private Coroutine screenTransitionCoroutine;
+    private Coroutine inventoryOverlayTransitionCoroutine;
+    private Coroutine profileOverlayTransitionCoroutine;
+    private Coroutine settingsOverlayTransitionCoroutine;
+    private Coroutine gameStartTransitionCoroutine;
     private readonly List<Sprite> runtimeSprites = new List<Sprite>();
     private readonly List<SkinOptionButton> skinOptionButtons = new List<SkinOptionButton>();
     private string selectedWhiteSkinId = PieceSkinCatalog.DefaultSkinId;
@@ -68,6 +78,8 @@ public class HandDrawnMenuView : MonoBehaviour
         BuildBotDifficultyScreen();
         BuildSideScreen();
         BuildSkinScreen();
+        BuildSettingsOverlay();
+        BuildTransitionVeil();
         ShowMainMenu();
     }
 
@@ -76,7 +88,7 @@ public class HandDrawnMenuView : MonoBehaviour
         GameMusicManager.PlayMainMenuPrimaryMusic();
         SetVisible(true);
         SetInputEnabled(true);
-        SetScreen(mainScreen);
+        TransitionToScreen(mainScreen, null, "Loading main menu...");
     }
 
     public void ShowModeSelection()
@@ -84,9 +96,11 @@ public class HandDrawnMenuView : MonoBehaviour
         GameMusicManager.PlayMainMenuHubMusic();
         SetVisible(true);
         SetInputEnabled(true);
-        SetScreen(modeScreen);
-        CloseInventoryMenu();
-        CloseProfileMenu();
+        TransitionToScreen(modeScreen, () =>
+        {
+            HideInventoryOverlayImmediate();
+            HideProfileOverlayImmediate();
+        }, "Loading play hub...");
     }
 
     public void ShowSideSelection()
@@ -94,7 +108,7 @@ public class HandDrawnMenuView : MonoBehaviour
         GameMusicManager.PlayMainMenuHubMusic();
         SetVisible(true);
         SetInputEnabled(true);
-        SetScreen(sideScreen);
+        TransitionToScreen(sideScreen, null, "Loading side select...");
     }
 
     public void ShowBotDifficultySelection()
@@ -102,14 +116,15 @@ public class HandDrawnMenuView : MonoBehaviour
         GameMusicManager.PlayMainMenuHubMusic();
         SetVisible(true);
         SetInputEnabled(true);
-        SetScreen(botDifficultyScreen);
+        TransitionToScreen(botDifficultyScreen, null, "Loading difficulties...");
     }
 
     public void ShowLocalModeSelection()
     {
+        GameMusicManager.PlayMainMenuHubMusic();
         SetVisible(true);
         SetInputEnabled(true);
-        SetScreen(localModeScreen);
+        TransitionToScreen(localModeScreen, null, "Loading local mode...");
     }
 
     public void ShowPieceSkinSelection(bool vsBot, PieceTeam playerTeam)
@@ -126,10 +141,9 @@ public class HandDrawnMenuView : MonoBehaviour
             SetSelectedSkinId(playerTeam, PieceSkinCatalog.DefaultSkinId);
         }
 
-        RebuildSkinScreen();
         SetVisible(true);
         SetInputEnabled(true);
-        SetScreen(skinScreen);
+        TransitionToScreen(skinScreen, RebuildSkinScreen, "Loading skins...");
     }
 
     public void ShowMultiplayerModeSelection()
@@ -143,7 +157,7 @@ public class HandDrawnMenuView : MonoBehaviour
 
         SetVisible(true);
         SetInputEnabled(true);
-        SetScreen(multiplayerModeScreen);
+        TransitionToScreen(multiplayerModeScreen, null, "Loading multiplayer...");
     }
 
     public void ShowGachaMenu()
@@ -151,14 +165,15 @@ public class HandDrawnMenuView : MonoBehaviour
         GameMusicManager.PlayGachaMusic();
         SetVisible(true);
         SetInputEnabled(true);
-        gachaController?.OpenMainScreen();
-        SetScreen(gachaScreen);
+        TransitionToScreen(gachaScreen, () => gachaController?.OpenMainScreen(), "Loading gacha...");
     }
 
     public void HideForPlaying()
     {
-        CloseInventoryMenu();
-        CloseProfileMenu();
+        StopMenuTransitions();
+        HideInventoryOverlayImmediate();
+        HideProfileOverlayImmediate();
+        HideSettingsOverlayImmediate();
         SetVisible(false);
         SetInputEnabled(false);
         SetAllScreensActive(false);
@@ -200,7 +215,7 @@ public class HandDrawnMenuView : MonoBehaviour
         AddImage(mainScreen, "Doodle Face", assets.doodleFaceDecoration, new Vector2(-835f, 425f), new Vector2(225f, 178f), 1.2f, 0.45f);
         AddImage(mainScreen, "Game Logo", assets.gameLogo, new Vector2(0f, 345f), new Vector2(720f, 398f), 0.6f, 0.2f);
         AddInteractive(mainScreen, "Start", assets.startButton, new Vector2(0f, 42f), new Vector2(660f, 158f), () => chessGame.OpenTurnSelection(), false, 1.035f);
-        AddInteractive(mainScreen, "Settings", assets.settingsButton, new Vector2(0f, -142f), new Vector2(660f, 148f), () => LogMenuClick("Settings"), false, 1.035f);
+        AddInteractive(mainScreen, "Settings", assets.settingsButton, new Vector2(0f, -142f), new Vector2(660f, 148f), ShowSettingsMenu, false, 1.035f);
         AddInteractive(mainScreen, "Credits", assets.creditsButton, new Vector2(0f, -326f), new Vector2(660f, 158f), () => LogMenuClick("Credits"), false, 1.035f);
 
         AddImage(mainScreen, "Crown Doodle", assets.backgroundDecoration4, new Vector2(-735f, -330f), new Vector2(205f, 158f), 0.45f, 0.2f);
@@ -249,7 +264,7 @@ public class HandDrawnMenuView : MonoBehaviour
         AddInteractive(screen, "Inventory", assets.inventoryButton, new Vector2(805f, 130f), new Vector2(132f, 132f), CreateAuthenticatedAction("Inventory", ShowInventoryMenu), false, 1.045f);
         AddInteractive(screen, "Gacha", assets.gachaButton, new Vector2(805f, -50f), new Vector2(132f, 132f), CreateAuthenticatedAction("Gacha", ShowGachaMenu), false, 1.045f);
         AddInteractive(screen, "Player Profile", assets.playerProfile, new Vector2(805f, -230f), new Vector2(136f, 136f), CreateAuthenticatedAction("Player Profile", ShowProfileMenu), false, 1.045f);
-        AddInteractive(screen, "Settings Icon", assets.settingsIcon, new Vector2(500f, -398f), new Vector2(118f, 118f), CreateAuthenticatedAction("Settings", () => LogMenuClick("Settings")), false, 1.045f);
+        AddInteractive(screen, "Settings Icon", assets.settingsIcon, new Vector2(500f, -398f), new Vector2(118f, 118f), ShowSettingsMenu, false, 1.045f);
         AddImage(screen, "Game Version", assets.gameVersion, new Vector2(735f, -415f), new Vector2(320f, 142f), 0f, 0f);
         modeLogoutButton = AddLogoutButton(screen);
     }
@@ -261,6 +276,10 @@ public class HandDrawnMenuView : MonoBehaviour
         inventoryOverlay.SetParent(modeScreen, false);
         Stretch(inventoryOverlay);
         inventoryOverlay.SetAsLastSibling();
+        CanvasGroup group = overlay.AddComponent<CanvasGroup>();
+        group.alpha = 1f;
+        group.interactable = true;
+        group.blocksRaycasts = false;
 
         inventoryController = overlay.AddComponent<InventoryMenuController>();
         inventoryController.Initialize(inventoryOverlay, CloseInventoryMenu);
@@ -274,9 +293,30 @@ public class HandDrawnMenuView : MonoBehaviour
         profileOverlay.SetParent(modeScreen, false);
         Stretch(profileOverlay);
         profileOverlay.SetAsLastSibling();
+        CanvasGroup group = overlay.AddComponent<CanvasGroup>();
+        group.alpha = 1f;
+        group.interactable = true;
+        group.blocksRaycasts = false;
 
         profileController = overlay.AddComponent<PlayerProfileMenuController>();
         profileController.Initialize(profileOverlay, CloseProfileMenu);
+        overlay.SetActive(false);
+    }
+
+    private void BuildSettingsOverlay()
+    {
+        GameObject overlay = new GameObject("Settings Overlay", typeof(RectTransform));
+        settingsOverlay = overlay.GetComponent<RectTransform>();
+        settingsOverlay.SetParent(transform, false);
+        Stretch(settingsOverlay);
+        settingsOverlay.SetAsLastSibling();
+        CanvasGroup group = overlay.AddComponent<CanvasGroup>();
+        group.alpha = 1f;
+        group.interactable = true;
+        group.blocksRaycasts = false;
+
+        settingsController = overlay.AddComponent<SettingsMenuController>();
+        settingsController.Initialize(settingsOverlay, CloseSettingsMenu);
         overlay.SetActive(false);
     }
 
@@ -287,17 +327,13 @@ public class HandDrawnMenuView : MonoBehaviour
 
         SetVisible(true);
         SetInputEnabled(true);
-        SetScreen(modeScreen);
-        SetModeScreenBackgroundInteractable(false);
-        inventoryOverlay.SetAsLastSibling();
-        inventoryController?.Open();
-        inventoryOverlay.gameObject.SetActive(true);
+        TransitionToScreen(modeScreen, OpenInventoryOverlay, "Loading inventory...");
     }
 
     private void CloseInventoryMenu()
     {
         if (inventoryOverlay)
-            inventoryOverlay.gameObject.SetActive(false);
+            inventoryOverlayTransitionCoroutine = StartOverlayTransition(inventoryOverlay, inventoryOverlayTransitionCoroutine, false);
 
         if (!IsProfileOpen)
             SetModeScreenBackgroundInteractable(true);
@@ -310,18 +346,13 @@ public class HandDrawnMenuView : MonoBehaviour
 
         SetVisible(true);
         SetInputEnabled(true);
-        SetScreen(modeScreen);
-        SetModeScreenBackgroundInteractable(false);
-        profileOverlay.SetAsLastSibling();
-        profileController?.Open();
-        profileOverlay.gameObject.SetActive(true);
-        SetModeLogoutVisible(false);
+        TransitionToScreen(modeScreen, OpenProfileOverlay, "Loading profile...");
     }
 
     private void CloseProfileMenu()
     {
         if (profileOverlay)
-            profileOverlay.gameObject.SetActive(false);
+            profileOverlayTransitionCoroutine = StartOverlayTransition(profileOverlay, profileOverlayTransitionCoroutine, false);
 
         SetModeLogoutVisible(true);
 
@@ -329,38 +360,98 @@ public class HandDrawnMenuView : MonoBehaviour
             SetModeScreenBackgroundInteractable(true);
     }
 
+    private void ShowSettingsMenu()
+    {
+        if (!settingsOverlay)
+            return;
+
+        SetVisible(true);
+        SetInputEnabled(true);
+        HideInventoryOverlayImmediate();
+        HideProfileOverlayImmediate();
+        settingsOverlay.SetAsLastSibling();
+        settingsController?.Open();
+        settingsOverlayTransitionCoroutine = StartOverlayTransition(settingsOverlay, settingsOverlayTransitionCoroutine, true);
+    }
+
+    private void CloseSettingsMenu()
+    {
+        if (settingsOverlay)
+            settingsOverlayTransitionCoroutine = StartOverlayTransition(settingsOverlay, settingsOverlayTransitionCoroutine, false);
+    }
+
+    private void OpenInventoryOverlay()
+    {
+        if (!inventoryOverlay)
+            return;
+
+        HideProfileOverlayImmediate();
+        SetModeScreenBackgroundInteractable(false);
+        inventoryOverlay.SetAsLastSibling();
+        inventoryController?.Open();
+        inventoryOverlayTransitionCoroutine = StartOverlayTransition(inventoryOverlay, inventoryOverlayTransitionCoroutine, true);
+    }
+
+    private void OpenProfileOverlay()
+    {
+        if (!profileOverlay)
+            return;
+
+        HideInventoryOverlayImmediate();
+        SetModeScreenBackgroundInteractable(false);
+        profileOverlay.SetAsLastSibling();
+        profileController?.Open();
+        SetModeLogoutVisible(false);
+        profileOverlayTransitionCoroutine = StartOverlayTransition(profileOverlay, profileOverlayTransitionCoroutine, true);
+    }
+
+    private void HideInventoryOverlayImmediate()
+    {
+        if (inventoryOverlayTransitionCoroutine != null)
+        {
+            StopCoroutine(inventoryOverlayTransitionCoroutine);
+            inventoryOverlayTransitionCoroutine = null;
+        }
+
+        SetOverlayState(inventoryOverlay, false, 1f, 0.96f);
+        if (!IsProfileOpen)
+            SetModeScreenBackgroundInteractable(true);
+    }
+
+    private void HideProfileOverlayImmediate()
+    {
+        if (profileOverlayTransitionCoroutine != null)
+        {
+            StopCoroutine(profileOverlayTransitionCoroutine);
+            profileOverlayTransitionCoroutine = null;
+        }
+
+        SetOverlayState(profileOverlay, false, 1f, 0.96f);
+        SetModeLogoutVisible(true);
+        if (!IsInventoryOpen)
+            SetModeScreenBackgroundInteractable(true);
+    }
+
+    private void HideSettingsOverlayImmediate()
+    {
+        if (settingsOverlayTransitionCoroutine != null)
+        {
+            StopCoroutine(settingsOverlayTransitionCoroutine);
+            settingsOverlayTransitionCoroutine = null;
+        }
+
+        SetOverlayState(settingsOverlay, false, 1f, 0.96f);
+    }
+
     private bool IsInventoryOpen => inventoryOverlay && inventoryOverlay.gameObject.activeSelf;
     private bool IsProfileOpen => profileOverlay && profileOverlay.gameObject.activeSelf;
 
     private void SetModeScreenBackgroundInteractable(bool interactable)
     {
-        if (!modeScreen)
-            return;
-
-        if (!interactable)
-        {
-            if (inventoryBlockedSelectables.Count > 0)
-                return;
-
-            Selectable[] selectables = modeScreen.GetComponentsInChildren<Selectable>(true);
-            for (int i = 0; i < selectables.Length; i++)
-            {
-                Selectable selectable = selectables[i];
-                if (!selectable ||
-                    (inventoryOverlay && selectable.transform.IsChildOf(inventoryOverlay)) ||
-                    (profileOverlay && selectable.transform.IsChildOf(profileOverlay)))
-                    continue;
-
-                inventoryBlockedSelectables[selectable] = selectable.interactable;
-                selectable.interactable = false;
-            }
-            return;
-        }
-
-        foreach (KeyValuePair<Selectable, bool> entry in inventoryBlockedSelectables)
-            if (entry.Key)
-                entry.Key.interactable = entry.Value;
-        inventoryBlockedSelectables.Clear();
+        // Inventory/Profile overlays already include a full-screen raycast blocker.
+        // Do not flip Selectable.interactable here: Unity applies disabled tint,
+        // which makes the hand-drawn buttons look permanently washed out during
+        // fade transitions.
     }
 
     private void SetModeLogoutVisible(bool visible)
@@ -956,25 +1047,176 @@ public class HandDrawnMenuView : MonoBehaviour
         return image;
     }
 
-    private void SetScreen(RectTransform activeScreen)
+    private void BuildTransitionVeil()
+    {
+        GameObject veilObject = new GameObject("Menu Transition Veil", typeof(RectTransform), typeof(CanvasGroup), typeof(Image));
+        transitionVeil = veilObject.GetComponent<RectTransform>();
+        transitionVeil.SetParent(transform, false);
+        Stretch(transitionVeil);
+        transitionVeil.SetAsLastSibling();
+
+        Image veilImage = veilObject.GetComponent<Image>();
+        veilImage.color = new Color(0.985f, 0.965f, 0.91f, 0.94f);
+        veilImage.raycastTarget = true;
+
+        transitionVeilGroup = veilObject.GetComponent<CanvasGroup>();
+        transitionVeilGroup.alpha = 0f;
+        transitionVeilGroup.interactable = true;
+        transitionVeilGroup.blocksRaycasts = false;
+
+        AddImage(transitionVeil, "Transition Stars Left", assets.backgroundDecoration3, new Vector2(-135f, 18f), new Vector2(78f, 52f), 0.2f, 0.08f);
+        AddImage(transitionVeil, "Transition Stars Right", assets.backgroundDecoration3, new Vector2(155f, -20f), new Vector2(78f, 52f), 0.2f, 0.08f);
+
+        GameObject labelObject = new GameObject("Transition Label", typeof(RectTransform), typeof(TextMeshProUGUI));
+        RectTransform labelRect = labelObject.GetComponent<RectTransform>();
+        labelRect.SetParent(transitionVeil, false);
+        labelRect.anchorMin = labelRect.anchorMax = labelRect.pivot = new Vector2(0.5f, 0.5f);
+        labelRect.anchoredPosition = new Vector2(0f, -52f);
+        labelRect.sizeDelta = new Vector2(520f, 56f);
+
+        transitionLabel = labelObject.GetComponent<TextMeshProUGUI>();
+        transitionLabel.font = ChessFontCatalog.TmpFont != null ? ChessFontCatalog.TmpFont : TMP_Settings.defaultFontAsset;
+        transitionLabel.fontSize = 34f;
+        transitionLabel.enableAutoSizing = true;
+        transitionLabel.fontSizeMin = 20f;
+        transitionLabel.fontSizeMax = 34f;
+        transitionLabel.alignment = TextAlignmentOptions.Center;
+        transitionLabel.color = new Color(0.18f, 0.14f, 0.1f, 0.9f);
+        transitionLabel.raycastTarget = false;
+        transitionLabel.text = string.Empty;
+
+        Image progressTrack = CreateImage(transitionVeil, "Transition Progress Track", null, new Vector2(0f, -102f), new Vector2(430f, 10f));
+        progressTrack.color = new Color(0.15f, 0.12f, 0.08f, 0.18f);
+        progressTrack.preserveAspect = false;
+
+        Image progressFill = CreateImage(progressTrack.rectTransform, "Transition Progress Fill", null, Vector2.zero, new Vector2(1f, 10f));
+        progressFill.color = new Color(0.14f, 0.11f, 0.08f, 0.88f);
+        progressFill.preserveAspect = false;
+        transitionProgressFill = progressFill.rectTransform;
+        transitionProgressFill.anchorMin = new Vector2(0f, 0.5f);
+        transitionProgressFill.anchorMax = new Vector2(0f, 0.5f);
+        transitionProgressFill.pivot = new Vector2(0f, 0.5f);
+
+        transitionVeil.gameObject.SetActive(false);
+    }
+
+    private void TransitionToScreen(RectTransform activeScreen, Action prepareAction, string loadingText)
     {
         if (!mainScreen || !modeScreen || !localModeScreen || !multiplayerModeScreen || !gachaScreen || !botDifficultyScreen || !sideScreen || !skinScreen || !activeScreen)
             return;
 
         if (activeScreen != modeScreen)
         {
-            CloseInventoryMenu();
-            CloseProfileMenu();
+            HideInventoryOverlayImmediate();
+            HideProfileOverlayImmediate();
         }
 
-        mainScreen.gameObject.SetActive(activeScreen == mainScreen);
-        modeScreen.gameObject.SetActive(activeScreen == modeScreen);
-        localModeScreen.gameObject.SetActive(activeScreen == localModeScreen);
-        multiplayerModeScreen.gameObject.SetActive(activeScreen == multiplayerModeScreen);
-        gachaScreen.gameObject.SetActive(activeScreen == gachaScreen);
-        botDifficultyScreen.gameObject.SetActive(activeScreen == botDifficultyScreen);
-        sideScreen.gameObject.SetActive(activeScreen == sideScreen);
-        skinScreen.gameObject.SetActive(activeScreen == skinScreen);
+        if (!canvas || !canvas.enabled || currentScreen == null || !currentScreen.gameObject.activeSelf)
+        {
+            prepareAction?.Invoke();
+            SetScreenImmediate(activeScreen);
+            SetInputEnabled(true);
+            return;
+        }
+
+        if (currentScreen == activeScreen)
+        {
+            prepareAction?.Invoke();
+            SetScreenImmediate(activeScreen);
+            SetInputEnabled(true);
+            return;
+        }
+
+        if (screenTransitionCoroutine != null)
+        {
+            StopCoroutine(screenTransitionCoroutine);
+            screenTransitionCoroutine = null;
+            HideTransitionVeil();
+        }
+        screenTransitionCoroutine = StartCoroutine(AnimateScreenTransition(activeScreen, prepareAction, loadingText));
+    }
+
+    private IEnumerator AnimateScreenTransition(RectTransform activeScreen, Action prepareAction, string loadingText)
+    {
+        SetInputEnabled(false);
+
+        RectTransform previousScreen = currentScreen;
+        CanvasGroup previousGroup = GetOrAddCanvasGroup(previousScreen);
+        CanvasGroup activeGroup = GetOrAddCanvasGroup(activeScreen);
+        bool forward = GetScreenOrder(activeScreen) >= GetScreenOrder(previousScreen);
+        float direction = forward ? 1f : -1f;
+        float halfDuration = ScreenTransitionDuration * 0.5f;
+
+        previousScreen.gameObject.SetActive(true);
+        activeScreen.gameObject.SetActive(true);
+        ResetInactiveTransitionScreens(previousScreen, activeScreen);
+        previousScreen.SetAsLastSibling();
+        activeScreen.SetAsLastSibling();
+        ShowTransitionVeil(loadingText);
+
+        previousGroup.alpha = 1f;
+        previousGroup.interactable = true;
+        previousGroup.blocksRaycasts = false;
+        activeGroup.alpha = 0f;
+        activeGroup.interactable = true;
+        activeGroup.blocksRaycasts = false;
+        previousScreen.anchoredPosition = Vector2.zero;
+        activeScreen.anchoredPosition = new Vector2(direction * ScreenTransitionOffset, 0f);
+
+        float elapsed = 0f;
+        while (elapsed < halfDuration)
+        {
+            float eased = EaseOutCubic(elapsed / halfDuration);
+            previousGroup.alpha = Mathf.Lerp(1f, 0.22f, eased);
+            previousScreen.anchoredPosition = new Vector2(Mathf.Lerp(0f, -direction * ScreenTransitionOffset * 0.45f, eased), 0f);
+            SetTransitionVeil(loadingText, eased, Mathf.Lerp(0f, 0.55f, eased));
+            elapsed += Time.unscaledDeltaTime;
+            yield return null;
+        }
+
+        prepareAction?.Invoke();
+
+        elapsed = 0f;
+        while (elapsed < halfDuration)
+        {
+            float eased = EaseOutCubic(elapsed / halfDuration);
+            previousGroup.alpha = Mathf.Lerp(0.22f, 0f, eased);
+            activeGroup.alpha = Mathf.Lerp(0f, 1f, eased);
+            previousScreen.anchoredPosition = new Vector2(Mathf.Lerp(-direction * ScreenTransitionOffset * 0.45f, -direction * ScreenTransitionOffset, eased), 0f);
+            activeScreen.anchoredPosition = new Vector2(Mathf.Lerp(direction * ScreenTransitionOffset, 0f, eased), 0f);
+            SetTransitionVeil(loadingText, 1f - eased, Mathf.Lerp(0.55f, 1f, eased));
+            elapsed += Time.unscaledDeltaTime;
+            yield return null;
+        }
+
+        SetScreenImmediate(activeScreen);
+        HideTransitionVeil();
+        SetInputEnabled(true);
+        screenTransitionCoroutine = null;
+    }
+
+    private void SetScreenImmediate(RectTransform activeScreen)
+    {
+        if (!mainScreen || !modeScreen || !localModeScreen || !multiplayerModeScreen || !gachaScreen || !botDifficultyScreen || !sideScreen || !skinScreen || !activeScreen)
+            return;
+
+        RectTransform[] screens = GetMenuScreens();
+        for (int i = 0; i < screens.Length; i++)
+        {
+            RectTransform screen = screens[i];
+            bool isActive = screen == activeScreen;
+            CanvasGroup group = GetOrAddCanvasGroup(screen);
+            screen.gameObject.SetActive(isActive);
+            screen.anchoredPosition = Vector2.zero;
+            group.alpha = isActive ? 1f : 0f;
+            group.interactable = true;
+            group.blocksRaycasts = isActive;
+        }
+
+        activeScreen.SetAsLastSibling();
+        currentScreen = activeScreen;
+        if (transitionVeil)
+            transitionVeil.SetAsLastSibling();
     }
 
     private void SetAllScreensActive(bool active)
@@ -995,6 +1237,184 @@ public class HandDrawnMenuView : MonoBehaviour
             sideScreen.gameObject.SetActive(active);
         if (skinScreen)
             skinScreen.gameObject.SetActive(active);
+        if (!active)
+            currentScreen = null;
+    }
+
+    private RectTransform[] GetMenuScreens()
+    {
+        return new[] { mainScreen, modeScreen, localModeScreen, multiplayerModeScreen, gachaScreen, botDifficultyScreen, sideScreen, skinScreen };
+    }
+
+    private void ResetInactiveTransitionScreens(RectTransform previousScreen, RectTransform activeScreen)
+    {
+        RectTransform[] screens = GetMenuScreens();
+        for (int i = 0; i < screens.Length; i++)
+        {
+            RectTransform screen = screens[i];
+            if (!screen || screen == previousScreen || screen == activeScreen)
+                continue;
+
+            CanvasGroup group = GetOrAddCanvasGroup(screen);
+            screen.anchoredPosition = Vector2.zero;
+            group.alpha = 0f;
+            group.interactable = true;
+            group.blocksRaycasts = false;
+            screen.gameObject.SetActive(false);
+        }
+    }
+
+    private int GetScreenOrder(RectTransform screen)
+    {
+        RectTransform[] screens = GetMenuScreens();
+        for (int i = 0; i < screens.Length; i++)
+            if (screens[i] == screen)
+                return i;
+        return 0;
+    }
+
+    private CanvasGroup GetOrAddCanvasGroup(RectTransform rect)
+    {
+        CanvasGroup group = rect.GetComponent<CanvasGroup>();
+        if (!group)
+            group = rect.gameObject.AddComponent<CanvasGroup>();
+        return group;
+    }
+
+    private Coroutine StartOverlayTransition(RectTransform overlay, Coroutine existingCoroutine, bool visible)
+    {
+        if (!overlay)
+            return null;
+
+        if (existingCoroutine != null)
+            StopCoroutine(existingCoroutine);
+
+        return StartCoroutine(AnimateOverlayTransition(overlay, visible));
+    }
+
+    private IEnumerator AnimateOverlayTransition(RectTransform overlay, bool visible)
+    {
+        CanvasGroup group = GetOrAddCanvasGroup(overlay);
+        float startScale = overlay.localScale.x;
+        float endScale = visible ? 1f : 0.96f;
+        group.alpha = 1f;
+
+        if (visible)
+        {
+            overlay.gameObject.SetActive(true);
+            overlay.SetAsLastSibling();
+        }
+
+        group.interactable = true;
+        group.blocksRaycasts = visible;
+
+        float elapsed = 0f;
+        while (elapsed < OverlayTransitionDuration)
+        {
+            float eased = EaseOutCubic(elapsed / OverlayTransitionDuration);
+            overlay.localScale = Vector3.one * Mathf.Lerp(startScale, endScale, eased);
+            elapsed += Time.unscaledDeltaTime;
+            yield return null;
+        }
+
+        SetOverlayState(overlay, visible, 1f, endScale);
+
+        if (overlay == inventoryOverlay)
+            inventoryOverlayTransitionCoroutine = null;
+        else if (overlay == profileOverlay)
+            profileOverlayTransitionCoroutine = null;
+        else if (overlay == settingsOverlay)
+            settingsOverlayTransitionCoroutine = null;
+    }
+
+    private void SetOverlayState(RectTransform overlay, bool visible, float alpha, float scale)
+    {
+        if (!overlay)
+            return;
+
+        CanvasGroup group = GetOrAddCanvasGroup(overlay);
+        group.alpha = 1f;
+        group.interactable = true;
+        group.blocksRaycasts = visible;
+        overlay.localScale = Vector3.one * scale;
+        overlay.gameObject.SetActive(visible);
+    }
+
+    private void ShowTransitionVeil(string loadingText)
+    {
+        if (!transitionVeil || !transitionVeilGroup)
+            return;
+
+        transitionVeil.gameObject.SetActive(true);
+        transitionVeil.SetAsLastSibling();
+        transitionVeilGroup.interactable = true;
+        transitionVeilGroup.blocksRaycasts = true;
+        SetTransitionVeil(loadingText, 0f, 0f);
+    }
+
+    private void SetTransitionVeil(string loadingText, float alpha, float progress)
+    {
+        if (!transitionVeilGroup)
+            return;
+
+        transitionVeilGroup.alpha = Mathf.Clamp01(alpha);
+        if (transitionLabel)
+            transitionLabel.text = string.IsNullOrWhiteSpace(loadingText) ? "Loading..." : loadingText;
+        if (transitionProgressFill)
+            transitionProgressFill.sizeDelta = new Vector2(Mathf.Lerp(1f, 430f, Mathf.Clamp01(progress)), 10f);
+    }
+
+    private void HideTransitionVeil()
+    {
+        if (!transitionVeil || !transitionVeilGroup)
+            return;
+
+        transitionVeilGroup.alpha = 0f;
+        transitionVeilGroup.interactable = true;
+        transitionVeilGroup.blocksRaycasts = false;
+        transitionVeil.gameObject.SetActive(false);
+    }
+
+    private void StopMenuTransitions()
+    {
+        if (screenTransitionCoroutine != null)
+        {
+            StopCoroutine(screenTransitionCoroutine);
+            screenTransitionCoroutine = null;
+        }
+
+        if (inventoryOverlayTransitionCoroutine != null)
+        {
+            StopCoroutine(inventoryOverlayTransitionCoroutine);
+            inventoryOverlayTransitionCoroutine = null;
+        }
+
+        if (profileOverlayTransitionCoroutine != null)
+        {
+            StopCoroutine(profileOverlayTransitionCoroutine);
+            profileOverlayTransitionCoroutine = null;
+        }
+
+        if (settingsOverlayTransitionCoroutine != null)
+        {
+            StopCoroutine(settingsOverlayTransitionCoroutine);
+            settingsOverlayTransitionCoroutine = null;
+        }
+
+        if (gameStartTransitionCoroutine != null)
+        {
+            StopCoroutine(gameStartTransitionCoroutine);
+            gameStartTransitionCoroutine = null;
+        }
+
+        HideTransitionVeil();
+    }
+
+    private static float EaseOutCubic(float value)
+    {
+        value = Mathf.Clamp01(value);
+        float inverse = 1f - value;
+        return 1f - inverse * inverse * inverse;
     }
 
     private void SetVisible(bool visible)
@@ -1032,11 +1452,38 @@ public class HandDrawnMenuView : MonoBehaviour
 
         if (string.Equals(modeLabel, "LAN"))
         {
-            owner.ShowOnlineSetup();
+            owner.ShowLanSetup();
             return;
         }
 
         owner.ShowOnlineSetup();
+    }
+
+    private void StartBotGameWithTransition(PieceTeam playerTeam)
+    {
+        if (gameStartTransitionCoroutine != null)
+            StopCoroutine(gameStartTransitionCoroutine);
+        gameStartTransitionCoroutine = StartCoroutine(AnimateStartBotGame(playerTeam));
+    }
+
+    private IEnumerator AnimateStartBotGame(PieceTeam playerTeam)
+    {
+        SetInputEnabled(false);
+        ShowTransitionVeil("Loading match...");
+
+        const float duration = 0.28f;
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            float eased = EaseOutCubic(elapsed / duration);
+            SetTransitionVeil("Loading match...", eased, eased);
+            elapsed += Time.unscaledDeltaTime;
+            yield return null;
+        }
+
+        SetTransitionVeil("Loading match...", 1f, 1f);
+        owner.StartBotGame(playerTeam);
+        gameStartTransitionCoroutine = null;
     }
 
     private static void Stretch(RectTransform rect)
@@ -1111,14 +1558,9 @@ public sealed class GachaMenuController : MonoBehaviour
     private TextMeshProUGUI statusLabel;
     private TextMeshProUGUI resultSummaryLabel;
     private TextMeshProUGUI tooltipLabel;
-    private RawImage videoImage;
-    private VideoPlayer videoPlayer;
-    private RenderTexture videoTexture;
-    private Coroutine videoCoroutine;
     private UnityAction backToModeSelection;
     private GachaSaveData saveData;
     private List<GachaReward> pendingResults = new List<GachaReward>();
-    private bool awaitingVideoResult;
 
     public void Initialize(RectTransform newRoot, UnityAction newBackToModeSelection)
     {
@@ -1129,7 +1571,6 @@ public sealed class GachaMenuController : MonoBehaviour
         BuildContentRoot();
         BuildMainScreen();
         BuildResultScreen();
-        BuildVideoOverlay();
         RefreshAll();
         ShowMainScreen();
     }
@@ -1184,34 +1625,6 @@ public sealed class GachaMenuController : MonoBehaviour
         AddButton(resultScreen, "Result Summon x1", GetSprite("SummonX1.png"), D(463f, 848f), S(330f, 116f), () => StartSummon(1), 1.035f);
         AddButton(resultScreen, "Result Summon x10", GetSprite("SummonX10.png"), D(858f, 848f), S(330f, 116f), () => StartSummon(10), 1.035f);
         AddButton(resultScreen, "Result Back", GetSprite("BackButton.png"), D(1226f, 848f), S(255f, 90f), ShowMainScreen, 1.035f);
-    }
-
-    private void BuildVideoOverlay()
-    {
-        RectTransform overlay = CreateLayer("Gacha Video Overlay");
-        overlay.SetAsLastSibling();
-        videoImage = overlay.gameObject.AddComponent<RawImage>();
-        videoImage.color = Color.white;
-        videoImage.raycastTarget = true;
-
-        Button skipButton = overlay.gameObject.AddComponent<Button>();
-        skipButton.transition = Selectable.Transition.None;
-        skipButton.onClick.AddListener(SkipVideoPlayback);
-
-        videoTexture = new RenderTexture(1920, 1080, 0, RenderTextureFormat.ARGB32);
-        videoTexture.name = "Gacha Animation RenderTexture";
-        videoImage.texture = videoTexture;
-
-        videoPlayer = overlay.gameObject.AddComponent<VideoPlayer>();
-        videoPlayer.playOnAwake = false;
-        videoPlayer.renderMode = VideoRenderMode.RenderTexture;
-        videoPlayer.targetTexture = videoTexture;
-        videoPlayer.audioOutputMode = VideoAudioOutputMode.None;
-        videoPlayer.waitForFirstFrame = true;
-        videoPlayer.skipOnDrop = true;
-        videoPlayer.loopPointReached += HandleVideoLoopPointReached;
-        videoPlayer.errorReceived += HandleVideoError;
-        overlay.gameObject.SetActive(false);
     }
 
     private void AddResourceBars(RectTransform parent)
@@ -1272,15 +1685,13 @@ public sealed class GachaMenuController : MonoBehaviour
         }
 
         pendingResults = RollRewards(count);
-        bool topRewardAnimation = HasTopAnimationReward(pendingResults);
-        Debug.Log($"[GachaMenu] Summon rolled. count={count}, payment=\"{paymentMessage}\", topRewardAnimation={topRewardAnimation}, rewards={DescribeRewardsForLog(pendingResults)}");
+        Debug.Log($"[GachaMenu] Summon rolled. count={count}, payment=\"{paymentMessage}\", rewards={DescribeRewardsForLog(pendingResults)}");
         ApplyRewards(pendingResults);
         saveData.pityPulls = Mathf.Clamp(saveData.pityPulls + count, 0, PityLimit);
         AddHistory(count, paymentMessage, pendingResults);
         Save();
         RefreshAll();
-        SetStatus(topRewardAnimation ? "Playing top reward summon animation..." : "Playing summon animation...");
-        PlayAnimation(topRewardAnimation);
+        ShowPendingResults();
     }
 
     private bool TrySpendForSummon(int count, out string paymentMessage)
@@ -1413,19 +1824,6 @@ public sealed class GachaMenuController : MonoBehaviour
         return parts.Count == 0 ? "No reward" : string.Join(", ", parts);
     }
 
-    private bool HasTopAnimationReward(List<GachaReward> rewards)
-    {
-        for (int i = 0; i < rewards.Count; i++)
-            if (IsTopAnimationReward(rewards[i]))
-                return true;
-        return false;
-    }
-
-    private bool IsTopAnimationReward(GachaReward reward)
-    {
-        return reward.isTopReward || (reward.type == GachaRewardType.Skin && reward.rarity >= 5);
-    }
-
     private string DescribeRewardsForLog(List<GachaReward> rewards)
     {
         if (rewards == null || rewards.Count == 0)
@@ -1440,127 +1838,8 @@ public sealed class GachaMenuController : MonoBehaviour
         return string.Join("; ", parts);
     }
 
-    private void PlayAnimation(bool topRewardAnimation)
-    {
-        if (!videoPlayer)
-        {
-            Debug.LogWarning("[GachaMenu] Missing VideoPlayer component; showing results.");
-            ShowPendingResults();
-            return;
-        }
-
-        string intro = topRewardAnimation ? "Gacha animation gold gif.mp4" : "Gacha animation gif.mp4";
-        string introPath = FullAssetPath(intro);
-        VideoClip editorClip = LoadEditorVideoClip(intro);
-        if (!editorClip && !File.Exists(introPath))
-        {
-            Debug.LogWarning($"[GachaMenu] Missing video file: {introPath}");
-            ShowPendingResults();
-            return;
-        }
-
-        Debug.Log($"[GachaMenu] Starting video. topRewardAnimation={topRewardAnimation}, file=\"{intro}\", editorClip={(editorClip ? editorClip.name : "null")}, path={introPath}");
-        awaitingVideoResult = true;
-        videoPlayer.gameObject.SetActive(true);
-        videoPlayer.Stop();
-        videoPlayer.isLooping = true;
-        if (editorClip)
-        {
-            videoPlayer.source = VideoSource.VideoClip;
-            videoPlayer.clip = editorClip;
-            videoPlayer.url = string.Empty;
-        }
-        else
-        {
-            videoPlayer.source = VideoSource.Url;
-            videoPlayer.clip = null;
-            videoPlayer.url = PathToUrl(introPath);
-        }
-
-        if (videoCoroutine != null)
-            StopCoroutine(videoCoroutine);
-        videoCoroutine = StartCoroutine(PlayVideoThenShowResults());
-    }
-
-    private void HandleVideoLoopPointReached(VideoPlayer source)
-    {
-        if (!awaitingVideoResult)
-            return;
-
-        Debug.Log("[GachaMenu] Video loopPointReached; looping animation.");
-    }
-
-    private void HandleVideoError(VideoPlayer source, string message)
-    {
-        Debug.LogWarning($"[GachaMenu] Video playback failed: {message}");
-        if (awaitingVideoResult)
-            ShowPendingResults();
-    }
-
-    private IEnumerator PlayVideoThenShowResults()
-    {
-        Debug.Log($"[GachaMenu] Prepare video source={videoPlayer.source}, clip={(videoPlayer.clip ? videoPlayer.clip.name : "null")}, url={videoPlayer.url}");
-        videoPlayer.Prepare();
-
-        float prepareDeadline = Time.unscaledTime + 5f;
-        while (awaitingVideoResult && videoPlayer && !videoPlayer.isPrepared && Time.unscaledTime < prepareDeadline)
-            yield return null;
-
-        if (!awaitingVideoResult)
-            yield break;
-
-        if (!videoPlayer || !videoPlayer.isPrepared)
-        {
-            Debug.LogWarning("[GachaMenu] Video prepare timed out; showing results.");
-            ShowPendingResults();
-            yield break;
-        }
-
-        Debug.Log($"[GachaMenu] Prepared. length={videoPlayer.length:0.###}, frameCount={videoPlayer.frameCount}, frameRate={videoPlayer.frameRate:0.###}");
-        videoPlayer.Play();
-        Debug.Log($"[GachaMenu] Play called. isPlaying={videoPlayer.isPlaying}, canSetTime={videoPlayer.canSetTime}");
-
-        bool started = false;
-        float startDeadline = Time.unscaledTime + 3f;
-        while (awaitingVideoResult && videoPlayer && Time.unscaledTime < startDeadline)
-        {
-            if (videoPlayer.isPlaying)
-            {
-                started = true;
-                break;
-            }
-            yield return null;
-        }
-
-        if (awaitingVideoResult && !started)
-        {
-            Debug.LogWarning($"[GachaMenu] Video playback start timed out. isPlaying={(videoPlayer ? videoPlayer.isPlaying : false)}, time={(videoPlayer ? videoPlayer.time : 0):0.###}");
-            ShowPendingResults();
-            yield break;
-        }
-
-        videoCoroutine = null;
-    }
-
-    private void SkipVideoPlayback()
-    {
-        if (!awaitingVideoResult)
-            return;
-
-        Debug.Log("[GachaMenu] Video skipped by click.");
-        ShowPendingResults();
-    }
-
     private void ShowPendingResults()
     {
-        awaitingVideoResult = false;
-        videoCoroutine = null;
-        if (videoPlayer)
-        {
-            videoPlayer.Stop();
-            videoPlayer.gameObject.SetActive(false);
-        }
-
         PopulateResultGrid();
         resultSummaryLabel.text = SummarizeRewards(pendingResults);
         resultScreen.gameObject.SetActive(true);
@@ -1608,7 +1887,6 @@ public sealed class GachaMenuController : MonoBehaviour
     {
         HideHistory();
         HideTooltip();
-        CancelVideoPlayback();
         mainScreen.gameObject.SetActive(true);
         resultScreen.gameObject.SetActive(false);
         RefreshAll();
@@ -1618,23 +1896,7 @@ public sealed class GachaMenuController : MonoBehaviour
     {
         HideHistory();
         HideTooltip();
-        CancelVideoPlayback();
         backToModeSelection?.Invoke();
-    }
-
-    private void CancelVideoPlayback()
-    {
-        awaitingVideoResult = false;
-        if (videoCoroutine != null)
-        {
-            StopCoroutine(videoCoroutine);
-            videoCoroutine = null;
-        }
-        if (videoPlayer)
-        {
-            videoPlayer.Stop();
-            videoPlayer.gameObject.SetActive(false);
-        }
     }
 
     private void ShowHistory()
@@ -1996,24 +2258,6 @@ public sealed class GachaMenuController : MonoBehaviour
         return Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), AssetFolder, fileName));
     }
 
-    private static string PathToUrl(string path)
-    {
-        return new Uri(path).AbsoluteUri;
-    }
-
-    private static VideoClip LoadEditorVideoClip(string fileName)
-    {
-#if UNITY_EDITOR
-        string assetPath = Path.Combine(AssetFolder, fileName).Replace('\\', '/');
-        VideoClip clip = AssetDatabase.LoadAssetAtPath<VideoClip>(assetPath);
-        if (!clip)
-            Debug.LogWarning($"[GachaMenu] AssetDatabase could not load VideoClip at {assetPath}; falling back to URL playback.");
-        return clip;
-#else
-        return null;
-#endif
-    }
-
     private static void Stretch(RectTransform rect)
     {
         rect.anchorMin = Vector2.zero;
@@ -2024,15 +2268,6 @@ public sealed class GachaMenuController : MonoBehaviour
 
     private void OnDestroy()
     {
-        if (videoPlayer)
-            videoPlayer.loopPointReached -= HandleVideoLoopPointReached;
-        if (videoPlayer)
-            videoPlayer.errorReceived -= HandleVideoError;
-        if (videoTexture)
-        {
-            videoTexture.Release();
-            Destroy(videoTexture);
-        }
         for (int i = 0; i < runtimeSprites.Count; i++)
         {
             if (!runtimeSprites[i])

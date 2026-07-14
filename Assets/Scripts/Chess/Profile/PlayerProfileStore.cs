@@ -193,7 +193,7 @@ public static class PlayerProfileStore
         Save();
     }
 
-    public static void RecordMatch(string mode, string opponent, string result, string detail)
+    public static void RecordMatch(string mode, string opponent, string result, string detail, int rewardGold = 0, int rewardDiamonds = 0, int rewardTickets = 0)
     {
         EnsureLoaded();
         if (data.matchHistory == null)
@@ -210,6 +210,9 @@ public static class PlayerProfileStore
 
         data.totalGames++;
         data.experience += 35 + (string.Equals(normalizedResult, "Win", StringComparison.OrdinalIgnoreCase) ? 25 : 0);
+        data.gold = Mathf.Max(0, data.gold + Mathf.Max(0, rewardGold));
+        data.diamonds = Mathf.Max(0, data.diamonds + Mathf.Max(0, rewardDiamonds));
+        data.tickets = Mathf.Max(0, data.tickets + Mathf.Max(0, rewardTickets));
         RecalculateLevel();
 
         data.matchHistory.Insert(0, new PlayerMatchHistoryEntry

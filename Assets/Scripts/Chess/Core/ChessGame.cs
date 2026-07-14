@@ -79,6 +79,7 @@ public class ChessGame : MonoBehaviour
     private bool suppressMoveCommittedEvent;
     private bool serverAuthoritativeMode;
     private bool botMode;
+    private StockfishDifficulty botDifficulty = StockfishDifficulty.Medium;
     private bool pendingRemotePromotionResolution;
     private PieceType remotePromotionType = PieceType.Queen;
     private Vector2Int pendingCommittedMoveFrom = -Vector2Int.one;
@@ -120,6 +121,8 @@ public class ChessGame : MonoBehaviour
 
     private void Awake()
     {
+        GameRuntimeSettings.ApplySaved();
+
         if (!chessboard)
             chessboard = FindAnyObjectByType<Chessboard>();
 
@@ -147,7 +150,7 @@ public class ChessGame : MonoBehaviour
             return;
 
         EnsureAudioSource();
-        audioSource.PlayOneShot(clip, soundVolume);
+        audioSource.PlayOneShot(clip, soundVolume * GameRuntimeSettings.SoundVolume01);
     }
 
     private void AutoAssignDefaultAudioClips()
@@ -264,6 +267,7 @@ public class ChessGame : MonoBehaviour
     {
         serverAuthoritativeMode = false;
         botMode = false;
+        botDifficulty = StockfishDifficulty.Medium;
         GameMusicManager.PlayInGameMusic(false, StockfishDifficulty.Medium);
         BeginGameInternal(firstTurn, firstTurn, false, firstTurn);
     }
@@ -272,14 +276,21 @@ public class ChessGame : MonoBehaviour
     {
         serverAuthoritativeMode = true;
         botMode = false;
+        botDifficulty = StockfishDifficulty.Medium;
         GameMusicManager.PlayInGameMusic(false, StockfishDifficulty.Medium);
         BeginGameInternal(firstTurn, localPlayerTeam, true, PieceTeam.White);
     }
 
     public void BeginBotGame(PieceTeam localPlayerTeam)
     {
+        BeginBotGame(localPlayerTeam, StockfishDifficulty.Medium);
+    }
+
+    public void BeginBotGame(PieceTeam localPlayerTeam, StockfishDifficulty selectedDifficulty)
+    {
         serverAuthoritativeMode = false;
         botMode = true;
+        botDifficulty = selectedDifficulty;
         BeginGameInternal(PieceTeam.White, localPlayerTeam, true, PieceTeam.White);
     }
 
@@ -530,11 +541,12 @@ public class ChessGame : MonoBehaviour
 
         PieceTeam selectedTeam = playerTeam;
         bool restartBotGame = botMode;
+        StockfishDifficulty selectedBotDifficulty = botDifficulty;
         pauseLocked = false;
         Time.timeScale = 1f;
         PrepareGame();
         if (restartBotGame)
-            BeginBotGame(selectedTeam);
+            BeginBotGame(selectedTeam, selectedBotDifficulty);
         else
             BeginGame(selectedTeam);
         LocalGameRestarted?.Invoke();
@@ -610,6 +622,7 @@ public class ChessGame : MonoBehaviour
         restrictInputToControlledTeam = false;
         serverAuthoritativeMode = false;
         botMode = false;
+        botDifficulty = StockfishDifficulty.Medium;
         winningTeam = PieceTeam.White;
         drawReason = string.Empty;
         ResetDrawTracking();
@@ -2153,17 +2166,26 @@ public class ChessGame : MonoBehaviour
 
     private void FinishGame(PieceTeam winner)
     {
+        if (gameOver)
+            return;
+
         StopCheckWarning();
         status = ChessGameStatus.Win;
         winningTeam = winner;
         frozenMatchDurationSeconds = MatchElapsedSeconds;
+        bool won = winner == playerTeam;
+        bool lost = winner != playerTeam;
+        MatchReward reward = CalculateMatchReward(won, lost, false);
         PlayerAuthService.RecordGameResult(
-            winner == playerTeam,
-            winner != playerTeam,
+            won,
+            lost,
             false,
             GetProfileMatchMode(),
             GetProfileOpponentName(),
-            $"{winner} won");
+            AppendRewardDetail($"{winner} won", reward),
+            reward.gold,
+            reward.diamonds,
+            reward.tickets);
         PlaySound(winSound);
         drawReason = string.Empty;
         selectedPiece = null;
@@ -2177,10 +2199,23 @@ public class ChessGame : MonoBehaviour
 
     private void FinishDraw(string reason)
     {
+        if (gameOver)
+            return;
+
         StopCheckWarning();
         status = ChessGameStatus.Draw;
         frozenMatchDurationSeconds = MatchElapsedSeconds;
-        PlayerAuthService.RecordGameResult(false, false, true, GetProfileMatchMode(), GetProfileOpponentName(), reason);
+        MatchReward reward = CalculateMatchReward(false, false, true);
+        PlayerAuthService.RecordGameResult(
+            false,
+            false,
+            true,
+            GetProfileMatchMode(),
+            GetProfileOpponentName(),
+            AppendRewardDetail(reason, reward),
+            reward.gold,
+            reward.diamonds,
+            reward.tickets);
         drawReason = reason;
         selectedPiece = null;
         gameStarted = false;
@@ -2205,8 +2240,130 @@ public class ChessGame : MonoBehaviour
     private string GetProfileOpponentName()
     {
         if (botMode)
-            return "Bot";
+            return $"{StockfishDifficultyProfiles.Get(botDifficulty).DisplayName} Bot";
         return "Player";
+    }
+
+    private MatchReward CalculateMatchReward(bool won, bool lost, bool draw)
+    {
+        if (botMode)
+            return CalculateBotReward(botDifficulty, won, lost, draw);
+
+        if (serverAuthoritativeMode || restrictInputToControlledTeam)
+            return CalculateNetworkReward(won, lost, draw);
+
+        return CalculateLocalReward(won, lost, draw);
+    }
+
+    private static MatchReward CalculateBotReward(StockfishDifficulty difficulty, bool won, bool lost, bool draw)
+    {
+        MatchReward winReward;
+        MatchReward drawReward;
+        MatchReward lossReward;
+
+        switch (difficulty)
+        {
+            case StockfishDifficulty.Beginner:
+                winReward = new MatchReward(120, 3, 0);
+                drawReward = new MatchReward(55, 1, 0);
+                lossReward = new MatchReward(25, 0, 0);
+                break;
+            case StockfishDifficulty.Easy:
+                winReward = new MatchReward(180, 5, 0);
+                drawReward = new MatchReward(80, 2, 0);
+                lossReward = new MatchReward(35, 1, 0);
+                break;
+            case StockfishDifficulty.Medium:
+                winReward = new MatchReward(260, 8, 1);
+                drawReward = new MatchReward(115, 3, 0);
+                lossReward = new MatchReward(50, 1, 0);
+                break;
+            case StockfishDifficulty.Hard:
+                winReward = new MatchReward(380, 12, 1);
+                drawReward = new MatchReward(165, 5, 0);
+                lossReward = new MatchReward(70, 2, 0);
+                break;
+            case StockfishDifficulty.Expert:
+                winReward = new MatchReward(540, 18, 2);
+                drawReward = new MatchReward(230, 7, 1);
+                lossReward = new MatchReward(95, 3, 0);
+                break;
+            default:
+                winReward = new MatchReward(260, 8, 1);
+                drawReward = new MatchReward(115, 3, 0);
+                lossReward = new MatchReward(50, 1, 0);
+                break;
+        }
+
+        if (won)
+            return winReward;
+        if (draw)
+            return drawReward;
+        return lost ? lossReward : MatchReward.None;
+    }
+
+    private static MatchReward CalculateNetworkReward(bool won, bool lost, bool draw)
+    {
+        if (won)
+            return new MatchReward(360, 12, 1);
+        if (draw)
+            return new MatchReward(180, 6, 0);
+        return lost ? new MatchReward(85, 3, 0) : MatchReward.None;
+    }
+
+    private static MatchReward CalculateLocalReward(bool won, bool lost, bool draw)
+    {
+        if (won)
+            return new MatchReward(70, 1, 0);
+        if (draw)
+            return new MatchReward(40, 1, 0);
+        return lost ? new MatchReward(25, 0, 0) : MatchReward.None;
+    }
+
+    private static string AppendRewardDetail(string detail, MatchReward reward)
+    {
+        string rewardText = reward.ToHistoryText();
+        if (string.IsNullOrWhiteSpace(rewardText))
+            return detail ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(detail))
+            return rewardText;
+        return $"{detail} | {rewardText}";
+    }
+
+    private readonly struct MatchReward
+    {
+        public static readonly MatchReward None = new MatchReward(0, 0, 0);
+
+        public readonly int gold;
+        public readonly int diamonds;
+        public readonly int tickets;
+
+        public MatchReward(int rewardGold, int rewardDiamonds, int rewardTickets)
+        {
+            gold = Mathf.Max(0, rewardGold);
+            diamonds = Mathf.Max(0, rewardDiamonds);
+            tickets = Mathf.Max(0, rewardTickets);
+        }
+
+        public string ToHistoryText()
+        {
+            StringBuilder builder = new StringBuilder();
+            AppendPart(builder, gold, "G");
+            AppendPart(builder, diamonds, "D");
+            AppendPart(builder, tickets, "T");
+            return builder.ToString();
+        }
+
+        private static void AppendPart(StringBuilder builder, int amount, string suffix)
+        {
+            if (amount <= 0)
+                return;
+            if (builder.Length > 0)
+                builder.Append(' ');
+            builder.Append('+');
+            builder.Append(amount);
+            builder.Append(suffix);
+        }
     }
 
     public bool ApplyNetworkMove(ChessLanMove move)

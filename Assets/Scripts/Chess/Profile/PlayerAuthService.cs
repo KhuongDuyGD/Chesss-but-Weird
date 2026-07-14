@@ -107,13 +107,22 @@ public static class PlayerAuthService
         return storedUser != null ? storedUser.username ?? string.Empty : string.Empty;
     }
 
-    public static void RecordGameResult(bool won, bool lost, bool draw, string mode = "Local", string opponent = "", string detail = "")
+    public static void RecordGameResult(
+        bool won,
+        bool lost,
+        bool draw,
+        string mode = "Local",
+        string opponent = "",
+        string detail = "",
+        int rewardGold = 0,
+        int rewardDiamonds = 0,
+        int rewardTickets = 0)
     {
         if (CurrentProfile == null)
             return;
 
         string result = won ? "Win" : lost ? "Lose" : "Draw";
-        PlayerProfileStore.RecordMatch(mode, opponent, result, detail);
+        PlayerProfileStore.RecordMatch(mode, opponent, result, detail, rewardGold, rewardDiamonds, rewardTickets);
         if (IsGuestSession)
             SaveGuestProfile();
     }

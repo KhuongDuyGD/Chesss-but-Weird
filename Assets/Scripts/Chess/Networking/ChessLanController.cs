@@ -3,7 +3,15 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using Newtonsoft.Json.Linq;
+using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
+
+public enum NetworkLobbyUiMode
+{
+    Lan,
+    Multiplayer
+}
 
 public class ChessLanController : MonoBehaviour
 {
@@ -18,18 +26,26 @@ public class ChessLanController : MonoBehaviour
     private ChessOrbitCamera orbitCamera;
     private readonly HashSet<string> pendingLocalMoveRequestIds = new HashSet<string>();
     private readonly List<BackendMatchDto> recentMatches = new List<BackendMatchDto>();
+    private readonly HashSet<string> readyPlayerIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+    private readonly HashSet<string> readyPlayerNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
     private bool showLanPanel;
     private bool lanGameActive;
     private bool requestInFlight;
+    private bool refreshInFlight;
     private bool reconnectPending;
+    private bool startRequestInFlight;
+    private NetworkLobbyUiMode lobbyMode = NetworkLobbyUiMode.Lan;
     private string roomCodeInput = string.Empty;
     private string statusMessage = "Connect to the Spring Boot backend, create a room, and wait for another player.";
+    private string serverHealthStatus = "Offline";
     private string currentRoomCode = string.Empty;
     private string currentMatchId = string.Empty;
     private string lastConfirmedFen = string.Empty;
     private float reconnectAt;
     private float lastHeartbeatAt;
+    private float nextRefreshAllowedAt;
+    private float nextStartAllowedAt;
     private BackendRoomDto currentRoom;
     private BackendGameStartPayload currentGameStart;
     private bool localReady;
@@ -37,6 +53,7 @@ public class ChessLanController : MonoBehaviour
     private bool opponentDrawOfferPending;
     private bool intentionalDisconnect;
     private Texture2D backButtonTexture;
+    private NetworkLobbyUiController lobbyUi;
 
     public bool IsNetworkGameActive => lanGameActive;
     public event Action<bool, string> OpponentPauseChanged;
@@ -66,6 +83,12 @@ public class ChessLanController : MonoBehaviour
             lastHeartbeatAt = Time.unscaledTime;
             _ = webSocketClient.SendAsync("SYNC_REQUEST", CreateRequestId("sync"), new { });
         }
+
+        if (startRequestInFlight && Time.unscaledTime >= nextStartAllowedAt + 3f)
+            startRequestInFlight = false;
+
+        if (showLanPanel && lobbyUi != null)
+            lobbyUi.Refresh();
     }
 
     private void OnDestroy()
@@ -77,6 +100,7 @@ public class ChessLanController : MonoBehaviour
         }
 
         ReleaseWebSocketClient();
+        DestroyLobbyUi();
     }
 
     public void SendPauseState(bool paused)
@@ -117,9 +141,6 @@ public class ChessLanController : MonoBehaviour
 
         try
         {
-            if (showLanPanel)
-                DrawLanPanel(guiWidth, guiHeight);
-
             if (lanGameActive)
                 DrawInGameHud(guiWidth, guiHeight);
         }
@@ -131,19 +152,35 @@ public class ChessLanController : MonoBehaviour
 
     public void ShowLanSetup()
     {
+        ShowLobby(NetworkLobbyUiMode.Lan);
+    }
+
+    public void ShowMultiplayerSetup()
+    {
+        ShowLobby(NetworkLobbyUiMode.Multiplayer);
+    }
+
+    private void ShowLobby(NetworkLobbyUiMode mode)
+    {
         CacheOrbitCamera();
         EnsureWebSocketClient();
+        lobbyMode = mode;
         showLanPanel = true;
-        statusMessage = "Connect to the backend, share your room code, and play online.";
+        statusMessage = mode == NetworkLobbyUiMode.Lan
+            ? "Host a LAN lobby or join by room code."
+            : "Create or join an online multiplayer room.";
         roomCodeInput = currentRoomCode;
+        EnsureLobbyUi();
+        lobbyUi.Show(mode);
         ApplyLobbyCameraState(immediate: false);
-        StartCoroutine(LoadMatchHistoryCoroutine());
-        StartCoroutine(LoadActiveMatchCoroutine());
+        RequestRefreshLobby();
     }
 
     public void HideLanSetup()
     {
         showLanPanel = false;
+        if (lobbyUi != null)
+            lobbyUi.Hide();
         if (!lanGameActive)
             ApplyLobbyCameraState(immediate: false);
     }
@@ -151,6 +188,8 @@ public class ChessLanController : MonoBehaviour
     public void ResetForAuthenticationChange(bool authenticated = false)
     {
         showLanPanel = false;
+        if (lobbyUi != null)
+            lobbyUi.Hide();
         ResetRoomState(clearRoomIdentity: true);
         DisconnectSocketIntentional();
         recentMatches.Clear();
@@ -159,6 +198,160 @@ public class ChessLanController : MonoBehaviour
             ? "Signed in. Online multiplayer is ready."
             : "Sign in to use online multiplayer.";
         ApplyLobbyCameraState(immediate: false);
+    }
+
+    public void RequestCreateRoom()
+    {
+        if (!CanUseLobbyCommand("create a room"))
+            return;
+
+        if (currentRoom != null)
+        {
+            statusMessage = "You are already in a room. Leave it before creating another.";
+            return;
+        }
+
+        StartCoroutine(CreateRoomCoroutine());
+    }
+
+    public void RequestJoinRoom(string rawRoomCode)
+    {
+        if (!CanUseLobbyCommand("join a room"))
+            return;
+
+        if (currentRoom != null)
+        {
+            statusMessage = "Leave the current room before joining another.";
+            return;
+        }
+
+        roomCodeInput = NormalizeRoomCode(rawRoomCode);
+        if (!IsValidRoomCode(roomCodeInput))
+        {
+            statusMessage = "Room code must be 6 letters or numbers.";
+            return;
+        }
+
+        StartCoroutine(JoinRoomCoroutine());
+    }
+
+    public void RequestReady()
+    {
+        if (!CanUseLobbyCommand("ready up"))
+            return;
+
+        if (currentRoom == null || string.IsNullOrWhiteSpace(currentRoomCode))
+        {
+            statusMessage = "Create or join a room before readying up.";
+            return;
+        }
+
+        if (!HasTwoPlayers())
+        {
+            statusMessage = "Waiting for another player before readying up.";
+            return;
+        }
+
+        if (webSocketClient == null || !webSocketClient.IsConnected)
+        {
+            statusMessage = "Room socket is not connected yet.";
+            return;
+        }
+
+        if (localReady)
+        {
+            statusMessage = "You are already ready.";
+            return;
+        }
+
+        SendReady();
+    }
+
+    public void RequestStartGame()
+    {
+        if (!CanUseLobbyCommand("start the game"))
+            return;
+
+        if (Time.unscaledTime < nextStartAllowedAt)
+        {
+            statusMessage = "Start request is cooling down.";
+            return;
+        }
+
+        if (currentRoom == null || string.IsNullOrWhiteSpace(currentRoomCode))
+        {
+            statusMessage = "Create or join a room before starting.";
+            return;
+        }
+
+        if (!HasTwoPlayers())
+        {
+            statusMessage = "Need two players before starting.";
+            return;
+        }
+
+        if (readyCount < 2)
+        {
+            statusMessage = $"Both players must be ready first ({readyCount}/2).";
+            return;
+        }
+
+        if (webSocketClient == null || !webSocketClient.IsConnected)
+        {
+            statusMessage = "Room socket is not connected yet.";
+            return;
+        }
+
+        nextStartAllowedAt = Time.unscaledTime + 2.5f;
+        startRequestInFlight = true;
+        _ = webSocketClient.SendAsync("START", CreateRequestId("start"), new { roomCode = currentRoomCode });
+        _ = webSocketClient.SendAsync("SYNC_REQUEST", CreateRequestId("sync"), new { });
+        statusMessage = "Start requested. Waiting for server confirmation...";
+    }
+
+    public void RequestRefreshLobby()
+    {
+        if (startRequestInFlight)
+        {
+            statusMessage = "Cannot refresh while a start request is pending.";
+            return;
+        }
+
+        if (refreshInFlight || requestInFlight)
+        {
+            statusMessage = "Please wait for the current server request to finish.";
+            return;
+        }
+
+        if (Time.unscaledTime < nextRefreshAllowedAt)
+        {
+            statusMessage = "Refresh is cooling down for a moment.";
+            return;
+        }
+
+        nextRefreshAllowedAt = Time.unscaledTime + 1.75f;
+        StartCoroutine(RefreshLobbyCoroutine());
+    }
+
+    public void RequestCopyRoomCode()
+    {
+        CopyRoomCodeToClipboard();
+    }
+
+    public void RequestBackToMultiplayerChoice()
+    {
+        ResetRoomState(clearRoomIdentity: true);
+        DisconnectSocketIntentional();
+        HideLanSetup();
+        turnSelectionUI.ShowMultiplayerModeSelection();
+    }
+
+    public void RequestLeaveToModeSelection()
+    {
+        ResetRoomState(clearRoomIdentity: true);
+        DisconnectSocketIntentional();
+        HideLanSetup();
+        turnSelectionUI.ShowTurnSelection();
     }
 
     private void DrawLanPanel(float guiWidth, float guiHeight)
@@ -321,6 +514,9 @@ public class ChessLanController : MonoBehaviour
 
     private IEnumerator CreateRoomCoroutine()
     {
+        if (requestInFlight)
+            yield break;
+
         requestInFlight = true;
         statusMessage = "Creating room...";
         yield return BackendRestClient.Send<BackendRoomDto>(
@@ -331,26 +527,40 @@ public class ChessLanController : MonoBehaviour
             response =>
             {
                 requestInFlight = false;
+                serverHealthStatus = "Online";
                 currentRoom = response.result;
+                if (currentRoom == null)
+                {
+                    statusMessage = "Server did not return a room. Please try again.";
+                    return;
+                }
+
                 currentRoomCode = currentRoom.roomCode ?? string.Empty;
                 roomCodeInput = currentRoomCode;
                 readyCount = 0;
                 localReady = false;
+                readyPlayerIds.Clear();
+                readyPlayerNames.Clear();
                 statusMessage = $"Room {currentRoomCode} created. Connecting to waiting room...";
                 StartCoroutine(ConnectWebSocketCoroutine(false));
             },
             (message, _) =>
             {
                 requestInFlight = false;
-                statusMessage = message;
+                serverHealthStatus = GetServerHealthFromError(message);
+                statusMessage = $"Could not create room: {message}";
             });
     }
 
     private IEnumerator JoinRoomCoroutine()
     {
-        if (string.IsNullOrWhiteSpace(roomCodeInput))
+        if (requestInFlight)
+            yield break;
+
+        roomCodeInput = NormalizeRoomCode(roomCodeInput);
+        if (!IsValidRoomCode(roomCodeInput))
         {
-            statusMessage = "Enter the 6-character room code first.";
+            statusMessage = "Enter a valid 6-character room code first.";
             yield break;
         }
 
@@ -364,18 +574,28 @@ public class ChessLanController : MonoBehaviour
             response =>
             {
                 requestInFlight = false;
+                serverHealthStatus = "Online";
                 currentRoom = response.result;
+                if (currentRoom == null)
+                {
+                    statusMessage = "Server did not return the joined room. Please try again.";
+                    return;
+                }
+
                 currentRoomCode = currentRoom.roomCode ?? roomCodeInput;
                 roomCodeInput = currentRoomCode;
                 readyCount = 0;
                 localReady = false;
+                readyPlayerIds.Clear();
+                readyPlayerNames.Clear();
                 statusMessage = $"Joined room {currentRoomCode}. Connecting to waiting room...";
                 StartCoroutine(ConnectWebSocketCoroutine(false));
             },
             (message, _) =>
             {
                 requestInFlight = false;
-                statusMessage = message;
+                serverHealthStatus = GetServerHealthFromError(message);
+                statusMessage = $"Join failed. Check the code or connection: {message}";
             });
     }
 
@@ -403,7 +623,10 @@ public class ChessLanController : MonoBehaviour
 
         requestInFlight = false;
         if (task.IsFaulted)
+        {
+            serverHealthStatus = "Offline";
             statusMessage = "Unable to connect to room socket.";
+        }
     }
 
     private IEnumerator LoadMatchHistoryCoroutine()
@@ -418,11 +641,15 @@ public class ChessLanController : MonoBehaviour
             true,
             response =>
             {
+                serverHealthStatus = "Online";
                 recentMatches.Clear();
                 if (response.result != null)
                     recentMatches.AddRange(response.result);
             },
-            (_, __) => { });
+            (message, _) =>
+            {
+                serverHealthStatus = GetServerHealthFromError(message);
+            });
     }
 
     private IEnumerator LoadActiveMatchCoroutine()
@@ -437,6 +664,7 @@ public class ChessLanController : MonoBehaviour
             true,
             response =>
             {
+                serverHealthStatus = "Online";
                 if (response.result == null)
                     return;
 
@@ -464,7 +692,10 @@ public class ChessLanController : MonoBehaviour
             (_, error) =>
             {
                 if (error != null && error.code != 4004)
+                {
+                    serverHealthStatus = "Offline";
                     statusMessage = "Unable to load active match.";
+                }
             });
     }
 
@@ -483,6 +714,7 @@ public class ChessLanController : MonoBehaviour
         }
 
         localReady = true;
+        MarkPlayerReady(PlayerAuthService.UserId, PlayerAuthService.Username);
         string requestId = CreateRequestId("ready");
         _ = webSocketClient.SendAsync("READY", requestId, new { });
         statusMessage = "Ready sent. Waiting for the other player...";
@@ -541,6 +773,7 @@ public class ChessLanController : MonoBehaviour
     private void HandleWebSocketConnected()
     {
         requestInFlight = false;
+        serverHealthStatus = "Online";
         reconnectPending = false;
         statusMessage = $"Connected to room {currentRoomCode}.";
         lastHeartbeatAt = Time.unscaledTime;
@@ -551,6 +784,7 @@ public class ChessLanController : MonoBehaviour
     private void HandleWebSocketClosed(string message)
     {
         requestInFlight = false;
+        startRequestInFlight = false;
 
         if (intentionalDisconnect)
         {
@@ -562,12 +796,15 @@ public class ChessLanController : MonoBehaviour
             return;
 
         statusMessage = message;
+        serverHealthStatus = "Offline";
         reconnectPending = true;
         reconnectAt = Time.unscaledTime + ReconnectDelaySeconds;
     }
 
     private void HandleWebSocketError(string message)
     {
+        startRequestInFlight = false;
+        serverHealthStatus = GetServerHealthFromError(message);
         statusMessage = message;
     }
 
@@ -624,6 +861,8 @@ public class ChessLanController : MonoBehaviour
     {
         BackendPlayerReadyPayload payload = payloadToken.ToObject<BackendPlayerReadyPayload>();
         readyCount = payload != null ? Mathf.Max(readyCount, payload.readyCount) : readyCount;
+        if (payload != null)
+            MarkPlayerReady(payload.userId, payload.username);
         statusMessage = payload == null
             ? "A player is ready."
             : $"{payload.username} is ready ({payload.readyCount}/2).";
@@ -672,7 +911,11 @@ public class ChessLanController : MonoBehaviour
         ApplyActiveMatchCameraState(localTeam, immediate: true);
         lanGameActive = true;
         showLanPanel = false;
+        if (lobbyUi != null)
+            lobbyUi.Hide();
         readyCount = 2;
+        startRequestInFlight = false;
+        serverHealthStatus = "Online";
         statusMessage = "Match started.";
         StartCoroutine(RefreshRoomCoroutine());
     }
@@ -754,6 +997,9 @@ public class ChessLanController : MonoBehaviour
 
     private void HandleSocketErrorPayload(string requestId, JToken payloadToken)
     {
+        if (!string.IsNullOrWhiteSpace(requestId) && requestId.StartsWith("start-", StringComparison.OrdinalIgnoreCase))
+            startRequestInFlight = false;
+
         BackendSocketErrorPayload payload = payloadToken.ToObject<BackendSocketErrorPayload>();
         string message = payload != null && !string.IsNullOrWhiteSpace(payload.message)
             ? payload.message
@@ -774,23 +1020,61 @@ public class ChessLanController : MonoBehaviour
             $"/api/rooms/{currentRoomCode}",
             null,
             true,
-            response => currentRoom = response.result,
-            (_, __) => { });
+            response =>
+            {
+                serverHealthStatus = "Online";
+                if (response.result != null)
+                    currentRoom = response.result;
+            },
+            (message, _) =>
+            {
+                serverHealthStatus = GetServerHealthFromError(message);
+                statusMessage = $"Refresh failed: {message}";
+            });
+    }
+
+    private IEnumerator RefreshLobbyCoroutine()
+    {
+        refreshInFlight = true;
+        statusMessage = string.IsNullOrWhiteSpace(currentRoomCode)
+            ? "Checking server and match history..."
+            : $"Refreshing room {currentRoomCode}...";
+
+        if (!string.IsNullOrWhiteSpace(currentRoomCode))
+            yield return RefreshRoomCoroutine();
+
+        if (lobbyMode == NetworkLobbyUiMode.Multiplayer)
+            yield return LoadMatchHistoryCoroutine();
+
+        yield return LoadActiveMatchCoroutine();
+
+        refreshInFlight = false;
+        if (string.IsNullOrWhiteSpace(statusMessage) || statusMessage.StartsWith("Checking", StringComparison.OrdinalIgnoreCase) ||
+            statusMessage.StartsWith("Refreshing", StringComparison.OrdinalIgnoreCase))
+        {
+            statusMessage = "Lobby refreshed.";
+        }
     }
 
     private void LeaveRoom()
     {
+        bool wasActiveMatch = lanGameActive || (chessGame != null && chessGame.GameStarted);
         ResetRoomState(clearRoomIdentity: true);
         statusMessage = "Left online room.";
         DisconnectSocketIntentional();
-        showLanPanel = true;
+        showLanPanel = false;
+        if (lobbyUi != null)
+            lobbyUi.Hide();
         ApplyLobbyCameraState(immediate: false);
-        chessGame.RestartToMainMenu();
+        if (wasActiveMatch)
+            chessGame.RestartToMainMenu();
+        else
+            turnSelectionUI.ShowTurnSelection();
     }
 
     private void CopyRoomCodeToClipboard()
     {
-        string codeToCopy = !string.IsNullOrWhiteSpace(currentRoomCode) ? currentRoomCode : roomCodeInput;
+        string codeToCopy = currentRoomCode;
         if (string.IsNullOrWhiteSpace(codeToCopy))
         {
             statusMessage = "No room code to copy yet.";
@@ -799,6 +1083,158 @@ public class ChessLanController : MonoBehaviour
 
         GUIUtility.systemCopyBuffer = codeToCopy;
         statusMessage = $"Copied room code {codeToCopy}.";
+    }
+
+    private bool CanUseLobbyCommand(string action)
+    {
+        if (Application.internetReachability == NetworkReachability.NotReachable)
+        {
+            serverHealthStatus = "Offline";
+            statusMessage = $"Cannot {action}: network is offline.";
+            return false;
+        }
+
+        if (!PlayerAuthService.CanUseOnlineFeatures)
+        {
+            statusMessage = $"Cannot {action}: please log in first.";
+            return false;
+        }
+
+        if (requestInFlight || refreshInFlight)
+        {
+            statusMessage = $"Please wait before trying to {action}.";
+            return false;
+        }
+
+        if (startRequestInFlight)
+        {
+            statusMessage = "Start request is already in progress.";
+            return false;
+        }
+
+        return true;
+    }
+
+    private bool HasTwoPlayers()
+    {
+        return currentRoom != null &&
+               !string.IsNullOrWhiteSpace(currentRoom.hostUsername) &&
+               !string.IsNullOrWhiteSpace(currentRoom.guestUsername);
+    }
+
+    private void MarkPlayerReady(string userId, string username)
+    {
+        if (!string.IsNullOrWhiteSpace(userId))
+            readyPlayerIds.Add(userId);
+        if (!string.IsNullOrWhiteSpace(username))
+            readyPlayerNames.Add(username);
+    }
+
+    private bool IsPlayerReady(string userId, string username, bool localPlayer)
+    {
+        if (localPlayer && localReady)
+            return true;
+        if (!string.IsNullOrWhiteSpace(userId) && readyPlayerIds.Contains(userId))
+            return true;
+        if (!string.IsNullOrWhiteSpace(username) && readyPlayerNames.Contains(username))
+            return true;
+        return readyCount >= 2;
+    }
+
+    private string GetServerHealth()
+    {
+        if (Application.internetReachability == NetworkReachability.NotReachable)
+            return "Offline";
+        if (requestInFlight || refreshInFlight)
+            return "Checking";
+        if (webSocketClient != null && webSocketClient.IsConnected)
+            return "Online";
+        if (reconnectPending)
+            return "Reconnecting";
+        return string.IsNullOrWhiteSpace(serverHealthStatus) ? "Offline" : serverHealthStatus;
+    }
+
+    private string GetServerHealthFromError(string message)
+    {
+        if (!string.IsNullOrWhiteSpace(message) && message.IndexOf("maintenance", StringComparison.OrdinalIgnoreCase) >= 0)
+            return "Maintenance";
+        return Application.internetReachability == NetworkReachability.NotReachable ? "Offline" : "Offline";
+    }
+
+    private string GetHostPlayerLine()
+    {
+        if (currentRoom == null || string.IsNullOrWhiteSpace(currentRoom.hostUsername))
+            return "Waiting for host";
+
+        bool localPlayer = IsLocalPlayer(currentRoom.hostId, currentRoom.hostUsername);
+        string status = IsPlayerReady(currentRoom.hostId, currentRoom.hostUsername, localPlayer) ? "Ready" : "In room";
+        return $"{LimitName(currentRoom.hostUsername, 20)} - {status}";
+    }
+
+    private string GetGuestPlayerLine()
+    {
+        if (currentRoom == null || string.IsNullOrWhiteSpace(currentRoom.guestUsername))
+            return "Waiting for player";
+
+        bool localPlayer = IsLocalPlayer(currentRoom.guestId, currentRoom.guestUsername);
+        string status = IsPlayerReady(currentRoom.guestId, currentRoom.guestUsername, localPlayer) ? "Ready" : "In room";
+        return $"{LimitName(currentRoom.guestUsername, 20)} - {status}";
+    }
+
+    private bool IsLocalPlayer(string userId, string username)
+    {
+        return (!string.IsNullOrWhiteSpace(userId) &&
+                string.Equals(userId, PlayerAuthService.UserId, StringComparison.OrdinalIgnoreCase)) ||
+               (!string.IsNullOrWhiteSpace(username) &&
+                string.Equals(username, PlayerAuthService.Username, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private string GetLobbyRoomCode()
+    {
+        return string.IsNullOrWhiteSpace(currentRoomCode) ? string.Empty : currentRoomCode;
+    }
+
+    private string GetRecentMatchLine(int index)
+    {
+        if (recentMatches.Count == 0)
+            return index == 0 ? "No recent matches." : string.Empty;
+        if (index < 0 || index >= recentMatches.Count || index >= 3)
+            return string.Empty;
+
+        BackendMatchDto match = recentMatches[index];
+        string white = LimitName(match.whiteUsername, 10);
+        string black = LimitName(match.blackUsername, 10);
+        string result = string.IsNullOrWhiteSpace(match.winnerUsername)
+            ? match.status
+            : $"{LimitName(match.winnerUsername, 10)} won";
+        return $"{white} vs {black} | {LimitName(result, 16)}";
+    }
+
+    private static string NormalizeRoomCode(string raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw))
+            return string.Empty;
+        return raw.Trim().ToUpperInvariant();
+    }
+
+    private static bool IsValidRoomCode(string code)
+    {
+        if (string.IsNullOrWhiteSpace(code) || code.Length != 6)
+            return false;
+        for (int i = 0; i < code.Length; i++)
+            if (!char.IsLetterOrDigit(code[i]))
+                return false;
+        return true;
+    }
+
+    private static string LimitName(string value, int maxCharacters)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return string.Empty;
+        string trimmed = value.Trim();
+        if (trimmed.Length <= maxCharacters)
+            return trimmed;
+        return trimmed.Substring(0, Mathf.Max(0, maxCharacters - 3)) + "...";
     }
 
     private void EnsureWebSocketClient()
@@ -979,6 +1415,384 @@ public class ChessLanController : MonoBehaviour
 
         move = new ChessLanMove(from, to, promotionType);
         return true;
+    }
+
+    private void EnsureLobbyUi()
+    {
+        if (lobbyUi != null)
+            return;
+
+        lobbyUi = new NetworkLobbyUiController(this);
+    }
+
+    private void DestroyLobbyUi()
+    {
+        if (lobbyUi == null)
+            return;
+
+        lobbyUi.Destroy();
+        lobbyUi = null;
+    }
+
+    private sealed class NetworkLobbyUiController
+    {
+        private const float DesignWidth = 1672f;
+        private const float DesignHeight = 941f;
+        private static readonly Vector2 DesignSize = new Vector2(DesignWidth, DesignHeight);
+
+        private readonly ChessLanController owner;
+        private readonly Dictionary<string, Sprite> sprites = new Dictionary<string, Sprite>(StringComparer.OrdinalIgnoreCase);
+        private readonly List<UnityEngine.Object> runtimeAssets = new List<UnityEngine.Object>();
+        private readonly TextMeshProUGUI[] playerLabels = new TextMeshProUGUI[2];
+        private readonly TextMeshProUGUI[] recentLabels = new TextMeshProUGUI[3];
+
+        private GameObject canvasRoot;
+        private RectTransform contentRoot;
+        private TMP_InputField joinInput;
+        private TextMeshProUGUI roomCodeLabel;
+        private TextMeshProUGUI statusLabel;
+        private TextMeshProUGUI serverLabel;
+        private NetworkLobbyUiMode currentMode;
+
+        public NetworkLobbyUiController(ChessLanController newOwner)
+        {
+            owner = newOwner;
+            BuildCanvas();
+        }
+
+        public void Show(NetworkLobbyUiMode mode)
+        {
+            currentMode = mode;
+            canvasRoot.SetActive(true);
+            Rebuild();
+            Refresh();
+        }
+
+        public void Hide()
+        {
+            if (canvasRoot)
+                canvasRoot.SetActive(false);
+        }
+
+        public void Refresh()
+        {
+            if (!canvasRoot || !canvasRoot.activeSelf)
+                return;
+
+            if (roomCodeLabel)
+                roomCodeLabel.text = string.IsNullOrWhiteSpace(owner.GetLobbyRoomCode()) ? "------" : owner.GetLobbyRoomCode();
+
+            if (joinInput && !joinInput.isFocused && string.IsNullOrWhiteSpace(joinInput.text) && !string.IsNullOrWhiteSpace(owner.roomCodeInput))
+                joinInput.SetTextWithoutNotify(owner.roomCodeInput);
+
+            if (playerLabels[0])
+                playerLabels[0].text = owner.GetHostPlayerLine();
+            if (playerLabels[1])
+                playerLabels[1].text = owner.GetGuestPlayerLine();
+            if (statusLabel)
+                statusLabel.text = owner.statusMessage ?? string.Empty;
+
+            if (serverLabel)
+            {
+                string health = owner.GetServerHealth();
+                serverLabel.text = health;
+                serverLabel.color = GetServerColor(health);
+            }
+
+            for (int i = 0; i < recentLabels.Length; i++)
+                if (recentLabels[i])
+                    recentLabels[i].text = owner.GetRecentMatchLine(i);
+        }
+
+        public void Destroy()
+        {
+            if (canvasRoot)
+                UnityEngine.Object.Destroy(canvasRoot);
+
+            for (int i = 0; i < runtimeAssets.Count; i++)
+                if (runtimeAssets[i])
+                    UnityEngine.Object.Destroy(runtimeAssets[i]);
+
+            runtimeAssets.Clear();
+            sprites.Clear();
+        }
+
+        private void BuildCanvas()
+        {
+            canvasRoot = new GameObject("Network Lobby UI Canvas", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
+            Canvas canvas = canvasRoot.GetComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = 64;
+
+            ResponsiveUi.ConfigureCanvasScaler(canvasRoot.GetComponent<CanvasScaler>(), DesignSize);
+            contentRoot = CreateChild(canvasRoot.transform, "Network Lobby Content", Vector2.zero, DesignSize);
+            canvasRoot.SetActive(false);
+        }
+
+        private void Rebuild()
+        {
+            for (int i = contentRoot.childCount - 1; i >= 0; i--)
+                UnityEngine.Object.Destroy(contentRoot.GetChild(i).gameObject);
+
+            for (int i = 0; i < playerLabels.Length; i++)
+                playerLabels[i] = null;
+            for (int i = 0; i < recentLabels.Length; i++)
+                recentLabels[i] = null;
+
+            joinInput = null;
+            roomCodeLabel = null;
+            statusLabel = null;
+            serverLabel = null;
+
+            if (currentMode == NetworkLobbyUiMode.Lan)
+                BuildLan();
+            else
+                BuildMultiplayer();
+        }
+
+        private void BuildLan()
+        {
+            AddImage(contentRoot, "LAN Background", LoadSprite("LANUIBlank.png"), Vector2.zero, DesignSize);
+            AddButton("Host", "HostButton.png", D(410f, 390f), new Vector2(360f, 142f), owner.RequestCreateRoom);
+            joinInput = AddInput("Join Code Input", D(815f, 354f), new Vector2(330f, 58f));
+            AddButton("Join", "JoinButton.png", D(815f, 440f), new Vector2(360f, 112f), () => owner.RequestJoinRoom(joinInput != null ? joinInput.text : string.Empty));
+            roomCodeLabel = AddText("Room Code Value", D(838f, 612f), new Vector2(310f, 66f), 34f, TextAlignmentOptions.Center, Color.black);
+            AddButton("Copy", "CopyIcon.png", D(988f, 612f), new Vector2(92f, 92f), owner.RequestCopyRoomCode, 1.08f);
+            playerLabels[0] = AddText("Host Player", D(1316f, 353f), new Vector2(300f, 44f), 25f, TextAlignmentOptions.MidlineLeft, Color.black);
+            playerLabels[1] = AddText("Guest Player", D(1316f, 460f), new Vector2(300f, 44f), 25f, TextAlignmentOptions.MidlineLeft, Color.black);
+            statusLabel = AddText("Lobby Status", D(842f, 760f), new Vector2(890f, 48f), 25f, TextAlignmentOptions.Center, new Color(0.1f, 0.08f, 0.06f, 0.9f));
+
+            AddButton("Ready", "ReadyButton.png", D(325f, 866f), new Vector2(270f, 108f), owner.RequestReady);
+            AddButton("Start", "StartButton.png", D(576f, 866f), new Vector2(270f, 108f), owner.RequestStartGame);
+            AddButton("Refresh", "RefreshButton.png", D(835f, 866f), new Vector2(270f, 108f), owner.RequestRefreshLobby);
+            AddButton("Leave", "LeaveButton.png", D(1096f, 866f), new Vector2(270f, 108f), owner.RequestLeaveToModeSelection);
+            AddButton("Back", "BackButton.png", D(1356f, 866f), new Vector2(270f, 108f), owner.RequestBackToMultiplayerChoice);
+        }
+
+        private void BuildMultiplayer()
+        {
+            AddImage(contentRoot, "Multiplayer Background", LoadSprite("MultiplayerUIBlank.png"), Vector2.zero, DesignSize);
+            AddButton("Create Room", "CreateRoomButton.png", D(382f, 337f), new Vector2(360f, 142f), owner.RequestCreateRoom);
+            joinInput = AddInput("Join Code Input", D(807f, 310f), new Vector2(340f, 58f));
+            AddButton("Join Room", "JoinRoomButton.png", D(807f, 392f), new Vector2(360f, 112f), () => owner.RequestJoinRoom(joinInput != null ? joinInput.text : string.Empty));
+            roomCodeLabel = AddText("Room Code Value", D(702f, 620f), new Vector2(310f, 66f), 34f, TextAlignmentOptions.Center, Color.black);
+            AddButton("Copy", "CopyIcon.png", D(808f, 620f), new Vector2(92f, 92f), owner.RequestCopyRoomCode, 1.08f);
+            playerLabels[0] = AddText("Host Player", D(1310f, 303f), new Vector2(300f, 44f), 25f, TextAlignmentOptions.MidlineLeft, Color.black);
+            playerLabels[1] = AddText("Guest Player", D(1310f, 416f), new Vector2(300f, 44f), 25f, TextAlignmentOptions.MidlineLeft, Color.black);
+            recentLabels[0] = AddText("Recent Match 0", D(1320f, 554f), new Vector2(335f, 42f), 22f, TextAlignmentOptions.Center, Color.black);
+            recentLabels[1] = AddText("Recent Match 1", D(1320f, 636f), new Vector2(335f, 42f), 22f, TextAlignmentOptions.Center, Color.black);
+            recentLabels[2] = AddText("Recent Match 2", D(1320f, 716f), new Vector2(335f, 42f), 22f, TextAlignmentOptions.Center, Color.black);
+            statusLabel = AddText("Lobby Status", D(836f, 777f), new Vector2(1120f, 46f), 25f, TextAlignmentOptions.Center, new Color(0.1f, 0.08f, 0.06f, 0.9f));
+            serverLabel = AddText("Server Health", D(1452f, 93f), new Vector2(200f, 46f), 28f, TextAlignmentOptions.Center, Color.black);
+
+            AddButton("Ready", "ReadyButton.png", D(180f, 866f), new Vector2(270f, 108f), owner.RequestReady);
+            AddButton("Start Game", "StartGameButton.png", D(486f, 866f), new Vector2(330f, 108f), owner.RequestStartGame);
+            AddButton("Refresh", "RefreshButton.png", D(815f, 866f), new Vector2(270f, 108f), owner.RequestRefreshLobby);
+            AddButton("Leave Room", "LeaveRoomButton.png", D(1142f, 866f), new Vector2(330f, 108f), owner.RequestLeaveToModeSelection);
+            AddButton("Back", "BackButton.png", D(1452f, 866f), new Vector2(270f, 108f), owner.RequestBackToMultiplayerChoice);
+        }
+
+        private Button AddButton(string name, string spriteName, Vector2 position, Vector2 size, Action action, float hoverScale = 1.035f)
+        {
+            Image image = AddImage(contentRoot, name, LoadSprite(spriteName), position, size);
+            image.raycastTarget = true;
+            Button button = image.gameObject.AddComponent<Button>();
+            button.transition = Selectable.Transition.None;
+            button.targetGraphic = image;
+            button.onClick.AddListener(() => action?.Invoke());
+
+            HandDrawnPressable pressable = image.gameObject.AddComponent<HandDrawnPressable>();
+            pressable.Configure(hoverScale, 0.965f, 1.1f, new Color(1f, 0.97f, 0.74f, 1f));
+            return button;
+        }
+
+        private TMP_InputField AddInput(string name, Vector2 position, Vector2 size)
+        {
+            GameObject inputObject = new GameObject(name, typeof(RectTransform), typeof(Image), typeof(TMP_InputField));
+            RectTransform rect = inputObject.GetComponent<RectTransform>();
+            rect.SetParent(contentRoot, false);
+            rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.anchoredPosition = position;
+            rect.sizeDelta = size;
+
+            Image background = inputObject.GetComponent<Image>();
+            background.color = new Color(1f, 1f, 1f, 0.01f);
+            background.raycastTarget = true;
+
+            TMP_InputField input = inputObject.GetComponent<TMP_InputField>();
+            input.characterLimit = 6;
+            input.contentType = TMP_InputField.ContentType.Alphanumeric;
+            input.lineType = TMP_InputField.LineType.SingleLine;
+            input.richText = false;
+
+            TextMeshProUGUI text = AddText(rect, "Text", Vector2.zero, size - new Vector2(28f, 8f), 34f, TextAlignmentOptions.Center, Color.black);
+            input.textViewport = rect;
+            input.textComponent = text;
+            input.onValueChanged.AddListener(value =>
+            {
+                string normalized = NormalizeRoomCode(value);
+                if (!string.Equals(value, normalized, StringComparison.Ordinal))
+                    input.SetTextWithoutNotify(normalized);
+                owner.roomCodeInput = normalized;
+            });
+            return input;
+        }
+
+        private Image AddImage(Transform parent, string name, Sprite sprite, Vector2 position, Vector2 size)
+        {
+            GameObject imageObject = new GameObject(name, typeof(RectTransform), typeof(Image));
+            RectTransform rect = imageObject.GetComponent<RectTransform>();
+            rect.SetParent(parent, false);
+            rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.anchoredPosition = position;
+            rect.sizeDelta = size;
+
+            Image image = imageObject.GetComponent<Image>();
+            image.sprite = sprite;
+            image.color = Color.white;
+            image.preserveAspect = true;
+            image.raycastTarget = false;
+            return image;
+        }
+
+        private TextMeshProUGUI AddText(string name, Vector2 position, Vector2 size, float fontSize, TextAlignmentOptions alignment, Color color)
+        {
+            return AddText(contentRoot, name, position, size, fontSize, alignment, color);
+        }
+
+        private TextMeshProUGUI AddText(Transform parent, string name, Vector2 position, Vector2 size, float fontSize, TextAlignmentOptions alignment, Color color)
+        {
+            GameObject textObject = new GameObject(name, typeof(RectTransform), typeof(TextMeshProUGUI));
+            RectTransform rect = textObject.GetComponent<RectTransform>();
+            rect.SetParent(parent, false);
+            rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.anchoredPosition = position;
+            rect.sizeDelta = size;
+
+            TextMeshProUGUI text = textObject.GetComponent<TextMeshProUGUI>();
+            text.font = ChessFontCatalog.TmpFont != null ? ChessFontCatalog.TmpFont : TMP_Settings.defaultFontAsset;
+            text.fontSize = fontSize;
+            text.fontSizeMin = Mathf.Max(13f, fontSize * 0.58f);
+            text.fontSizeMax = fontSize;
+            text.enableAutoSizing = true;
+            text.alignment = alignment;
+            text.color = color;
+            text.textWrappingMode = TextWrappingModes.NoWrap;
+            text.overflowMode = TextOverflowModes.Ellipsis;
+            text.raycastTarget = false;
+            return text;
+        }
+
+        private RectTransform CreateChild(Transform parent, string name, Vector2 position, Vector2 size)
+        {
+            GameObject child = new GameObject(name, typeof(RectTransform));
+            RectTransform rect = child.GetComponent<RectTransform>();
+            rect.SetParent(parent, false);
+            rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.anchoredPosition = position;
+            rect.sizeDelta = size;
+            return rect;
+        }
+
+        private Sprite LoadSprite(params string[] names)
+        {
+            string folder = currentMode == NetworkLobbyUiMode.Lan
+                ? "Assets/Materials/LANUI"
+                : "Assets/Materials/MultiplayerUI";
+
+            for (int i = 0; i < names.Length; i++)
+            {
+                string key = $"{folder}/{names[i]}";
+                if (sprites.TryGetValue(key, out Sprite cached))
+                    return cached;
+
+                string fullPath = Path.Combine(Directory.GetCurrentDirectory(), folder, names[i]);
+                if (!File.Exists(fullPath))
+                    continue;
+
+                byte[] bytes = File.ReadAllBytes(fullPath);
+                Texture2D texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+                if (!texture.LoadImage(bytes))
+                {
+                    UnityEngine.Object.Destroy(texture);
+                    continue;
+                }
+
+                texture.name = Path.GetFileNameWithoutExtension(names[i]);
+                texture.filterMode = FilterMode.Bilinear;
+                Rect spriteRect = ShouldTrimSprite(names[i])
+                    ? GetAlphaBounds(texture, 8)
+                    : new Rect(0f, 0f, texture.width, texture.height);
+                Sprite sprite = Sprite.Create(texture, spriteRect, new Vector2(0.5f, 0.5f), 100f);
+                sprite.name = texture.name;
+                runtimeAssets.Add(texture);
+                runtimeAssets.Add(sprite);
+                sprites[key] = sprite;
+                return sprite;
+            }
+
+            return null;
+        }
+
+        private static bool ShouldTrimSprite(string spriteName)
+        {
+            return !spriteName.EndsWith("Blank.png", StringComparison.OrdinalIgnoreCase) &&
+                   !spriteName.EndsWith("Design.png", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static Rect GetAlphaBounds(Texture2D texture, int padding)
+        {
+            Color32[] pixels = texture.GetPixels32();
+            int minX = texture.width;
+            int minY = texture.height;
+            int maxX = -1;
+            int maxY = -1;
+
+            for (int y = 0; y < texture.height; y++)
+            {
+                int row = y * texture.width;
+                for (int x = 0; x < texture.width; x++)
+                {
+                    if (pixels[row + x].a <= 8)
+                        continue;
+
+                    if (x < minX)
+                        minX = x;
+                    if (y < minY)
+                        minY = y;
+                    if (x > maxX)
+                        maxX = x;
+                    if (y > maxY)
+                        maxY = y;
+                }
+            }
+
+            if (maxX < minX || maxY < minY)
+                return new Rect(0f, 0f, texture.width, texture.height);
+
+            minX = Mathf.Max(0, minX - padding);
+            minY = Mathf.Max(0, minY - padding);
+            maxX = Mathf.Min(texture.width - 1, maxX + padding);
+            maxY = Mathf.Min(texture.height - 1, maxY + padding);
+            return new Rect(minX, minY, maxX - minX + 1, maxY - minY + 1);
+        }
+
+        private static Vector2 D(float x, float y)
+        {
+            return new Vector2(x - DesignWidth * 0.5f, DesignHeight * 0.5f - y);
+        }
+
+        private static Color GetServerColor(string health)
+        {
+            if (string.Equals(health, "Online", StringComparison.OrdinalIgnoreCase))
+                return new Color(0.06f, 0.45f, 0.16f, 1f);
+            if (string.Equals(health, "Maintenance", StringComparison.OrdinalIgnoreCase))
+                return new Color(0.85f, 0.48f, 0.04f, 1f);
+            if (string.Equals(health, "Checking", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(health, "Reconnecting", StringComparison.OrdinalIgnoreCase))
+                return new Color(0.1f, 0.28f, 0.78f, 1f);
+            return new Color(0.72f, 0.08f, 0.08f, 1f);
+        }
     }
 
     private static GUIStyle GetTitleStyle()
