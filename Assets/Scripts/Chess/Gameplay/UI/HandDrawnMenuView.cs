@@ -32,6 +32,8 @@ public class HandDrawnMenuView : MonoBehaviour
     private RectTransform profileOverlay;
     private RectTransform botDifficultyScreen;
     private RectTransform sideScreen;
+    private RectTransform skinScreen;
+    private Text skinMessageText;
     private Button modeLogoutButton;
     private GachaMenuController gachaController;
     private InventoryMenuController inventoryController;
@@ -421,8 +423,8 @@ public class HandDrawnMenuView : MonoBehaviour
         AddBattleDoodles(sideScreen, true);
         AddMenuConfetti(sideScreen);
         AddImage(sideScreen, "Choose Side Title", assets.chooseYourSide, new Vector2(0f, 365f), new Vector2(880f, 150f), 0f, 0f);
-        AddInteractive(sideScreen, "White Card", assets.whiteSideButton, new Vector2(-365f, -105f), new Vector2(560f, 745f), () => owner.StartBotGame(PieceTeam.White), false, 1.035f);
-        AddInteractive(sideScreen, "Black Card", assets.blackSideButton, new Vector2(365f, -105f), new Vector2(560f, 745f), () => owner.StartBotGame(PieceTeam.Black), false, 1.035f);
+        AddInteractive(sideScreen, "White Card", assets.whiteSideButton, new Vector2(-365f, -105f), new Vector2(560f, 745f), () => owner.ShowBotSkinSelection(PieceTeam.White), false, 1.035f);
+        AddInteractive(sideScreen, "Black Card", assets.blackSideButton, new Vector2(365f, -105f), new Vector2(560f, 745f), () => owner.ShowBotSkinSelection(PieceTeam.Black), false, 1.035f);
         AddImage(sideScreen, "Game Version", assets.gameVersion, new Vector2(735f, -420f), new Vector2(330f, 145f), 0f, 0f);
         AddBackButton(sideScreen, new Vector2(-820f, -455f), () => ShowBotDifficultySelection(), new Vector2(300f, 125f));
     }
