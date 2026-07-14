@@ -66,7 +66,6 @@ public sealed class ResultMenuView : MonoBehaviour
         if (!IsReady)
             return;
 
-        GameMusicManager.PlayResultMusic(kind);
         pauseMenu?.SetResultSpectating(false);
         Rebuild(kind);
         canvasRoot.SetActive(true);

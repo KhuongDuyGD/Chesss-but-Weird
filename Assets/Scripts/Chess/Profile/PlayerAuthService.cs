@@ -96,7 +96,6 @@ public static class PlayerAuthService
         IsGuestSession = true;
         CurrentProfile = LoadGuestProfile();
         CurrentProfile.lastLoginAtUtc = DateTime.UtcNow.ToString("O");
-        PlayerProfileStore.Reload();
         SaveGuestProfile();
         Debug.Log($"[PlayerAuthService] Guest session started for '{CurrentDisplayName}'.");
     }
@@ -107,13 +106,20 @@ public static class PlayerAuthService
         return storedUser != null ? storedUser.username ?? string.Empty : string.Empty;
     }
 
-    public static void RecordGameResult(bool won, bool lost, bool draw, string mode = "Local", string opponent = "", string detail = "")
+    public static void RecordGameResult(bool won, bool lost, bool draw)
     {
         if (CurrentProfile == null)
             return;
 
-        string result = won ? "Win" : lost ? "Lose" : "Draw";
-        PlayerProfileStore.RecordMatch(mode, opponent, result, detail);
+        if (won)
+            CurrentProfile.wins++;
+        else if (lost)
+            CurrentProfile.losses++;
+        else if (draw)
+            CurrentProfile.draws++;
+
+        CurrentProfile.totalGames++;
+
         if (IsGuestSession)
             SaveGuestProfile();
     }
@@ -131,7 +137,6 @@ public static class PlayerAuthService
             lastLoginAtUtc = DateTime.UtcNow.ToString("O"),
             rating = user.elo
         };
-        PlayerProfileStore.Reload();
     }
 
     private static PlayerProfile LoadGuestProfile()

@@ -11,7 +11,6 @@ public class AuthController : MonoBehaviour
 
     public static AuthController Create(ChessGame game, Action onAuthenticated)
     {
-        GameMusicManager.PlayAuthMusic();
         GameObject root = new GameObject("Chess Auth Controller");
         AuthController controller = root.AddComponent<AuthController>();
         controller.authenticatedCallback = onAuthenticated;

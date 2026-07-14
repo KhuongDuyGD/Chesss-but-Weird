@@ -6,8 +6,8 @@ public sealed class ChessOrbitCamera : MonoBehaviour
 {
     [Header("Orbit")]
     [SerializeField] private float rotationSpeed = 0.22f;
-    [SerializeField] private float zoomSpeed = 9f;
-    [SerializeField] private float minDistance = 2.35f;
+    [SerializeField] private float zoomSpeed = 5f;
+    [SerializeField] private float minDistance = 2.75f;
     [SerializeField] private float maxDistance = 28f;
     [SerializeField] private float minPitch = 15f;
     [SerializeField] private float maxPitch = 78f;
@@ -18,7 +18,7 @@ public sealed class ChessOrbitCamera : MonoBehaviour
     [SerializeField] private float distanceSmoothTime = 0.10f;
     [SerializeField] private float pivotSafeHeight = 0.9f;
     [SerializeField] private bool allowPieceLock = true;
-    [SerializeField] private float gameplayDistance = 6.25f;
+    [SerializeField] private float gameplayDistance = 7.5f;
     [SerializeField] private float gameplayPitch = 42f;
 
     private ChessGame chessGame;
