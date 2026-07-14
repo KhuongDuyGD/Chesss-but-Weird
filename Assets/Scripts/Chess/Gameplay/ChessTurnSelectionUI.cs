@@ -59,6 +59,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
         ui.TryCreateAnalysisBoard();
         ui.TryCreateResultMenu();
         ui.TryCreateBotController();
+        GameMusicManager.PlayMainMenuPrimaryMusic();
         return ui;
     }
 
@@ -98,6 +99,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
 
     public void ShowMainMenu()
     {
+        GameMusicManager.PlayMainMenuPrimaryMusic();
         promotionCallback = null;
         resultIsDraw = false;
         drawReason = string.Empty;
@@ -114,6 +116,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
 
     public void ShowTurnSelection()
     {
+        GameMusicManager.PlayMainMenuHubMusic();
         showCheckWarning = false;
         lanController?.HideLanSetup();
         if (handDrawnMenu && handDrawnMenu.IsReady)
@@ -130,6 +133,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
 
     public void ShowSideSelection()
     {
+        GameMusicManager.PlayMainMenuHubMusic();
         showCheckWarning = false;
         lanController?.HideLanSetup();
         state = ScreenState.TurnSelection;
@@ -139,6 +143,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
 
     public void ShowBotDifficultySelection()
     {
+        GameMusicManager.PlayMainMenuHubMusic();
         showCheckWarning = false;
         lanController?.HideLanSetup();
         state = ScreenState.TurnSelection;
@@ -207,6 +212,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
 
     public void ShowMultiplayerModeSelection()
     {
+        GameMusicManager.PlayMainMenuHubMusic();
         if (!PlayerAuthService.CanUseOnlineFeatures)
         {
             RequestAuthentication("Multiplayer requires a valid backend login. Please log in or sign up.");
@@ -222,6 +228,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
 
     public void ShowLanSetup()
     {
+        GameMusicManager.PlayMainMenuHubMusic();
         showCheckWarning = false;
         state = ScreenState.TurnSelection;
         handDrawnMenu?.HideForPlaying();
@@ -312,6 +319,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
 
     public void StartNewGameFromResult()
     {
+        GameMusicManager.PlayInGameMusic(chessGame && chessGame.IsBotGame, selectedBotDifficulty);
         resultMenu?.Hide();
         pauseMenu?.SetResultSpectating(false);
         if (!chessGame.RestartCurrentLocalGame())
