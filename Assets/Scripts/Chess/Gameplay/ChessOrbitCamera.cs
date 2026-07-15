@@ -41,6 +41,8 @@ public sealed class ChessOrbitCamera : MonoBehaviour
     private float baseYaw;
     private float basePitch;
     private float baseDistance;
+    private Vector3 freePivot;
+    private bool hasFreePivot;
     private bool initialized;
 
     public Vector3 CurrentPivot => currentPivot;
@@ -115,21 +117,33 @@ public sealed class ChessOrbitCamera : MonoBehaviour
 
     public void ReleaseLock()
     {
+        ReleaseLock(true);
+    }
+
+    private void ReleaseLock(bool preserveCurrentPivot)
+    {
         UnsubscribeFromPiece();
         lockedTarget = null;
         lockedHeightOffset = 0f;
+
+        if (preserveCurrentPivot && initialized)
+        {
+            freePivot = currentPivot;
+            hasFreePivot = true;
+        }
     }
 
     public void SetAllowPieceLock(bool allowed)
     {
         allowPieceLock = allowed;
         if (!allowPieceLock)
-            ReleaseLock();
+            ReleaseLock(false);
     }
 
     public void ResetToBoardView(bool immediate = false)
     {
-        ReleaseLock();
+        ReleaseLock(false);
+        hasFreePivot = false;
         targetYaw = baseYaw;
         targetPitch = basePitch;
         targetDistance = baseDistance;
@@ -140,7 +154,8 @@ public sealed class ChessOrbitCamera : MonoBehaviour
 
     public void ConfigureForPlayerSide(PieceTeam playerTeam, bool immediate = false)
     {
-        ReleaseLock();
+        ReleaseLock(false);
+        hasFreePivot = false;
         targetYaw = playerTeam == PieceTeam.Black ? baseYaw + 180f : baseYaw;
         targetPitch = Mathf.Clamp(gameplayPitch, minPitch, maxPitch);
         targetDistance = Mathf.Clamp(gameplayDistance, minDistance, maxDistance);
@@ -243,6 +258,9 @@ public sealed class ChessOrbitCamera : MonoBehaviour
     {
         if (allowPieceLock && lockedTarget != null)
             return lockedTarget.position + Vector3.up * lockedHeightOffset;
+
+        if (hasFreePivot)
+            return freePivot;
 
         return boardCenter;
     }

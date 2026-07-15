@@ -963,8 +963,6 @@ public class ChessLanController : MonoBehaviour
             chessGame.ApplyFenState(payload.fen);
             if (string.Equals(payload.status, "ACTIVE", StringComparison.OrdinalIgnoreCase))
                 ApplyActiveMatchCameraState(localTeam, immediate: false);
-            else
-                ApplyLobbyCameraState(immediate: false);
         }
 
         if (!string.Equals(payload.status, "ACTIVE", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(payload.result))
@@ -981,7 +979,6 @@ public class ChessLanController : MonoBehaviour
         opponentDrawOfferPending = false;
         OpponentPauseChanged?.Invoke(false, string.Empty);
         statusMessage = $"Game over: {payload.result} ({payload.reason})";
-        ApplyLobbyCameraState(immediate: false);
         chessGame.ApplyServerGameOver(payload.result, payload.reason);
         StartCoroutine(LoadMatchHistoryCoroutine());
         if (string.Equals(payload.reason, "RESIGNATION", StringComparison.OrdinalIgnoreCase))
@@ -1272,9 +1269,13 @@ public class ChessLanController : MonoBehaviour
         if (orbitCamera == null)
             return;
 
-        // Khi vao tran multiplayer, dua goc nhin ve phia nguoi choi hien tai.
         orbitCamera.SetAllowPieceLock(true);
-        orbitCamera.ConfigureForPlayerSide(localTeam, immediate);
+        if (!immediate)
+            return;
+
+        // Chi dua goc nhin ve phia nguoi choi khi vua vao/recover tran.
+        // Cac lan sync GAME_STATE giua tran khong duoc keo camera ve goc mac dinh.
+        orbitCamera.ConfigureForPlayerSide(localTeam, true);
     }
 
     private void ReleaseWebSocketClient()
