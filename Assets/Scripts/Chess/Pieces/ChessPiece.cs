@@ -74,7 +74,16 @@ public abstract class ChessPiece : MonoBehaviour
     public IReadOnlyList<Vector2Int> GetLegalMoves(ChessPiece[,] board)
     {
         List<Vector2Int> legalMoves = new List<Vector2Int>();
+        CollectLegalMoves(board, legalMoves);
+        return legalMoves;
+    }
 
+    public void CollectLegalMoves(ChessPiece[,] board, List<Vector2Int> legalMoves)
+    {
+        if (legalMoves == null)
+            return;
+
+        legalMoves.Clear();
         for (int x = 0; x < 8; x++)
             for (int y = 0; y < 8; y++)
             {
@@ -82,8 +91,6 @@ public abstract class ChessPiece : MonoBehaviour
                 if (IsLegalMove(destination, board))
                     legalMoves.Add(destination);
             }
-
-        return legalMoves;
     }
 
     protected abstract bool IsLegalMovePattern(Vector2Int destination, ChessPiece[,] board);

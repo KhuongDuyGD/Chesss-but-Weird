@@ -7,6 +7,7 @@ public sealed class ResponsiveSafeArea : MonoBehaviour
     private RectTransform rectTransform;
     private Rect lastSafeArea = new Rect(-1f, -1f, -1f, -1f);
     private Vector2Int lastScreenSize = new Vector2Int(-1, -1);
+    private float nextSafeAreaCheckAt;
 
     private void Awake()
     {
@@ -21,6 +22,10 @@ public sealed class ResponsiveSafeArea : MonoBehaviour
 
     private void Update()
     {
+        if (Time.unscaledTime < nextSafeAreaCheckAt)
+            return;
+
+        nextSafeAreaCheckAt = Time.unscaledTime + 0.25f;
         if (lastSafeArea != Screen.safeArea || lastScreenSize.x != Screen.width || lastScreenSize.y != Screen.height)
             Apply();
     }
@@ -38,6 +43,7 @@ public sealed class ResponsiveSafeArea : MonoBehaviour
 
         lastSafeArea = safeArea;
         lastScreenSize = new Vector2Int(Screen.width, Screen.height);
+        nextSafeAreaCheckAt = Time.unscaledTime + 0.25f;
     }
 }
 

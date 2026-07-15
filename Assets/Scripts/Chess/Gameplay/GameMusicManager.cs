@@ -328,6 +328,13 @@ public sealed class GameMusicManager : MonoBehaviour
         }
 
         playbackCoroutine = null;
+        if (ShouldStopAfterClip(request))
+        {
+            source.Stop();
+            source.clip = null;
+            yield break;
+        }
+
         Play(request, true);
     }
 
@@ -359,6 +366,13 @@ public sealed class GameMusicManager : MonoBehaviour
     {
         float contextVolume = request.context == GameMusicContext.InGame ? InGameVolume : MenuVolume;
         return contextVolume * GameRuntimeSettings.MusicVolume01;
+    }
+
+    private static bool ShouldStopAfterClip(MusicRequest request)
+    {
+        return request.context == GameMusicContext.Result &&
+            (request.resultKind == ResultMenuView.ResultKind.Win ||
+             request.resultKind == ResultMenuView.ResultKind.Lose);
     }
 
     private IEnumerator FadeSource(float from, float to, float duration)

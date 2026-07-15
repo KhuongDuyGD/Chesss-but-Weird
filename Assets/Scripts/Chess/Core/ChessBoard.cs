@@ -82,12 +82,15 @@ public class Chessboard : MonoBehaviour
     private bool presentationVisible = true;
     private int tileLayer;
     private int hoverLayer;
+    private int hoverRaycastMask;
     private BoardLayout currentBoardLayout;
+    private readonly Dictionary<GameObject, Vector2Int> tileLookup = new Dictionary<GameObject, Vector2Int>(TILE_COUNT_X * TILE_COUNT_Y);
 
     private void Awake()
     {
         tileLayer = LayerMask.NameToLayer("Tile");
         hoverLayer = LayerMask.NameToLayer("Hover");
+        hoverRaycastMask = CreateLayerMaskOrDefault("Tile", "Hover");
 
         CreateTileMaterials();
         currentBoardLayout = ResolveBoardLayout();
@@ -110,10 +113,10 @@ public class Chessboard : MonoBehaviour
         }
 
         if (!currentCamera)
-        {
             currentCamera = Camera.main;
+
+        if (!currentCamera)
             return;
-        }
 
         if (Mouse.current == null)
         {
@@ -122,7 +125,7 @@ public class Chessboard : MonoBehaviour
         }
 
         Ray ray = currentCamera.ScreenPointToRay(Mouse.current.position.ReadValue());
-        if (Physics.Raycast(ray, out RaycastHit info, 100, LayerMask.GetMask("Tile", "Hover")))
+        if (Physics.Raycast(ray, out RaycastHit info, 100, hoverRaycastMask))
         {
             Vector2Int hitPosition = LookupTileIndex(info.transform.gameObject);
             if (!IsValidTilePosition(hitPosition))
@@ -150,11 +153,13 @@ public class Chessboard : MonoBehaviour
         tileRenderers = new MeshRenderer[tileCountX, tileCountY];
         baseTileMaterials = new Material[tileCountX, tileCountY];
         legalMoveHighlights = new bool[tileCountX, tileCountY];
+        tileLookup.Clear();
 
         for (int x = 0; x < tileCountX; x++)
             for (int y = 0; y < tileCountY; y++)
             {
                 tiles[x, y] = GenerateSingleTile(boardLayout, x, y);
+                tileLookup[tiles[x, y]] = new Vector2Int(x, y);
                 tileRenderers[x, y] = tiles[x, y].GetComponent<MeshRenderer>();
                 baseTileMaterials[x, y] = (x + y) % 2 == 0 ? lightTileMaterial : darkTileMaterial;
                 tileRenderers[x, y].sharedMaterial = baseTileMaterials[x, y];
@@ -361,12 +366,16 @@ public class Chessboard : MonoBehaviour
 
     private Vector2Int LookupTileIndex(GameObject hitInfo)
     {
-        for (int x = 0; x < TILE_COUNT_X; x++)
-            for (int y = 0; y < TILE_COUNT_Y; y++)
-                if (tiles[x, y] == hitInfo)
-                    return new Vector2Int(x, y);
+        if (hitInfo && tileLookup.TryGetValue(hitInfo, out Vector2Int tile))
+            return tile;
 
         return -Vector2Int.one;
+    }
+
+    private static int CreateLayerMaskOrDefault(params string[] layerNames)
+    {
+        int mask = LayerMask.GetMask(layerNames);
+        return mask == 0 ? Physics.DefaultRaycastLayers : mask;
     }
 
     private bool IsValidTilePosition(Vector2Int position)

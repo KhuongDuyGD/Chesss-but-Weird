@@ -43,6 +43,9 @@ public class HandDrawnPressable : MonoBehaviour, IPointerEnterHandler, IPointerE
 
     private void Update()
     {
+        if (!hovering && !pressing && IsAtRest())
+            return;
+
         float targetScale = pressing ? pressedScale : hovering ? hoverScale : 1f;
         float targetRotation = hovering ? hoverDirection * rotationAmount : 0f;
         float blend = 1f - Mathf.Exp(-responseSpeed * Time.unscaledDeltaTime);
@@ -52,6 +55,30 @@ public class HandDrawnPressable : MonoBehaviour, IPointerEnterHandler, IPointerE
 
         if (tintTarget)
             tintTarget.color = Color.Lerp(tintTarget.color, hovering ? hoverTint : baseColor, blend);
+    }
+
+    private bool IsAtRest()
+    {
+        if (!rectTransform)
+            return true;
+
+        bool transformAtRest =
+            (rectTransform.localScale - baseScale).sqrMagnitude < 0.000001f &&
+            Quaternion.Dot(rectTransform.localRotation, baseRotation) > 0.9999f;
+
+        if (!tintTarget)
+            return transformAtRest;
+
+        return transformAtRest && Approximately(tintTarget.color, baseColor);
+    }
+
+    private static bool Approximately(Color left, Color right)
+    {
+        const float epsilon = 0.002f;
+        return Mathf.Abs(left.r - right.r) < epsilon &&
+            Mathf.Abs(left.g - right.g) < epsilon &&
+            Mathf.Abs(left.b - right.b) < epsilon &&
+            Mathf.Abs(left.a - right.a) < epsilon;
     }
 
     private void OnDisable()

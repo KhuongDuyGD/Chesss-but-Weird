@@ -19,7 +19,9 @@ public class ChessGame : MonoBehaviour
         Draw
     }
 
+    private const int BoardSize = 8;
     private const int FiftyMoveRuleHalfMoveLimit = 100;
+    private const float BoardClickRaycastDistance = 100f;
 
     [SerializeField] private Chessboard chessboard;
     [SerializeField] private Transform piecesRoot;
@@ -53,6 +55,9 @@ public class ChessGame : MonoBehaviour
     private readonly List<string> moveHistory = new List<string>();
     private readonly List<PieceType> whiteCapturedPieces = new List<PieceType>();
     private readonly List<PieceType> blackCapturedPieces = new List<PieceType>();
+    private readonly List<Vector2Int> candidateMoveBuffer = new List<Vector2Int>(32);
+    private readonly List<Vector2Int> safeMoveBuffer = new List<Vector2Int>(32);
+    private readonly List<ChessPiece> nonKingPieceBuffer = new List<ChessPiece>(30);
     private PieceTeam currentTurn = PieceTeam.White;
     private ChessPiece selectedPiece;
     private Transform runtimePiecesRoot;
@@ -91,6 +96,10 @@ public class ChessGame : MonoBehaviour
     private string lastMoveSummary = "No moves yet.";
     private PieceTeam moveHistoryFirstTurn = PieceTeam.White;
     private ChessOrbitCamera orbitCamera;
+    private Camera gameplayCamera;
+    private int boardClickRaycastMask;
+    private ChessPiece whiteKing;
+    private ChessPiece blackKing;
     private string whitePieceSkinId = PieceSkinCatalog.DefaultSkinId;
     private string blackPieceSkinId = PieceSkinCatalog.DefaultSkinId;
     public PieceTeam CurrentTurn => currentTurn;
@@ -126,6 +135,7 @@ public class ChessGame : MonoBehaviour
         if (!chessboard)
             chessboard = FindAnyObjectByType<Chessboard>();
 
+        boardClickRaycastMask = CreateLayerMaskOrDefault("ChessPiece", "Tile", "Hover");
         EnsureOrbitCamera();
 
         EnsureAudioSource();
@@ -142,6 +152,24 @@ public class ChessGame : MonoBehaviour
 
         audioSource.playOnAwake = false;
         audioSource.spatialBlend = 0f;
+    }
+
+    private Camera GetGameplayCamera()
+    {
+        if (gameplayCamera)
+            return gameplayCamera;
+
+        gameplayCamera = Camera.main;
+        if (!gameplayCamera)
+            gameplayCamera = FindAnyObjectByType<Camera>();
+
+        return gameplayCamera;
+    }
+
+    private static int CreateLayerMaskOrDefault(params string[] layerNames)
+    {
+        int mask = LayerMask.GetMask(layerNames);
+        return mask == 0 ? Physics.DefaultRaycastLayers : mask;
     }
 
     private void PlaySound(AudioClip clip)
@@ -257,6 +285,7 @@ public class ChessGame : MonoBehaviour
                 continue;
 
             pieces[piece.BoardPosition.x, piece.BoardPosition.y] = piece;
+            CacheKing(piece);
         }
 
         selectedPiece = null;
@@ -691,9 +720,7 @@ public class ChessGame : MonoBehaviour
 
     private void EnsureOrbitCamera()
     {
-        Camera gameplayCamera = Camera.main;
-        if (!gameplayCamera)
-            gameplayCamera = FindAnyObjectByType<Camera>();
+        Camera gameplayCamera = GetGameplayCamera();
 
         if (!gameplayCamera)
             return;
@@ -720,13 +747,12 @@ public class ChessGame : MonoBehaviour
 
     private void HandleBoardClick()
     {
-        Camera currentCamera = Camera.main;
+        Camera currentCamera = GetGameplayCamera();
         if (!currentCamera)
             return;
 
         Ray ray = currentCamera.ScreenPointToRay(Mouse.current.position.ReadValue());
-        int raycastMask = LayerMask.GetMask("ChessPiece", "Tile", "Hover");
-        if (!Physics.Raycast(ray, out RaycastHit hitInfo, 100f, raycastMask == 0 ? Physics.DefaultRaycastLayers : raycastMask))
+        if (!Physics.Raycast(ray, out RaycastHit hitInfo, BoardClickRaycastDistance, boardClickRaycastMask))
         {
             ClearSelection();
             return;
@@ -761,19 +787,19 @@ public class ChessGame : MonoBehaviour
 
     private List<Vector2Int> GetSafeLegalMoves(ChessPiece piece)
     {
-        List<Vector2Int> safeMoves = new List<Vector2Int>();
+        safeMoveBuffer.Clear();
         if (!piece)
-            return safeMoves;
+            return safeMoveBuffer;
 
-        IReadOnlyList<Vector2Int> candidateMoves = GetCandidateMoves(piece);
+        List<Vector2Int> candidateMoves = GetCandidateMoves(piece);
         for (int i = 0; i < candidateMoves.Count; i++)
         {
             Vector2Int destination = candidateMoves[i];
             if (IsLegalMoveAfterKingSafety(piece, piece.BoardPosition, destination))
-                safeMoves.Add(destination);
+                safeMoveBuffer.Add(destination);
         }
 
-        return safeMoves;
+        return safeMoveBuffer;
     }
 
     private bool IsLegalMoveAfterKingSafety(ChessPiece piece, Vector2Int from, Vector2Int destination)
@@ -788,11 +814,15 @@ public class ChessGame : MonoBehaviour
         return DoesMoveKeepTeamKingSafe(piece, from, destination, piece.Team);
     }
 
-    private IReadOnlyList<Vector2Int> GetCandidateMoves(ChessPiece piece)
+    private List<Vector2Int> GetCandidateMoves(ChessPiece piece)
     {
-        List<Vector2Int> candidateMoves = new List<Vector2Int>(piece.GetLegalMoves(pieces));
-        AddSpecialCandidateMoves(piece, candidateMoves);
-        return candidateMoves;
+        candidateMoveBuffer.Clear();
+        if (!piece)
+            return candidateMoveBuffer;
+
+        piece.CollectLegalMoves(pieces, candidateMoveBuffer);
+        AddSpecialCandidateMoves(piece, candidateMoveBuffer);
+        return candidateMoveBuffer;
     }
 
     private void AddSpecialCandidateMoves(ChessPiece piece, List<Vector2Int> candidateMoves)
@@ -898,14 +928,14 @@ public class ChessGame : MonoBehaviour
 
     private bool HasAnySafeLegalMove(PieceTeam team)
     {
-        for (int x = 0; x < pieces.GetLength(0); x++)
-            for (int y = 0; y < pieces.GetLength(1); y++)
+        for (int x = 0; x < BoardSize; x++)
+            for (int y = 0; y < BoardSize; y++)
             {
                 ChessPiece piece = pieces[x, y];
                 if (!piece || piece.Team != team)
                     continue;
 
-                IReadOnlyList<Vector2Int> candidateMoves = GetCandidateMoves(piece);
+                List<Vector2Int> candidateMoves = GetCandidateMoves(piece);
                 for (int i = 0; i < candidateMoves.Count; i++)
                     if (IsLegalMoveAfterKingSafety(piece, piece.BoardPosition, candidateMoves[i]))
                         return true;
@@ -957,29 +987,29 @@ public class ChessGame : MonoBehaviour
 
     private bool HasInsufficientMaterial()
     {
-        List<ChessPiece> nonKingPieces = new List<ChessPiece>();
-        for (int x = 0; x < pieces.GetLength(0); x++)
-            for (int y = 0; y < pieces.GetLength(1); y++)
+        nonKingPieceBuffer.Clear();
+        for (int x = 0; x < BoardSize; x++)
+            for (int y = 0; y < BoardSize; y++)
             {
                 ChessPiece piece = pieces[x, y];
                 if (piece && piece.Type != PieceType.King)
-                    nonKingPieces.Add(piece);
+                    nonKingPieceBuffer.Add(piece);
             }
 
-        if (nonKingPieces.Count == 0)
+        if (nonKingPieceBuffer.Count == 0)
             return true;
 
-        if (nonKingPieces.Count == 1)
+        if (nonKingPieceBuffer.Count == 1)
         {
-            PieceType type = nonKingPieces[0].Type;
+            PieceType type = nonKingPieceBuffer[0].Type;
             return type == PieceType.Bishop || type == PieceType.Knight;
         }
 
-        if (nonKingPieces.Count != 2)
+        if (nonKingPieceBuffer.Count != 2)
             return false;
 
-        ChessPiece first = nonKingPieces[0];
-        ChessPiece second = nonKingPieces[1];
+        ChessPiece first = nonKingPieceBuffer[0];
+        ChessPiece second = nonKingPieceBuffer[1];
         return first.Type == PieceType.Bishop &&
             second.Type == PieceType.Bishop &&
             first.Team != second.Team &&
@@ -1002,8 +1032,8 @@ public class ChessGame : MonoBehaviour
 
     private bool IsSquareUnderAttack(Vector2Int square, PieceTeam attackerTeam)
     {
-        for (int x = 0; x < pieces.GetLength(0); x++)
-            for (int y = 0; y < pieces.GetLength(1); y++)
+        for (int x = 0; x < BoardSize; x++)
+            for (int y = 0; y < BoardSize; y++)
             {
                 ChessPiece piece = pieces[x, y];
                 if (!piece || piece.Team != attackerTeam)
@@ -1032,12 +1062,19 @@ public class ChessGame : MonoBehaviour
 
     private ChessPiece FindKing(PieceTeam team)
     {
-        for (int x = 0; x < pieces.GetLength(0); x++)
-            for (int y = 0; y < pieces.GetLength(1); y++)
+        ChessPiece cachedKing = team == PieceTeam.White ? whiteKing : blackKing;
+        if (IsCachedKingValid(cachedKing, team))
+            return cachedKing;
+
+        for (int x = 0; x < BoardSize; x++)
+            for (int y = 0; y < BoardSize; y++)
             {
                 ChessPiece piece = pieces[x, y];
                 if (piece && piece.Team == team && piece.Type == PieceType.King)
+                {
+                    CacheKing(piece);
                     return piece;
+                }
             }
 
         return null;
@@ -2186,7 +2223,7 @@ public class ChessGame : MonoBehaviour
             reward.gold,
             reward.diamonds,
             reward.tickets);
-        PlaySound(winSound);
+        PlayResultSoundIfDefaultPack(won ? ResultMenuView.ResultKind.Win : ResultMenuView.ResultKind.Lose);
         drawReason = string.Empty;
         selectedPiece = null;
         gameStarted = false;
@@ -2216,6 +2253,7 @@ public class ChessGame : MonoBehaviour
             reward.gold,
             reward.diamonds,
             reward.tickets);
+        PlayResultSoundIfDefaultPack(ResultMenuView.ResultKind.Draw);
         drawReason = reason;
         selectedPiece = null;
         gameStarted = false;
@@ -2242,6 +2280,20 @@ public class ChessGame : MonoBehaviour
         if (botMode)
             return $"{StockfishDifficultyProfiles.Get(botDifficulty).DisplayName} Bot";
         return "Player";
+    }
+
+    private void PlayResultSoundIfDefaultPack(ResultMenuView.ResultKind resultKind)
+    {
+        if (GameMusicManager.ActivePack != GameMusicPack.Default)
+            return;
+
+        switch (resultKind)
+        {
+            case ResultMenuView.ResultKind.Win:
+            case ResultMenuView.ResultKind.Lose:
+                PlaySound(winSound);
+                break;
+        }
     }
 
     private MatchReward CalculateMatchReward(bool won, bool lost, bool draw)
@@ -2468,6 +2520,7 @@ public class ChessGame : MonoBehaviour
                     return false;
 
                 pieces[file, rank] = piece;
+                CacheKing(piece);
                 file++;
             }
 
@@ -2724,9 +2777,32 @@ public class ChessGame : MonoBehaviour
 
     private void ClearPieceMap()
     {
-        for (int x = 0; x < pieces.GetLength(0); x++)
-            for (int y = 0; y < pieces.GetLength(1); y++)
+        whiteKing = null;
+        blackKing = null;
+
+        for (int x = 0; x < BoardSize; x++)
+            for (int y = 0; y < BoardSize; y++)
                 pieces[x, y] = null;
+    }
+
+    private void CacheKing(ChessPiece piece)
+    {
+        if (!piece || piece.Type != PieceType.King)
+            return;
+
+        if (piece.Team == PieceTeam.White)
+            whiteKing = piece;
+        else
+            blackKing = piece;
+    }
+
+    private bool IsCachedKingValid(ChessPiece king, PieceTeam team)
+    {
+        return king &&
+            king.Team == team &&
+            king.Type == PieceType.King &&
+            ChessMoveRules.IsInsideBoard(king.BoardPosition) &&
+            pieces[king.BoardPosition.x, king.BoardPosition.y] == king;
     }
 
     private ChessPiece CreatePieceFromFenSymbol(char symbol, Vector2Int boardPosition)

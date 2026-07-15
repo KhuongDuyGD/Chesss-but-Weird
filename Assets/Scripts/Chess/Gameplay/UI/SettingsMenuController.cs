@@ -235,10 +235,9 @@ public sealed class SettingsMenuController : MonoBehaviour
     {
         GameRuntimeSettings.MusicVolumePercent = 80;
         GameRuntimeSettings.SoundVolumePercent = 100;
-        GameRuntimeSettings.TargetFps = 60;
-        GameRuntimeSettings.QualityIndex = PresetToQuality(2);
+        GameRuntimeSettings.ResetPerformanceToRecommended();
         RefreshFromSettings();
-        SetStatus("Reset to defaults.");
+        SetStatus("Reset to recommended defaults.");
     }
 
     private void Close()
