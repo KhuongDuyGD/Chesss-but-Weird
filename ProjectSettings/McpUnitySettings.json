@@ -1,5 +1,9 @@
 {
+<<<<<<< Updated upstream
     "Port": 6505,
+=======
+    "Port": 6502,
+>>>>>>> Stashed changes
     "AutoSelectAvailablePort": true,
     "PreferredPort": 17806,
     "PortSearchRange": 30,

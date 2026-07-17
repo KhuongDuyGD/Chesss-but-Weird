@@ -1558,6 +1558,7 @@ public sealed class GachaMenuController : MonoBehaviour
     private TextMeshProUGUI statusLabel;
     private TextMeshProUGUI resultSummaryLabel;
     private TextMeshProUGUI tooltipLabel;
+    private GachaSummonRevealController summonReveal;
     private UnityAction backToModeSelection;
     private GachaSaveData saveData;
     private List<GachaReward> pendingResults = new List<GachaReward>();
@@ -1571,6 +1572,7 @@ public sealed class GachaMenuController : MonoBehaviour
         BuildContentRoot();
         BuildMainScreen();
         BuildResultScreen();
+        BuildSummonReveal();
         RefreshAll();
         ShowMainScreen();
     }
@@ -1691,7 +1693,7 @@ public sealed class GachaMenuController : MonoBehaviour
         AddHistory(count, paymentMessage, pendingResults);
         Save();
         RefreshAll();
-        ShowPendingResults();
+        PlayPendingReveal();
     }
 
     private bool TrySpendForSummon(int count, out string paymentMessage)
@@ -1845,6 +1847,38 @@ public sealed class GachaMenuController : MonoBehaviour
         resultScreen.gameObject.SetActive(true);
         mainScreen.gameObject.SetActive(false);
         SetStatus(string.Empty);
+    }
+
+    private void BuildSummonReveal()
+    {
+        summonReveal = contentRoot.gameObject.AddComponent<GachaSummonRevealController>();
+        summonReveal.Initialize(contentRoot);
+    }
+
+    private void PlayPendingReveal()
+    {
+        GachaReward featuredReward = GetFeaturedReward();
+        mainScreen.gameObject.SetActive(false);
+        resultScreen.gameObject.SetActive(false);
+        if (summonReveal)
+            summonReveal.Play(featuredReward, GetRewardSprite(featuredReward.type), ShowPendingResults);
+        else
+            ShowPendingResults();
+    }
+
+    private GachaReward GetFeaturedReward()
+    {
+        if (pendingResults == null || pendingResults.Count == 0)
+            return new GachaReward(GachaRewardType.Ticket, 1, 3, false);
+
+        GachaReward featured = pendingResults[0];
+        for (int i = 1; i < pendingResults.Count; i++)
+        {
+            GachaReward candidate = pendingResults[i];
+            if (candidate.rarity > featured.rarity || (candidate.rarity == featured.rarity && candidate.isTopReward && !featured.isTopReward))
+                featured = candidate;
+        }
+        return featured;
     }
 
     private void PopulateResultGrid()
