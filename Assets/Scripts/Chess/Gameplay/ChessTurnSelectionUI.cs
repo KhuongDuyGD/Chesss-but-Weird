@@ -160,6 +160,15 @@ public class ChessTurnSelectionUI : MonoBehaviour
         handDrawnMenu?.ShowLocalModeSelection();
     }
 
+    public void ShowAramModeSelection()
+    {
+        showCheckWarning = false;
+        lanController?.HideLanSetup();
+        state = ScreenState.TurnSelection;
+        analysisBoard?.SetVisible(false);
+        handDrawnMenu?.ShowAramModeSelection();
+    }
+
     public void SelectBotDifficulty(StockfishDifficulty difficulty)
     {
         selectedBotDifficulty = difficulty;
@@ -200,6 +209,16 @@ public class ChessTurnSelectionUI : MonoBehaviour
     {
         chessGame.ConfigurePieceSkinsForLocalPlayers(whiteSkinId, blackSkinId);
         chessGame.BeginGame(PieceTeam.White);
+    }
+
+    public void StartAramPracticeGame()
+    {
+        showCheckWarning = false;
+        lanController?.HideLanSetup();
+        analysisBoard?.SetVisible(true);
+        analysisBoard?.SetInteractionEnabled(true);
+        chessGame.ConfigurePieceSkinsForLocalPlayers(PieceSkinCatalog.DefaultSkinId, PieceSkinCatalog.DefaultSkinId);
+        chessGame.BeginAramGame();
     }
 
     private void StartBotGameWithConfiguredSkins(PieceTeam playerTeam)

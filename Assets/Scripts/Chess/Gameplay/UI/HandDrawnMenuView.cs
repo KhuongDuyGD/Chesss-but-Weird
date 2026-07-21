@@ -25,6 +25,7 @@ public class HandDrawnMenuView : MonoBehaviour
     private RectTransform mainScreen;
     private RectTransform modeScreen;
     private RectTransform localModeScreen;
+    private RectTransform aramModeScreen;
     private RectTransform multiplayerModeScreen;
     private RectTransform gachaScreen;
     private RectTransform inventoryOverlay;
@@ -73,6 +74,7 @@ public class HandDrawnMenuView : MonoBehaviour
         BuildMainScreen();
         BuildModeScreen();
         BuildLocalModeScreen();
+        BuildAramModeScreen();
         BuildMultiplayerModeScreen();
         BuildGachaScreen();
         BuildBotDifficultyScreen();
@@ -125,6 +127,14 @@ public class HandDrawnMenuView : MonoBehaviour
         SetVisible(true);
         SetInputEnabled(true);
         TransitionToScreen(localModeScreen, null, "Loading local mode...");
+    }
+
+    public void ShowAramModeSelection()
+    {
+        GameMusicManager.PlayMainMenuHubMusic();
+        SetVisible(true);
+        SetInputEnabled(true);
+        TransitionToScreen(aramModeScreen, null, "Loading ARAM mode...");
     }
 
     public void ShowPieceSkinSelection(bool vsBot, PieceTeam playerTeam)
@@ -247,6 +257,22 @@ public class HandDrawnMenuView : MonoBehaviour
         AddBackButton(localModeScreen, new Vector2(-820f, -420f), () => ShowModeSelection());
     }
 
+    private void BuildAramModeScreen()
+    {
+        aramModeScreen = CreateScreen("ARAM Mode");
+
+        AddBattleDoodles(aramModeScreen, true);
+        AddMenuConfetti(aramModeScreen);
+        AddText(aramModeScreen, "ARAM Mode Title", "ARAM Mode", new Vector2(0f, 340f), new Vector2(760f, 125f), 76, TextAnchor.MiddleCenter, new Color(0.12f, 0.1f, 0.08f, 1f));
+        AddTextButton(aramModeScreen, "ARAM Practice", "Practice", new Vector2(-430f, 35f), new Vector2(470f, 180f), owner.StartAramPracticeGame, new Color(0.98f, 0.78f, 0.3f, 1f));
+        Button lanLocked = AddTextButton(aramModeScreen, "ARAM LAN Locked", "LAN Locked", new Vector2(120f, 35f), new Vector2(430f, 160f), () => LogMenuClick("ARAM LAN Locked"), new Color(0.56f, 0.58f, 0.62f, 1f));
+        Button onlineLocked = AddTextButton(aramModeScreen, "ARAM Multiplayer Locked", "Multiplayer Locked", new Vector2(600f, 35f), new Vector2(430f, 160f), () => LogMenuClick("ARAM Multiplayer Locked"), new Color(0.56f, 0.58f, 0.62f, 1f));
+        SetLockedButton(lanLocked);
+        SetLockedButton(onlineLocked);
+        AddText(aramModeScreen, "ARAM Practice Caption", "Practice local", new Vector2(-430f, -95f), new Vector2(470f, 48f), 30, TextAnchor.MiddleCenter, new Color(0.14f, 0.11f, 0.08f, 1f));
+        AddBackButton(aramModeScreen, new Vector2(-820f, -420f), () => ShowModeSelection());
+    }
+
     private void BuildPlayHub(RectTransform screen)
     {
         AddBattleDoodles(screen, true);
@@ -258,7 +284,7 @@ public class HandDrawnMenuView : MonoBehaviour
 
         AddInteractive(screen, "Local Gameplay", assets.localGameplayButton, new Vector2(-660f, 270f), new Vector2(475f, 132f), () => owner.ShowLocalModeSelection(), false, 1.035f);
         AddInteractive(screen, "Online Play", assets.onlinePlayButton, new Vector2(-660f, 95f), new Vector2(475f, 132f), () => owner.ShowMultiplayerModeSelection(), false, 1.035f);
-        AddInteractive(screen, "ARAM Mode", assets.aramModeButton, new Vector2(-660f, -80f), new Vector2(475f, 132f), CreateAuthenticatedAction("ARAM", () => LogMenuClick("ARAM")), false, 1.035f);
+        AddInteractive(screen, "ARAM Mode", assets.aramModeButton, new Vector2(-660f, -80f), new Vector2(475f, 132f), CreateAuthenticatedAction("ARAM", owner.ShowAramModeSelection), false, 1.035f);
         AddInteractive(screen, "Shop", assets.shopButton, new Vector2(-660f, -255f), new Vector2(475f, 132f), CreateAuthenticatedAction("Shop", () => LogMenuClick("Shop")), false, 1.035f);
 
         AddInteractive(screen, "Inventory", assets.inventoryButton, new Vector2(805f, 130f), new Vector2(132f, 132f), CreateAuthenticatedAction("Inventory", ShowInventoryMenu), false, 1.045f);
@@ -924,6 +950,21 @@ public class HandDrawnMenuView : MonoBehaviour
         return button;
     }
 
+    private void SetLockedButton(Button button)
+    {
+        if (!button)
+            return;
+
+        button.interactable = false;
+        Image image = button.GetComponent<Image>();
+        if (image)
+            image.color = new Color(0.48f, 0.48f, 0.5f, 0.82f);
+
+        HandDrawnPressable pressable = button.GetComponent<HandDrawnPressable>();
+        if (pressable)
+            pressable.enabled = false;
+    }
+
     private Text AddText(Transform parent, string textName, string textValue, Vector2 position, Vector2 size, int fontSize, TextAnchor alignment, Color color)
     {
         GameObject textObject = new GameObject(textName, typeof(RectTransform), typeof(Text));
@@ -1102,7 +1143,7 @@ public class HandDrawnMenuView : MonoBehaviour
 
     private void TransitionToScreen(RectTransform activeScreen, Action prepareAction, string loadingText)
     {
-        if (!mainScreen || !modeScreen || !localModeScreen || !multiplayerModeScreen || !gachaScreen || !botDifficultyScreen || !sideScreen || !skinScreen || !activeScreen)
+        if (!mainScreen || !modeScreen || !localModeScreen || !aramModeScreen || !multiplayerModeScreen || !gachaScreen || !botDifficultyScreen || !sideScreen || !skinScreen || !activeScreen)
             return;
 
         if (activeScreen != modeScreen)
@@ -1197,7 +1238,7 @@ public class HandDrawnMenuView : MonoBehaviour
 
     private void SetScreenImmediate(RectTransform activeScreen)
     {
-        if (!mainScreen || !modeScreen || !localModeScreen || !multiplayerModeScreen || !gachaScreen || !botDifficultyScreen || !sideScreen || !skinScreen || !activeScreen)
+        if (!mainScreen || !modeScreen || !localModeScreen || !aramModeScreen || !multiplayerModeScreen || !gachaScreen || !botDifficultyScreen || !sideScreen || !skinScreen || !activeScreen)
             return;
 
         RectTransform[] screens = GetMenuScreens();
@@ -1227,6 +1268,8 @@ public class HandDrawnMenuView : MonoBehaviour
             modeScreen.gameObject.SetActive(active);
         if (localModeScreen)
             localModeScreen.gameObject.SetActive(active);
+        if (aramModeScreen)
+            aramModeScreen.gameObject.SetActive(active);
         if (multiplayerModeScreen)
             multiplayerModeScreen.gameObject.SetActive(active);
         if (gachaScreen)
@@ -1243,7 +1286,7 @@ public class HandDrawnMenuView : MonoBehaviour
 
     private RectTransform[] GetMenuScreens()
     {
-        return new[] { mainScreen, modeScreen, localModeScreen, multiplayerModeScreen, gachaScreen, botDifficultyScreen, sideScreen, skinScreen };
+        return new[] { mainScreen, modeScreen, localModeScreen, aramModeScreen, multiplayerModeScreen, gachaScreen, botDifficultyScreen, sideScreen, skinScreen };
     }
 
     private void ResetInactiveTransitionScreens(RectTransform previousScreen, RectTransform activeScreen)
@@ -1562,6 +1605,7 @@ public sealed class GachaMenuController : MonoBehaviour
     private UnityAction backToModeSelection;
     private GachaSaveData saveData;
     private List<GachaReward> pendingResults = new List<GachaReward>();
+    private bool summonInProgress;
 
     public void Initialize(RectTransform newRoot, UnityAction newBackToModeSelection)
     {
@@ -1676,6 +1720,13 @@ public sealed class GachaMenuController : MonoBehaviour
 
     private void StartSummon(int count)
     {
+        if (summonInProgress)
+        {
+            if (summonReveal && summonReveal.IsPlaying)
+                summonReveal.RequestSkip();
+            return;
+        }
+
         HideHistory();
         HideTooltip();
         Debug.Log($"[GachaMenu] Summon requested. count={count}, gold={saveData.gold}, diamonds={saveData.diamonds}, tickets={saveData.tickets}, pity={saveData.pityPulls}/{PityLimit}");
@@ -1693,6 +1744,7 @@ public sealed class GachaMenuController : MonoBehaviour
         AddHistory(count, paymentMessage, pendingResults);
         Save();
         RefreshAll();
+        summonInProgress = true;
         PlayPendingReveal();
     }
 
@@ -1842,6 +1894,7 @@ public sealed class GachaMenuController : MonoBehaviour
 
     private void ShowPendingResults()
     {
+        summonInProgress = false;
         PopulateResultGrid();
         resultSummaryLabel.text = SummarizeRewards(pendingResults);
         resultScreen.gameObject.SetActive(true);
@@ -1857,11 +1910,10 @@ public sealed class GachaMenuController : MonoBehaviour
 
     private void PlayPendingReveal()
     {
-        GachaReward featuredReward = GetFeaturedReward();
         mainScreen.gameObject.SetActive(false);
         resultScreen.gameObject.SetActive(false);
         if (summonReveal)
-            summonReveal.Play(featuredReward, GetRewardSprite(featuredReward.type), ShowPendingResults);
+            summonReveal.PlaySequence(pendingResults, reward => GetRewardSprite(reward.type), ShowPendingResults);
         else
             ShowPendingResults();
     }

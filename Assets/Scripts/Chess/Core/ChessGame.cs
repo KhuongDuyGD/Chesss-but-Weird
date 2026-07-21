@@ -84,6 +84,7 @@ public class ChessGame : MonoBehaviour
     private bool suppressMoveCommittedEvent;
     private bool serverAuthoritativeMode;
     private bool botMode;
+    private bool aramMode;
     private StockfishDifficulty botDifficulty = StockfishDifficulty.Medium;
     private bool pendingRemotePromotionResolution;
     private PieceType remotePromotionType = PieceType.Queen;
@@ -102,6 +103,7 @@ public class ChessGame : MonoBehaviour
     private ChessPiece blackKing;
     private string whitePieceSkinId = PieceSkinCatalog.DefaultSkinId;
     private string blackPieceSkinId = PieceSkinCatalog.DefaultSkinId;
+    private AramBuffRuntime aramRuntime;
     public PieceTeam CurrentTurn => currentTurn;
     public ChessPiece SelectedPiece => selectedPiece;
     public bool GameStarted => gameStarted;
@@ -109,6 +111,7 @@ public class ChessGame : MonoBehaviour
     public bool InputLocked => inputLocked;
     public bool PauseLocked => pauseLocked;
     public bool IsBotGame => botMode;
+    public bool IsAramGame => aramMode;
     public PieceTeam WinningTeam => winningTeam;
     public PieceTeam PlayerTeam => playerTeam;
     public ChessGameStatus Status => status;
@@ -263,6 +266,18 @@ public class ChessGame : MonoBehaviour
 
     private void Update()
     {
+        if (gameStarted && aramMode && aramRuntime != null && aramRuntime.IsSelectingSetupTargets)
+        {
+            if (pauseLocked || Mouse.current == null || !Mouse.current.leftButton.wasPressedThisFrame)
+                return;
+
+            if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
+                return;
+
+            aramRuntime.TryHandleSetupPieceClick(GetPieceUnderPointerForAramSetup());
+            return;
+        }
+
         if (!gameStarted || inputLocked || pauseLocked || !CanLocalPlayerInteract() || Mouse.current == null || !Mouse.current.leftButton.wasPressedThisFrame)
             return;
 
@@ -270,6 +285,26 @@ public class ChessGame : MonoBehaviour
             return;
 
         HandleBoardClick();
+    }
+
+    private ChessPiece GetPieceUnderPointerForAramSetup()
+    {
+        Camera currentCamera = GetGameplayCamera();
+        if (!currentCamera)
+            return null;
+
+        Ray ray = currentCamera.ScreenPointToRay(Mouse.current.position.ReadValue());
+        if (!Physics.Raycast(ray, out RaycastHit hitInfo, BoardClickRaycastDistance, boardClickRaycastMask))
+            return null;
+
+        ChessPiece clickedPiece = hitInfo.collider.GetComponentInParent<ChessPiece>();
+        if (clickedPiece)
+            return clickedPiece;
+
+        if (chessboard.TryGetTileFromObject(hitInfo.collider.gameObject, out Vector2Int tile))
+            return pieces[tile.x, tile.y];
+
+        return null;
     }
 
     public void RefreshPieceMap()
@@ -296,15 +331,29 @@ public class ChessGame : MonoBehaviour
     {
         serverAuthoritativeMode = false;
         botMode = false;
+        aramMode = false;
         botDifficulty = StockfishDifficulty.Medium;
         GameMusicManager.PlayInGameMusic(false, StockfishDifficulty.Medium);
         BeginGameInternal(firstTurn, firstTurn, false, firstTurn);
+    }
+
+    public void BeginAramGame()
+    {
+        serverAuthoritativeMode = false;
+        botMode = false;
+        aramMode = true;
+        botDifficulty = StockfishDifficulty.Medium;
+        EnsureAramRuntime();
+        GameMusicManager.PlayInGameMusic(false, StockfishDifficulty.Medium);
+        BeginGameInternal(PieceTeam.White, PieceTeam.White, false, PieceTeam.White);
+        aramRuntime.BeginMatch(this);
     }
 
     public void BeginLanGame(PieceTeam firstTurn, PieceTeam localPlayerTeam)
     {
         serverAuthoritativeMode = true;
         botMode = false;
+        aramMode = false;
         botDifficulty = StockfishDifficulty.Medium;
         GameMusicManager.PlayInGameMusic(false, StockfishDifficulty.Medium);
         BeginGameInternal(firstTurn, localPlayerTeam, true, PieceTeam.White);
@@ -319,6 +368,7 @@ public class ChessGame : MonoBehaviour
     {
         serverAuthoritativeMode = false;
         botMode = true;
+        aramMode = false;
         botDifficulty = selectedDifficulty;
         BeginGameInternal(PieceTeam.White, localPlayerTeam, true, PieceTeam.White);
     }
@@ -464,10 +514,18 @@ public class ChessGame : MonoBehaviour
         movingPiece.SetBoardPosition(destination);
         movingPiece.MarkMoved();
         RecordLastMove(movingPiece, from, destination);
+        aramRuntime?.OnMoveAccepted(movingPiece, from, destination, pieces);
         lastMoveSummary = BuildMoveSummary(movingPiece, from, destination, capturedPiece, isCastling);
         moveHistory.Add(lastMoveSummary);
         if (capturedPiece)
             GetCapturedPieceList(movingPiece.Team).Add(capturedPiece.Type);
+        List<ChessPiece> aramExplosionVictims = null;
+        if (capturedPiece && aramRuntime != null)
+        {
+            aramExplosionVictims = new List<ChessPiece>();
+            if (!aramRuntime.TryGetQueenExplosion(capturedPiece, destination, movingPiece, pieces, aramExplosionVictims))
+                aramExplosionVictims = null;
+        }
         UpdateHalfMoveClock(movedPawn, capturedAnyPiece);
         selectedPiece = null;
         chessboard.ClearLegalMoveHighlights();
@@ -481,6 +539,8 @@ public class ChessGame : MonoBehaviour
 
         if (capturedPiece)
             Destroy(capturedPiece.gameObject);
+        if (aramExplosionVictims != null)
+            DestroyAramExplosionVictims(aramExplosionVictims);
 
         if (isCastling)
             AnimatePieceToTile(castlingRook, castlingRookTo, 0f, moveAnimationDuration, moveArcHeight * 0.5f);
@@ -492,6 +552,7 @@ public class ChessGame : MonoBehaviour
         }
 
         currentTurn = opponentTeam;
+        aramRuntime?.OnTurnStarted(currentTurn);
         NotifyMoveCommitted(new ChessLanMove(from, destination));
         turnSelectionUI?.SetTurn(currentTurn);
         RefreshLocalInteractionState();
@@ -528,6 +589,31 @@ public class ChessGame : MonoBehaviour
         }
 
         return false;
+    }
+
+    private void DestroyAramExplosionVictims(List<ChessPiece> victims)
+    {
+        if (victims == null)
+            return;
+
+        for (int i = 0; i < victims.Count; i++)
+        {
+            ChessPiece victim = victims[i];
+            if (!victim || victim.Type == PieceType.King)
+                continue;
+
+            Vector2Int position = victim.BoardPosition;
+            if (ChessMoveRules.IsInsideBoard(position) && pieces[position.x, position.y] == victim)
+                pieces[position.x, position.y] = null;
+
+            if (pieceAnimations.TryGetValue(victim, out Coroutine existingAnimation))
+            {
+                StopCoroutine(existingAnimation);
+                pieceAnimations.Remove(victim);
+            }
+
+            Destroy(victim.gameObject);
+        }
     }
 
     public void ClearSelection()
@@ -570,11 +656,14 @@ public class ChessGame : MonoBehaviour
 
         PieceTeam selectedTeam = playerTeam;
         bool restartBotGame = botMode;
+        bool restartAramGame = aramMode;
         StockfishDifficulty selectedBotDifficulty = botDifficulty;
         pauseLocked = false;
         Time.timeScale = 1f;
         PrepareGame();
-        if (restartBotGame)
+        if (restartAramGame)
+            BeginAramGame();
+        else if (restartBotGame)
             BeginBotGame(selectedTeam, selectedBotDifficulty);
         else
             BeginGame(selectedTeam);
@@ -609,6 +698,7 @@ public class ChessGame : MonoBehaviour
         StopCheckWarning();
         StopAllCoroutines();
         pieceAnimations.Clear();
+        aramRuntime?.EndMatch();
 
         if (piecesRoot)
         {
@@ -651,6 +741,7 @@ public class ChessGame : MonoBehaviour
         restrictInputToControlledTeam = false;
         serverAuthoritativeMode = false;
         botMode = false;
+        aramMode = false;
         botDifficulty = StockfishDifficulty.Medium;
         winningTeam = PieceTeam.White;
         drawReason = string.Empty;
@@ -730,6 +821,16 @@ public class ChessGame : MonoBehaviour
             return;
 
         orbitCamera = gameplayCamera.gameObject.AddComponent<ChessOrbitCamera>();
+    }
+
+    private void EnsureAramRuntime()
+    {
+        if (aramRuntime)
+            return;
+
+        aramRuntime = GetComponent<AramBuffRuntime>();
+        if (!aramRuntime)
+            aramRuntime = gameObject.AddComponent<AramBuffRuntime>();
     }
 
     private void ApplyGameplayCameraState(PieceTeam playerSide, bool immediate)
@@ -820,8 +921,10 @@ public class ChessGame : MonoBehaviour
         if (!piece)
             return candidateMoveBuffer;
 
-        piece.CollectLegalMoves(pieces, candidateMoveBuffer);
+        if (aramRuntime == null || !aramRuntime.SuppressesStandardMovement(piece))
+            piece.CollectLegalMoves(pieces, candidateMoveBuffer);
         AddSpecialCandidateMoves(piece, candidateMoveBuffer);
+        aramRuntime?.AddCandidateMoves(piece, candidateMoveBuffer, pieces);
         return candidateMoveBuffer;
     }
 
@@ -856,9 +959,11 @@ public class ChessGame : MonoBehaviour
 
     private bool IsLegalMoveIgnoringKingSafety(ChessPiece piece, Vector2Int from, Vector2Int destination)
     {
-        return ChessMoveRules.IsLegalMove(piece, from, destination, pieces) ||
+        bool suppressStandardMovement = aramRuntime != null && aramRuntime.SuppressesStandardMovement(piece);
+        return (!suppressStandardMovement && ChessMoveRules.IsLegalMove(piece, from, destination, pieces)) ||
             IsEnPassantMove(piece, from, destination) ||
-            IsCastlingMove(piece, from, destination);
+            IsCastlingMove(piece, from, destination) ||
+            (aramRuntime != null && aramRuntime.IsLegalAramMove(piece, from, destination, pieces));
     }
 
     private bool DoesMoveKeepTeamKingSafe(ChessPiece piece, Vector2Int from, Vector2Int destination, PieceTeam team)
@@ -1057,7 +1162,9 @@ public class ChessGame : MonoBehaviour
             return Mathf.Abs(delta.x) == 1 && delta.y == piece.ForwardDirection;
         }
 
-        return piece.IsLegalMove(square, pieces);
+        bool suppressStandardMovement = aramRuntime != null && aramRuntime.SuppressesStandardMovement(piece);
+        return (!suppressStandardMovement && piece.IsLegalMove(square, pieces)) ||
+            (aramRuntime != null && aramRuntime.CanAramPieceAttackSquare(piece, square, pieces));
     }
 
     private ChessPiece FindKing(PieceTeam team)
@@ -1115,14 +1222,16 @@ public class ChessGame : MonoBehaviour
         if (!TryGetCastlingRookMove(piece, from, destination, out _, out Vector2Int rookFrom, out _))
             return false;
 
-        if (IsTeamInCheck(piece.Team))
+        bool strongFortress = aramRuntime != null && aramRuntime.AllowsStrongFortressCastle(piece.Team);
+        if (!strongFortress && IsTeamInCheck(piece.Team))
             return false;
 
         int direction = destination.x > from.x ? 1 : -1;
         PieceTeam enemyTeam = piece.Team == PieceTeam.White ? PieceTeam.Black : PieceTeam.White;
-        for (int x = from.x + direction; x != destination.x + direction; x += direction)
-            if (IsSquareUnderAttack(new Vector2Int(x, from.y), enemyTeam))
-                return false;
+        if (!strongFortress)
+            for (int x = from.x + direction; x != destination.x + direction; x += direction)
+                if (IsSquareUnderAttack(new Vector2Int(x, from.y), enemyTeam))
+                    return false;
 
         return true;
     }
@@ -1358,6 +1467,7 @@ public class ChessGame : MonoBehaviour
             moveHistory[moveHistory.Count - 1] = lastMoveSummary;
 
         currentTurn = pendingPromotionOpponentTeam;
+        aramRuntime?.OnTurnStarted(currentTurn);
         NotifyMoveCommitted(new ChessLanMove(pendingCommittedMoveFrom, pendingCommittedMoveTo, promotionType));
         turnSelectionUI?.SetTurn(currentTurn);
         pendingRemotePromotionResolution = false;
@@ -2266,6 +2376,8 @@ public class ChessGame : MonoBehaviour
 
     private string GetProfileMatchMode()
     {
+        if (aramMode)
+            return "ARAM";
         if (botMode)
             return "Bot";
         if (serverAuthoritativeMode)
@@ -2575,6 +2687,29 @@ public class ChessGame : MonoBehaviour
     public IReadOnlyList<PieceType> GetCapturedPieces(PieceTeam capturingTeam)
     {
         return GetCapturedPieceList(capturingTeam);
+    }
+
+    public List<ChessPiece> GetActivePiecesForAram(PieceTeam team)
+    {
+        List<ChessPiece> result = new List<ChessPiece>();
+        for (int x = 0; x < BoardSize; x++)
+            for (int y = 0; y < BoardSize; y++)
+            {
+                ChessPiece piece = pieces[x, y];
+                if (piece && piece.Team == team)
+                    result.Add(piece);
+            }
+
+        return result;
+    }
+
+    public void SetAramInputLocked(bool locked)
+    {
+        if (!aramMode)
+            return;
+
+        inputLocked = locked;
+        RefreshLocalInteractionState();
     }
 
     public int GetCapturedPieceCount(PieceTeam capturingTeam)
