@@ -221,6 +221,32 @@ public class ChessTurnSelectionUI : MonoBehaviour
         chessGame.BeginAramGame();
     }
 
+    public void ShowAramLanSetup()
+    {
+        GameMusicManager.PlayMainMenuHubMusic();
+        showCheckWarning = false;
+        state = ScreenState.TurnSelection;
+        handDrawnMenu?.HideForPlaying();
+        analysisBoard?.SetVisible(false);
+        lanController?.ShowAramLanSetup();
+    }
+
+    public void ShowAramOnlineSetup()
+    {
+        if (!PlayerAuthService.CanUseOnlineFeatures)
+        {
+            RequestAuthentication("ARAM online play requires a valid backend login. Please log in or sign up.");
+            return;
+        }
+
+        GameMusicManager.PlayMainMenuHubMusic();
+        showCheckWarning = false;
+        state = ScreenState.TurnSelection;
+        handDrawnMenu?.HideForPlaying();
+        analysisBoard?.SetVisible(false);
+        lanController?.ShowAramMultiplayerSetup();
+    }
+
     private void StartBotGameWithConfiguredSkins(PieceTeam playerTeam)
     {
         if (botController)

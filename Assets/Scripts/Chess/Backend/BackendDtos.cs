@@ -12,6 +12,14 @@ public class BackendAuthRequest
 public class BackendJoinRoomRequest
 {
     public string roomCode;
+    [Newtonsoft.Json.JsonProperty(NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+    public string gameMode;
+}
+
+[Serializable]
+public class BackendCreateRoomRequest
+{
+    public string gameMode;
 }
 
 [Serializable]
@@ -41,6 +49,7 @@ public class BackendRoomDto
     public string guestId;
     public string guestUsername;
     public string status;
+    public string gameMode;
 }
 
 [Serializable]
@@ -79,6 +88,9 @@ public class BackendMatchDto
     public int? blackEloAfter;
     public string startedAt;
     public string finishedAt;
+    public string gameMode;
+    public string aramSeed;
+    public BackendAramStatePayload aramState;
     public List<BackendMatchMoveDto> moves;
 }
 
@@ -124,6 +136,9 @@ public class BackendGameStartPayload
     public string blackUsername;
     public string fen;
     public string turn;
+    public string gameMode;
+    public string aramSeed;
+    public BackendAramStatePayload aramState;
 }
 
 [Serializable]
@@ -132,6 +147,8 @@ public class BackendMovePayload
     public string from;
     public string to;
     public string promotion;
+    [Newtonsoft.Json.JsonProperty(NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+    public string gameMode;
 }
 
 [Serializable]
@@ -149,6 +166,8 @@ public class BackendMoveResultPayload
     public string turn;
     public bool check;
     public string status;
+    public string gameMode;
+    public BackendAramStatePayload aramState;
     public BackendGameOverPayload gameOver;
 }
 
@@ -169,6 +188,38 @@ public class BackendGameStatePayload
     public int? whiteEloAfter;
     public int? blackEloBefore;
     public int? blackEloAfter;
+    public string gameMode;
+    public string aramSeed;
+    public BackendAramStatePayload aramState;
+}
+
+[Serializable]
+public class BackendGameModePayload
+{
+    public string gameMode;
+}
+
+[Serializable]
+public class BackendAramStatePayload
+{
+    public int version;
+    public string seed;
+    public BackendAramTeamStatePayload white;
+    public BackendAramTeamStatePayload black;
+}
+
+[Serializable]
+public class BackendAramTeamStatePayload
+{
+    public string team;
+    public string buff;
+    public List<string> commandantPawns;
+    public string swappedKnight;
+    public string swappedBishop;
+    public string originalQueen;
+    public bool suicideBomberUsed;
+    public int queenTeleportUses;
+    public int queenTeleportCooldown;
 }
 
 [Serializable]

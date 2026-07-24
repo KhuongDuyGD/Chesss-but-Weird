@@ -2,6 +2,8 @@
 
 Simple TCP relay server for prototype online multiplayer. The server creates room codes, accepts one host and one client per room, then relays gameplay and pause state between them.
 
+> This relay is legacy and is not the Spring WebSocket backend currently selected by the Unity client. The ARAM server contract and executable validation reference are documented in [ARAM_SERVER_CONTRACT.md](ARAM_SERVER_CONTRACT.md). Port that module into the deployed Spring backend before enabling ARAM rooms in production.
+
 This server does not validate chess rules, users, or anti-cheat. It is intended for internal dev testing.
 
 ## How It Differs From LAN

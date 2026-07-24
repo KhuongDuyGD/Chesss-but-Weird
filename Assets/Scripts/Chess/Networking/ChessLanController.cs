@@ -15,6 +15,8 @@ public enum NetworkLobbyUiMode
 
 public class ChessLanController : MonoBehaviour
 {
+    private const string ClassicGameMode = "CLASSIC";
+    private const string AramGameMode = "ARAM";
     private const float ReferenceWidth = 1920f;
     private const float ReferenceHeight = 1080f;
     private const float ReconnectDelaySeconds = 3f;
@@ -48,6 +50,10 @@ public class ChessLanController : MonoBehaviour
     private float nextStartAllowedAt;
     private BackendRoomDto currentRoom;
     private BackendGameStartPayload currentGameStart;
+    private BackendAramStatePayload lastAramState;
+    private string requestedGameMode = ClassicGameMode;
+    private string currentAramSeed = string.Empty;
+    private bool variantServerConfirmed = true;
     private bool localReady;
     private int readyCount;
     private bool opponentDrawOfferPending;
@@ -81,7 +87,7 @@ public class ChessLanController : MonoBehaviour
         if (webSocketClient != null && webSocketClient.IsConnected && lanGameActive && Time.unscaledTime - lastHeartbeatAt >= HeartbeatIntervalSeconds)
         {
             lastHeartbeatAt = Time.unscaledTime;
-            _ = webSocketClient.SendAsync("SYNC_REQUEST", CreateRequestId("sync"), new { });
+            _ = webSocketClient.SendAsync("SYNC_REQUEST", CreateRequestId("sync"), CreateVariantPayload());
         }
 
         if (startRequestInFlight && Time.unscaledTime >= nextStartAllowedAt + 3f)
@@ -152,23 +158,36 @@ public class ChessLanController : MonoBehaviour
 
     public void ShowLanSetup()
     {
-        ShowLobby(NetworkLobbyUiMode.Lan);
+        ShowLobby(NetworkLobbyUiMode.Lan, ClassicGameMode);
     }
 
     public void ShowMultiplayerSetup()
     {
-        ShowLobby(NetworkLobbyUiMode.Multiplayer);
+        ShowLobby(NetworkLobbyUiMode.Multiplayer, ClassicGameMode);
     }
 
-    private void ShowLobby(NetworkLobbyUiMode mode)
+    public void ShowAramLanSetup()
+    {
+        ShowLobby(NetworkLobbyUiMode.Lan, AramGameMode);
+    }
+
+    public void ShowAramMultiplayerSetup()
+    {
+        ShowLobby(NetworkLobbyUiMode.Multiplayer, AramGameMode);
+    }
+
+    private void ShowLobby(NetworkLobbyUiMode mode, string gameMode)
     {
         CacheOrbitCamera();
         EnsureWebSocketClient();
         lobbyMode = mode;
+        requestedGameMode = NormalizeGameMode(gameMode);
+        variantServerConfirmed = !IsAramGameMode(requestedGameMode);
         showLanPanel = true;
+        string variantLabel = IsAramGameMode(requestedGameMode) ? " ARAM" : string.Empty;
         statusMessage = mode == NetworkLobbyUiMode.Lan
-            ? "Host a LAN lobby or join by room code."
-            : "Create or join an online multiplayer room.";
+            ? $"Host a{variantLabel} LAN lobby or join by room code."
+            : $"Create or join an{variantLabel} online multiplayer room.";
         roomCodeInput = currentRoomCode;
         EnsureLobbyUi();
         lobbyUi.Show(mode);
@@ -240,6 +259,9 @@ public class ChessLanController : MonoBehaviour
         if (!CanUseLobbyCommand("ready up"))
             return;
 
+        if (!EnsureVariantServerSupport())
+            return;
+
         if (currentRoom == null || string.IsNullOrWhiteSpace(currentRoomCode))
         {
             statusMessage = "Create or join a room before readying up.";
@@ -270,6 +292,9 @@ public class ChessLanController : MonoBehaviour
     public void RequestStartGame()
     {
         if (!CanUseLobbyCommand("start the game"))
+            return;
+
+        if (!EnsureVariantServerSupport())
             return;
 
         if (Time.unscaledTime < nextStartAllowedAt)
@@ -304,8 +329,11 @@ public class ChessLanController : MonoBehaviour
 
         nextStartAllowedAt = Time.unscaledTime + 2.5f;
         startRequestInFlight = true;
-        _ = webSocketClient.SendAsync("START", CreateRequestId("start"), new { roomCode = currentRoomCode });
-        _ = webSocketClient.SendAsync("SYNC_REQUEST", CreateRequestId("sync"), new { });
+        object startPayload = IsAramGameMode(requestedGameMode)
+            ? new { roomCode = currentRoomCode, gameMode = AramGameMode }
+            : new { roomCode = currentRoomCode };
+        _ = webSocketClient.SendAsync("START", CreateRequestId("start"), startPayload);
+        _ = webSocketClient.SendAsync("SYNC_REQUEST", CreateRequestId("sync"), CreateVariantPayload());
         statusMessage = "Start requested. Waiting for server confirmation...";
     }
 
@@ -343,7 +371,10 @@ public class ChessLanController : MonoBehaviour
         ResetRoomState(clearRoomIdentity: true);
         DisconnectSocketIntentional();
         HideLanSetup();
-        turnSelectionUI.ShowMultiplayerModeSelection();
+        if (IsAramGameMode(requestedGameMode))
+            turnSelectionUI.ShowAramModeSelection();
+        else
+            turnSelectionUI.ShowMultiplayerModeSelection();
     }
 
     public void RequestLeaveToModeSelection()
@@ -522,7 +553,7 @@ public class ChessLanController : MonoBehaviour
         yield return BackendRestClient.Send<BackendRoomDto>(
             "POST",
             "/api/rooms/create",
-            null,
+            IsAramGameMode(requestedGameMode) ? new BackendCreateRoomRequest { gameMode = AramGameMode } : null,
             true,
             response =>
             {
@@ -536,12 +567,15 @@ public class ChessLanController : MonoBehaviour
                 }
 
                 currentRoomCode = currentRoom.roomCode ?? string.Empty;
+                variantServerConfirmed = ValidateRoomGameMode(currentRoom.gameMode);
                 roomCodeInput = currentRoomCode;
                 readyCount = 0;
                 localReady = false;
                 readyPlayerIds.Clear();
                 readyPlayerNames.Clear();
-                statusMessage = $"Room {currentRoomCode} created. Connecting to waiting room...";
+                statusMessage = variantServerConfirmed
+                    ? $"Room {currentRoomCode} created. Connecting to waiting room..."
+                    : "This backend did not create an ARAM room. Update the server before starting.";
                 StartCoroutine(ConnectWebSocketCoroutine(false));
             },
             (message, _) =>
@@ -569,7 +603,7 @@ public class ChessLanController : MonoBehaviour
         yield return BackendRestClient.Send<BackendRoomDto>(
             "POST",
             "/api/rooms/join",
-            new BackendJoinRoomRequest { roomCode = roomCodeInput },
+            new BackendJoinRoomRequest { roomCode = roomCodeInput, gameMode = IsAramGameMode(requestedGameMode) ? AramGameMode : null },
             true,
             response =>
             {
@@ -583,12 +617,15 @@ public class ChessLanController : MonoBehaviour
                 }
 
                 currentRoomCode = currentRoom.roomCode ?? roomCodeInput;
+                variantServerConfirmed = ValidateRoomGameMode(currentRoom.gameMode);
                 roomCodeInput = currentRoomCode;
                 readyCount = 0;
                 localReady = false;
                 readyPlayerIds.Clear();
                 readyPlayerNames.Clear();
-                statusMessage = $"Joined room {currentRoomCode}. Connecting to waiting room...";
+                statusMessage = variantServerConfirmed
+                    ? $"Joined room {currentRoomCode}. Connecting to waiting room..."
+                    : "That room is not a server-confirmed ARAM room.";
                 StartCoroutine(ConnectWebSocketCoroutine(false));
             },
             (message, _) =>
@@ -672,12 +709,21 @@ public class ChessLanController : MonoBehaviour
                 currentRoomCode = match.roomCode ?? currentRoomCode;
                 currentMatchId = match.id ?? currentMatchId;
                 lastConfirmedFen = match.currentFen ?? lastConfirmedFen;
+                requestedGameMode = ResolveServerGameMode(match.gameMode);
+                variantServerConfirmed = !IsAramGameMode(requestedGameMode) ||
+                    (IsAramGameMode(match.gameMode) && match.aramState != null);
+                if (!variantServerConfirmed)
+                {
+                    statusMessage = "Active match is missing authoritative ARAM state.";
+                    return;
+                }
+                currentAramSeed = string.IsNullOrWhiteSpace(match.aramSeed) ? currentMatchId : match.aramSeed;
+                lastAramState = match.aramState;
                 turnSelectionUI.SetMatchPlayers(match.whiteUsername, match.blackUsername);
                 PieceTeam localTeam = string.Equals(match.whitePlayerId, PlayerAuthService.UserId, StringComparison.OrdinalIgnoreCase)
                     ? PieceTeam.White
                     : PieceTeam.Black;
-                chessGame.BeginLanGame(PieceTeam.White, localTeam);
-                chessGame.ApplyFenState(match.currentFen);
+                BeginServerMatch(localTeam, match.currentFen, currentAramSeed, lastAramState);
                 lanGameActive = string.Equals(match.status, "ACTIVE", StringComparison.OrdinalIgnoreCase);
                 if (lanGameActive)
                     ApplyActiveMatchCameraState(localTeam, immediate: true);
@@ -716,7 +762,7 @@ public class ChessLanController : MonoBehaviour
         localReady = true;
         MarkPlayerReady(PlayerAuthService.UserId, PlayerAuthService.Username);
         string requestId = CreateRequestId("ready");
-        _ = webSocketClient.SendAsync("READY", requestId, new { });
+        _ = webSocketClient.SendAsync("READY", requestId, CreateVariantPayload());
         statusMessage = "Ready sent. Waiting for the other player...";
     }
 
@@ -759,7 +805,8 @@ public class ChessLanController : MonoBehaviour
         {
             from = ToSquare(move.from),
             to = ToSquare(move.to),
-            promotion = move.hasPromotion ? ToPromotion(move.promotionType) : null
+            promotion = move.hasPromotion ? ToPromotion(move.promotionType) : null,
+            gameMode = IsAramGameMode(requestedGameMode) ? AramGameMode : null
         });
     }
 
@@ -777,7 +824,7 @@ public class ChessLanController : MonoBehaviour
         reconnectPending = false;
         statusMessage = $"Connected to room {currentRoomCode}.";
         lastHeartbeatAt = Time.unscaledTime;
-        _ = webSocketClient.SendAsync("SYNC_REQUEST", CreateRequestId("sync"), new { });
+        _ = webSocketClient.SendAsync("SYNC_REQUEST", CreateRequestId("sync"), CreateVariantPayload());
         StartCoroutine(LoadActiveMatchCoroutine());
     }
 
@@ -898,16 +945,27 @@ public class ChessLanController : MonoBehaviour
         if (payload == null)
             return;
 
+        bool aramStart = IsAramGameMode(requestedGameMode) || IsAramGameMode(payload.gameMode);
+        if (aramStart && (!IsAramGameMode(payload.gameMode) || payload.aramState == null))
+        {
+            variantServerConfirmed = false;
+            statusMessage = "Server rejected ARAM authority: GAME_START is missing ARAM mode/state.";
+            return;
+        }
+
         currentGameStart = payload;
         currentMatchId = payload.matchId ?? string.Empty;
         lastConfirmedFen = payload.fen ?? string.Empty;
+        requestedGameMode = ResolveServerGameMode(payload.gameMode);
+        variantServerConfirmed = true;
+        currentAramSeed = string.IsNullOrWhiteSpace(payload.aramSeed) ? currentMatchId : payload.aramSeed;
+        lastAramState = payload.aramState;
         opponentDrawOfferPending = false;
         turnSelectionUI.SetMatchPlayers(payload.whiteUsername, payload.blackUsername);
         PieceTeam localTeam = string.Equals(payload.whitePlayerId, PlayerAuthService.UserId, StringComparison.OrdinalIgnoreCase)
             ? PieceTeam.White
             : PieceTeam.Black;
-        chessGame.BeginLanGame(PieceTeam.White, localTeam);
-        chessGame.ApplyFenState(payload.fen);
+        BeginServerMatch(localTeam, payload.fen, currentAramSeed, lastAramState);
         ApplyActiveMatchCameraState(localTeam, immediate: true);
         lanGameActive = true;
         showLanPanel = false;
@@ -920,16 +978,55 @@ public class ChessLanController : MonoBehaviour
         StartCoroutine(RefreshRoomCoroutine());
     }
 
+    private void BeginServerMatch(PieceTeam localTeam, string fen, string aramSeed, BackendAramStatePayload aramState)
+    {
+        if (!IsAramGameMode(requestedGameMode))
+        {
+            chessGame.BeginLanGame(PieceTeam.White, localTeam);
+            chessGame.ApplyFenState(fen);
+            return;
+        }
+
+        chessGame.BeginAramNetworkGame(PieceTeam.White, localTeam, aramSeed, aramState);
+        BackendAramStatePayload stateToRebind = aramState ?? chessGame.CaptureAramNetworkState();
+        chessGame.ApplyFenState(fen);
+        chessGame.ApplyAramNetworkState(stateToRebind);
+        lastAramState = stateToRebind;
+    }
+
     private void HandleMoveResult(string requestId, JToken payloadToken)
     {
         BackendMoveResultPayload payload = payloadToken.ToObject<BackendMoveResultPayload>();
         if (payload == null)
             return;
 
+        bool aramStateResponse = IsAramGameMode(requestedGameMode) || IsAramGameMode(payload.gameMode);
+        if (aramStateResponse && (!IsAramGameMode(payload.gameMode) || payload.aramState == null))
+        {
+            if (!string.IsNullOrWhiteSpace(requestId))
+                pendingLocalMoveRequestIds.Remove(requestId);
+            statusMessage = "Ignored non-authoritative ARAM move result; requesting a full server sync.";
+            chessGame.SetAramInputLocked(true);
+            _ = webSocketClient.SendAsync("SYNC_REQUEST", CreateRequestId("sync"), CreateVariantPayload());
+            return;
+        }
+
         bool isLocalMove = !string.IsNullOrWhiteSpace(requestId) && pendingLocalMoveRequestIds.Remove(requestId);
         lastConfirmedFen = payload.fen ?? lastConfirmedFen;
+        BackendAramStatePayload localPrediction = IsAramGameMode(requestedGameMode)
+            ? chessGame.CaptureAramNetworkState()
+            : null;
+        if (payload.aramState != null)
+            lastAramState = payload.aramState;
+        else if (localPrediction != null)
+            lastAramState = localPrediction;
 
         chessGame.ApplyFenState(payload.fen);
+        if (IsAramGameMode(requestedGameMode))
+        {
+            chessGame.ApplyAramNetworkState(lastAramState);
+            chessGame.SetAramInputLocked(false);
+        }
         turnSelectionUI.SetLatestMoveText(
             string.IsNullOrWhiteSpace(payload.notation) ? $"{payload.from}-{payload.to}" : payload.notation,
             isLocalMove);
@@ -947,7 +1044,20 @@ public class ChessLanController : MonoBehaviour
         if (payload == null)
             return;
 
+        bool aramGameState = IsAramGameMode(requestedGameMode) || IsAramGameMode(payload.gameMode);
+        if (aramGameState && (!IsAramGameMode(payload.gameMode) || payload.aramState == null))
+        {
+            statusMessage = "Ignored GAME_STATE without authoritative ARAM state.";
+            chessGame.SetAramInputLocked(true);
+            return;
+        }
+
         currentMatchId = payload.matchId ?? currentMatchId;
+        requestedGameMode = ResolveServerGameMode(payload.gameMode);
+        variantServerConfirmed = true;
+        currentAramSeed = string.IsNullOrWhiteSpace(payload.aramSeed) ? currentMatchId : payload.aramSeed;
+        if (payload.aramState != null)
+            lastAramState = payload.aramState;
         if (!string.IsNullOrWhiteSpace(payload.fen))
         {
             lastConfirmedFen = payload.fen;
@@ -956,11 +1066,21 @@ public class ChessLanController : MonoBehaviour
                 : PieceTeam.Black;
             if (!chessGame.GameStarted)
             {
-                chessGame.BeginLanGame(PieceTeam.White, localTeam);
+                BeginServerMatch(localTeam, payload.fen, currentAramSeed, lastAramState);
                 lanGameActive = string.Equals(payload.status, "ACTIVE", StringComparison.OrdinalIgnoreCase);
             }
-
-            chessGame.ApplyFenState(payload.fen);
+            else
+            {
+                BackendAramStatePayload localPrediction = IsAramGameMode(requestedGameMode)
+                    ? chessGame.CaptureAramNetworkState()
+                    : null;
+                chessGame.ApplyFenState(payload.fen);
+                if (IsAramGameMode(requestedGameMode))
+                {
+                    chessGame.ApplyAramNetworkState(lastAramState ?? localPrediction);
+                    chessGame.SetAramInputLocked(false);
+                }
+            }
             if (string.Equals(payload.status, "ACTIVE", StringComparison.OrdinalIgnoreCase))
                 ApplyActiveMatchCameraState(localTeam, immediate: false);
         }
@@ -1004,7 +1124,11 @@ public class ChessLanController : MonoBehaviour
         statusMessage = message;
 
         if (!string.IsNullOrWhiteSpace(requestId) && pendingLocalMoveRequestIds.Remove(requestId) && !string.IsNullOrWhiteSpace(lastConfirmedFen))
+        {
             chessGame.ApplyFenState(lastConfirmedFen);
+            if (IsAramGameMode(requestedGameMode))
+                chessGame.ApplyAramNetworkState(lastAramState);
+        }
     }
 
     private IEnumerator RefreshRoomCoroutine()
@@ -1021,7 +1145,10 @@ public class ChessLanController : MonoBehaviour
             {
                 serverHealthStatus = "Online";
                 if (response.result != null)
+                {
                     currentRoom = response.result;
+                    variantServerConfirmed = ValidateRoomGameMode(currentRoom.gameMode);
+                }
             },
             (message, _) =>
             {
@@ -1214,6 +1341,54 @@ public class ChessLanController : MonoBehaviour
         return raw.Trim().ToUpperInvariant();
     }
 
+    private static string NormalizeGameMode(string raw)
+    {
+        return string.Equals(raw, AramGameMode, StringComparison.OrdinalIgnoreCase) ? AramGameMode : ClassicGameMode;
+    }
+
+    private object CreateVariantPayload()
+    {
+        return IsAramGameMode(requestedGameMode)
+            ? new BackendGameModePayload { gameMode = AramGameMode }
+            : new { };
+    }
+
+    private static bool IsAramGameMode(string raw)
+    {
+        return string.Equals(raw, AramGameMode, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private string ResolveServerGameMode(string serverMode)
+    {
+        return string.IsNullOrWhiteSpace(serverMode) ? requestedGameMode : NormalizeGameMode(serverMode);
+    }
+
+    private bool ValidateRoomGameMode(string serverMode)
+    {
+        if (!IsAramGameMode(requestedGameMode))
+            return true;
+
+        if (string.IsNullOrWhiteSpace(serverMode))
+            return false;
+
+        string normalized = NormalizeGameMode(serverMode);
+        if (!string.Equals(normalized, requestedGameMode, StringComparison.OrdinalIgnoreCase))
+        {
+            statusMessage = $"Room variant mismatch: requested {requestedGameMode}, server returned {normalized}.";
+            return false;
+        }
+        return true;
+    }
+
+    private bool EnsureVariantServerSupport()
+    {
+        if (!IsAramGameMode(requestedGameMode) || variantServerConfirmed)
+            return true;
+
+        statusMessage = "The connected backend has not confirmed ARAM authority for this room.";
+        return false;
+    }
+
     private static bool IsValidRoomCode(string code)
     {
         if (string.IsNullOrWhiteSpace(code) || code.Length != 6)
@@ -1307,6 +1482,9 @@ public class ChessLanController : MonoBehaviour
         opponentDrawOfferPending = false;
         OpponentPauseChanged?.Invoke(false, string.Empty);
         pendingLocalMoveRequestIds.Clear();
+        lastAramState = null;
+        currentAramSeed = string.Empty;
+        variantServerConfirmed = !IsAramGameMode(requestedGameMode);
 
         if (!clearRoomIdentity)
             return;
@@ -1322,7 +1500,7 @@ public class ChessLanController : MonoBehaviour
         if (currentRoom == null)
             return "Not in a room";
 
-        return $"{currentRoom.roomCode} ({currentRoom.status})";
+        return $"{currentRoom.roomCode} ({currentRoom.status}, {requestedGameMode})";
     }
 
     private string GetConnectionSummary()
@@ -1554,6 +1732,8 @@ public class ChessLanController : MonoBehaviour
         private void BuildLan()
         {
             AddImage(contentRoot, "LAN Background", LoadSprite("LANUIBlank.png"), Vector2.zero, DesignSize);
+            if (IsAramGameMode(owner.requestedGameMode))
+                AddText("ARAM Variant", D(836f, 80f), new Vector2(620f, 54f), 34f, TextAlignmentOptions.Center, new Color(0.36f, 0.16f, 0.62f, 1f)).text = "ARAM - PRIVATE BUFFS";
             AddButton("Host", "HostButton.png", D(410f, 390f), new Vector2(360f, 142f), owner.RequestCreateRoom);
             joinInput = AddInput("Join Code Input", D(815f, 354f), new Vector2(330f, 58f));
             AddButton("Join", "JoinButton.png", D(815f, 440f), new Vector2(360f, 112f), () => owner.RequestJoinRoom(joinInput != null ? joinInput.text : string.Empty));
@@ -1573,6 +1753,8 @@ public class ChessLanController : MonoBehaviour
         private void BuildMultiplayer()
         {
             AddImage(contentRoot, "Multiplayer Background", LoadSprite("MultiplayerUIBlank.png"), Vector2.zero, DesignSize);
+            if (IsAramGameMode(owner.requestedGameMode))
+                AddText("ARAM Variant", D(836f, 80f), new Vector2(620f, 54f), 34f, TextAlignmentOptions.Center, new Color(0.36f, 0.16f, 0.62f, 1f)).text = "ARAM - PRIVATE BUFFS";
             AddButton("Create Room", "CreateRoomButton.png", D(382f, 337f), new Vector2(360f, 142f), owner.RequestCreateRoom);
             joinInput = AddInput("Join Code Input", D(807f, 310f), new Vector2(340f, 58f));
             AddButton("Join Room", "JoinRoomButton.png", D(807f, 392f), new Vector2(360f, 112f), () => owner.RequestJoinRoom(joinInput != null ? joinInput.text : string.Empty));

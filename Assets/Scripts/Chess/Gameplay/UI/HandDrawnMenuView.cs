@@ -265,11 +265,11 @@ public class HandDrawnMenuView : MonoBehaviour
         AddMenuConfetti(aramModeScreen);
         AddText(aramModeScreen, "ARAM Mode Title", "ARAM Mode", new Vector2(0f, 340f), new Vector2(760f, 125f), 76, TextAnchor.MiddleCenter, new Color(0.12f, 0.1f, 0.08f, 1f));
         AddTextButton(aramModeScreen, "ARAM Practice", "Practice", new Vector2(-430f, 35f), new Vector2(470f, 180f), owner.StartAramPracticeGame, new Color(0.98f, 0.78f, 0.3f, 1f));
-        Button lanLocked = AddTextButton(aramModeScreen, "ARAM LAN Locked", "LAN Locked", new Vector2(120f, 35f), new Vector2(430f, 160f), () => LogMenuClick("ARAM LAN Locked"), new Color(0.56f, 0.58f, 0.62f, 1f));
-        Button onlineLocked = AddTextButton(aramModeScreen, "ARAM Multiplayer Locked", "Multiplayer Locked", new Vector2(600f, 35f), new Vector2(430f, 160f), () => LogMenuClick("ARAM Multiplayer Locked"), new Color(0.56f, 0.58f, 0.62f, 1f));
-        SetLockedButton(lanLocked);
-        SetLockedButton(onlineLocked);
+        AddTextButton(aramModeScreen, "ARAM LAN", "LAN", new Vector2(120f, 35f), new Vector2(430f, 160f), owner.ShowAramLanSetup, new Color(0.56f, 0.82f, 0.94f, 1f));
+        AddTextButton(aramModeScreen, "ARAM Multiplayer", "Multiplayer", new Vector2(600f, 35f), new Vector2(430f, 160f), owner.ShowAramOnlineSetup, new Color(0.74f, 0.66f, 0.96f, 1f));
         AddText(aramModeScreen, "ARAM Practice Caption", "Practice local", new Vector2(-430f, -95f), new Vector2(470f, 48f), 30, TextAnchor.MiddleCenter, new Color(0.14f, 0.11f, 0.08f, 1f));
+        AddText(aramModeScreen, "ARAM LAN Caption", "Private LAN room", new Vector2(120f, -95f), new Vector2(430f, 48f), 28, TextAnchor.MiddleCenter, new Color(0.14f, 0.11f, 0.08f, 1f));
+        AddText(aramModeScreen, "ARAM Online Caption", "Online matchmaking", new Vector2(600f, -95f), new Vector2(430f, 48f), 28, TextAnchor.MiddleCenter, new Color(0.14f, 0.11f, 0.08f, 1f));
         AddBackButton(aramModeScreen, new Vector2(-820f, -420f), () => ShowModeSelection());
     }
 

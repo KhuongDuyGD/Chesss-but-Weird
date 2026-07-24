@@ -98,6 +98,26 @@ public static class AramBuffLibrary
         };
     }
 
+    public static AramBuffDefinition FindById(IReadOnlyList<AramBuffDefinition> definitions, AramBuffId id)
+    {
+        if (definitions == null)
+            return null;
+
+        for (int i = 0; i < definitions.Count; i++)
+        {
+            AramBuffDefinition definition = definitions[i];
+            if (definition && definition.Id == id)
+                return definition;
+        }
+
+        return null;
+    }
+
+    public static bool TryParseId(string value, out AramBuffId id)
+    {
+        return System.Enum.TryParse(value, true, out id) && System.Enum.IsDefined(typeof(AramBuffId), id);
+    }
+
     private static AramBuffDefinition Create(AramBuffId id, AramBuffTier tier, string displayName, string shortName, string description, Color accentColor)
     {
         AramBuffDefinition definition = ScriptableObject.CreateInstance<AramBuffDefinition>();

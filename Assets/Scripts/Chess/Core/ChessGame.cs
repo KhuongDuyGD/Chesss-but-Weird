@@ -359,6 +359,18 @@ public class ChessGame : MonoBehaviour
         BeginGameInternal(firstTurn, localPlayerTeam, true, PieceTeam.White);
     }
 
+    public void BeginAramNetworkGame(PieceTeam firstTurn, PieceTeam localPlayerTeam, string matchSeed, BackendAramStatePayload serverState)
+    {
+        serverAuthoritativeMode = true;
+        botMode = false;
+        aramMode = true;
+        botDifficulty = StockfishDifficulty.Medium;
+        EnsureAramRuntime();
+        GameMusicManager.PlayInGameMusic(false, StockfishDifficulty.Medium);
+        BeginGameInternal(firstTurn, localPlayerTeam, true, PieceTeam.White);
+        aramRuntime.BeginNetworkMatch(this, localPlayerTeam, matchSeed, serverState);
+    }
+
     public void BeginBotGame(PieceTeam localPlayerTeam)
     {
         BeginBotGame(localPlayerTeam, StockfishDifficulty.Medium);
@@ -2658,6 +2670,18 @@ public class ChessGame : MonoBehaviour
         RefreshLocalInteractionState();
         UpdateCheckWarningForCurrentTurn();
         return true;
+    }
+
+    public void ApplyAramNetworkState(BackendAramStatePayload serverState)
+    {
+        if (!aramMode || aramRuntime == null || serverState == null)
+            return;
+        aramRuntime.ApplyNetworkState(serverState);
+    }
+
+    public BackendAramStatePayload CaptureAramNetworkState()
+    {
+        return aramMode && aramRuntime != null ? aramRuntime.CaptureNetworkState() : null;
     }
 
     public void ApplyServerGameOver(string result, string reason)

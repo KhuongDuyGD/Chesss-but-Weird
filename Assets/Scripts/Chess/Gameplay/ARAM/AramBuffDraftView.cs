@@ -31,12 +31,14 @@ public sealed class AramBuffDraftView : MonoBehaviour
     private readonly List<AramBuffDefinition> blackSelection = new List<AramBuffDefinition>();
     private Action<List<AramBuffDefinition>, List<AramBuffDefinition>> completion;
     private PieceTeam choosingTeam = PieceTeam.White;
+    private bool privateNetworkDraft;
     private float toastUntil;
 
     public void ShowDraft(List<AramBuffDefinition> pool, Action<List<AramBuffDefinition>, List<AramBuffDefinition>> onCompleted)
     {
         EnsureBuilt();
         completion = onCompleted;
+        privateNetworkDraft = false;
         choosingTeam = PieceTeam.White;
         whiteOptions.Clear();
         blackOptions.Clear();
@@ -62,6 +64,7 @@ public sealed class AramBuffDraftView : MonoBehaviour
     {
         EnsureBuilt();
         completion = onCompleted;
+        privateNetworkDraft = false;
         choosingTeam = PieceTeam.White;
         whiteOptions.Clear();
         blackOptions.Clear();
@@ -82,6 +85,35 @@ public sealed class AramBuffDraftView : MonoBehaviour
         RefreshDraftCopy();
     }
 
+    public void ShowNetworkRoll(PieceTeam localTeam, List<AramBuffDefinition> localOptions, Action<AramBuffDefinition> onCompleted)
+    {
+        EnsureBuilt();
+        privateNetworkDraft = true;
+        choosingTeam = localTeam;
+        whiteOptions.Clear();
+        blackOptions.Clear();
+        if (localTeam == PieceTeam.White)
+            whiteOptions.AddRange(localOptions ?? new List<AramBuffDefinition>());
+        else
+            blackOptions.AddRange(localOptions ?? new List<AramBuffDefinition>());
+
+        whiteSelection.Clear();
+        blackSelection.Clear();
+        completion = (white, black) =>
+        {
+            IReadOnlyList<AramBuffDefinition> selected = localTeam == PieceTeam.White ? white : black;
+            onCompleted?.Invoke(selected != null && selected.Count > 0 ? selected[0] : null);
+        };
+        draftGroup.alpha = 1f;
+        draftGroup.blocksRaycasts = true;
+        draftGroup.interactable = true;
+        draftPanel.gameObject.SetActive(true);
+        hudPanel.gameObject.SetActive(false);
+        SetContinueButtonVisible(false);
+        RebuildCards(localTeam == PieceTeam.White ? whiteOptions : blackOptions);
+        RefreshDraftCopy();
+    }
+
     public void ShowHud(IReadOnlyList<AramBuffDefinition> whiteBuffs, IReadOnlyList<AramBuffDefinition> blackBuffs)
     {
         EnsureBuilt();
@@ -92,6 +124,19 @@ public sealed class AramBuffDraftView : MonoBehaviour
         draftGroup.alpha = 1f;
         hudPanel.gameObject.SetActive(true);
         RefreshHud(whiteBuffs, blackBuffs);
+    }
+
+    public void ShowPrivateHud(PieceTeam localTeam, IReadOnlyList<AramBuffDefinition> localBuffs)
+    {
+        EnsureBuilt();
+        draftPanel.gameObject.SetActive(false);
+        targetPromptPanel.gameObject.SetActive(false);
+        draftGroup.blocksRaycasts = false;
+        draftGroup.interactable = false;
+        draftGroup.alpha = 1f;
+        hudPanel.gameObject.SetActive(true);
+        hudWhiteLabel.text = localTeam == PieceTeam.White ? $"Your buffs: {FormatBuffList(localBuffs)}" : "White buffs: Hidden";
+        hudBlackLabel.text = localTeam == PieceTeam.Black ? $"Your buffs: {FormatBuffList(localBuffs)}" : "Black buffs: Hidden";
     }
 
     public void ShowTargetPrompt(PieceTeam team, string message, AramBuffDefinition source)
@@ -220,6 +265,16 @@ public sealed class AramBuffDraftView : MonoBehaviour
         if (!definition)
             return;
 
+        if (privateNetworkDraft)
+        {
+            if (choosingTeam == PieceTeam.White)
+                whiteSelection.Add(definition);
+            else
+                blackSelection.Add(definition);
+            CompleteSelection();
+            return;
+        }
+
         if (choosingTeam == PieceTeam.White)
         {
             whiteSelection.Clear();
@@ -237,6 +292,14 @@ public sealed class AramBuffDraftView : MonoBehaviour
 
     private void RefreshDraftCopy()
     {
+        if (privateNetworkDraft)
+        {
+            List<AramBuffDefinition> options = choosingTeam == PieceTeam.White ? whiteOptions : blackOptions;
+            titleLabel.text = "YOUR PRIVATE ARAM ROLL";
+            subtitleLabel.text = $"Choose 1 {FormatTierList(options)} buff. Your opponent cannot see this buff.";
+            return;
+        }
+
         titleLabel.text = choosingTeam == PieceTeam.White ? "WHITE ARAM ROLL" : "BLACK ARAM ROLL";
         subtitleLabel.text = choosingTeam == PieceTeam.White
             ? $"Choose 1 buff from {FormatTierList(whiteOptions)} options."
@@ -249,6 +312,7 @@ public sealed class AramBuffDraftView : MonoBehaviour
         draftPanel.gameObject.SetActive(false);
         Action<List<AramBuffDefinition>, List<AramBuffDefinition>> callback = completion;
         completion = null;
+        privateNetworkDraft = false;
         callback?.Invoke(new List<AramBuffDefinition>(whiteSelection), new List<AramBuffDefinition>(blackSelection));
     }
 
