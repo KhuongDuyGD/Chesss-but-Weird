@@ -22,6 +22,7 @@ public sealed class PlayerProfileSaveData
     public int draws;
     public int totalGames;
     public List<PlayerMatchHistoryEntry> matchHistory = new List<PlayerMatchHistoryEntry>();
+    public List<string> recordedMatchIds = new List<string>();
 
     public static PlayerProfileSaveData Create(PlayerProfile profile)
     {
@@ -47,6 +48,7 @@ public sealed class PlayerProfileSaveData
 [Serializable]
 public sealed class PlayerMatchHistoryEntry
 {
+    public string matchId;
     public string playedAtUtc;
     public string opponent;
     public string mode;
@@ -193,11 +195,33 @@ public static class PlayerProfileStore
         Save();
     }
 
-    public static void RecordMatch(string mode, string opponent, string result, string detail, int rewardGold = 0, int rewardDiamonds = 0, int rewardTickets = 0)
+    public static void RecordMatch(
+        string mode,
+        string opponent,
+        string result,
+        string detail,
+        int rewardGold = 0,
+        int rewardDiamonds = 0,
+        int rewardTickets = 0,
+        string matchId = "")
     {
         EnsureLoaded();
         if (data.matchHistory == null)
             data.matchHistory = new List<PlayerMatchHistoryEntry>();
+
+        string normalizedMatchId = Limit(matchId, 96);
+        if (!string.IsNullOrWhiteSpace(normalizedMatchId))
+        {
+            if (data.recordedMatchIds != null && data.recordedMatchIds.Contains(normalizedMatchId))
+                return;
+
+            if (data.recordedMatchIds == null)
+                data.recordedMatchIds = new List<string>();
+
+            data.recordedMatchIds.Insert(0, normalizedMatchId);
+            while (data.recordedMatchIds.Count > 128)
+                data.recordedMatchIds.RemoveAt(data.recordedMatchIds.Count - 1);
+        }
 
         string normalizedResult = string.IsNullOrWhiteSpace(result) ? "Draw" : result.Trim();
         if (string.Equals(normalizedResult, "Win", StringComparison.OrdinalIgnoreCase))
@@ -217,6 +241,7 @@ public static class PlayerProfileStore
 
         data.matchHistory.Insert(0, new PlayerMatchHistoryEntry
         {
+            matchId = normalizedMatchId,
             playedAtUtc = DateTime.UtcNow.ToString("O"),
             opponent = Limit(opponent, 28),
             mode = Limit(mode, 24),
@@ -252,6 +277,8 @@ public static class PlayerProfileStore
             data.achievementTitle = "Beginner";
         if (data.matchHistory == null)
             data.matchHistory = new List<PlayerMatchHistoryEntry>();
+        if (data.recordedMatchIds == null)
+            data.recordedMatchIds = new List<string>();
     }
 
     private static void UpdateLoginStreak()

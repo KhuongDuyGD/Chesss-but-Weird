@@ -379,6 +379,7 @@ public sealed class PlayerProfileMenuController : MonoBehaviour
     private Sprite LoadSprite(string fileName, bool trimTransparent)
     {
         string path = Path.Combine(Directory.GetCurrentDirectory(), AssetFolder, fileName);
+        if (CoreArtworkCache.GetSprite(path) is Sprite prepared) return prepared;
         if (!File.Exists(path))
         {
             Debug.LogWarning($"[PlayerProfile] Missing asset: {fileName}");
@@ -399,6 +400,7 @@ public sealed class PlayerProfileMenuController : MonoBehaviour
 
         Rect rect = trimTransparent ? FindVisibleRect(texture) : new Rect(0f, 0f, texture.width, texture.height);
         Sprite sprite = Sprite.Create(texture, rect, new Vector2(0.5f, 0.5f), 100f, 0u, SpriteMeshType.FullRect);
+        texture.Apply(false, true);
         runtimeAssets.Add(sprite);
         runtimeAssets.Add(texture);
         return sprite;

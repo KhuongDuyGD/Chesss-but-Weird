@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "com.unity.addressables": "2.9.1",
     "com.gamelovers.mcp-unity": "file:com.gamelovers.mcp-unity",
     "com.unity.ai.assistant": "2.9.0-pre.2",
     "com.unity.ai.inference": "2.6.1",

@@ -80,6 +80,37 @@ public class Chessboard : MonoBehaviour
     private bool[,] legalMoveHighlights;
     private bool interactionEnabled;
     private bool presentationVisible = true;
+    private Transform cosmeticBoard;
+    private bool generatedTilesBeforeCosmetic;
+
+    // Board prefabs use an 8x8 playable area centered at origin, surface at local Y=0.
+    public void AttachCosmeticBoard(Transform visual)
+    {
+        if (!cosmeticBoard) generatedTilesBeforeCosmetic = showGeneratedTiles;
+        cosmeticBoard = visual;
+        if (!visual) return;
+        showGeneratedTiles = false;
+        RefreshAllTileVisuals();
+        visual.SetParent(transform, false);
+        visual.position = GetBoardCenterWorld();
+        visual.localRotation = Quaternion.identity;
+        visual.localScale = new Vector3(currentBoardLayout.tileWidth, 1, currentBoardLayout.tileDepth);
+        ApplyBoardRendererVisibility();
+    }
+
+    public void DetachCosmeticBoard()
+    {
+        if (cosmeticBoard) showGeneratedTiles = generatedTilesBeforeCosmetic;
+        cosmeticBoard = null;
+        RefreshAllTileVisuals();
+        ApplyBoardRendererVisibility();
+    }
+
+    public void ShowFallbackBoard()
+    {
+        showGeneratedTiles = true;
+        RefreshAllTileVisuals();
+    }
     private int tileLayer;
     private int hoverLayer;
     private int hoverRaycastMask;
@@ -308,6 +339,8 @@ public class Chessboard : MonoBehaviour
 
     private void ApplyBoardRendererVisibility()
     {
+        if (cosmeticBoard)
+            foreach (var renderer in cosmeticBoard.GetComponentsInChildren<Renderer>(true)) renderer.enabled = presentationVisible;
         Transform visualRoot = GetVisualBoardSearchRoot();
         if (!visualRoot)
             return;
@@ -317,7 +350,7 @@ public class Chessboard : MonoBehaviour
         {
             Renderer currentRenderer = renderers[i];
             if (IsVisualBoardRenderer(currentRenderer))
-                currentRenderer.enabled = presentationVisible;
+                currentRenderer.enabled = presentationVisible && !cosmeticBoard;
         }
     }
 

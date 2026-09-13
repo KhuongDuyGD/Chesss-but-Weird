@@ -1,3 +1,5 @@
+using MatchReward = MatchRewardPolicy.MatchReward;
+using MeshComponentData = PieceVisualFactory.MeshComponentData;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -49,7 +51,9 @@ public class ChessGame : MonoBehaviour
     [SerializeField, Range(0f, 1f)] private float soundVolume = 1f;
 
     private readonly ChessPiece[,] pieces = new ChessPiece[8, 8];
-    private readonly Dictionary<ChessPiece, Coroutine> pieceAnimations = new Dictionary<ChessPiece, Coroutine>();
+    private PieceAnimator pieceAnimator;
+    private readonly PieceVisualFactory visualFactory = new PieceVisualFactory();
+    private PieceAnimator Animator => pieceAnimator ?? (pieceAnimator = new PieceAnimator(this));
     private readonly Dictionary<string, int> positionHistory = new Dictionary<string, int>();
     private readonly HashSet<ChessPiece> startingPlacementPieces = new HashSet<ChessPiece>();
     private readonly List<string> moveHistory = new List<string>();
@@ -58,11 +62,13 @@ public class ChessGame : MonoBehaviour
     private readonly List<Vector2Int> candidateMoveBuffer = new List<Vector2Int>(32);
     private readonly List<Vector2Int> safeMoveBuffer = new List<Vector2Int>(32);
     private readonly List<ChessPiece> nonKingPieceBuffer = new List<ChessPiece>(30);
+    private readonly Dictionary<int, ChessPiece> localClassicPiecesById = new Dictionary<int, ChessPiece>();
     private PieceTeam currentTurn = PieceTeam.White;
     private ChessPiece selectedPiece;
     private Transform runtimePiecesRoot;
     private ChessGameStatus status = ChessGameStatus.NotStarted;
     private bool gameStarted;
+    private bool contentLoading;
     private bool gameOver;
     private bool inputLocked;
     private bool pauseLocked;
@@ -88,6 +94,7 @@ public class ChessGame : MonoBehaviour
     private StockfishDifficulty botDifficulty = StockfishDifficulty.Medium;
     private bool pendingRemotePromotionResolution;
     private PieceType remotePromotionType = PieceType.Queen;
+    private ChessButWeird.Application.ClassicMatchCoordinator localClassicCoordinator;
     private Vector2Int pendingCommittedMoveFrom = -Vector2Int.one;
     private Vector2Int pendingCommittedMoveTo = -Vector2Int.one;
     private float matchStartedAt;
@@ -103,15 +110,21 @@ public class ChessGame : MonoBehaviour
     private ChessPiece blackKing;
     private string whitePieceSkinId = PieceSkinCatalog.DefaultSkinId;
     private string blackPieceSkinId = PieceSkinCatalog.DefaultSkinId;
-    private AramBuffRuntime aramRuntime;
+    private ChessButWeird.Application.AramMatchCoordinator aramCoordinator;
+    private readonly ChessButWeird.Application.MatchResultRecorder matchResultRecorder =
+        new ChessButWeird.Application.MatchResultRecorder();
     public PieceTeam CurrentTurn => currentTurn;
     public ChessPiece SelectedPiece => selectedPiece;
-    public bool GameStarted => gameStarted;
+    public bool GameStarted => gameStarted && !contentLoading;
+    public Chessboard Board => chessboard;
     public bool GameOver => gameOver;
-    public bool InputLocked => inputLocked;
+    public bool InputLocked => inputLocked || contentLoading;
     public bool PauseLocked => pauseLocked;
     public bool IsBotGame => botMode;
     public bool IsAramGame => aramMode;
+    public bool UsesLocalClassicSession => localClassicCoordinator != null && !aramMode && !serverAuthoritativeMode && !botMode;
+    public bool UsesClassicDomainSession => localClassicCoordinator != null && !aramMode && !serverAuthoritativeMode;
+    public bool HasPendingPromotion => pendingPromotionPawn != null;
     public PieceTeam WinningTeam => winningTeam;
     public PieceTeam PlayerTeam => playerTeam;
     public ChessGameStatus Status => status;
@@ -147,14 +160,7 @@ public class ChessGame : MonoBehaviour
 
     private void EnsureAudioSource()
     {
-        if (!audioSource)
-            audioSource = GetComponent<AudioSource>();
-
-        if (!audioSource)
-            audioSource = gameObject.AddComponent<AudioSource>();
-
-        audioSource.playOnAwake = false;
-        audioSource.spatialBlend = 0f;
+        audioSource = MatchAudioPresenter.EnsureSource(gameObject, audioSource);
     }
 
     private Camera GetGameplayCamera()
@@ -177,11 +183,8 @@ public class ChessGame : MonoBehaviour
 
     private void PlaySound(AudioClip clip)
     {
-        if (!clip)
-            return;
-
-        EnsureAudioSource();
-        audioSource.PlayOneShot(clip, soundVolume * GameRuntimeSettings.SoundVolume01);
+        audioSource = MatchAudioPresenter.Play(gameObject, audioSource, clip,
+            soundVolume * GameRuntimeSettings.SoundVolume01);
     }
 
     private void AutoAssignDefaultAudioClips()
@@ -232,41 +235,67 @@ public class ChessGame : MonoBehaviour
 
     private void Start()
     {
-        PrepareGame();
+        // Referenced board/piece assets already belong to the scene; prepare them after auth.
         PlayerAuthService.TryRestoreSession();
         if (PlayerAuthService.IsAuthenticated || PlayerAuthService.IsGuestSession)
+            QueueAuthenticatedSession();
+        else
+            AuthController.Create(this, QueueAuthenticatedSession);
+    }
+
+    public void QueueAuthenticatedSession()
+    {
+        SessionLoadingController.For(this).Begin();
+    }
+
+    internal void PrepareAuthenticatedBoard()
+    {
+        if (chessboard) PrepareGame();
+    }
+
+    public void AttachBoard(Chessboard board)
+    {
+        chessboard = board;
+        gameplayCamera = null;
+        if (board) EnsureOrbitCamera();
+    }
+
+    public void SetContentLoading(bool loading)
+    {
+        contentLoading = loading;
+        RefreshLocalInteractionState();
+    }
+
+    internal void ClearCosmeticPieces()
+    {
+        ClearLocalClassicSession();
+        aramCoordinator?.EndMatch();
+        pieceAnimator?.CancelAll();
+        StopCheckWarning();
+        StopAllCoroutines();
+        if (runtimePiecesRoot)
         {
-            BeginAuthenticatedSession();
-            return;
+            runtimePiecesRoot.gameObject.SetActive(false);
+            Destroy(runtimePiecesRoot.gameObject);
+            runtimePiecesRoot = null;
         }
-
-        AuthController.Create(this, QueueAuthenticatedSession);
+        ClearPieceMap();
+        gameStarted = false;
+        status = ChessGameStatus.NotStarted;
     }
 
-    private void QueueAuthenticatedSession()
+    internal void CompleteAuthenticatedSession()
     {
-        StartCoroutine(BeginAuthenticatedSessionNextFrame());
-    }
-
-    private IEnumerator BeginAuthenticatedSessionNextFrame()
-    {
-        yield return null;
-        yield return null;
-        BeginAuthenticatedSession();
-    }
-
-    private void BeginAuthenticatedSession()
-    {
-        PrepareGame();
         if (!turnSelectionUI)
             turnSelectionUI = ChessTurnSelectionUI.Create(this);
         else
-            turnSelectionUI.ShowMainMenu();
+            turnSelectionUI.RestoreAuthenticatedMenu();
     }
 
     private void Update()
     {
-        if (gameStarted && aramMode && aramRuntime != null && aramRuntime.IsSelectingSetupTargets)
+        if (contentLoading) return;
+        if (gameStarted && aramMode && aramCoordinator != null && aramCoordinator.IsSelectingSetupTargets)
         {
             if (pauseLocked || Mouse.current == null || !Mouse.current.leftButton.wasPressedThisFrame)
                 return;
@@ -274,7 +303,7 @@ public class ChessGame : MonoBehaviour
             if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
                 return;
 
-            aramRuntime.TryHandleSetupPieceClick(GetPieceUnderPointerForAramSetup());
+            aramCoordinator.TryHandleSetupPieceClick(GetPieceUnderPointerForAramSetup());
             return;
         }
 
@@ -346,7 +375,7 @@ public class ChessGame : MonoBehaviour
         EnsureAramRuntime();
         GameMusicManager.PlayInGameMusic(false, StockfishDifficulty.Medium);
         BeginGameInternal(PieceTeam.White, PieceTeam.White, false, PieceTeam.White);
-        aramRuntime.BeginMatch(this);
+        aramCoordinator.BeginMatch(this);
     }
 
     public void BeginLanGame(PieceTeam firstTurn, PieceTeam localPlayerTeam)
@@ -368,7 +397,7 @@ public class ChessGame : MonoBehaviour
         EnsureAramRuntime();
         GameMusicManager.PlayInGameMusic(false, StockfishDifficulty.Medium);
         BeginGameInternal(firstTurn, localPlayerTeam, true, PieceTeam.White);
-        aramRuntime.BeginNetworkMatch(this, localPlayerTeam, matchSeed, serverState);
+        aramCoordinator.BeginNetworkMatch(this, localPlayerTeam, matchSeed, serverState);
     }
 
     public void BeginBotGame(PieceTeam localPlayerTeam)
@@ -398,12 +427,6 @@ public class ChessGame : MonoBehaviour
         whitePieceSkinId = PieceSkinCatalog.NormalizeId(whiteSkinId);
         blackPieceSkinId = PieceSkinCatalog.NormalizeId(blackSkinId);
 
-        if (!PieceSkinCatalog.IsDefault(whitePieceSkinId) &&
-            string.Equals(whitePieceSkinId, blackPieceSkinId, StringComparison.OrdinalIgnoreCase))
-        {
-            blackPieceSkinId = PieceSkinCatalog.DefaultSkinId;
-        }
-
         ApplyPieceSkinsToRuntimePieces();
     }
 
@@ -422,6 +445,8 @@ public class ChessGame : MonoBehaviour
 
     private void BeginGameInternal(PieceTeam firstTurn, PieceTeam localPlayerTeam, bool restrictInput, PieceTeam frontTeam)
     {
+        ClearLocalClassicSession();
+        matchResultRecorder.Begin(Guid.NewGuid().ToString("N"));
         currentTurn = firstTurn;
         moveHistoryFirstTurn = firstTurn;
         playerTeam = localPlayerTeam;
@@ -445,6 +470,8 @@ public class ChessGame : MonoBehaviour
         ApplyPieceSkinsToRuntimePieces();
         SetRuntimePiecesVisible(true);
         RefreshPieceMap();
+        if (!aramMode && !serverAuthoritativeMode)
+            InitializeClassicSession(firstTurn, frontTeam);
         RecordCurrentPosition();
         gameStarted = true;
         ApplyGameplayCameraState(localPlayerTeam, true);
@@ -453,6 +480,82 @@ public class ChessGame : MonoBehaviour
         RefreshLocalInteractionState();
         turnSelectionUI?.SetTurn(currentTurn);
         UpdateCheckWarningForCurrentTurn();
+    }
+
+    private void InitializeClassicSession(PieceTeam firstTurn, PieceTeam frontTeam)
+    {
+        var orientation = new ChessButWeird.Domain.BoardOrientation((ChessButWeird.Domain.Team)frontTeam);
+        localClassicCoordinator = ChessButWeird.Application.ClassicMatchCoordinator.CreateClassic(
+            (ChessButWeird.Domain.Team)firstTurn, orientation);
+        RebindLocalClassicPieces();
+    }
+
+    private void RebindLocalClassicPieces()
+    {
+        localClassicPiecesById.Clear();
+        if (localClassicCoordinator == null)
+            return;
+
+        for (int x = 0; x < BoardSize; x++)
+            for (int y = 0; y < BoardSize; y++)
+            {
+                ChessPiece piece = pieces[x, y];
+                if (!piece)
+                    continue;
+
+                ChessButWeird.Domain.PieceState state = localClassicCoordinator.GetPiece(
+                    new ChessButWeird.Domain.Square(x, y));
+                if (!state.IsEmpty && (PieceTeam)state.Team == piece.Team &&
+                    (PieceType)state.Kind == piece.Type)
+                    localClassicPiecesById[state.Id] = piece;
+            }
+    }
+
+    private void ClearLocalClassicSession()
+    {
+        if (localClassicCoordinator != null)
+            localClassicCoordinator.ClearPendingCommand();
+        localClassicCoordinator = null;
+        localClassicPiecesById.Clear();
+    }
+
+    private void RemoveLocalClassicPiece(ChessPiece piece)
+    {
+        if (!piece)
+            return;
+
+        int idToRemove = 0;
+        foreach (KeyValuePair<int, ChessPiece> entry in localClassicPiecesById)
+            if (entry.Value == piece)
+            {
+                idToRemove = entry.Key;
+                break;
+            }
+
+        if (idToRemove != 0)
+            localClassicPiecesById.Remove(idToRemove);
+    }
+
+    private ChessPiece GetLocalClassicPieceById(int id)
+    {
+        return id > 0 && localClassicPiecesById.TryGetValue(id, out ChessPiece piece) ? piece : null;
+    }
+
+    private void ReplaceLocalClassicPiece(ChessPiece oldPiece, ChessPiece newPiece)
+    {
+        if (!oldPiece || !newPiece || localClassicCoordinator == null)
+            return;
+
+        int idToReplace = 0;
+        foreach (KeyValuePair<int, ChessPiece> entry in localClassicPiecesById)
+            if (entry.Value == oldPiece)
+            {
+                idToReplace = entry.Key;
+                break;
+            }
+
+        if (idToReplace != 0)
+            localClassicPiecesById[idToReplace] = newPiece;
     }
 
     public bool TrySelectPiece(ChessPiece piece)
@@ -489,7 +592,24 @@ public class ChessGame : MonoBehaviour
         Vector2Int from = selectedPiece.BoardPosition;
         pendingCommittedMoveFrom = from;
         pendingCommittedMoveTo = destination;
-        if (!IsLegalMoveAfterKingSafety(selectedPiece, from, destination))
+        bool localSessionPromotionPending = false;
+        ChessButWeird.Domain.MatchSessionMoveResult localSessionResult = null;
+        bool moveAccepted;
+        if (UsesClassicDomainSession)
+        {
+            ChessButWeird.Application.ClassicMoveStatus submission = localClassicCoordinator.Submit(
+                new ChessButWeird.Domain.Move(UnityBoardAdapter.ToSquare(from),
+                    UnityBoardAdapter.ToSquare(destination)), out localSessionResult);
+            localSessionPromotionPending = submission == ChessButWeird.Application.ClassicMoveStatus.PromotionRequired;
+            moveAccepted = submission == ChessButWeird.Application.ClassicMoveStatus.Applied ||
+                localSessionPromotionPending;
+        }
+        else
+        {
+            moveAccepted = IsLegalMoveAfterKingSafety(selectedPiece, from, destination);
+        }
+
+        if (!moveAccepted)
         {
             ClearPendingCommittedMove();
             PlaySound(errorSound);
@@ -499,8 +619,69 @@ public class ChessGame : MonoBehaviour
         ChessPiece movingPiece = selectedPiece;
         ChessPiece capturedPiece = pieces[destination.x, destination.y];
         PieceTeam opponentTeam = movingPiece.Team == PieceTeam.White ? PieceTeam.Black : PieceTeam.White;
-        bool isEnPassant = TryGetEnPassantCapture(movingPiece, from, destination, out ChessPiece enPassantCapturedPiece, out Vector2Int enPassantCapturePosition);
-        bool isCastling = TryGetCastlingRookMove(movingPiece, from, destination, out ChessPiece castlingRook, out Vector2Int castlingRookFrom, out Vector2Int castlingRookTo);
+        bool isEnPassant;
+        ChessPiece enPassantCapturedPiece;
+        Vector2Int enPassantCapturePosition;
+        bool isCastling;
+        ChessPiece castlingRook;
+        Vector2Int castlingRookFrom;
+        Vector2Int castlingRookTo;
+        if (UsesClassicDomainSession && localSessionResult != null)
+        {
+            // The accepted domain result is the single rule decision for local
+            // classic. Resolve its stable IDs into the existing visual objects
+            // instead of asking the legacy helpers to decide capture/castle again.
+            isEnPassant = false;
+            enPassantCapturedPiece = null;
+            enPassantCapturePosition = default;
+            isCastling = localSessionResult.IsCastle;
+            castlingRook = null;
+            castlingRookFrom = default;
+            castlingRookTo = default;
+            for (int changeIndex = 0; changeIndex < localSessionResult.Changes.Count; changeIndex++)
+            {
+                ChessButWeird.Domain.BoardChange change = localSessionResult.Changes[changeIndex];
+                if (change.Kind == ChessButWeird.Domain.BoardChangeKind.Capture)
+                {
+                    enPassantCapturedPiece = GetLocalClassicPieceById(change.PieceId);
+                    if (enPassantCapturedPiece)
+                    {
+                        capturedPiece = enPassantCapturedPiece;
+                        enPassantCapturePosition = new Vector2Int(change.From.File, change.From.Rank);
+                        isEnPassant = capturedPiece != pieces[destination.x, destination.y];
+                    }
+                }
+                else if (change.Kind == ChessButWeird.Domain.BoardChangeKind.Move && change.From != UnityBoardAdapter.ToSquare(from))
+                {
+                    castlingRook = GetLocalClassicPieceById(change.PieceId);
+                    if (castlingRook)
+                    {
+                        castlingRookFrom = new Vector2Int(change.From.File, change.From.Rank);
+                        castlingRookTo = new Vector2Int(change.To.File, change.To.Rank);
+                    }
+                }
+            }
+            if (isEnPassant)
+                enPassantCapturedPiece = capturedPiece;
+        }
+        else if (UsesClassicDomainSession)
+        {
+            // A promotion is validated before the user's choice and committed
+            // in CompletePromotion. Its capture is still the destination piece;
+            // en-passant and castling cannot occur on a promotion rank.
+            isEnPassant = false;
+            enPassantCapturedPiece = null;
+            enPassantCapturePosition = default;
+            isCastling = false;
+            castlingRook = null;
+            castlingRookFrom = default;
+            castlingRookTo = default;
+        }
+        else
+        {
+            isEnPassant = TryGetEnPassantCapture(movingPiece, from, destination, out enPassantCapturedPiece, out enPassantCapturePosition);
+            isCastling = TryGetCastlingRookMove(movingPiece, from, destination, out castlingRook, out castlingRookFrom, out castlingRookTo);
+        }
         bool movedPawn = movingPiece.Type == PieceType.Pawn;
         StopCheckWarning();
 
@@ -508,6 +689,9 @@ public class ChessGame : MonoBehaviour
             capturedPiece = enPassantCapturedPiece;
 
         bool capturedAnyPiece = capturedPiece;
+
+        if (UsesClassicDomainSession && capturedPiece)
+            RemoveLocalClassicPiece(capturedPiece);
 
         pieces[from.x, from.y] = null;
         if (isEnPassant)
@@ -526,16 +710,16 @@ public class ChessGame : MonoBehaviour
         movingPiece.SetBoardPosition(destination);
         movingPiece.MarkMoved();
         RecordLastMove(movingPiece, from, destination);
-        aramRuntime?.OnMoveAccepted(movingPiece, from, destination, pieces);
+        aramCoordinator?.OnMoveAccepted(movingPiece, from, destination, pieces);
         lastMoveSummary = BuildMoveSummary(movingPiece, from, destination, capturedPiece, isCastling);
         moveHistory.Add(lastMoveSummary);
         if (capturedPiece)
             GetCapturedPieceList(movingPiece.Team).Add(capturedPiece.Type);
         List<ChessPiece> aramExplosionVictims = null;
-        if (capturedPiece && aramRuntime != null)
+        if (capturedPiece && aramCoordinator != null)
         {
             aramExplosionVictims = new List<ChessPiece>();
-            if (!aramRuntime.TryGetQueenExplosion(capturedPiece, destination, movingPiece, pieces, aramExplosionVictims))
+            if (!aramCoordinator.TryGetQueenExplosion(capturedPiece, destination, movingPiece, pieces, aramExplosionVictims))
                 aramExplosionVictims = null;
         }
         UpdateHalfMoveClock(movedPawn, capturedAnyPiece);
@@ -563,8 +747,10 @@ public class ChessGame : MonoBehaviour
             return true;
         }
 
-        currentTurn = opponentTeam;
-        aramRuntime?.OnTurnStarted(currentTurn);
+        currentTurn = UsesClassicDomainSession
+            ? (PieceTeam)localClassicCoordinator.Turn
+            : opponentTeam;
+        aramCoordinator?.OnTurnStarted(currentTurn);
         NotifyMoveCommitted(new ChessLanMove(from, destination));
         turnSelectionUI?.SetTurn(currentTurn);
         RefreshLocalInteractionState();
@@ -618,11 +804,7 @@ public class ChessGame : MonoBehaviour
             if (ChessMoveRules.IsInsideBoard(position) && pieces[position.x, position.y] == victim)
                 pieces[position.x, position.y] = null;
 
-            if (pieceAnimations.TryGetValue(victim, out Coroutine existingAnimation))
-            {
-                StopCoroutine(existingAnimation);
-                pieceAnimations.Remove(victim);
-            }
+            pieceAnimator?.Cancel(victim);
 
             Destroy(victim.gameObject);
         }
@@ -654,9 +836,16 @@ public class ChessGame : MonoBehaviour
 
     public void RestartToMainMenu()
     {
+        var loading = GetComponent<LoadingManager>();
+        if (loading && loading.HasMatchContent) { loading.ReturnToMenu(); return; }
+        FinishReturnToMainMenu();
+    }
+
+    internal void FinishReturnToMainMenu()
+    {
         pauseLocked = false;
         Time.timeScale = 1f;
-        PrepareGame();
+        if (chessboard) PrepareGame();
         turnSelectionUI?.ShowMainMenu();
         ReturnedToMainMenu?.Invoke();
     }
@@ -705,12 +894,20 @@ public class ChessGame : MonoBehaviour
         RefreshLocalInteractionState();
     }
 
+    private void OnDestroy()
+    {
+        pieceAnimator?.CancelAll();
+        aramCoordinator?.Dispose();
+        visualFactory.Dispose();
+    }
+
     private void PrepareGame()
     {
         StopCheckWarning();
         StopAllCoroutines();
-        pieceAnimations.Clear();
-        aramRuntime?.EndMatch();
+        pieceAnimator?.CancelAll();
+        ClearLocalClassicSession();
+        aramCoordinator?.EndMatch();
 
         if (piecesRoot)
         {
@@ -837,12 +1034,10 @@ public class ChessGame : MonoBehaviour
 
     private void EnsureAramRuntime()
     {
-        if (aramRuntime)
+        if (aramCoordinator != null)
             return;
 
-        aramRuntime = GetComponent<AramBuffRuntime>();
-        if (!aramRuntime)
-            aramRuntime = gameObject.AddComponent<AramBuffRuntime>();
+        aramCoordinator = new ChessButWeird.Application.AramMatchCoordinator(gameObject);
     }
 
     private void ApplyGameplayCameraState(PieceTeam playerSide, bool immediate)
@@ -904,6 +1099,19 @@ public class ChessGame : MonoBehaviour
         if (!piece)
             return safeMoveBuffer;
 
+        if (UsesClassicDomainSession)
+        {
+            List<ChessButWeird.Domain.Move> sessionMoves = localClassicCoordinator.LegalMovesFrom(
+                UnityBoardAdapter.ToSquare(piece.BoardPosition));
+            for (int i = 0; i < sessionMoves.Count; i++)
+            {
+                Vector2Int destination = new Vector2Int(sessionMoves[i].To.File, sessionMoves[i].To.Rank);
+                if (!safeMoveBuffer.Contains(destination))
+                    safeMoveBuffer.Add(destination);
+            }
+            return safeMoveBuffer;
+        }
+
         List<Vector2Int> candidateMoves = GetCandidateMoves(piece);
         for (int i = 0; i < candidateMoves.Count; i++)
         {
@@ -917,6 +1125,9 @@ public class ChessGame : MonoBehaviour
 
     private bool IsLegalMoveAfterKingSafety(ChessPiece piece, Vector2Int from, Vector2Int destination)
     {
+        if (UsesClassicDomainSession)
+            return localClassicCoordinator.CanApply(UnityBoardAdapter.ToSquare(from), UnityBoardAdapter.ToSquare(destination));
+
         if (!IsLegalMoveIgnoringKingSafety(piece, from, destination))
             return false;
 
@@ -933,10 +1144,23 @@ public class ChessGame : MonoBehaviour
         if (!piece)
             return candidateMoveBuffer;
 
-        if (aramRuntime == null || !aramRuntime.SuppressesStandardMovement(piece))
+        if (UsesClassicDomainSession)
+        {
+            List<ChessButWeird.Domain.Move> sessionMoves = localClassicCoordinator.LegalMovesFrom(
+                UnityBoardAdapter.ToSquare(piece.BoardPosition));
+            for (int i = 0; i < sessionMoves.Count; i++)
+            {
+                Vector2Int destination = new Vector2Int(sessionMoves[i].To.File, sessionMoves[i].To.Rank);
+                if (!candidateMoveBuffer.Contains(destination))
+                    candidateMoveBuffer.Add(destination);
+            }
+            return candidateMoveBuffer;
+        }
+
+        if (aramCoordinator == null || !aramCoordinator.SuppressesStandardMovement(piece))
             piece.CollectLegalMoves(pieces, candidateMoveBuffer);
         AddSpecialCandidateMoves(piece, candidateMoveBuffer);
-        aramRuntime?.AddCandidateMoves(piece, candidateMoveBuffer, pieces);
+        aramCoordinator?.AddCandidateMoves(piece, candidateMoveBuffer, pieces);
         return candidateMoveBuffer;
     }
 
@@ -971,71 +1195,32 @@ public class ChessGame : MonoBehaviour
 
     private bool IsLegalMoveIgnoringKingSafety(ChessPiece piece, Vector2Int from, Vector2Int destination)
     {
-        bool suppressStandardMovement = aramRuntime != null && aramRuntime.SuppressesStandardMovement(piece);
+        bool suppressStandardMovement = aramCoordinator != null && aramCoordinator.SuppressesStandardMovement(piece);
         return (!suppressStandardMovement && ChessMoveRules.IsLegalMove(piece, from, destination, pieces)) ||
             IsEnPassantMove(piece, from, destination) ||
             IsCastlingMove(piece, from, destination) ||
-            (aramRuntime != null && aramRuntime.IsLegalAramMove(piece, from, destination, pieces));
+            (aramCoordinator != null && aramCoordinator.IsLegalAramMove(piece, from, destination, pieces));
     }
 
     private bool DoesMoveKeepTeamKingSafe(ChessPiece piece, Vector2Int from, Vector2Int destination, PieceTeam team)
     {
-        MoveSimulation simulation = ApplyMoveSimulation(piece, from, destination);
-
-        bool kingIsSafe = !IsTeamInCheck(team);
-
-        RestoreMoveSimulation(piece, from, destination, simulation);
-
-        return kingIsSafe;
-    }
-
-    private MoveSimulation ApplyMoveSimulation(ChessPiece piece, Vector2Int from, Vector2Int destination)
-    {
-        MoveSimulation simulation = new MoveSimulation
+        var none = new ChessButWeird.Domain.Square(-1, -1);
+        var capture = UnityBoardAdapter.ToSquare(destination);
+        if (TryGetEnPassantCapture(piece, from, destination, out _, out Vector2Int enPassantPosition))
+            capture = UnityBoardAdapter.ToSquare(enPassantPosition);
+        var rookFrom = none;
+        var rookTo = none;
+        if (TryGetCastlingRookMove(piece, from, destination, out _, out Vector2Int source, out Vector2Int target))
         {
-            destinationPiece = pieces[destination.x, destination.y]
-        };
-
-        if (TryGetEnPassantCapture(piece, from, destination, out ChessPiece enPassantCapturedPiece, out Vector2Int enPassantCapturePosition))
-        {
-            simulation.isEnPassant = true;
-            simulation.enPassantCapturedPiece = enPassantCapturedPiece;
-            simulation.enPassantCapturePosition = enPassantCapturePosition;
-            pieces[enPassantCapturePosition.x, enPassantCapturePosition.y] = null;
+            rookFrom = UnityBoardAdapter.ToSquare(source);
+            rookTo = UnityBoardAdapter.ToSquare(target);
         }
-
-        if (TryGetCastlingRookMove(piece, from, destination, out ChessPiece rook, out Vector2Int rookFrom, out Vector2Int rookTo))
-        {
-            simulation.isCastling = true;
-            simulation.castlingRook = rook;
-            simulation.castlingRookFrom = rookFrom;
-            simulation.castlingRookTo = rookTo;
-            pieces[rookFrom.x, rookFrom.y] = null;
-            pieces[rookTo.x, rookTo.y] = rook;
-            rook.SetBoardPosition(rookTo);
-        }
-
-        pieces[from.x, from.y] = null;
-        pieces[destination.x, destination.y] = piece;
-        piece.SetBoardPosition(destination);
-        return simulation;
-    }
-
-    private void RestoreMoveSimulation(ChessPiece piece, Vector2Int from, Vector2Int destination, MoveSimulation simulation)
-    {
-        piece.SetBoardPosition(from);
-        pieces[from.x, from.y] = piece;
-        pieces[destination.x, destination.y] = simulation.destinationPiece;
-
-        if (simulation.isEnPassant)
-            pieces[simulation.enPassantCapturePosition.x, simulation.enPassantCapturePosition.y] = simulation.enPassantCapturedPiece;
-
-        if (simulation.isCastling && simulation.castlingRook)
-        {
-            simulation.castlingRook.SetBoardPosition(simulation.castlingRookFrom);
-            pieces[simulation.castlingRookFrom.x, simulation.castlingRookFrom.y] = simulation.castlingRook;
-            pieces[simulation.castlingRookTo.x, simulation.castlingRookTo.y] = null;
-        }
+        bool explosion = aramCoordinator != null && aramCoordinator.WouldQueenExplode(pieces[destination.x, destination.y]);
+        var simulation = new ChessButWeird.Domain.MoveBoardView<UnityBoardAdapter>(new UnityBoardAdapter(pieces),
+            UnityBoardAdapter.ToSquare(from), UnityBoardAdapter.ToSquare(destination), capture, rookFrom, rookTo, explosion);
+        return !ChessButWeird.Domain.KingSafetyRules.IsInCheck(simulation, (ChessButWeird.Domain.Team)team,
+            new UnityBuffContextAdapter(pieces, aramCoordinator != null ? aramCoordinator.Runtime : null),
+            aramCoordinator != null ? aramCoordinator.DomainRules : ChessButWeird.Domain.AramRules.BuiltIn);
     }
 
     private bool IsCheckmate(PieceTeam team)
@@ -1045,6 +1230,9 @@ public class ChessGame : MonoBehaviour
 
     private bool HasAnySafeLegalMove(PieceTeam team)
     {
+        if (UsesClassicDomainSession)
+            return localClassicCoordinator.LegalMoves().Count > 0;
+
         for (int x = 0; x < BoardSize; x++)
             for (int y = 0; y < BoardSize; y++)
             {
@@ -1149,34 +1337,15 @@ public class ChessGame : MonoBehaviour
 
     private bool IsSquareUnderAttack(Vector2Int square, PieceTeam attackerTeam)
     {
-        for (int x = 0; x < BoardSize; x++)
-            for (int y = 0; y < BoardSize; y++)
-            {
-                ChessPiece piece = pieces[x, y];
-                if (!piece || piece.Team != attackerTeam)
-                    continue;
-
-                if (CanPieceAttackSquare(piece, square))
-                    return true;
-            }
-
-        return false;
-    }
-
-    private bool CanPieceAttackSquare(ChessPiece piece, Vector2Int square)
-    {
-        if (!piece || piece.BoardPosition == square)
-            return false;
-
-        if (piece.Type == PieceType.Pawn)
-        {
-            Vector2Int delta = square - piece.BoardPosition;
-            return Mathf.Abs(delta.x) == 1 && delta.y == piece.ForwardDirection;
-        }
-
-        bool suppressStandardMovement = aramRuntime != null && aramRuntime.SuppressesStandardMovement(piece);
-        return (!suppressStandardMovement && piece.IsLegalMove(square, pieces)) ||
-            (aramRuntime != null && aramRuntime.CanAramPieceAttackSquare(piece, square, pieces));
+        ChessButWeird.Domain.AramRules rules = aramCoordinator != null
+            ? aramCoordinator.DomainRules
+            : ChessButWeird.Domain.AramRules.BuiltIn;
+        return ChessButWeird.Domain.KingSafetyRules.IsAttacked(
+            new UnityBoardAdapter(pieces),
+            UnityBoardAdapter.ToSquare(square),
+            (ChessButWeird.Domain.Team)attackerTeam,
+            new UnityBuffContextAdapter(pieces, aramCoordinator != null ? aramCoordinator.Runtime : null),
+            rules);
     }
 
     private ChessPiece FindKing(PieceTeam team)
@@ -1234,7 +1403,7 @@ public class ChessGame : MonoBehaviour
         if (!TryGetCastlingRookMove(piece, from, destination, out _, out Vector2Int rookFrom, out _))
             return false;
 
-        bool strongFortress = aramRuntime != null && aramRuntime.AllowsStrongFortressCastle(piece.Team);
+        bool strongFortress = aramCoordinator != null && aramCoordinator.AllowsStrongFortressCastle(piece.Team);
         if (!strongFortress && IsTeamInCheck(piece.Team))
             return false;
 
@@ -1326,6 +1495,14 @@ public class ChessGame : MonoBehaviour
 
     private string BuildPositionKey()
     {
+        if (UsesClassicDomainSession && pendingPromotionPawn == null)
+        {
+            string[] fields = ChessButWeird.Domain.FenCodec.Write(localClassicCoordinator.Snapshot)
+                .Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            if (fields.Length >= 4)
+                return $"{fields[0]} {fields[1]} {fields[2]} {fields[3]}";
+        }
+
         StringBuilder builder = new StringBuilder(96);
 
         for (int rank = 7; rank >= 0; rank--)
@@ -1441,6 +1618,9 @@ public class ChessGame : MonoBehaviour
 
     public string ExportFen()
     {
+        if (UsesClassicDomainSession && pendingPromotionPawn == null)
+            return ChessButWeird.Domain.FenCodec.Write(localClassicCoordinator.Snapshot);
+
         int fullMoveNumber = Mathf.Max(1, 1 + moveHistory.Count / 2);
         return $"{BuildPositionKey()} {halfMoveClock} {fullMoveNumber}";
     }
@@ -1470,6 +1650,23 @@ public class ChessGame : MonoBehaviour
         if (!pendingPromotionPawn)
             return;
 
+        if (UsesClassicDomainSession)
+        {
+            PieceType normalizedPromotion = promotionType == PieceType.King || promotionType == PieceType.Pawn
+                ? PieceType.Queen
+                : promotionType;
+            ChessButWeird.Application.ClassicMoveStatus submission = localClassicCoordinator.Submit(
+                new ChessButWeird.Domain.Move(
+                    UnityBoardAdapter.ToSquare(pendingCommittedMoveFrom),
+                    UnityBoardAdapter.ToSquare(pendingCommittedMoveTo),
+                    (ChessButWeird.Domain.PieceKind)normalizedPromotion), out _);
+            if (submission != ChessButWeird.Application.ClassicMoveStatus.Applied)
+            {
+                Debug.LogError("Local classic promotion could not be committed by MatchSession.");
+                return;
+            }
+        }
+
         ChessPiece promotedPiece = PromotePawn(pendingPromotionPawn, promotionType);
         PlaySound(promotionSound);
         pendingPromotionPawn = null;
@@ -1478,8 +1675,10 @@ public class ChessGame : MonoBehaviour
         if (moveHistory.Count > 0)
             moveHistory[moveHistory.Count - 1] = lastMoveSummary;
 
-        currentTurn = pendingPromotionOpponentTeam;
-        aramRuntime?.OnTurnStarted(currentTurn);
+        currentTurn = UsesClassicDomainSession
+            ? (PieceTeam)localClassicCoordinator.Turn
+            : pendingPromotionOpponentTeam;
+        aramCoordinator?.OnTurnStarted(currentTurn);
         NotifyMoveCommitted(new ChessLanMove(pendingCommittedMoveFrom, pendingCommittedMoveTo, promotionType));
         turnSelectionUI?.SetTurn(currentTurn);
         pendingRemotePromotionResolution = false;
@@ -1507,11 +1706,7 @@ public class ChessGame : MonoBehaviour
         Vector2Int boardPosition = pawn.BoardPosition;
         int forwardDirection = pawn.ForwardDirection;
 
-        if (pieceAnimations.TryGetValue(pawn, out Coroutine existingAnimation))
-        {
-            StopCoroutine(existingAnimation);
-            pieceAnimations.Remove(pawn);
-        }
+        pieceAnimator?.Cancel(pawn);
 
         GameObject pawnObject = pawn.gameObject;
         ChessPiece promotedPiece = CreatePromotedPieceObject(team, promotionType, boardPosition, forwardDirection);
@@ -1522,9 +1717,11 @@ public class ChessGame : MonoBehaviour
         promotedPiece.MarkMoved();
         promotedPiece.gameObject.name = $"{team} {promotionType} {boardPosition.x},{boardPosition.y}";
         ApplySkinToPiece(promotedPiece);
-        EnsurePieceCollider(promotedPiece.gameObject);
+        PieceViewGeometry.EnsurePieceCollider(promotedPiece.gameObject);
         MovePieceToTile(promotedPiece, boardPosition, 0f);
         pieces[boardPosition.x, boardPosition.y] = promotedPiece;
+        if (UsesClassicDomainSession)
+            ReplaceLocalClassicPiece(pawn, promotedPiece);
         lastMovedPiece = promotedPiece;
         lastMoveWasPawnDoubleStep = false;
 
@@ -1534,6 +1731,8 @@ public class ChessGame : MonoBehaviour
 
     private ChessPiece CreatePromotedPieceObject(PieceTeam team, PieceType promotionType, Vector2Int boardPosition, int forwardDirection)
     {
+        if (LoadingManager.For(this).HasMatchContent)
+            return CreateCosmeticPiece(promotionType, team, boardPosition);
         Transform sourceTransform = FindVisualChild(GetVisualSourceName(team, promotionType));
         if (!sourceTransform)
             return null;
@@ -1544,7 +1743,7 @@ public class ChessGame : MonoBehaviour
             return null;
 
         int sourcePieceCount = promotionType == PieceType.Queen ? 1 : 2;
-        List<MeshComponentData> components = SplitMeshIntoSpatialGroups(sourceMeshFilter.sharedMesh, sourcePieceCount);
+        List<MeshComponentData> components = visualFactory.SplitMeshIntoSpatialGroups(sourceMeshFilter.sharedMesh, sourcePieceCount);
         if (components.Count == 0)
             return null;
 
@@ -1593,6 +1792,11 @@ public class ChessGame : MonoBehaviour
         return promotedPiece;
     }
 
+    private void ApplySkinToPiece(ChessPiece piece)
+    {
+        if (piece) PieceSkinPresenter.Apply(piece, GetPieceSkinId(piece.Team));
+    }
+
     private void ApplyPieceSkinsToRuntimePieces()
     {
         if (!runtimePiecesRoot)
@@ -1601,53 +1805,6 @@ public class ChessGame : MonoBehaviour
         ChessPiece[] scenePieces = runtimePiecesRoot.GetComponentsInChildren<ChessPiece>(true);
         for (int i = 0; i < scenePieces.Length; i++)
             ApplySkinToPiece(scenePieces[i]);
-    }
-
-    private void ApplySkinToPiece(ChessPiece piece)
-    {
-        if (!piece)
-            return;
-
-        PieceSkinDefinition skin = PieceSkinCatalog.Get(GetPieceSkinId(piece.Team));
-        PieceSkinVisualState skinState = piece.GetComponent<PieceSkinVisualState>();
-        if (!skinState)
-            skinState = piece.gameObject.AddComponent<PieceSkinVisualState>();
-        skinState.CaptureOriginalRenderers(piece.transform);
-
-        if (skin.IsDefault || !TryLoadPieceSkinPrefab(skin, piece.Type, out GameObject prefab))
-        {
-            skinState.ApplyDefault();
-            UpdatePieceRootColliderFromVisibleRenderers(piece.gameObject);
-            return;
-        }
-
-        skinState.ApplyPrefabSkin(prefab, skin.Id, piece.Type, skin.GetTuning(piece.Type), piece.transform);
-        UpdatePieceRootColliderFromVisibleRenderers(piece.gameObject);
-    }
-
-    private bool TryLoadPieceSkinPrefab(PieceSkinDefinition skin, PieceType pieceType, out GameObject prefab)
-    {
-        prefab = null;
-        if (skin == null || skin.IsDefault)
-            return false;
-
-        string resourcePath = skin.GetResourcePath(pieceType);
-        if (!string.IsNullOrWhiteSpace(resourcePath))
-            prefab = Resources.Load<GameObject>(resourcePath);
-
-#if UNITY_EDITOR
-        if (!prefab)
-        {
-            string assetPath = skin.GetPrefabAssetPath(pieceType);
-            if (!string.IsNullOrWhiteSpace(assetPath))
-                prefab = AssetDatabase.LoadAssetAtPath<GameObject>(assetPath);
-        }
-#endif
-
-        if (!prefab)
-            Debug.LogWarning($"[PieceSkin] Missing prefab for skin '{skin.DisplayName}' and piece '{pieceType}'. Using default model.");
-
-        return prefab != null;
     }
 
     private string GetVisualSourceName(PieceTeam team, PieceType pieceType)
@@ -1765,6 +1922,17 @@ public class ChessGame : MonoBehaviour
 
     private void CreateRuntimePiecesFromVisualSet()
     {
+        if (LoadingManager.For(this).HasMatchContent)
+        {
+            PieceType[] backRank = { PieceType.Rook, PieceType.Knight, PieceType.Bishop, PieceType.Queen, PieceType.King, PieceType.Bishop, PieceType.Knight, PieceType.Rook };
+            foreach (PieceTeam team in new[] { PieceTeam.White, PieceTeam.Black })
+                for (int file = 0; file < 8; file++)
+                {
+                    CreateCosmeticPiece(backRank[file], team, new Vector2Int(file, team == PieceTeam.White ? 0 : 7));
+                    CreateCosmeticPiece(PieceType.Pawn, team, new Vector2Int(file, team == PieceTeam.White ? 1 : 6));
+                }
+            return;
+        }
         CreateSplitPieces<RookPiece>("Rook_1", PieceTeam.White, 0, new[] { 0, 7 });
         CreateSplitPieces<KnightPiece>("Knight_1", PieceTeam.White, 0, new[] { 1, 6 });
         CreateSplitPieces<BishopPiece>("Bishop_1", PieceTeam.White, 0, new[] { 2, 5 });
@@ -1778,6 +1946,31 @@ public class ChessGame : MonoBehaviour
         CreateSplitPieces<BishopPiece>("Bishop_2", PieceTeam.Black, 7, new[] { 2, 5 });
         CreateSplitPieces<QueenPiece>("Queen_2", PieceTeam.Black, 7, new[] { 3 });
         CreateSplitPieces<KingPiece>("King_2", PieceTeam.Black, 7, new[] { 4 });
+    }
+
+    private ChessPiece CreateCosmeticPiece(PieceType type, PieceTeam team, Vector2Int position)
+    {
+        var root = new GameObject($"{team} {type} {position.x},{position.y}");
+        root.transform.SetParent(runtimePiecesRoot, false);
+        // A shared primitive provides stable fitting/collider bounds and offline fallback.
+        float tile = Vector3.Distance(chessboard.GetTileCenterWorld(Vector2Int.zero), chessboard.GetTileCenterWorld(Vector2Int.right));
+        var fallback = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+        fallback.name = "Default fitting visual";
+        fallback.transform.SetParent(root.transform, false);
+        float height = tile * (type == PieceType.Pawn ? .65f : .95f);
+        fallback.transform.localScale = new Vector3(tile * .55f, height / 2, tile * .55f);
+        fallback.transform.localPosition = Vector3.up * height / 2;
+        Destroy(fallback.GetComponent<Collider>());
+        var block = new MaterialPropertyBlock();
+        Color color = team == PieceTeam.White ? new Color(.94f, .9f, .8f) : new Color(.17f, .19f, .24f);
+        block.SetColor("_BaseColor", color); block.SetColor("_Color", color);
+        fallback.GetComponent<Renderer>().SetPropertyBlock(block);
+        ChessPiece piece = AddPieceComponent(root, type);
+        piece.Initialize(team, position, team == PieceTeam.White ? 1 : -1);
+        ApplySkinToPiece(piece);
+        PieceViewGeometry.EnsurePieceCollider(root);
+        MovePieceToTile(piece, position, 0);
+        return piece;
     }
 
     private void CreateSplitPieces<T>(string sourceName, PieceTeam team, int rank, int[] files) where T : ChessPiece
@@ -1797,7 +1990,7 @@ public class ChessGame : MonoBehaviour
             return;
         }
 
-        List<MeshComponentData> components = SplitMeshIntoSpatialGroups(sourceMeshFilter.sharedMesh, files.Length);
+        List<MeshComponentData> components = visualFactory.SplitMeshIntoSpatialGroups(sourceMeshFilter.sharedMesh, files.Length);
         components.Sort((left, right) =>
             sourceTransform.TransformPoint(left.pivot).x.CompareTo(sourceTransform.TransformPoint(right.pivot).x));
 
@@ -1823,7 +2016,7 @@ public class ChessGame : MonoBehaviour
             T piece = pieceObject.AddComponent<T>();
             piece.Initialize(team, boardPosition, team == PieceTeam.White ? 1 : -1);
             ApplySkinToPiece(piece);
-            EnsurePieceCollider(pieceObject);
+            PieceViewGeometry.EnsurePieceCollider(pieceObject);
             MovePieceToTile(piece, boardPosition, 0f);
         }
     }
@@ -1849,258 +2042,6 @@ public class ChessGame : MonoBehaviour
 
         Transform visualRoot = chessboard.transform.Find("VisualChessSet");
         return visualRoot ? visualRoot : chessboard.transform;
-    }
-
-    private void EnsurePieceCollider(GameObject pieceObject)
-    {
-        int chessPieceLayer = LayerMask.NameToLayer("ChessPiece");
-        if (chessPieceLayer >= 0)
-            SetLayerRecursively(pieceObject.transform, chessPieceLayer);
-
-        if (pieceObject.GetComponentInChildren<Collider>())
-            return;
-
-        UpdatePieceRootColliderFromVisibleRenderers(pieceObject);
-    }
-
-    private void UpdatePieceRootColliderFromVisibleRenderers(GameObject pieceObject)
-    {
-        if (!pieceObject)
-            return;
-
-        Renderer[] renderers = pieceObject.GetComponentsInChildren<Renderer>(true);
-        if (!TryGetVisibleRendererBounds(renderers, out Bounds bounds))
-            return;
-
-        BoxCollider collider = pieceObject.GetComponent<BoxCollider>();
-        if (!collider)
-            collider = pieceObject.AddComponent<BoxCollider>();
-        collider.center = pieceObject.transform.InverseTransformPoint(bounds.center);
-
-        Vector3 localSize = pieceObject.transform.InverseTransformVector(bounds.size);
-        collider.size = new Vector3(Mathf.Abs(localSize.x), Mathf.Abs(localSize.y), Mathf.Abs(localSize.z));
-    }
-
-    private bool TryGetVisibleRendererBounds(Renderer[] renderers, out Bounds bounds)
-    {
-        bounds = default;
-        bool hasBounds = false;
-        for (int i = 0; i < renderers.Length; i++)
-        {
-            Renderer currentRenderer = renderers[i];
-            if (!currentRenderer || !currentRenderer.enabled || !currentRenderer.gameObject.activeInHierarchy)
-                continue;
-
-            if (!hasBounds)
-            {
-                bounds = currentRenderer.bounds;
-                hasBounds = true;
-            }
-            else
-            {
-                bounds.Encapsulate(currentRenderer.bounds);
-            }
-        }
-
-        return hasBounds;
-    }
-
-    private void SetLayerRecursively(Transform root, int layer)
-    {
-        if (!root)
-            return;
-
-        root.gameObject.layer = layer;
-        for (int i = 0; i < root.childCount; i++)
-            SetLayerRecursively(root.GetChild(i), layer);
-    }
-
-    private List<MeshComponentData> SplitMeshIntoSpatialGroups(Mesh sourceMesh, int expectedGroupCount)
-    {
-        Vector3[] vertices = sourceMesh.vertices;
-        Vector3[] normals = sourceMesh.normals;
-        Vector2[] uvs = sourceMesh.uv;
-        int subMeshCount = Mathf.Max(1, sourceMesh.subMeshCount);
-        bool splitAlongZ = sourceMesh.bounds.size.z > sourceMesh.bounds.size.x;
-        List<TriangleData> triangles = new List<TriangleData>();
-
-        for (int subMesh = 0; subMesh < subMeshCount; subMesh++)
-        {
-            int[] subMeshTriangles = sourceMesh.GetTriangles(subMesh);
-            for (int i = 0; i < subMeshTriangles.Length; i += 3)
-            {
-                int a = subMeshTriangles[i];
-                int b = subMeshTriangles[i + 1];
-                int c = subMeshTriangles[i + 2];
-                float centerAxis = splitAlongZ
-                    ? (vertices[a].z + vertices[b].z + vertices[c].z) / 3f
-                    : (vertices[a].x + vertices[b].x + vertices[c].x) / 3f;
-                triangles.Add(new TriangleData(subMesh, a, b, c, centerAxis));
-            }
-        }
-
-        List<MeshComponentData> components = new List<MeshComponentData>();
-        if (triangles.Count == 0)
-            return components;
-
-        int groupCount = Mathf.Clamp(expectedGroupCount, 1, triangles.Count);
-        List<TriangleData>[] groups = GroupTrianglesByCenterKMeans(triangles, groupCount);
-        for (int i = 0; i < groups.Length; i++)
-            if (groups[i].Count > 0)
-                components.Add(BuildMeshComponent(sourceMesh, vertices, normals, uvs, subMeshCount, groups[i]));
-
-        return components;
-    }
-
-    private List<TriangleData>[] GroupTrianglesByCenterKMeans(List<TriangleData> triangles, int groupCount)
-    {
-        List<TriangleData>[] groups = CreateTriangleGroups(groupCount);
-        if (groupCount == 1)
-        {
-            groups[0].AddRange(triangles);
-            return groups;
-        }
-
-        float minX = triangles[0].centerAxis;
-        float maxX = triangles[0].centerAxis;
-        for (int i = 1; i < triangles.Count; i++)
-        {
-            minX = Mathf.Min(minX, triangles[i].centerAxis);
-            maxX = Mathf.Max(maxX, triangles[i].centerAxis);
-        }
-
-        float[] centers = new float[groupCount];
-        float range = Mathf.Max(0.0001f, maxX - minX);
-        for (int i = 0; i < centers.Length; i++)
-            centers[i] = minX + range * ((i + 0.5f) / groupCount);
-
-        for (int iteration = 0; iteration < 12; iteration++)
-        {
-            groups = CreateTriangleGroups(groupCount);
-            for (int i = 0; i < triangles.Count; i++)
-                groups[FindNearestCenter(centers, triangles[i].centerAxis)].Add(triangles[i]);
-
-            for (int i = 0; i < groups.Length; i++)
-            {
-                if (groups[i].Count == 0)
-                    continue;
-
-                float sum = 0f;
-                for (int j = 0; j < groups[i].Count; j++)
-                    sum += groups[i][j].centerAxis;
-
-                centers[i] = sum / groups[i].Count;
-            }
-        }
-
-        return groups;
-    }
-
-    private List<TriangleData>[] CreateTriangleGroups(int groupCount)
-    {
-        List<TriangleData>[] groups = new List<TriangleData>[groupCount];
-        for (int i = 0; i < groups.Length; i++)
-            groups[i] = new List<TriangleData>();
-
-        return groups;
-    }
-
-    private int FindNearestCenter(float[] centers, float value)
-    {
-        int nearestIndex = 0;
-        float nearestDistance = Mathf.Abs(value - centers[0]);
-        for (int i = 1; i < centers.Length; i++)
-        {
-            float distance = Mathf.Abs(value - centers[i]);
-            if (distance >= nearestDistance)
-                continue;
-
-            nearestDistance = distance;
-            nearestIndex = i;
-        }
-
-        return nearestIndex;
-    }
-
-    private MeshComponentData BuildMeshComponent(
-        Mesh sourceMesh,
-        Vector3[] vertices,
-        Vector3[] normals,
-        Vector2[] uvs,
-        int subMeshCount,
-        List<TriangleData> triangles)
-    {
-        Bounds localBounds = new Bounds(vertices[triangles[0].a], Vector3.zero);
-        for (int i = 0; i < triangles.Count; i++)
-        {
-            localBounds.Encapsulate(vertices[triangles[i].a]);
-            localBounds.Encapsulate(vertices[triangles[i].b]);
-            localBounds.Encapsulate(vertices[triangles[i].c]);
-        }
-
-        Vector3 pivot = new Vector3(localBounds.center.x, localBounds.min.y, localBounds.center.z);
-        Dictionary<int, int> oldToNewIndex = new Dictionary<int, int>();
-        List<Vector3> newVertices = new List<Vector3>();
-        List<Vector3> newNormals = new List<Vector3>();
-        List<Vector2> newUvs = new List<Vector2>();
-        List<int>[] newTriangles = new List<int>[subMeshCount];
-        for (int i = 0; i < newTriangles.Length; i++)
-            newTriangles[i] = new List<int>();
-
-        for (int i = 0; i < triangles.Count; i++)
-        {
-            TriangleData triangle = triangles[i];
-            newTriangles[triangle.subMesh].Add(GetOrCreateMeshIndex(triangle.a, vertices, normals, uvs, pivot, oldToNewIndex, newVertices, newNormals, newUvs));
-            newTriangles[triangle.subMesh].Add(GetOrCreateMeshIndex(triangle.b, vertices, normals, uvs, pivot, oldToNewIndex, newVertices, newNormals, newUvs));
-            newTriangles[triangle.subMesh].Add(GetOrCreateMeshIndex(triangle.c, vertices, normals, uvs, pivot, oldToNewIndex, newVertices, newNormals, newUvs));
-        }
-
-        Mesh mesh = new Mesh
-        {
-            name = $"{sourceMesh.name} Runtime Piece"
-        };
-        mesh.SetVertices(newVertices);
-        mesh.subMeshCount = subMeshCount;
-        for (int i = 0; i < newTriangles.Length; i++)
-            mesh.SetTriangles(newTriangles[i], i);
-
-        if (newNormals.Count == newVertices.Count)
-            mesh.SetNormals(newNormals);
-        else
-            mesh.RecalculateNormals();
-
-        if (newUvs.Count == newVertices.Count)
-            mesh.SetUVs(0, newUvs);
-
-        mesh.RecalculateBounds();
-        return new MeshComponentData(mesh, pivot);
-    }
-
-    private int GetOrCreateMeshIndex(
-        int oldIndex,
-        Vector3[] vertices,
-        Vector3[] normals,
-        Vector2[] uvs,
-        Vector3 pivot,
-        Dictionary<int, int> oldToNewIndex,
-        List<Vector3> newVertices,
-        List<Vector3> newNormals,
-        List<Vector2> newUvs)
-    {
-        if (oldToNewIndex.TryGetValue(oldIndex, out int newIndex))
-            return newIndex;
-
-        newIndex = newVertices.Count;
-        oldToNewIndex.Add(oldIndex, newIndex);
-        newVertices.Add(vertices[oldIndex] - pivot);
-
-        if (normals != null && normals.Length == vertices.Length)
-            newNormals.Add(normals[oldIndex]);
-
-        if (uvs != null && uvs.Length == vertices.Length)
-            newUvs.Add(uvs[oldIndex]);
-
-        return newIndex;
     }
 
     private void AlignAllPiecesToBoard()
@@ -2263,35 +2204,7 @@ public class ChessGame : MonoBehaviour
             return;
 
         Vector3 targetPosition = GetPieceTilePosition(piece, tile, liftHeight);
-        StartPieceAnimation(piece, targetPosition, duration, arcHeight);
-    }
-
-    private void StartPieceAnimation(ChessPiece piece, Vector3 targetPosition, float duration, float arcHeight)
-    {
-        if (pieceAnimations.TryGetValue(piece, out Coroutine existingAnimation))
-            StopCoroutine(existingAnimation);
-
-        pieceAnimations[piece] = StartCoroutine(AnimatePiece(piece, targetPosition, duration, arcHeight));
-    }
-
-    private IEnumerator AnimatePiece(ChessPiece piece, Vector3 targetPosition, float duration, float arcHeight)
-    {
-        Vector3 startPosition = piece.transform.position;
-        float elapsed = 0f;
-
-        while (elapsed < duration)
-        {
-            elapsed += Time.deltaTime;
-            float t = Mathf.Clamp01(elapsed / Mathf.Max(0.001f, duration));
-            float easedT = t * t * (3f - 2f * t);
-            Vector3 nextPosition = Vector3.Lerp(startPosition, targetPosition, easedT);
-            nextPosition.y += Mathf.Sin(easedT * Mathf.PI) * arcHeight;
-            piece.transform.position = nextPosition;
-            yield return null;
-        }
-
-        piece.transform.position = targetPosition;
-        pieceAnimations.Remove(piece);
+        Animator.Play(piece, targetPosition, duration, arcHeight);
     }
 
     private IEnumerator AnimateMoveAndUnlock(ChessPiece movingPiece, Vector2Int destination)
@@ -2335,16 +2248,17 @@ public class ChessGame : MonoBehaviour
         bool won = winner == playerTeam;
         bool lost = winner != playerTeam;
         MatchReward reward = CalculateMatchReward(won, lost, false);
-        PlayerAuthService.RecordGameResult(
-            won,
-            lost,
-            false,
-            GetProfileMatchMode(),
-            GetProfileOpponentName(),
-            AppendRewardDetail($"{winner} won", reward),
-            reward.gold,
-            reward.diamonds,
-            reward.tickets);
+        matchResultRecorder.TryRecord(() => PlayerAuthService.RecordGameResult(
+                won,
+                lost,
+                false,
+                GetProfileMatchMode(),
+                GetProfileOpponentName(),
+                MatchRewardPolicy.AppendRewardDetail($"{winner} won", reward),
+                reward.gold,
+                reward.diamonds,
+                reward.tickets,
+                matchResultRecorder.MatchId));
         PlayResultSoundIfDefaultPack(won ? ResultMenuView.ResultKind.Win : ResultMenuView.ResultKind.Lose);
         drawReason = string.Empty;
         selectedPiece = null;
@@ -2365,16 +2279,17 @@ public class ChessGame : MonoBehaviour
         status = ChessGameStatus.Draw;
         frozenMatchDurationSeconds = MatchElapsedSeconds;
         MatchReward reward = CalculateMatchReward(false, false, true);
-        PlayerAuthService.RecordGameResult(
-            false,
-            false,
-            true,
-            GetProfileMatchMode(),
-            GetProfileOpponentName(),
-            AppendRewardDetail(reason, reward),
-            reward.gold,
-            reward.diamonds,
-            reward.tickets);
+        matchResultRecorder.TryRecord(() => PlayerAuthService.RecordGameResult(
+                false,
+                false,
+                true,
+                GetProfileMatchMode(),
+                GetProfileOpponentName(),
+                MatchRewardPolicy.AppendRewardDetail(reason, reward),
+                reward.gold,
+                reward.diamonds,
+                reward.tickets,
+                matchResultRecorder.MatchId));
         PlayResultSoundIfDefaultPack(ResultMenuView.ResultKind.Draw);
         drawReason = reason;
         selectedPiece = null;
@@ -2423,123 +2338,12 @@ public class ChessGame : MonoBehaviour
     private MatchReward CalculateMatchReward(bool won, bool lost, bool draw)
     {
         if (botMode)
-            return CalculateBotReward(botDifficulty, won, lost, draw);
+            return MatchRewardPolicy.CalculateBotReward(botDifficulty, won, lost, draw);
 
         if (serverAuthoritativeMode || restrictInputToControlledTeam)
-            return CalculateNetworkReward(won, lost, draw);
+            return MatchRewardPolicy.CalculateNetworkReward(won, lost, draw);
 
-        return CalculateLocalReward(won, lost, draw);
-    }
-
-    private static MatchReward CalculateBotReward(StockfishDifficulty difficulty, bool won, bool lost, bool draw)
-    {
-        MatchReward winReward;
-        MatchReward drawReward;
-        MatchReward lossReward;
-
-        switch (difficulty)
-        {
-            case StockfishDifficulty.Beginner:
-                winReward = new MatchReward(120, 3, 0);
-                drawReward = new MatchReward(55, 1, 0);
-                lossReward = new MatchReward(25, 0, 0);
-                break;
-            case StockfishDifficulty.Easy:
-                winReward = new MatchReward(180, 5, 0);
-                drawReward = new MatchReward(80, 2, 0);
-                lossReward = new MatchReward(35, 1, 0);
-                break;
-            case StockfishDifficulty.Medium:
-                winReward = new MatchReward(260, 8, 1);
-                drawReward = new MatchReward(115, 3, 0);
-                lossReward = new MatchReward(50, 1, 0);
-                break;
-            case StockfishDifficulty.Hard:
-                winReward = new MatchReward(380, 12, 1);
-                drawReward = new MatchReward(165, 5, 0);
-                lossReward = new MatchReward(70, 2, 0);
-                break;
-            case StockfishDifficulty.Expert:
-                winReward = new MatchReward(540, 18, 2);
-                drawReward = new MatchReward(230, 7, 1);
-                lossReward = new MatchReward(95, 3, 0);
-                break;
-            default:
-                winReward = new MatchReward(260, 8, 1);
-                drawReward = new MatchReward(115, 3, 0);
-                lossReward = new MatchReward(50, 1, 0);
-                break;
-        }
-
-        if (won)
-            return winReward;
-        if (draw)
-            return drawReward;
-        return lost ? lossReward : MatchReward.None;
-    }
-
-    private static MatchReward CalculateNetworkReward(bool won, bool lost, bool draw)
-    {
-        if (won)
-            return new MatchReward(360, 12, 1);
-        if (draw)
-            return new MatchReward(180, 6, 0);
-        return lost ? new MatchReward(85, 3, 0) : MatchReward.None;
-    }
-
-    private static MatchReward CalculateLocalReward(bool won, bool lost, bool draw)
-    {
-        if (won)
-            return new MatchReward(70, 1, 0);
-        if (draw)
-            return new MatchReward(40, 1, 0);
-        return lost ? new MatchReward(25, 0, 0) : MatchReward.None;
-    }
-
-    private static string AppendRewardDetail(string detail, MatchReward reward)
-    {
-        string rewardText = reward.ToHistoryText();
-        if (string.IsNullOrWhiteSpace(rewardText))
-            return detail ?? string.Empty;
-        if (string.IsNullOrWhiteSpace(detail))
-            return rewardText;
-        return $"{detail} | {rewardText}";
-    }
-
-    private readonly struct MatchReward
-    {
-        public static readonly MatchReward None = new MatchReward(0, 0, 0);
-
-        public readonly int gold;
-        public readonly int diamonds;
-        public readonly int tickets;
-
-        public MatchReward(int rewardGold, int rewardDiamonds, int rewardTickets)
-        {
-            gold = Mathf.Max(0, rewardGold);
-            diamonds = Mathf.Max(0, rewardDiamonds);
-            tickets = Mathf.Max(0, rewardTickets);
-        }
-
-        public string ToHistoryText()
-        {
-            StringBuilder builder = new StringBuilder();
-            AppendPart(builder, gold, "G");
-            AppendPart(builder, diamonds, "D");
-            AppendPart(builder, tickets, "T");
-            return builder.ToString();
-        }
-
-        private static void AppendPart(StringBuilder builder, int amount, string suffix)
-        {
-            if (amount <= 0)
-                return;
-            if (builder.Length > 0)
-                builder.Append(' ');
-            builder.Append('+');
-            builder.Append(amount);
-            builder.Append(suffix);
-        }
+        return MatchRewardPolicy.CalculateLocalReward(won, lost, draw);
     }
 
     public bool ApplyNetworkMove(ChessLanMove move)
@@ -2553,6 +2357,34 @@ public class ChessGame : MonoBehaviour
             return false;
 
         return ApplyControlledOpponentMove(move);
+    }
+
+    /// <summary>
+    /// Binds a server match identity to the current game lifecycle so repeated
+    /// terminal messages cannot create a second profile/history write.
+    /// </summary>
+    public void SetActiveMatchIdentity(string matchId)
+    {
+        if (!string.IsNullOrWhiteSpace(matchId))
+            matchResultRecorder.Begin(matchId);
+    }
+
+    public bool ApplyBotMove(ChessButWeird.Domain.Move move)
+    {
+        if (!botMode || serverAuthoritativeMode || !move.From.IsValid || !move.To.IsValid)
+            return false;
+
+        Vector2Int from = new Vector2Int(move.From.File, move.From.Rank);
+        Vector2Int to = new Vector2Int(move.To.File, move.To.Rank);
+        if (!move.Promotion.HasValue)
+            return ApplyControlledOpponentMove(new ChessLanMove(from, to));
+
+        PieceType promotion = (PieceType)move.Promotion.Value;
+        if (promotion == PieceType.King || promotion == PieceType.Pawn ||
+            !Enum.IsDefined(typeof(PieceType), promotion))
+            return false;
+
+        return ApplyControlledOpponentMove(new ChessLanMove(from, to, promotion));
     }
 
     private bool ApplyControlledOpponentMove(ChessLanMove move)
@@ -2602,9 +2434,34 @@ public class ChessGame : MonoBehaviour
         if (parts.Length < 2)
             return false;
 
+        bool restoreClassicDomainSession = UsesClassicDomainSession;
+        ChessButWeird.Domain.BoardOrientation localClassicOrientation = default;
+        ChessButWeird.Domain.MatchState importedLocalClassicState = null;
+        if (restoreClassicDomainSession)
+        {
+            localClassicOrientation = localClassicCoordinator.Orientation;
+            if (localClassicOrientation.IsRankFlipped)
+            {
+                Debug.LogWarning("Local classic FEN import currently requires the canonical-facing board.");
+                return false;
+            }
+
+            try
+            {
+                importedLocalClassicState = ChessButWeird.Domain.FenCodec.Parse(fen);
+            }
+            catch (FormatException)
+            {
+                return false;
+            }
+        }
+
+        // Imported snapshots intentionally start a fresh ownership boundary. The
+        // network/ARAM callers rebuild their adapter state immediately afterwards.
+        ClearLocalClassicSession();
         StopCheckWarning();
         StopAllCoroutines();
-        pieceAnimations.Clear();
+        pieceAnimator?.CancelAll();
         ClearRuntimePiecesRoot();
         ClearPieceMap();
         selectedPiece = null;
@@ -2666,6 +2523,12 @@ public class ChessGame : MonoBehaviour
         status = ChessGameStatus.Playing;
         SetRuntimePiecesVisible(true);
         chessboard?.SetPresentationVisible(true);
+        if (restoreClassicDomainSession)
+        {
+            localClassicCoordinator = ChessButWeird.Application.ClassicMatchCoordinator.FromSnapshot(
+                importedLocalClassicState, localClassicOrientation);
+            RebindLocalClassicPieces();
+        }
         turnSelectionUI?.SetTurn(currentTurn);
         RefreshLocalInteractionState();
         UpdateCheckWarningForCurrentTurn();
@@ -2674,14 +2537,14 @@ public class ChessGame : MonoBehaviour
 
     public void ApplyAramNetworkState(BackendAramStatePayload serverState)
     {
-        if (!aramMode || aramRuntime == null || serverState == null)
+        if (!aramMode || aramCoordinator == null || serverState == null)
             return;
-        aramRuntime.ApplyNetworkState(serverState);
+        aramCoordinator.ApplyNetworkState(serverState);
     }
 
     public BackendAramStatePayload CaptureAramNetworkState()
     {
-        return aramMode && aramRuntime != null ? aramRuntime.CaptureNetworkState() : null;
+        return aramMode && aramCoordinator != null ? aramCoordinator.CaptureNetworkState() : null;
     }
 
     public void ApplyServerGameOver(string result, string reason)
@@ -2924,7 +2787,7 @@ public class ChessGame : MonoBehaviour
 
     private void RefreshLocalInteractionState()
     {
-        bool shouldEnableInteraction = gameStarted &&
+        bool shouldEnableInteraction = gameStarted && !contentLoading &&
             !gameOver &&
             !inputLocked &&
             !pauseLocked &&
@@ -3000,6 +2863,12 @@ public class ChessGame : MonoBehaviour
 
     private ChessPiece CreateVisualPieceObject(PieceTeam team, PieceType pieceType, Vector2Int boardPosition, int forwardDirection)
     {
+        if (LoadingManager.For(this).HasMatchContent)
+        {
+            var cosmeticPiece = CreateCosmeticPiece(pieceType, team, boardPosition);
+            cosmeticPiece.Initialize(team, boardPosition, forwardDirection);
+            return cosmeticPiece;
+        }
         string sourceName = GetVisualSourceName(team, pieceType);
         Transform sourceTransform = FindVisualChild(sourceName);
         GameObject pieceObject = new GameObject($"{team} {pieceType} {boardPosition.x},{boardPosition.y}");
@@ -3014,7 +2883,7 @@ public class ChessGame : MonoBehaviour
             MeshRenderer sourceRenderer = sourceTransform.GetComponent<MeshRenderer>();
             if (sourceMeshFilter && sourceMeshFilter.sharedMesh)
             {
-                List<MeshComponentData> components = SplitMeshIntoSpatialGroups(sourceMeshFilter.sharedMesh, GetExpectedGroupCount(pieceType));
+                List<MeshComponentData> components = visualFactory.SplitMeshIntoSpatialGroups(sourceMeshFilter.sharedMesh, GetExpectedGroupCount(pieceType));
                 if (components.Count > 0)
                 {
                     components.Sort((left, right) =>
@@ -3042,7 +2911,7 @@ public class ChessGame : MonoBehaviour
         ChessPiece piece = AddPieceComponent(pieceObject, pieceType);
         piece.Initialize(team, boardPosition, forwardDirection);
         ApplySkinToPiece(piece);
-        EnsurePieceCollider(pieceObject);
+        PieceViewGeometry.EnsurePieceCollider(pieceObject);
         return piece;
     }
 
@@ -3156,45 +3025,5 @@ public class ChessGame : MonoBehaviour
         return true;
     }
 
-    private readonly struct MeshComponentData
-    {
-        public readonly Mesh mesh;
-        public readonly Vector3 pivot;
 
-        public MeshComponentData(Mesh mesh, Vector3 pivot)
-        {
-            this.mesh = mesh;
-            this.pivot = pivot;
-        }
-    }
-
-    private readonly struct TriangleData
-    {
-        public readonly int subMesh;
-        public readonly int a;
-        public readonly int b;
-        public readonly int c;
-        public readonly float centerAxis;
-
-        public TriangleData(int subMesh, int a, int b, int c, float centerAxis)
-        {
-            this.subMesh = subMesh;
-            this.a = a;
-            this.b = b;
-            this.c = c;
-            this.centerAxis = centerAxis;
-        }
-    }
-
-    private struct MoveSimulation
-    {
-        public ChessPiece destinationPiece;
-        public bool isEnPassant;
-        public ChessPiece enPassantCapturedPiece;
-        public Vector2Int enPassantCapturePosition;
-        public bool isCastling;
-        public ChessPiece castlingRook;
-        public Vector2Int castlingRookFrom;
-        public Vector2Int castlingRookTo;
-    }
 }

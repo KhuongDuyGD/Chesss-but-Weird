@@ -8,6 +8,13 @@ using UnityEngine.UI;
 
 public class MainMenuAuthUI : MonoBehaviour
 {
+    private readonly System.Collections.Generic.List<UnityEngine.Object> ownedArtwork = new System.Collections.Generic.List<UnityEngine.Object>();
+
+    private void OnDestroy()
+    {
+        foreach (var asset in ownedArtwork) if (asset) Destroy(asset);
+        ownedArtwork.Clear();
+    }
     public event Action SubmitRequested;
     public event Action GuestRequested;
 
@@ -409,8 +416,10 @@ public class MainMenuAuthUI : MonoBehaviour
             button.interactable = interactable;
     }
 
-    private static Sprite LoadSpriteFromProjectFile(string projectRelativePath)
+    private Sprite LoadSpriteFromProjectFile(string projectRelativePath)
     {
+        Sprite prepared = CoreArtworkCache.GetSprite(projectRelativePath);
+        if (prepared) return prepared;
         string fullPath = Path.Combine(Directory.GetCurrentDirectory(), projectRelativePath);
         if (!File.Exists(fullPath))
         {
@@ -421,7 +430,7 @@ public class MainMenuAuthUI : MonoBehaviour
         byte[] bytes = File.ReadAllBytes(fullPath);
         Texture2D texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
         texture.filterMode = FilterMode.Bilinear;
-        if (!texture.LoadImage(bytes))
+        if (!texture.LoadImage(bytes, true))
         {
             UnityEngine.Object.Destroy(texture);
             Debug.LogWarning($"[MainMenuAuthUI] Failed to load sprite at {projectRelativePath}");
@@ -429,7 +438,10 @@ public class MainMenuAuthUI : MonoBehaviour
         }
 
         texture.name = Path.GetFileNameWithoutExtension(projectRelativePath);
-        return Sprite.Create(texture, new Rect(0f, 0f, texture.width, texture.height), new Vector2(0.5f, 0.5f), 100f);
+        var sprite = Sprite.Create(texture, new Rect(0f, 0f, texture.width, texture.height), new Vector2(0.5f, 0.5f), 100f);
+        ownedArtwork.Add(sprite);
+        ownedArtwork.Add(texture);
+        return sprite;
     }
 
     private static void Stretch(RectTransform rect)

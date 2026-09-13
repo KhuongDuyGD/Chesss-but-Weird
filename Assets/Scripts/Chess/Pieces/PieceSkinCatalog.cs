@@ -2,85 +2,20 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
+// Menu metadata only. Prefab references and per-piece tuning live in PieceSkinData.
 public sealed class PieceSkinDefinition
 {
-    private readonly Dictionary<PieceType, string> prefabNames;
-    private readonly Dictionary<PieceType, PieceSkinPieceTuning> pieceTunings;
-
-    public PieceSkinDefinition(
-        string id,
-        string displayName,
-        Color swatchColor,
-        string prefabFolder = null,
-        string prefabPrefix = null,
-        IReadOnlyDictionary<PieceType, string> prefabNameOverrides = null,
-        IReadOnlyDictionary<PieceType, PieceSkinPieceTuning> pieceTuningOverrides = null)
+    public PieceSkinDefinition(string id, string displayName, Color swatchColor)
     {
         Id = string.IsNullOrWhiteSpace(id) ? PieceSkinCatalog.DefaultSkinId : id.Trim();
         DisplayName = string.IsNullOrWhiteSpace(displayName) ? Id : displayName.Trim();
         SwatchColor = swatchColor;
-        PrefabFolder = string.IsNullOrWhiteSpace(prefabFolder) ? null : prefabFolder.Trim().Replace('\\', '/');
-        PrefabPrefix = string.IsNullOrWhiteSpace(prefabPrefix) ? Id : prefabPrefix.Trim();
-        prefabNames = new Dictionary<PieceType, string>();
-        pieceTunings = new Dictionary<PieceType, PieceSkinPieceTuning>();
-
-        if (prefabNameOverrides != null)
-        {
-            foreach (KeyValuePair<PieceType, string> entry in prefabNameOverrides)
-                if (!string.IsNullOrWhiteSpace(entry.Value))
-                    prefabNames[entry.Key] = entry.Value.Trim();
-        }
-
-        if (pieceTuningOverrides == null)
-            return;
-
-        foreach (KeyValuePair<PieceType, PieceSkinPieceTuning> entry in pieceTuningOverrides)
-            pieceTunings[entry.Key] = entry.Value;
     }
 
     public string Id { get; }
     public string DisplayName { get; }
     public Color SwatchColor { get; }
-    public string PrefabFolder { get; }
-    public string PrefabPrefix { get; }
-    public bool IsDefault => string.Equals(Id, PieceSkinCatalog.DefaultSkinId, StringComparison.OrdinalIgnoreCase);
-
-    public string GetPrefabAssetPath(PieceType pieceType)
-    {
-        if (IsDefault || string.IsNullOrWhiteSpace(PrefabFolder))
-            return null;
-
-        return $"{PrefabFolder}/{GetPrefabName(pieceType)}.prefab";
-    }
-
-    public string GetResourcePath(PieceType pieceType)
-    {
-        if (IsDefault || string.IsNullOrWhiteSpace(PrefabFolder))
-            return null;
-
-        const string resourcesMarker = "/Resources/";
-        int resourcesIndex = PrefabFolder.IndexOf(resourcesMarker, StringComparison.OrdinalIgnoreCase);
-        if (resourcesIndex < 0)
-            return null;
-
-        string resourceFolder = PrefabFolder.Substring(resourcesIndex + resourcesMarker.Length);
-        return $"{resourceFolder}/{GetPrefabName(pieceType)}";
-    }
-
-    public PieceSkinPieceTuning GetTuning(PieceType pieceType)
-    {
-        return pieceTunings.TryGetValue(pieceType, out PieceSkinPieceTuning tuning)
-            ? tuning
-            : PieceSkinPieceTuning.Default;
-    }
-
-    private string GetPrefabName(PieceType pieceType)
-    {
-        if (prefabNames.TryGetValue(pieceType, out string overriddenName))
-            return overriddenName;
-
-        return $"{PrefabPrefix}_{pieceType}";
-    }
+    public bool IsDefault => PieceSkinCatalog.IsDefault(Id);
 }
 
 public readonly struct PieceSkinPieceTuning
@@ -103,65 +38,29 @@ public static class PieceSkinCatalog
 {
     public const string DefaultSkinId = "default";
 
-    private static readonly PieceSkinDefinition[] Skins =
+    private static readonly List<PieceSkinDefinition> Skins = new List<PieceSkinDefinition>
     {
-        new PieceSkinDefinition(DefaultSkinId, "Default Skin", new Color(0.96f, 0.93f, 0.84f, 1f)),
-        new PieceSkinDefinition(
-            "dc",
-            "DC",
-            new Color(0.62f, 0.82f, 1f, 1f),
-            "Assets/Skins/DC/Prefabs",
-            "DC",
-            new Dictionary<PieceType, string>
-            {
-                [PieceType.Bishop] = "DC_Bishop",
-                [PieceType.King] = "DC_KIng",
-                [PieceType.Knight] = "DC_Knight",
-                [PieceType.Pawn] = "DC_Pawn",
-                [PieceType.Queen] = "DC_Queen",
-                [PieceType.Rook] = "DC_Rook"
-            },
-            new Dictionary<PieceType, PieceSkinPieceTuning>
-            {
-                [PieceType.Knight] = new PieceSkinPieceTuning(new Vector3(0f, -90f, 0f), 1f, 1f),
-                [PieceType.Pawn] = new PieceSkinPieceTuning(Vector3.zero, 1.08f, 1f),
-                [PieceType.Rook] = new PieceSkinPieceTuning(Vector3.zero, 1.15f, 1f),
-                [PieceType.Bishop] = new PieceSkinPieceTuning(Vector3.zero, 1f, 1f),
-                [PieceType.Queen] = new PieceSkinPieceTuning(Vector3.zero, 0.96f, 1f),
-                [PieceType.King] = new PieceSkinPieceTuning(Vector3.zero, 0.96f, 1f)
-            }),
-        new PieceSkinDefinition(
-            "corn",
-            "Corn",
-            new Color(0.96f, 0.74f, 0.22f, 1f),
-            "Assets/Skins/Corn/Prefabs",
-            "Corn",
-            new Dictionary<PieceType, string>
-            {
-                [PieceType.Bishop] = "Corn_Bishop",
-                [PieceType.King] = "Corn_King",
-                [PieceType.Knight] = "Corn_Knight",
-                [PieceType.Pawn] = "Corn_Pawn",
-                [PieceType.Queen] = "Corn_Queen",
-                [PieceType.Rook] = "Corn_Rook"
-            },
-            new Dictionary<PieceType, PieceSkinPieceTuning>
-            {
-                [PieceType.Knight] = new PieceSkinPieceTuning(new Vector3(0f, -90f, 0f), 1f, 1f),
-                [PieceType.Pawn] = new PieceSkinPieceTuning(Vector3.zero, 1f, 1f),
-                [PieceType.Rook] = new PieceSkinPieceTuning(Vector3.zero, 1f, 1f),
-                [PieceType.Bishop] = new PieceSkinPieceTuning(Vector3.zero, 1f, 1f),
-                [PieceType.Queen] = new PieceSkinPieceTuning(Vector3.zero, 1f, 1f),
-                [PieceType.King] = new PieceSkinPieceTuning(Vector3.zero, 1f, 1f)
-            })
+        new PieceSkinDefinition(DefaultSkinId, "Classic", new Color(.96f, .93f, .84f))
     };
+
+    public static void UseCatalog(CosmeticCatalog catalog)
+    {
+        Skins.Clear();
+        Skins.Add(new PieceSkinDefinition(DefaultSkinId, "Classic", new Color(.96f, .93f, .84f)));
+        if (!catalog || catalog.pieceSkins == null) return;
+        foreach (var entry in catalog.pieceSkins)
+        {
+            if (entry == null || string.IsNullOrWhiteSpace(entry.id) || IsDefault(entry.id)) continue;
+            Skins.Add(new PieceSkinDefinition(entry.id, entry.displayName, new Color(.74f, .83f, .95f)));
+        }
+    }
 
     public static IReadOnlyList<PieceSkinDefinition> All => Skins;
 
     public static PieceSkinDefinition Get(string id)
     {
         string normalizedId = NormalizeId(id);
-        for (int i = 0; i < Skins.Length; i++)
+        for (int i = 0; i < Skins.Count; i++)
             if (string.Equals(Skins[i].Id, normalizedId, StringComparison.OrdinalIgnoreCase))
                 return Skins[i];
 
@@ -184,6 +83,7 @@ public sealed class PieceSkinVisualState : MonoBehaviour
 {
     private readonly List<Renderer> originalRenderers = new List<Renderer>();
     private GameObject activeSkinVisual;
+    public GameObject ActiveVisual => activeSkinVisual;
     private string activeSkinId;
     private PieceType activePieceType;
     private Bounds originalBounds;
@@ -241,7 +141,7 @@ public sealed class PieceSkinVisualState : MonoBehaviour
 
     public void SetRuntimeVisible(bool visible)
     {
-        bool hasActiveSkin = activeSkinVisual != null && !PieceSkinCatalog.IsDefault(activeSkinId);
+        bool hasActiveSkin = activeSkinVisual != null;
         SetOriginalRenderersVisible(visible && !hasActiveSkin);
         SetSkinVisualRenderersVisible(visible && hasActiveSkin);
     }

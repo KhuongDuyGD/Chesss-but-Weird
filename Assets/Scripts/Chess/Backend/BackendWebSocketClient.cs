@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Newtonsoft.Json;
 using UnityEngine;
 
-public sealed class BackendWebSocketClient : IDisposable
+public sealed class BackendWebSocketClient : IBackendWebSocketTransport
 {
     private readonly SynchronizationContext mainThreadContext;
     private ClientWebSocket socket;

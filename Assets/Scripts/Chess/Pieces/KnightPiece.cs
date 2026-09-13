@@ -6,10 +6,6 @@ public class KnightPiece : ChessPiece
 
     protected override bool IsLegalMovePattern(Vector2Int destination, ChessPiece[,] board)
     {
-        Vector2Int delta = destination - BoardPosition;
-        int absoluteX = Mathf.Abs(delta.x);
-        int absoluteY = Mathf.Abs(delta.y);
-
-        return (absoluteX == 1 && absoluteY == 2) || (absoluteX == 2 && absoluteY == 1);
+        return UnityBoardAdapter.IsLegalPattern(this, destination, board);
     }
 }

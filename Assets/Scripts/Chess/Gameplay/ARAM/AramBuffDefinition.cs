@@ -11,12 +11,13 @@ public enum AramBuffTier
 
 public enum AramBuffId
 {
-    CommandantPawn,
-    StrongFortress,
-    FreestyleLeap,
-    Doppelganger,
-    SuicideBomber,
-    FlyingThunderGod
+    // Stable serialized IDs; the Domain adapter maps each ID to its corresponding flag bit.
+    CommandantPawn = 0,
+    StrongFortress = 1,
+    FreestyleLeap = 2,
+    Doppelganger = 3,
+    SuicideBomber = 4,
+    FlyingThunderGod = 5
 }
 
 [CreateAssetMenu(fileName = "AramBuffDefinition", menuName = "Chess/ARAM/Buff Definition")]

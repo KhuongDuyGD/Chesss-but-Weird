@@ -418,6 +418,7 @@ public sealed class GachaSummonRevealController : MonoBehaviour
     private Sprite LoadSprite(string fileName)
     {
         string path = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), AssetFolder, fileName));
+        if (CoreArtworkCache.GetSprite(path) is Sprite prepared) return prepared;
         if (!File.Exists(path))
             return null;
 
@@ -432,6 +433,7 @@ public sealed class GachaSummonRevealController : MonoBehaviour
         texture.name = Path.GetFileNameWithoutExtension(fileName);
         texture.filterMode = FilterMode.Bilinear;
         Sprite sprite = Sprite.Create(texture, new Rect(0f, 0f, texture.width, texture.height), new Vector2(0.5f, 0.5f), 100f, 0u, SpriteMeshType.FullRect);
+        texture.Apply(false, true);
         runtimeSprites.Add(sprite);
         return sprite;
     }

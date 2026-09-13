@@ -443,6 +443,7 @@ public sealed class InventoryMenuController : MonoBehaviour
 
     private Sprite LoadSpriteFromPath(string path, bool trimTransparent)
     {
+        if (CoreArtworkCache.GetSprite(path) is Sprite prepared) return prepared;
         if (!File.Exists(path))
         {
             Debug.LogWarning($"[InventoryMenu] Missing asset: {path}");
@@ -463,6 +464,7 @@ public sealed class InventoryMenuController : MonoBehaviour
         texture.anisoLevel = 4;
         Rect rect = trimTransparent ? FindOpaqueBounds(texture) : new Rect(0f, 0f, texture.width, texture.height);
         Sprite sprite = Sprite.Create(texture, rect, new Vector2(0.5f, 0.5f), 100f, 0u, SpriteMeshType.FullRect);
+        texture.Apply(false, true);
         runtimeSprites.Add(sprite);
         return sprite;
     }

@@ -6,7 +6,6 @@ public class RookPiece : ChessPiece
 
     protected override bool IsLegalMovePattern(Vector2Int destination, ChessPiece[,] board)
     {
-        Vector2Int delta = destination - BoardPosition;
-        return IsStraight(delta) && IsPathClear(destination, board);
+        return UnityBoardAdapter.IsLegalPattern(this, destination, board);
     }
 }

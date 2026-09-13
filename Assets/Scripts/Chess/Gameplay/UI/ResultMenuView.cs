@@ -126,6 +126,7 @@ public sealed class ResultMenuView : MonoBehaviour
     private Sprite LoadSprite(string fileName, bool trimTransparency)
     {
         string path = Path.Combine(Directory.GetCurrentDirectory(), AssetFolder, fileName);
+        if (CoreArtworkCache.GetSprite(path) is Sprite prepared) return prepared;
         if (!File.Exists(path))
         {
             Debug.LogWarning($"[ResultMenu] Missing result asset: {fileName}");
@@ -146,6 +147,7 @@ public sealed class ResultMenuView : MonoBehaviour
 
         Rect sourceRect = trimTransparency ? FindVisibleRect(texture) : new Rect(0f, 0f, texture.width, texture.height);
         Sprite sprite = Sprite.Create(texture, sourceRect, new Vector2(0.5f, 0.5f), 100f, 0u, SpriteMeshType.FullRect);
+        texture.Apply(false, true);
         runtimeAssets.Add(sprite);
         runtimeAssets.Add(texture);
         return sprite;

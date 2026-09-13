@@ -1,0 +1,51 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f720b1c217a64cd09248a3fc4f866510, type: 3}
+  m_Name: CosmeticCatalog
+  m_EditorClassIdentifier: Assembly-CSharp::CosmeticCatalog
+  defaultPieceSkinId: default
+  defaultBoardId: default
+  pieceSkins:
+  - id: default
+    displayName: Classic
+    data:
+      m_AssetGUID: 930ce0cd1bb7f6948885de6f356e7f9c
+      m_SubObjectName: 
+      m_SubObjectType: 
+      m_SubObjectGUID: 
+      m_EditorAssetChanged: 0
+  - id: dc
+    displayName: DC
+    data:
+      m_AssetGUID: 6ed81e885fee7ee4689c80048b31fa99
+      m_SubObjectName: 
+      m_SubObjectType: 
+      m_SubObjectGUID: 
+      m_EditorAssetChanged: 0
+  - id: corn
+    displayName: Corn
+    data:
+      m_AssetGUID: 47173d3093601694b84b083f06c56871
+      m_SubObjectName: 
+      m_SubObjectType: 
+      m_SubObjectGUID: 
+      m_EditorAssetChanged: 0
+  boards:
+  - id: default
+    displayName: Classic
+    data:
+      m_AssetGUID: 742fd7037ee724b41adc9426bc02bcf0
+      m_SubObjectName: 
+      m_SubObjectType: 
+      m_SubObjectGUID: 
+      m_EditorAssetChanged: 0
+  environments: []

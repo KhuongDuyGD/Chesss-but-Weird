@@ -1,3 +1,4 @@
+using ChessButWeird.Domain;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -15,6 +16,10 @@ public sealed class AramBuffRuntime : MonoBehaviour
     private readonly List<AramBuffPieceMarker> activeMarkers = new List<AramBuffPieceMarker>();
     private readonly Queue<AramTargetTask> targetTasks = new Queue<AramTargetTask>();
     private readonly List<ChessPiece> pendingTargetPieces = new List<ChessPiece>();
+    // Keep one registry for movement, attack queries, and hypothetical king-safety moves.
+    // The current Unity adapter intentionally uses the built-in ARAM-V1 set; a future
+    // ruleset can replace this instance without changing the callers.
+    private readonly AramRules domainRules = AramRules.BuiltIn;
     private ChessGame game;
     private AramBuffDraftView draftView;
     private AramTargetTask currentTargetTask;
@@ -27,6 +32,7 @@ public sealed class AramBuffRuntime : MonoBehaviour
     public bool IsActive => active;
     public bool IsNetworkMatch => active && networkMatch;
     public bool IsSelectingSetupTargets => active && currentTargetKind != AramTargetKind.None;
+    internal AramRules DomainRules => domainRules;
 
     public IReadOnlyList<AramBuffDefinition> GetBuffs(PieceTeam team)
     {
@@ -121,94 +127,44 @@ public sealed class AramBuffRuntime : MonoBehaviour
             moves.Add(scratchMoves[i]);
     }
 
+    internal AramPieceContext CreateDomainContext(ChessPiece piece)
+    {
+        AramTeamState state = GetState(piece.Team);
+        AramBuffs flags = AramBuffs.None;
+        for (int i = 0; i < state.Buffs.Count; i++)
+        {
+            AramBuffDefinition definition = state.Buffs[i];
+            if (definition) flags |= (AramBuffs)(1 << (int)definition.Id);
+        }
+        return new AramPieceContext(flags, state.CommandantPawns.Contains(piece),
+            piece == state.SwappedKnight, piece == state.SwappedBishop,
+            piece == state.OriginalQueen, state.CanUseQueenTeleport(piece));
+    }
+
     public bool IsLegalAramMove(ChessPiece piece, Vector2Int from, Vector2Int destination, ChessPiece[,] board)
     {
-        if (!active || !piece || board == null || !ChessMoveRules.IsInsideBoard(from) || !CanUseDestination(piece, destination, board))
-            return false;
-
-        AramTeamState state = GetState(piece.Team);
-        Vector2Int delta = destination - from;
-
-        if (state.HasBuff(AramBuffId.CommandantPawn) &&
-            piece.Type == PieceType.Pawn &&
-            state.CommandantPawns.Contains(piece) &&
-            delta.x == 0 &&
-            delta.y == piece.ForwardDirection * 2)
-        {
-            int middleY = from.y + piece.ForwardDirection;
-            return ChessMoveRules.IsInsideBoard(new Vector2Int(from.x, middleY)) &&
-                board[from.x, middleY] == null &&
-                board[destination.x, destination.y] == null;
-        }
-
-        if (state.HasBuff(AramBuffId.FreestyleLeap) && piece.Type == PieceType.Knight)
-        {
-            int absoluteX = Mathf.Abs(delta.x);
-            int absoluteY = Mathf.Abs(delta.y);
-            bool normalKnight = (absoluteX == 1 && absoluteY == 2) || (absoluteX == 2 && absoluteY == 1);
-            bool diagonalLeap = absoluteX == 2 && absoluteY == 2;
-            if (normalKnight || diagonalLeap)
-                return true;
-        }
-
-        if (state.HasBuff(AramBuffId.Doppelganger))
-        {
-            if (piece == state.SwappedKnight)
-                return IsBishopPattern(from, destination, board);
-            if (piece == state.SwappedBishop)
-                return IsKnightPattern(delta);
-        }
-
-        if (state.HasBuff(AramBuffId.FlyingThunderGod) &&
-            piece == state.OriginalQueen &&
-            board[destination.x, destination.y] == null &&
-            state.CanUseQueenTeleport(piece))
-        {
-            return true;
-        }
-
-        return false;
+        if (!active || !piece || board == null) return false;
+        return domainRules.Allows(new UnityBoardAdapter(board), UnityBoardAdapter.ToState(piece),
+            UnityBoardAdapter.ToSquare(from), UnityBoardAdapter.ToSquare(destination), CreateDomainContext(piece));
     }
 
     public bool SuppressesStandardMovement(ChessPiece piece)
     {
-        if (!active || !piece)
-            return false;
-
-        AramTeamState state = GetState(piece.Team);
-        return state.HasBuff(AramBuffId.Doppelganger) &&
-            (piece == state.SwappedKnight || piece == state.SwappedBishop);
+        return active && piece && AramRules.SuppressesStandardMovement(CreateDomainContext(piece));
     }
 
     public bool CanAramPieceAttackSquare(ChessPiece piece, Vector2Int square, ChessPiece[,] board)
     {
-        if (!active || !piece || board == null || !ChessMoveRules.IsInsideBoard(square) || piece.BoardPosition == square)
-            return false;
-
-        AramTeamState state = GetState(piece.Team);
-        Vector2Int delta = square - piece.BoardPosition;
-        if (state.HasBuff(AramBuffId.FreestyleLeap) && piece.Type == PieceType.Knight)
-        {
-            int absoluteX = Mathf.Abs(delta.x);
-            int absoluteY = Mathf.Abs(delta.y);
-            if ((absoluteX == 1 && absoluteY == 2) || (absoluteX == 2 && absoluteY == 1) || (absoluteX == 2 && absoluteY == 2))
-                return true;
-        }
-
-        if (!state.HasBuff(AramBuffId.Doppelganger))
-            return false;
-
-        if (piece == state.SwappedKnight)
-            return IsBishopPattern(piece.BoardPosition, square, board);
-        if (piece == state.SwappedBishop)
-            return IsKnightPattern(delta);
-
-        return false;
+        if (!active || !piece || board == null) return false;
+        return domainRules.Allows(new UnityBoardAdapter(board), UnityBoardAdapter.ToState(piece),
+            UnityBoardAdapter.ToSquare(piece.BoardPosition), UnityBoardAdapter.ToSquare(square),
+            CreateDomainContext(piece), attack: true);
     }
 
     public bool AllowsStrongFortressCastle(PieceTeam team)
     {
-        return HasBuff(team, AramBuffId.StrongFortress);
+        return StrongFortressBuff.WaivesCastleAttackChecks(
+            HasBuff(team, AramBuffId.StrongFortress) ? AramBuffs.StrongFortress : AramBuffs.None);
     }
 
     public void OnMoveAccepted(ChessPiece piece, Vector2Int from, Vector2Int destination, ChessPiece[,] board)
@@ -222,9 +178,9 @@ public sealed class AramBuffRuntime : MonoBehaviour
 
         Vector2Int delta = destination - from;
         bool queenPattern = (delta.x == 0 || delta.y == 0 || Mathf.Abs(delta.x) == Mathf.Abs(delta.y)) &&
-            IsPathClear(from, destination, board);
+            MovementRules.IsPathClear(new UnityBoardAdapter(board), UnityBoardAdapter.ToSquare(from), UnityBoardAdapter.ToSquare(destination));
         if (!queenPattern)
-            state.MarkQueenTeleportUsed(piece, 5);
+            state.MarkQueenTeleportUsed(piece, FlyingThunderGodBuff.CooldownTurns);
     }
 
     public bool TryGetQueenExplosion(ChessPiece capturedPiece, Vector2Int center, ChessPiece movingPiece, ChessPiece[,] board, List<ChessPiece> victims)
@@ -246,7 +202,9 @@ public sealed class AramBuffRuntime : MonoBehaviour
                     continue;
 
                 ChessPiece victim = board[x, y];
-                if (!victim || victim == movingPiece || victim.Type == PieceType.King || victims.Contains(victim))
+                if (!SuicideBomberBuff.IsVictim(UnityBoardAdapter.ToState(victim),
+                    UnityBoardAdapter.ToState(movingPiece).Id, UnityBoardAdapter.ToSquare(center),
+                    UnityBoardAdapter.ToSquare(position)) || victims.Contains(victim))
                     continue;
 
                 victims.Add(victim);
@@ -255,6 +213,13 @@ public sealed class AramBuffRuntime : MonoBehaviour
         if (!networkMatch || capturedPiece.Team == visibleTeam)
             draftView?.ShowBuffToast(capturedPiece.Team, "Suicide Bomber detonated", state.GetBuff(AramBuffId.SuicideBomber));
         return true;
+    }
+
+    internal bool WouldQueenExplode(ChessPiece piece)
+    {
+        if (!active || !piece || piece.Type != PieceType.Queen) return false;
+        AramTeamState state = GetState(piece.Team);
+        return state.HasBuff(AramBuffId.SuicideBomber) && piece == state.OriginalQueen && !state.SuicideBomberUsed;
     }
 
     public bool TryHandleSetupPieceClick(ChessPiece piece)
@@ -923,50 +888,11 @@ public sealed class AramBuffRuntime : MonoBehaviour
         public AramTargetKind Kind { get; }
     }
 
-    private static bool CanUseDestination(ChessPiece piece, Vector2Int destination, ChessPiece[,] board)
-    {
-        if (!ChessMoveRules.IsInsideBoard(destination) || piece.BoardPosition == destination)
-            return false;
-
-        ChessPiece targetPiece = board[destination.x, destination.y];
-        return !targetPiece || targetPiece.Team != piece.Team;
-    }
-
-    private static bool IsKnightPattern(Vector2Int delta)
-    {
-        int absoluteX = Mathf.Abs(delta.x);
-        int absoluteY = Mathf.Abs(delta.y);
-        return (absoluteX == 1 && absoluteY == 2) || (absoluteX == 2 && absoluteY == 1);
-    }
-
-    private static bool IsBishopPattern(Vector2Int from, Vector2Int destination, ChessPiece[,] board)
-    {
-        Vector2Int delta = destination - from;
-        return Mathf.Abs(delta.x) == Mathf.Abs(delta.y) && IsPathClear(from, destination, board);
-    }
-
-    private static bool IsPathClear(Vector2Int from, Vector2Int destination, ChessPiece[,] board)
-    {
-        Vector2Int step = new Vector2Int(
-            Mathf.Clamp(destination.x - from.x, -1, 1),
-            Mathf.Clamp(destination.y - from.y, -1, 1));
-
-        Vector2Int current = from + step;
-        while (current != destination)
-        {
-            if (board[current.x, current.y])
-                return false;
-            current += step;
-        }
-
-        return true;
-    }
-
     private sealed class AramTeamState
     {
         private readonly List<AramBuffDefinition> buffs = new List<AramBuffDefinition>();
-        private readonly Dictionary<ChessPiece, int> queenTeleportCooldowns = new Dictionary<ChessPiece, int>();
-        private readonly Dictionary<ChessPiece, int> queenTeleportUses = new Dictionary<ChessPiece, int>();
+        private ChessPiece trackedQueen;
+        private LimitedUseState queenTeleport = new LimitedUseState(FlyingThunderGodBuff.MaximumUses);
 
         public AramTeamState(PieceTeam team)
         {
@@ -985,8 +911,8 @@ public sealed class AramBuffRuntime : MonoBehaviour
         {
             buffs.Clear();
             CommandantPawns.Clear();
-            queenTeleportCooldowns.Clear();
-            queenTeleportUses.Clear();
+            trackedQueen = null;
+            queenTeleport = new LimitedUseState(FlyingThunderGodBuff.MaximumUses);
             SwappedKnight = null;
             SwappedBishop = null;
             OriginalQueen = null;
@@ -1022,54 +948,39 @@ public sealed class AramBuffRuntime : MonoBehaviour
 
         public bool CanUseQueenTeleport(ChessPiece queen)
         {
-            if (!queen || GetQueenTeleportUses(queen) >= 5)
-                return false;
-            return GetQueenTeleportCooldown(queen) <= 0;
+            return queen && (queen != trackedQueen || queenTeleport.CanUse);
         }
 
         public void MarkQueenTeleportUsed(ChessPiece queen, int cooldown)
         {
-            if (!queen)
-                return;
-
-            queenTeleportUses[queen] = GetQueenTeleportUses(queen) + 1;
-            queenTeleportCooldowns[queen] = Mathf.Max(0, cooldown);
+            if (!queen) return;
+            if (queen != trackedQueen)
+            {
+                trackedQueen = queen;
+                queenTeleport = new LimitedUseState(FlyingThunderGodBuff.MaximumUses);
+            }
+            if (queenTeleport.TryConsume(cooldown, out LimitedUseState next)) queenTeleport = next;
         }
 
         public void TickTurnCooldowns()
         {
-            List<ChessPiece> keys = new List<ChessPiece>(queenTeleportCooldowns.Keys);
-            for (int i = 0; i < keys.Count; i++)
-            {
-                ChessPiece key = keys[i];
-                if (!key)
-                {
-                    queenTeleportCooldowns.Remove(key);
-                    continue;
-                }
-
-                queenTeleportCooldowns[key] = Mathf.Max(0, queenTeleportCooldowns[key] - 1);
-            }
+            if (trackedQueen) queenTeleport = queenTeleport.Tick();
         }
 
         public void SetQueenTeleportState(ChessPiece queen, int uses, int cooldown)
         {
-            queenTeleportUses.Clear();
-            queenTeleportCooldowns.Clear();
-            if (!queen)
-                return;
-            queenTeleportUses[queen] = Mathf.Clamp(uses, 0, 5);
-            queenTeleportCooldowns[queen] = Mathf.Max(0, cooldown);
+            trackedQueen = queen;
+            queenTeleport = new LimitedUseState(FlyingThunderGodBuff.MaximumUses, queen ? uses : 0, queen ? cooldown : 0);
         }
 
         private int GetQueenTeleportCooldown(ChessPiece queen)
         {
-            return queen && queenTeleportCooldowns.TryGetValue(queen, out int cooldown) ? cooldown : 0;
+            return queen && queen == trackedQueen ? queenTeleport.Cooldown : 0;
         }
 
         private int GetQueenTeleportUses(ChessPiece queen)
         {
-            return queen && queenTeleportUses.TryGetValue(queen, out int uses) ? uses : 0;
+            return queen && queen == trackedQueen ? queenTeleport.Uses : 0;
         }
 
         public int GetQueenTeleportUsesForSync()

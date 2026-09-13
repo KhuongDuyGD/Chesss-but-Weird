@@ -51,6 +51,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
     public static ChessTurnSelectionUI Create(ChessGame chessGame)
     {
         GameObject root = new GameObject("Chess Turn Selection UI", typeof(RectTransform));
+        root.transform.SetParent(chessGame.transform, false);
         ChessTurnSelectionUI ui = root.AddComponent<ChessTurnSelectionUI>();
         ui.chessGame = chessGame;
         ui.TryCreateHandDrawnMenu();
@@ -195,20 +196,33 @@ public class ChessTurnSelectionUI : MonoBehaviour
 
     public void StartBotGame(PieceTeam playerTeam)
     {
-        chessGame.ConfigurePieceSkinsForBot(playerTeam, PieceSkinCatalog.DefaultSkinId);
-        StartBotGameWithConfiguredSkins(playerTeam);
+        var saved = CosmeticSelection.Load();
+        StartBotGameWithSkin(playerTeam, playerTeam == PieceTeam.White ? saved.whiteSkinId : saved.blackSkinId);
     }
 
     public void StartBotGameWithSkin(PieceTeam playerTeam, string playerSkinId)
     {
-        chessGame.ConfigurePieceSkinsForBot(playerTeam, playerSkinId);
-        StartBotGameWithConfiguredSkins(playerTeam);
+        var selection = CosmeticSelection.Load();
+        selection.whiteSkinId = playerTeam == PieceTeam.White ? playerSkinId : PieceSkinCatalog.DefaultSkinId;
+        selection.blackSkinId = playerTeam == PieceTeam.Black ? playerSkinId : PieceSkinCatalog.DefaultSkinId;
+        selection.Save();
+        LoadingManager.For(chessGame).StartMatch(selection, () =>
+        {
+            chessGame.ConfigurePieceSkinsForBot(playerTeam, playerSkinId);
+            StartBotGameWithConfiguredSkins(playerTeam);
+        });
     }
 
     public void StartLocalTwoPlayerGameWithSkins(string whiteSkinId, string blackSkinId)
     {
-        chessGame.ConfigurePieceSkinsForLocalPlayers(whiteSkinId, blackSkinId);
-        chessGame.BeginGame(PieceTeam.White);
+        var selection = CosmeticSelection.Load();
+        selection.whiteSkinId = whiteSkinId; selection.blackSkinId = blackSkinId;
+        selection.Save();
+        LoadingManager.For(chessGame).StartMatch(selection, () =>
+        {
+            chessGame.ConfigurePieceSkinsForLocalPlayers(whiteSkinId, blackSkinId);
+            chessGame.BeginGame(PieceTeam.White);
+        });
     }
 
     public void StartAramPracticeGame()
@@ -217,12 +231,17 @@ public class ChessTurnSelectionUI : MonoBehaviour
         lanController?.HideLanSetup();
         analysisBoard?.SetVisible(true);
         analysisBoard?.SetInteractionEnabled(true);
-        chessGame.ConfigurePieceSkinsForLocalPlayers(PieceSkinCatalog.DefaultSkinId, PieceSkinCatalog.DefaultSkinId);
-        chessGame.BeginAramGame();
+        var selection = CosmeticSelection.Load();
+        LoadingManager.For(chessGame).StartMatch(selection, () =>
+        {
+            chessGame.ConfigurePieceSkinsForLocalPlayers(selection.whiteSkinId, selection.blackSkinId);
+            chessGame.BeginAramGame();
+        });
     }
 
     public void ShowAramLanSetup()
     {
+        if (PrepareNetworkContent(ShowAramLanSetup)) return;
         GameMusicManager.PlayMainMenuHubMusic();
         showCheckWarning = false;
         state = ScreenState.TurnSelection;
@@ -239,6 +258,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
             return;
         }
 
+        if (PrepareNetworkContent(ShowAramOnlineSetup)) return;
         GameMusicManager.PlayMainMenuHubMusic();
         showCheckWarning = false;
         state = ScreenState.TurnSelection;
@@ -273,6 +293,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
 
     public void ShowLanSetup()
     {
+        if (PrepareNetworkContent(ShowLanSetup)) return;
         GameMusicManager.PlayMainMenuHubMusic();
         showCheckWarning = false;
         state = ScreenState.TurnSelection;
@@ -289,6 +310,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
             return;
         }
 
+        if (PrepareNetworkContent(ShowOnlineSetup)) return;
         GameMusicManager.PlayMainMenuHubMusic();
         showCheckWarning = false;
         state = ScreenState.TurnSelection;
@@ -305,16 +327,20 @@ public class ChessTurnSelectionUI : MonoBehaviour
 
     public void LogoutToAuthentication()
     {
+        var loading = LoadingManager.For(chessGame);
+        if (loading.IsBusy) return;
+        if (loading.HasMatchContent) { loading.ReturnToMenu(LogoutToAuthentication); return; }
         lanController?.ResetForAuthenticationChange();
+        SessionLoadingController.For(chessGame).Cancel();
         PlayerAuthService.Logout();
         lanController?.HideLanSetup();
         analysisBoard?.SetVisible(false);
         handDrawnMenu?.HideForPlaying();
-        AuthController.Create(chessGame, HandleAuthenticationCompleted);
+        AuthController.Create(chessGame, chessGame.QueueAuthenticatedSession);
         Debug.Log("[ChessTurnSelectionUI] Session cleared. Returning to login/sign-up.");
     }
 
-    private void HandleAuthenticationCompleted()
+    internal void RestoreAuthenticatedMenu()
     {
         // Rebuild the multiplayer state after the account identity changes so a
         // previous Guest socket/room can never leak into the new login session.
@@ -657,7 +683,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
             menuAssets = gameObject.AddComponent<HandDrawnMenuAssets>();
         }
 
-        if (!menuAssets.HasRequiredSprites)
+        if (!menuAssets.IsPrepared)
             menuAssets.LoadFromResources();
 
         if (!menuAssets.HasRequiredSprites)
@@ -668,6 +694,14 @@ public class ChessTurnSelectionUI : MonoBehaviour
 
         handDrawnMenu = gameObject.AddComponent<HandDrawnMenuView>();
         handDrawnMenu.Initialize(this, chessGame, menuAssets);
+    }
+
+    private bool PrepareNetworkContent(Action openLobby)
+    {
+        var loading = LoadingManager.For(chessGame);
+        if (loading.HasMatchContent) return false;
+        loading.StartMatch(CosmeticSelection.Load(), openLobby);
+        return true;
     }
 
     private void TryCreateLanController()

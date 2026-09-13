@@ -6,8 +6,18 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
+    path: Assets/Game/Scenes/Boot.unity
+    guid: 9af6a7a9712d1b24598adb67491223d1
+  - enabled: 1
+    path: Assets/Game/Scenes/MainMenu.unity
+    guid: 5ed24d1c957d1454693516f13b19248f
+  - enabled: 1
+    path: Assets/Game/Scenes/ChessMatch.unity
+    guid: a5e066fffb0a85e498e66f5fa9bc5c3d
+  - enabled: 1
     path: Assets/Scenes/ChessClassic.unity
     guid: 99c9720ab356a0642a771bea13969a05
   m_configObjects:
+    com.unity.addressableassets: {fileID: 11400000, guid: 1e71ebf4e24876f49b7db05d3d72cc31, type: 2}
     com.unity.dt.app-ui: {fileID: 11400000, guid: 1b1c20d82303e4b5781c3ef50ac1449f, type: 2}
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}

@@ -1,0 +1,78 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
+  m_Name: CoreAudio
+  m_EditorClassIdentifier: Unity.Addressables.Editor::UnityEditor.AddressableAssets.Settings.AddressableAssetGroup
+  m_GroupName: CoreAudio
+  m_GUID: eb60e2f16d119c3448b79160e174c4da
+  m_SerializeEntries:
+  - m_GUID: 2226bcda12c7846e38f10e70e7c8b903
+    m_Address: Assets/Audio/SFX/pick.mp3
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 28736cf9fed744e789b287cac52d6912
+    m_Address: Assets/Audio/SFX/chieu.mp3
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 28f7eb0162c3b4c548fed497ebe2bd69
+    m_Address: Assets/Audio/SFX/hit.mp3
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 2bc6172b820e24c40b295dbfd9532893
+    m_Address: Assets/Audio/SFX/Checkmate.mp3
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 35436e99152f939489de5b9660fa002f
+    m_Address: Assets/Audio/SFX/PieceSelection.mp3
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 5b0ccc351a7204429bdfd4ac27c9762a
+    m_Address: Assets/Audio/SFX/nhapthanh.mp3
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 627b89f5938979c408b82af5e00323bb
+    m_Address: Assets/Audio/SFX/CapturePiece.mp3
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7b8fb2fa764a54320b2ea7fc6ae8a5de
+    m_Address: Assets/Audio/SFX/win.mp3
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 8329137c995a54a3bbb302ee3e4583d2
+    m_Address: Assets/Audio/SFX/move.wav
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: aee87f369e08c483f9d31857d1391555
+    m_Address: Assets/Audio/SFX/phonghau.mp3
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: cfc74110c5b224ef4bfcc7f6ebdc5f04
+    m_Address: Assets/Audio/SFX/error.mp3
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  m_ReadOnly: 0
+  m_Settings: {fileID: 11400000, guid: 8194c9a80f156474bbbfc1ccbf68345e, type: 2}
+  m_SchemaSet:
+    m_Schemas:
+    - {fileID: 11400000, guid: 97b04547d969794409e69144326c453d, type: 2}
+    - {fileID: 11400000, guid: f3bb5506d0df50d4186c4b85e3e07e4b, type: 2}

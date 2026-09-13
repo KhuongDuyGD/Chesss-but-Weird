@@ -108,3 +108,7 @@ InitTestScene*.unity*
 /[Aa]ssets/[Ii]nit[Tt]est[Ss]cene*.unity*
 ProjectSettings/McpUnitySettings.json
 ProjectSettings/McpUnitySettings.json
+
+# Standalone shared-domain build and verification outputs
+/Tests/**/bin/
+/Tests/**/obj/

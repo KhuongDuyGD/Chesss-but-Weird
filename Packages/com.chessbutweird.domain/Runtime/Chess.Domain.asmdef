@@ -1,0 +1,7 @@
+{
+  "name": "Chess.Domain",
+  "rootNamespace": "ChessButWeird.Domain",
+  "references": [],
+  "autoReferenced": true,
+  "noEngineReferences": true
+}

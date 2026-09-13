@@ -1,0 +1,86 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1ce2f9a80e66472182ba97e02f649dd5, type: 3}
+  m_Name: DC
+  m_EditorClassIdentifier: Assembly-CSharp::PieceSkinData
+  skinId: dc
+  displayName: DC
+  preview:
+    m_AssetGUID: 
+    m_SubObjectName: 
+    m_SubObjectType: 
+    m_SubObjectGUID: 
+    m_EditorAssetChanged: 0
+  pawn:
+    m_AssetGUID: 724e47f0e01db404ea00b3dc5d71f7fd
+    m_SubObjectName: 
+    m_SubObjectType: 
+    m_SubObjectGUID: 
+    m_EditorAssetChanged: 0
+  rook:
+    m_AssetGUID: 22e9b2c97bac4cb4984a58c7242aa87d
+    m_SubObjectName: 
+    m_SubObjectType: 
+    m_SubObjectGUID: 
+    m_EditorAssetChanged: 0
+  knight:
+    m_AssetGUID: e8f104aa4fc038949943f67b6d2d216c
+    m_SubObjectName: 
+    m_SubObjectType: 
+    m_SubObjectGUID: 
+    m_EditorAssetChanged: 0
+  bishop:
+    m_AssetGUID: 0feb0d89603b44f40911f78575006227
+    m_SubObjectName: 
+    m_SubObjectType: 
+    m_SubObjectGUID: 
+    m_EditorAssetChanged: 0
+  queen:
+    m_AssetGUID: a8aecbf1ce9b0bc498ba5dfe521a89e9
+    m_SubObjectName: 
+    m_SubObjectType: 
+    m_SubObjectGUID: 
+    m_EditorAssetChanged: 0
+  king:
+    m_AssetGUID: a14aa89b5fa1d974ba85f33c0e9b1460
+    m_SubObjectName: 
+    m_SubObjectType: 
+    m_SubObjectGUID: 
+    m_EditorAssetChanged: 0
+  applyTeamColor: 1
+  whiteColor: {r: 0.94, g: 0.91, b: 0.82, a: 1}
+  blackColor: {r: 0.18, g: 0.21, b: 0.27, a: 1}
+  tuning:
+  - pieceType: 0
+    rotationEuler: {x: 0, y: 0, z: 0}
+    heightMultiplier: 1
+    maxFootprintMultiplier: 1
+  - pieceType: 1
+    rotationEuler: {x: 0, y: 0, z: 0}
+    heightMultiplier: 1
+    maxFootprintMultiplier: 1
+  - pieceType: 2
+    rotationEuler: {x: 0, y: 0, z: 0}
+    heightMultiplier: 1.15
+    maxFootprintMultiplier: 1
+  - pieceType: 3
+    rotationEuler: {x: 0, y: 0, z: 0}
+    heightMultiplier: 1
+    maxFootprintMultiplier: 1
+  - pieceType: 4
+    rotationEuler: {x: 0, y: -90, z: 0}
+    heightMultiplier: 1
+    maxFootprintMultiplier: 1
+  - pieceType: 5
+    rotationEuler: {x: 0, y: 0, z: 0}
+    heightMultiplier: 1.08
+    maxFootprintMultiplier: 1

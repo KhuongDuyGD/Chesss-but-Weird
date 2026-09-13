@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using ChessButWeird.Application;
+using ChessButWeird.Domain;
 using UnityEngine;
 
 public sealed class StockfishBotController : MonoBehaviour
@@ -101,7 +103,7 @@ public sealed class StockfishBotController : MonoBehaviour
                 return;
 
             StockfishCandidate selected = SelectCandidate(search.Result, profile);
-            if (selected == null || !TryParseUciMove(selected.Move, out ChessLanMove move))
+            if (selected == null || !StockfishMoveAdapter.TryParseUci(selected.Move, out Move move))
                 throw new InvalidOperationException("Stockfish did not return a usable move.");
 
             if (!chessGame.ApplyBotMove(move))
@@ -147,51 +149,6 @@ public sealed class StockfishBotController : MonoBehaviour
         return alternatives
             .OrderBy(candidate => Math.Abs((bestScore - candidate.ScoreCentipawns) - targetLoss) + random.NextDouble() * 45d)
             .First();
-    }
-
-    private static bool TryParseUciMove(string uciMove, out ChessLanMove move)
-    {
-        move = default;
-        if (string.IsNullOrWhiteSpace(uciMove) || (uciMove.Length != 4 && uciMove.Length != 5))
-            return false;
-
-        if (!TryParseSquare(uciMove.Substring(0, 2), out Vector2Int from) ||
-            !TryParseSquare(uciMove.Substring(2, 2), out Vector2Int to))
-            return false;
-
-        if (uciMove.Length == 4)
-        {
-            move = new ChessLanMove(from, to);
-            return true;
-        }
-
-        PieceType promotion;
-        switch (char.ToLowerInvariant(uciMove[4]))
-        {
-            case 'q': promotion = PieceType.Queen; break;
-            case 'r': promotion = PieceType.Rook; break;
-            case 'b': promotion = PieceType.Bishop; break;
-            case 'n': promotion = PieceType.Knight; break;
-            default: return false;
-        }
-
-        move = new ChessLanMove(from, to, promotion);
-        return true;
-    }
-
-    private static bool TryParseSquare(string square, out Vector2Int position)
-    {
-        position = -Vector2Int.one;
-        if (square == null || square.Length != 2)
-            return false;
-
-        char file = char.ToLowerInvariant(square[0]);
-        char rank = square[1];
-        if (file < 'a' || file > 'h' || rank < '1' || rank > '8')
-            return false;
-
-        position = new Vector2Int(file - 'a', rank - '1');
-        return true;
     }
 
     private void CancelPendingTurn()

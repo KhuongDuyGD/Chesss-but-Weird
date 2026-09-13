@@ -116,13 +116,14 @@ public static class PlayerAuthService
         string detail = "",
         int rewardGold = 0,
         int rewardDiamonds = 0,
-        int rewardTickets = 0)
+        int rewardTickets = 0,
+        string matchId = "")
     {
         if (CurrentProfile == null)
             return;
 
         string result = won ? "Win" : lost ? "Lose" : "Draw";
-        PlayerProfileStore.RecordMatch(mode, opponent, result, detail, rewardGold, rewardDiamonds, rewardTickets);
+        PlayerProfileStore.RecordMatch(mode, opponent, result, detail, rewardGold, rewardDiamonds, rewardTickets, matchId);
         if (IsGuestSession)
             SaveGuestProfile();
     }

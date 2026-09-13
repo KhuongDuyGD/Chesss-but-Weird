@@ -34,10 +34,7 @@ public class HandDrawnMenuView : MonoBehaviour
     private RectTransform botDifficultyScreen;
     private RectTransform sideScreen;
     private RectTransform skinScreen;
-    private Text skinMessageText;
     private RectTransform transitionVeil;
-    private RectTransform transitionProgressFill;
-    private TextMeshProUGUI transitionLabel;
     private CanvasGroup transitionVeilGroup;
     private RectTransform currentScreen;
     private Button modeLogoutButton;
@@ -49,12 +46,13 @@ public class HandDrawnMenuView : MonoBehaviour
     private Coroutine inventoryOverlayTransitionCoroutine;
     private Coroutine profileOverlayTransitionCoroutine;
     private Coroutine settingsOverlayTransitionCoroutine;
-    private Coroutine gameStartTransitionCoroutine;
     private readonly List<Sprite> runtimeSprites = new List<Sprite>();
     private readonly List<SkinOptionButton> skinOptionButtons = new List<SkinOptionButton>();
     private string selectedWhiteSkinId = PieceSkinCatalog.DefaultSkinId;
     private string selectedBlackSkinId = PieceSkinCatalog.DefaultSkinId;
     private bool skinSelectionVsBot;
+    private int whiteSkinPage;
+    private int blackSkinPage;
     private PieceTeam skinSelectionPlayerTeam = PieceTeam.White;
     private static Font uiFont;
 
@@ -90,7 +88,7 @@ public class HandDrawnMenuView : MonoBehaviour
         GameMusicManager.PlayMainMenuPrimaryMusic();
         SetVisible(true);
         SetInputEnabled(true);
-        TransitionToScreen(mainScreen, null, "Loading main menu...");
+        TransitionToScreen(mainScreen, null);
     }
 
     public void ShowModeSelection()
@@ -102,7 +100,7 @@ public class HandDrawnMenuView : MonoBehaviour
         {
             HideInventoryOverlayImmediate();
             HideProfileOverlayImmediate();
-        }, "Loading play hub...");
+        });
     }
 
     public void ShowSideSelection()
@@ -110,7 +108,7 @@ public class HandDrawnMenuView : MonoBehaviour
         GameMusicManager.PlayMainMenuHubMusic();
         SetVisible(true);
         SetInputEnabled(true);
-        TransitionToScreen(sideScreen, null, "Loading side select...");
+        TransitionToScreen(sideScreen, null);
     }
 
     public void ShowBotDifficultySelection()
@@ -118,7 +116,7 @@ public class HandDrawnMenuView : MonoBehaviour
         GameMusicManager.PlayMainMenuHubMusic();
         SetVisible(true);
         SetInputEnabled(true);
-        TransitionToScreen(botDifficultyScreen, null, "Loading difficulties...");
+        TransitionToScreen(botDifficultyScreen, null);
     }
 
     public void ShowLocalModeSelection()
@@ -126,7 +124,7 @@ public class HandDrawnMenuView : MonoBehaviour
         GameMusicManager.PlayMainMenuHubMusic();
         SetVisible(true);
         SetInputEnabled(true);
-        TransitionToScreen(localModeScreen, null, "Loading local mode...");
+        TransitionToScreen(localModeScreen, null);
     }
 
     public void ShowAramModeSelection()
@@ -134,26 +132,21 @@ public class HandDrawnMenuView : MonoBehaviour
         GameMusicManager.PlayMainMenuHubMusic();
         SetVisible(true);
         SetInputEnabled(true);
-        TransitionToScreen(aramModeScreen, null, "Loading ARAM mode...");
+        TransitionToScreen(aramModeScreen, null);
     }
 
     public void ShowPieceSkinSelection(bool vsBot, PieceTeam playerTeam)
     {
         skinSelectionVsBot = vsBot;
         skinSelectionPlayerTeam = playerTeam;
-        selectedWhiteSkinId = chessGame ? chessGame.GetPieceSkinId(PieceTeam.White) : PieceSkinCatalog.DefaultSkinId;
-        selectedBlackSkinId = chessGame ? chessGame.GetPieceSkinId(PieceTeam.Black) : PieceSkinCatalog.DefaultSkinId;
-
-        if (vsBot)
-        {
-            selectedWhiteSkinId = PieceSkinCatalog.DefaultSkinId;
-            selectedBlackSkinId = PieceSkinCatalog.DefaultSkinId;
-            SetSelectedSkinId(playerTeam, PieceSkinCatalog.DefaultSkinId);
-        }
+        var saved = CosmeticSelection.Load();
+        selectedWhiteSkinId = saved.whiteSkinId;
+        selectedBlackSkinId = saved.blackSkinId;
+        whiteSkinPage = blackSkinPage = 0;
 
         SetVisible(true);
         SetInputEnabled(true);
-        TransitionToScreen(skinScreen, RebuildSkinScreen, "Loading skins...");
+        TransitionToScreen(skinScreen, RebuildSkinScreen);
     }
 
     public void ShowMultiplayerModeSelection()
@@ -167,7 +160,7 @@ public class HandDrawnMenuView : MonoBehaviour
 
         SetVisible(true);
         SetInputEnabled(true);
-        TransitionToScreen(multiplayerModeScreen, null, "Loading multiplayer...");
+        TransitionToScreen(multiplayerModeScreen, null);
     }
 
     public void ShowGachaMenu()
@@ -175,7 +168,7 @@ public class HandDrawnMenuView : MonoBehaviour
         GameMusicManager.PlayGachaMusic();
         SetVisible(true);
         SetInputEnabled(true);
-        TransitionToScreen(gachaScreen, () => gachaController?.OpenMainScreen(), "Loading gacha...");
+        TransitionToScreen(gachaScreen, () => gachaController?.OpenMainScreen());
     }
 
     public void HideForPlaying()
@@ -353,7 +346,7 @@ public class HandDrawnMenuView : MonoBehaviour
 
         SetVisible(true);
         SetInputEnabled(true);
-        TransitionToScreen(modeScreen, OpenInventoryOverlay, "Loading inventory...");
+        TransitionToScreen(modeScreen, OpenInventoryOverlay);
     }
 
     private void CloseInventoryMenu()
@@ -372,7 +365,7 @@ public class HandDrawnMenuView : MonoBehaviour
 
         SetVisible(true);
         SetInputEnabled(true);
-        TransitionToScreen(modeScreen, OpenProfileOverlay, "Loading profile...");
+        TransitionToScreen(modeScreen, OpenProfileOverlay);
     }
 
     private void CloseProfileMenu()
@@ -574,17 +567,28 @@ public class HandDrawnMenuView : MonoBehaviour
             AddBackButton(skinScreen, new Vector2(-820f, -430f), () => ShowLocalModeSelection());
         }
 
-        skinMessageText = AddText(
-            skinScreen,
-            "Skin Message",
-            string.Empty,
-            new Vector2(0f, -325f),
-            new Vector2(1250f, 58f),
-            34,
-            TextAnchor.MiddleCenter,
-            new Color(0.78f, 0.12f, 0.08f, 1f));
-
+        var selection = CosmeticSelection.Load();
+        var catalog = LoadingManager.For(chessGame).Catalog;
+        AddTextButton(skinScreen, "Board selection", "Board: " + (catalog?.FindBoard(selection.boardId)?.displayName ?? "Classic"),
+            new Vector2(-260, -260), new Vector2(490, 65), () => CycleCosmetic(false), new Color(.86f, .88f, .95f));
+        AddTextButton(skinScreen, "Environment selection", "Environment: " + (catalog?.FindEnvironment(selection.environmentId)?.displayName ?? "None"),
+            new Vector2(260, -260), new Vector2(490, 65), () => CycleCosmetic(true), new Color(.86f, .88f, .95f));
         RefreshSkinOptionStates();
+    }
+
+    private void CycleCosmetic(bool environment)
+    {
+        var catalog = LoadingManager.For(chessGame).Catalog;
+        if (!catalog) return;
+        var items = environment ? catalog.environments : catalog.boards;
+        if (items == null || items.Count == 0) return;
+        var selection = CosmeticSelection.Load();
+        string current = environment ? selection.environmentId : selection.boardId;
+        int index = items.FindIndex(e => e != null && e.id == current) + 1;
+        string next = index >= items.Count ? (environment ? "" : items[0].id) : items[index].id;
+        if (environment) selection.environmentId = next; else selection.boardId = next;
+        selection.Save();
+        RebuildSkinScreen();
     }
 
     private void ClearSkinScreen()
@@ -603,13 +607,22 @@ public class HandDrawnMenuView : MonoBehaviour
         IReadOnlyList<PieceSkinDefinition> skins = PieceSkinCatalog.All;
         float startX = center.x - 135f;
         float startY = center.y + 108f;
-        for (int i = 0; i < skins.Count; i++)
+        int pages = Mathf.Max(1, (skins.Count + 3) / 4);
+        int page = (team == PieceTeam.White ? whiteSkinPage : blackSkinPage) % pages;
+        for (int slot = 0; slot < 4 && page * 4 + slot < skins.Count; slot++)
         {
-            int column = i % 2;
-            int row = i / 2;
+            int i = page * 4 + slot;
+            int column = slot % 2;
+            int row = slot / 2;
             Vector2 position = new Vector2(startX + column * 270f, startY - row * 105f);
             AddSkinOption(team, skins[i], position);
         }
+        if (pages > 1)
+            AddTextButton(skinScreen, team + " More skins", $"More ({page + 1}/{pages})", center + new Vector2(0, -125), new Vector2(240, 58), () =>
+            {
+                if (team == PieceTeam.White) whiteSkinPage++; else blackSkinPage++;
+                RebuildSkinScreen();
+            }, new Color(.88f, .88f, .9f));
     }
 
     private void AddSkinOption(PieceTeam team, PieceSkinDefinition skin, Vector2 position)
@@ -650,16 +663,7 @@ public class HandDrawnMenuView : MonoBehaviour
 
     private void SelectSkinOption(PieceTeam team, PieceSkinDefinition skin)
     {
-        if (IsSkinLockedForTeam(team, skin.Id))
-        {
-            if (skinMessageText)
-                skinMessageText.text = "Skin n\u00e0y \u0111\u00e3 \u0111\u01b0\u1ee3c ng\u01b0\u1eddi ch\u01a1i c\u00f2n l\u1ea1i ch\u1ecdn.";
-            return;
-        }
-
         SetSelectedSkinId(team, skin.Id);
-        if (skinMessageText)
-            skinMessageText.text = string.Empty;
         RefreshSkinOptionStates();
     }
 
@@ -669,24 +673,14 @@ public class HandDrawnMenuView : MonoBehaviour
         {
             SkinOptionButton option = skinOptionButtons[i];
             bool selected = string.Equals(GetSelectedSkinId(option.Team), option.Skin.Id, System.StringComparison.OrdinalIgnoreCase);
-            bool locked = IsSkinLockedForTeam(option.Team, option.Skin.Id);
             Color backgroundColor = option.Skin.SwatchColor;
 
-            option.Background.color = locked ? new Color(0.42f, 0.42f, 0.42f, 0.8f) : backgroundColor;
-            option.Label.color = locked ? new Color(0.8f, 0.8f, 0.8f, 1f) : GetReadableTextColor(backgroundColor);
-            option.CanvasGroup.alpha = locked ? 0.48f : 1f;
+            option.Background.color = backgroundColor;
+            option.Label.color = GetReadableTextColor(backgroundColor);
+            option.CanvasGroup.alpha = 1f;
             option.Outline.effectColor = selected ? new Color(1f, 0.72f, 0.08f, 1f) : new Color(0f, 0f, 0f, 0f);
             option.Button.interactable = true;
         }
-    }
-
-    private bool IsSkinLockedForTeam(PieceTeam team, string skinId)
-    {
-        if (PieceSkinCatalog.IsDefault(skinId))
-            return false;
-
-        PieceTeam otherTeam = team == PieceTeam.White ? PieceTeam.Black : PieceTeam.White;
-        return string.Equals(GetSelectedSkinId(otherTeam), skinId, System.StringComparison.OrdinalIgnoreCase);
     }
 
     private string GetSelectedSkinId(PieceTeam team)
@@ -1108,40 +1102,10 @@ public class HandDrawnMenuView : MonoBehaviour
         AddImage(transitionVeil, "Transition Stars Left", assets.backgroundDecoration3, new Vector2(-135f, 18f), new Vector2(78f, 52f), 0.2f, 0.08f);
         AddImage(transitionVeil, "Transition Stars Right", assets.backgroundDecoration3, new Vector2(155f, -20f), new Vector2(78f, 52f), 0.2f, 0.08f);
 
-        GameObject labelObject = new GameObject("Transition Label", typeof(RectTransform), typeof(TextMeshProUGUI));
-        RectTransform labelRect = labelObject.GetComponent<RectTransform>();
-        labelRect.SetParent(transitionVeil, false);
-        labelRect.anchorMin = labelRect.anchorMax = labelRect.pivot = new Vector2(0.5f, 0.5f);
-        labelRect.anchoredPosition = new Vector2(0f, -52f);
-        labelRect.sizeDelta = new Vector2(520f, 56f);
-
-        transitionLabel = labelObject.GetComponent<TextMeshProUGUI>();
-        transitionLabel.font = ChessFontCatalog.TmpFont != null ? ChessFontCatalog.TmpFont : TMP_Settings.defaultFontAsset;
-        transitionLabel.fontSize = 34f;
-        transitionLabel.enableAutoSizing = true;
-        transitionLabel.fontSizeMin = 20f;
-        transitionLabel.fontSizeMax = 34f;
-        transitionLabel.alignment = TextAlignmentOptions.Center;
-        transitionLabel.color = new Color(0.18f, 0.14f, 0.1f, 0.9f);
-        transitionLabel.raycastTarget = false;
-        transitionLabel.text = string.Empty;
-
-        Image progressTrack = CreateImage(transitionVeil, "Transition Progress Track", null, new Vector2(0f, -102f), new Vector2(430f, 10f));
-        progressTrack.color = new Color(0.15f, 0.12f, 0.08f, 0.18f);
-        progressTrack.preserveAspect = false;
-
-        Image progressFill = CreateImage(progressTrack.rectTransform, "Transition Progress Fill", null, Vector2.zero, new Vector2(1f, 10f));
-        progressFill.color = new Color(0.14f, 0.11f, 0.08f, 0.88f);
-        progressFill.preserveAspect = false;
-        transitionProgressFill = progressFill.rectTransform;
-        transitionProgressFill.anchorMin = new Vector2(0f, 0.5f);
-        transitionProgressFill.anchorMax = new Vector2(0f, 0.5f);
-        transitionProgressFill.pivot = new Vector2(0f, 0.5f);
-
         transitionVeil.gameObject.SetActive(false);
     }
 
-    private void TransitionToScreen(RectTransform activeScreen, Action prepareAction, string loadingText)
+    private void TransitionToScreen(RectTransform activeScreen, Action prepareAction)
     {
         if (!mainScreen || !modeScreen || !localModeScreen || !aramModeScreen || !multiplayerModeScreen || !gachaScreen || !botDifficultyScreen || !sideScreen || !skinScreen || !activeScreen)
             return;
@@ -1174,10 +1138,10 @@ public class HandDrawnMenuView : MonoBehaviour
             screenTransitionCoroutine = null;
             HideTransitionVeil();
         }
-        screenTransitionCoroutine = StartCoroutine(AnimateScreenTransition(activeScreen, prepareAction, loadingText));
+        screenTransitionCoroutine = StartCoroutine(AnimateScreenTransition(activeScreen, prepareAction));
     }
 
-    private IEnumerator AnimateScreenTransition(RectTransform activeScreen, Action prepareAction, string loadingText)
+    private IEnumerator AnimateScreenTransition(RectTransform activeScreen, Action prepareAction)
     {
         SetInputEnabled(false);
 
@@ -1193,7 +1157,7 @@ public class HandDrawnMenuView : MonoBehaviour
         ResetInactiveTransitionScreens(previousScreen, activeScreen);
         previousScreen.SetAsLastSibling();
         activeScreen.SetAsLastSibling();
-        ShowTransitionVeil(loadingText);
+        ShowTransitionVeil();
 
         previousGroup.alpha = 1f;
         previousGroup.interactable = true;
@@ -1210,7 +1174,7 @@ public class HandDrawnMenuView : MonoBehaviour
             float eased = EaseOutCubic(elapsed / halfDuration);
             previousGroup.alpha = Mathf.Lerp(1f, 0.22f, eased);
             previousScreen.anchoredPosition = new Vector2(Mathf.Lerp(0f, -direction * ScreenTransitionOffset * 0.45f, eased), 0f);
-            SetTransitionVeil(loadingText, eased, Mathf.Lerp(0f, 0.55f, eased));
+            SetTransitionVeil(eased);
             elapsed += Time.unscaledDeltaTime;
             yield return null;
         }
@@ -1225,7 +1189,7 @@ public class HandDrawnMenuView : MonoBehaviour
             activeGroup.alpha = Mathf.Lerp(0f, 1f, eased);
             previousScreen.anchoredPosition = new Vector2(Mathf.Lerp(-direction * ScreenTransitionOffset * 0.45f, -direction * ScreenTransitionOffset, eased), 0f);
             activeScreen.anchoredPosition = new Vector2(Mathf.Lerp(direction * ScreenTransitionOffset, 0f, eased), 0f);
-            SetTransitionVeil(loadingText, 1f - eased, Mathf.Lerp(0.55f, 1f, eased));
+            SetTransitionVeil(1f - eased);
             elapsed += Time.unscaledDeltaTime;
             yield return null;
         }
@@ -1383,7 +1347,7 @@ public class HandDrawnMenuView : MonoBehaviour
         overlay.gameObject.SetActive(visible);
     }
 
-    private void ShowTransitionVeil(string loadingText)
+    private void ShowTransitionVeil()
     {
         if (!transitionVeil || !transitionVeilGroup)
             return;
@@ -1392,19 +1356,16 @@ public class HandDrawnMenuView : MonoBehaviour
         transitionVeil.SetAsLastSibling();
         transitionVeilGroup.interactable = true;
         transitionVeilGroup.blocksRaycasts = true;
-        SetTransitionVeil(loadingText, 0f, 0f);
+        SetTransitionVeil(0f);
     }
 
-    private void SetTransitionVeil(string loadingText, float alpha, float progress)
+    private void SetTransitionVeil(float alpha)
     {
         if (!transitionVeilGroup)
             return;
 
         transitionVeilGroup.alpha = Mathf.Clamp01(alpha);
-        if (transitionLabel)
-            transitionLabel.text = string.IsNullOrWhiteSpace(loadingText) ? "Loading..." : loadingText;
-        if (transitionProgressFill)
-            transitionProgressFill.sizeDelta = new Vector2(Mathf.Lerp(1f, 430f, Mathf.Clamp01(progress)), 10f);
+
     }
 
     private void HideTransitionVeil()
@@ -1444,11 +1405,6 @@ public class HandDrawnMenuView : MonoBehaviour
             settingsOverlayTransitionCoroutine = null;
         }
 
-        if (gameStartTransitionCoroutine != null)
-        {
-            StopCoroutine(gameStartTransitionCoroutine);
-            gameStartTransitionCoroutine = null;
-        }
 
         HideTransitionVeil();
     }
@@ -1500,33 +1456,6 @@ public class HandDrawnMenuView : MonoBehaviour
         }
 
         owner.ShowOnlineSetup();
-    }
-
-    private void StartBotGameWithTransition(PieceTeam playerTeam)
-    {
-        if (gameStartTransitionCoroutine != null)
-            StopCoroutine(gameStartTransitionCoroutine);
-        gameStartTransitionCoroutine = StartCoroutine(AnimateStartBotGame(playerTeam));
-    }
-
-    private IEnumerator AnimateStartBotGame(PieceTeam playerTeam)
-    {
-        SetInputEnabled(false);
-        ShowTransitionVeil("Loading match...");
-
-        const float duration = 0.28f;
-        float elapsed = 0f;
-        while (elapsed < duration)
-        {
-            float eased = EaseOutCubic(elapsed / duration);
-            SetTransitionVeil("Loading match...", eased, eased);
-            elapsed += Time.unscaledDeltaTime;
-            yield return null;
-        }
-
-        SetTransitionVeil("Loading match...", 1f, 1f);
-        owner.StartBotGame(playerTeam);
-        gameStartTransitionCoroutine = null;
     }
 
     private static void Stretch(RectTransform rect)
@@ -2231,6 +2160,7 @@ public sealed class GachaMenuController : MonoBehaviour
     private Sprite LoadSprite(string fileName, bool trimTransparent)
     {
         string path = FullAssetPath(fileName);
+        if (CoreArtworkCache.GetSprite(path) is Sprite prepared) return prepared;
         if (!File.Exists(path))
         {
             Debug.LogWarning($"[GachaMenu] Missing asset: {fileName}");
@@ -2249,6 +2179,7 @@ public sealed class GachaMenuController : MonoBehaviour
         texture.filterMode = FilterMode.Bilinear;
         Rect rect = trimTransparent ? FindOpaqueBounds(texture) : new Rect(0f, 0f, texture.width, texture.height);
         Sprite sprite = Sprite.Create(texture, rect, new Vector2(0.5f, 0.5f), 100f, 0u, SpriteMeshType.FullRect);
+        texture.Apply(false, true);
         runtimeSprites.Add(sprite);
         return sprite;
     }
