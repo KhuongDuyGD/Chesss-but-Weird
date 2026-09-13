@@ -1,11 +1,10 @@
 {
-    "Port": 8093,
-    "AutoSelectAvailablePort": true,
-    "PreferredPort": 17806,
-    "PortSearchRange": 30,
+    "Port": 8091,
     "RequestTimeoutSeconds": 10,
     "AutoStartServer": true,
+    "AllowBatchModeServer": false,
     "EnableInfoLogs": true,
     "NpmExecutablePath": "",
-    "AllowRemoteConnections": false
+    "AllowRemoteConnections": false,
+    "AllowPackageInstallation": false
 }
