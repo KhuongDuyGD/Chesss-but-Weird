@@ -15,38 +15,8 @@ MonoBehaviour:
   m_GroupName: PieceSkin_DC
   m_GUID: accf4a476ce2bfe41873e043d6f0ea63
   m_SerializeEntries:
-  - m_GUID: 0feb0d89603b44f40911f78575006227
-    m_Address: Pieces/DC/Bishop
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 22e9b2c97bac4cb4984a58c7242aa87d
-    m_Address: Pieces/DC/Rook
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 6ed81e885fee7ee4689c80048b31fa99
     m_Address: PieceSkin/dc
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 724e47f0e01db404ea00b3dc5d71f7fd
-    m_Address: Pieces/DC/Pawn
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: a14aa89b5fa1d974ba85f33c0e9b1460
-    m_Address: Pieces/DC/King
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: a8aecbf1ce9b0bc498ba5dfe521a89e9
-    m_Address: Pieces/DC/Queen
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: e8f104aa4fc038949943f67b6d2d216c
-    m_Address: Pieces/DC/Knight
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
@@ -56,3 +26,6 @@ MonoBehaviour:
     m_Schemas:
     - {fileID: 11400000, guid: 201eba31652a54f4ba1e579b4f1f4133, type: 2}
     - {fileID: 11400000, guid: 529f742af82744d4abf79c4f2c1f2f11, type: 2}
+    m_SchemaDisplayOrder: []
+  m_IncludeInBuild: 1
+  m_IncludeInBuildMigrated: 1
