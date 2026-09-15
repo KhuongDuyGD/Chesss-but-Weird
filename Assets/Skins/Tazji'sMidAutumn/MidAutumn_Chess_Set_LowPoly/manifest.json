@@ -1,0 +1,80 @@
+{
+  "original_prompt": "Tạo 1 chess set mới theo style trung thu, gồm 6 quân tốt, mã, xe, tương, hậu, vua mỗi bên.",
+  "revisions": [
+    "Tôi thấy thiết kế hiện tại chưa đẹp và đúng chủ đề lắm",
+    "Đồ chơi Trung thu Việt: đầu lân, đèn ông sao, màu tươi, hình khối đáng yêu",
+    "Theo phong cách lowpoly nữa"
+  ],
+  "negative_prompt": null,
+  "provenance": "Original procedural Blender modeling",
+  "files": {
+    "MidAutumn_Chess_Set.blend": {
+      "bytes": 2116520,
+      "sha256": "33c6605ca09f006ed122cb112c381a46d7381ba64bcfb667e98f1d1c81f531d0"
+    },
+    "MidAutumn_Chess_Set_12.fbx": {
+      "bytes": 1847340,
+      "sha256": "f218a469c284e0178f11114d2d0756fe4f5965cf5ea7c997699a401cf82c8ced"
+    },
+    "MidAutumn_Chess_Set_Preview.png": {
+      "bytes": 2817171,
+      "sha256": "3de1596b08e43dda003da4408ce75c7ea07bd700f4d31295206c8fa9305a83d7"
+    },
+    "README.md": {
+      "bytes": 2357,
+      "sha256": "5f8d5d7d4e00c47fa9e8e2963a3cbcce9555164af0e129155e3917b75af7872f"
+    },
+    "validation.json": {
+      "bytes": 6521,
+      "sha256": "24998d167e51ee5d8c58e8e1a02662e05f7b92c664cde4177948929788b1d3fd"
+    },
+    "FBX\\MA_Lantern_Bishop.fbx": {
+      "bytes": 150556,
+      "sha256": "9f808eac95cb97eaea4956b3f0d4ee0ef78926a56c14d8aa26fa8b9ef4bba26a"
+    },
+    "FBX\\MA_Lantern_King.fbx": {
+      "bytes": 184300,
+      "sha256": "1c7b14a871362d89b6538b81fed34786c7e8f0edd931f55d523aab17f26d2cd6"
+    },
+    "FBX\\MA_Lantern_Knight.fbx": {
+      "bytes": 199292,
+      "sha256": "c43bc73a702079b390c41032237599742cda7e71ffbee0e46c9408f10e5a2b73"
+    },
+    "FBX\\MA_Lantern_Pawn.fbx": {
+      "bytes": 127788,
+      "sha256": "c8705f42ebcd290eece6a19e419d37e6f9b8cb984c11be2604b0e2b866265a87"
+    },
+    "FBX\\MA_Lantern_Queen.fbx": {
+      "bytes": 190252,
+      "sha256": "efce036fe3a98065f2178139cfa0df1b55c4398aff6aaaf3a3602052ee837aaa"
+    },
+    "FBX\\MA_Lantern_Rook.fbx": {
+      "bytes": 171164,
+      "sha256": "1dbb26d3cb61066c7528c10d1b6814dd4d3bc717bd71836b500d901f90d4d27e"
+    },
+    "FBX\\MA_Moon_Bishop.fbx": {
+      "bytes": 151532,
+      "sha256": "36ae7cc5bcdb41db8df83ad22e254e7ee0a02b29e808b6887c49ea54f38e0265"
+    },
+    "FBX\\MA_Moon_King.fbx": {
+      "bytes": 184220,
+      "sha256": "c8a2636d6e18e17b74faa0003c0ad9595aa5a722b8610fe8afc8bf3602773d07"
+    },
+    "FBX\\MA_Moon_Knight.fbx": {
+      "bytes": 199324,
+      "sha256": "f5737dd3c535ca81e5873fd6e73c8cb7db0c6bd7cd738a77beae2fa5fb096e80"
+    },
+    "FBX\\MA_Moon_Pawn.fbx": {
+      "bytes": 127772,
+      "sha256": "38f891da1ad8a9097d404c097066936926533ad3c440d22b92f8251068c1d4d9"
+    },
+    "FBX\\MA_Moon_Queen.fbx": {
+      "bytes": 190092,
+      "sha256": "977af6c0dfbf55f67c06a77c87e2e396fdd2c13a50b8a6a62abb0724009bb058"
+    },
+    "FBX\\MA_Moon_Rook.fbx": {
+      "bytes": 171148,
+      "sha256": "f8b8826bad992ec87080f8347d39a8c3fe4a9cdd772017d00c0b55271a8d04a5"
+    }
+  }
+}

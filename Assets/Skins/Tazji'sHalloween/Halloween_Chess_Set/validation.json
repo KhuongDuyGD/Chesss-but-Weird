@@ -1,0 +1,248 @@
+{
+  "pieces": [
+    {
+      "name": "HW_Ember_Pawn",
+      "triangles": 1340,
+      "non_manifold_edges": 0,
+      "degenerate_faces": 0,
+      "modifiers": 0,
+      "dimensions": [
+        0.7239999771118164,
+        0.7239999771118164,
+        0.9835336208343506
+      ]
+    },
+    {
+      "name": "HW_Ember_Rook",
+      "triangles": 900,
+      "non_manifold_edges": 0,
+      "degenerate_faces": 0,
+      "modifiers": 0,
+      "dimensions": [
+        0.7239999771118164,
+        0.7239999771118164,
+        1.1150000095367432
+      ]
+    },
+    {
+      "name": "HW_Ember_Knight",
+      "triangles": 1508,
+      "non_manifold_edges": 0,
+      "degenerate_faces": 0,
+      "modifiers": 0,
+      "dimensions": [
+        0.7719999551773071,
+        0.7239999771118164,
+        1.340000033378601
+      ]
+    },
+    {
+      "name": "HW_Ember_Bishop",
+      "triangles": 1820,
+      "non_manifold_edges": 0,
+      "degenerate_faces": 0,
+      "modifiers": 0,
+      "dimensions": [
+        0.7239999771118164,
+        0.7239999771118164,
+        1.559999942779541
+      ]
+    },
+    {
+      "name": "HW_Ember_Queen",
+      "triangles": 2208,
+      "non_manifold_edges": 0,
+      "degenerate_faces": 0,
+      "modifiers": 0,
+      "dimensions": [
+        0.8863327503204346,
+        0.7239999771118164,
+        1.6360000371932983
+      ]
+    },
+    {
+      "name": "HW_Ember_King",
+      "triangles": 2292,
+      "non_manifold_edges": 0,
+      "degenerate_faces": 0,
+      "modifiers": 0,
+      "dimensions": [
+        0.7239999771118164,
+        0.7239999771118164,
+        1.9100000858306885
+      ]
+    },
+    {
+      "name": "HW_Specter_Pawn",
+      "triangles": 1340,
+      "non_manifold_edges": 0,
+      "degenerate_faces": 0,
+      "modifiers": 0,
+      "dimensions": [
+        0.7239999771118164,
+        0.7239999771118164,
+        0.9835336208343506
+      ]
+    },
+    {
+      "name": "HW_Specter_Rook",
+      "triangles": 900,
+      "non_manifold_edges": 0,
+      "degenerate_faces": 0,
+      "modifiers": 0,
+      "dimensions": [
+        0.7239999771118164,
+        0.7239999771118164,
+        1.1150000095367432
+      ]
+    },
+    {
+      "name": "HW_Specter_Knight",
+      "triangles": 1508,
+      "non_manifold_edges": 0,
+      "degenerate_faces": 0,
+      "modifiers": 0,
+      "dimensions": [
+        0.7719999551773071,
+        0.7239999771118164,
+        1.340000033378601
+      ]
+    },
+    {
+      "name": "HW_Specter_Bishop",
+      "triangles": 1820,
+      "non_manifold_edges": 0,
+      "degenerate_faces": 0,
+      "modifiers": 0,
+      "dimensions": [
+        0.7239999771118164,
+        0.7239999771118164,
+        1.559999942779541
+      ]
+    },
+    {
+      "name": "HW_Specter_Queen",
+      "triangles": 2208,
+      "non_manifold_edges": 0,
+      "degenerate_faces": 0,
+      "modifiers": 0,
+      "dimensions": [
+        0.8863327503204346,
+        0.7239999771118164,
+        1.6360000371932983
+      ]
+    },
+    {
+      "name": "HW_Specter_King",
+      "triangles": 2292,
+      "non_manifold_edges": 0,
+      "degenerate_faces": 0,
+      "modifiers": 0,
+      "dimensions": [
+        0.7239999771118164,
+        0.7239999771118164,
+        1.9100000858306885
+      ]
+    }
+  ],
+  "count": 12,
+  "total_triangles": 20136,
+  "fbx_roundtrip": [
+    {
+      "file": "HW_Ember_Bishop.fbx",
+      "bytes": 67932,
+      "mesh_count": 1,
+      "triangles": 1820,
+      "origin_zero": true,
+      "materials": 8
+    },
+    {
+      "file": "HW_Ember_King.fbx",
+      "bytes": 78700,
+      "mesh_count": 1,
+      "triangles": 2292,
+      "origin_zero": true,
+      "materials": 7
+    },
+    {
+      "file": "HW_Ember_Knight.fbx",
+      "bytes": 58156,
+      "mesh_count": 1,
+      "triangles": 1508,
+      "origin_zero": true,
+      "materials": 6
+    },
+    {
+      "file": "HW_Ember_Pawn.fbx",
+      "bytes": 53564,
+      "mesh_count": 1,
+      "triangles": 1340,
+      "origin_zero": true,
+      "materials": 7
+    },
+    {
+      "file": "HW_Ember_Queen.fbx",
+      "bytes": 77852,
+      "mesh_count": 1,
+      "triangles": 2208,
+      "origin_zero": true,
+      "materials": 7
+    },
+    {
+      "file": "HW_Ember_Rook.fbx",
+      "bytes": 41884,
+      "mesh_count": 1,
+      "triangles": 900,
+      "origin_zero": true,
+      "materials": 6
+    },
+    {
+      "file": "HW_Specter_Bishop.fbx",
+      "bytes": 67932,
+      "mesh_count": 1,
+      "triangles": 1820,
+      "origin_zero": true,
+      "materials": 8
+    },
+    {
+      "file": "HW_Specter_King.fbx",
+      "bytes": 78700,
+      "mesh_count": 1,
+      "triangles": 2292,
+      "origin_zero": true,
+      "materials": 7
+    },
+    {
+      "file": "HW_Specter_Knight.fbx",
+      "bytes": 58172,
+      "mesh_count": 1,
+      "triangles": 1508,
+      "origin_zero": true,
+      "materials": 6
+    },
+    {
+      "file": "HW_Specter_Pawn.fbx",
+      "bytes": 53580,
+      "mesh_count": 1,
+      "triangles": 1340,
+      "origin_zero": true,
+      "materials": 7
+    },
+    {
+      "file": "HW_Specter_Queen.fbx",
+      "bytes": 77852,
+      "mesh_count": 1,
+      "triangles": 2208,
+      "origin_zero": true,
+      "materials": 7
+    },
+    {
+      "file": "HW_Specter_Rook.fbx",
+      "bytes": 41868,
+      "mesh_count": 1,
+      "triangles": 900,
+      "origin_zero": true,
+      "materials": 6
+    }
+  ]
+}

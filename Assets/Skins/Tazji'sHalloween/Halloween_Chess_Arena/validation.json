@@ -1,0 +1,179 @@
+{
+  "style": "Dread cemetery redesign",
+  "mesh_count": 8,
+  "total_triangles": 30614,
+  "geometry": [
+    {
+      "name": "Arena_Stone_Architecture",
+      "triangles": 6948,
+      "non_manifold_edges": 0,
+      "degenerate_faces": 0,
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "modifiers": 0
+    },
+    {
+      "name": "Arena_Gothic_Gateway",
+      "triangles": 2032,
+      "non_manifold_edges": 0,
+      "degenerate_faces": 0,
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "modifiers": 0
+    },
+    {
+      "name": "Arena_Dead_Trees",
+      "triangles": 1420,
+      "non_manifold_edges": 0,
+      "degenerate_faces": 0,
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "modifiers": 0
+    },
+    {
+      "name": "Arena_Decor_Props",
+      "triangles": 16620,
+      "non_manifold_edges": 0,
+      "degenerate_faces": 0,
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "modifiers": 0
+    },
+    {
+      "name": "Chess_Board",
+      "triangles": 718,
+      "non_manifold_edges": 0,
+      "degenerate_faces": 0,
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "modifiers": 0,
+      "source_vertices_exact": true,
+      "source_faces_exact": true
+    },
+    {
+      "name": "Arena_Walkable_Floor",
+      "triangles": 256,
+      "non_manifold_edges": 0,
+      "degenerate_faces": 0,
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "modifiers": 0,
+      "source_vertices_exact": true,
+      "source_faces_exact": true
+    },
+    {
+      "name": "Arena_Floating_Island",
+      "triangles": 420,
+      "non_manifold_edges": 0,
+      "degenerate_faces": 0,
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "modifiers": 0,
+      "source_vertices_exact": true,
+      "source_faces_exact": true
+    },
+    {
+      "name": "Arena_Floor_Inlays",
+      "triangles": 2200,
+      "non_manifold_edges": 0,
+      "degenerate_faces": 0,
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "modifiers": 0,
+      "source_vertices_exact": true,
+      "source_faces_exact": true
+    }
+  ],
+  "fbx_version": 7400,
+  "fbx_units_axes_match_reference": true,
+  "fbx_protected_mesh_comparison": {
+    "Chess_Board": {
+      "max_vertex_delta": 0.0,
+      "vertex_count_same": true,
+      "faces_identical": true
+    },
+    "Arena_Walkable_Floor": {
+      "max_vertex_delta": 0.0,
+      "vertex_count_same": true,
+      "faces_identical": true
+    },
+    "Arena_Floor_Inlays": {
+      "max_vertex_delta": 0.0,
+      "vertex_count_same": true,
+      "faces_identical": true
+    },
+    "Arena_Floating_Island": {
+      "max_vertex_delta": 0.0,
+      "vertex_count_same": true,
+      "faces_identical": true
+    }
+  },
+  "dimensions_blender_units": {
+    "playing_grid": [
+      8,
+      8
+    ],
+    "chess_cell": [
+      1,
+      1
+    ],
+    "floor": [
+      13.4,
+      11.7
+    ],
+    "board_mesh": [
+      8.68,
+      8.68
+    ],
+    "slots_per_side": 6,
+    "slot_outer": [
+      0.7,
+      0.9
+    ],
+    "slot_inner": [
+      0.59,
+      0.79
+    ],
+    "slot_pitch": 1.26,
+    "slot_center_x": [
+      -4.93,
+      4.93
+    ],
+    "slot_centers_y": [
+      -3.15,
+      -1.89,
+      -0.63,
+      0.63,
+      1.89,
+      3.15
+    ]
+  },
+  "limitations": [
+    "Game engine import not tested",
+    "Perimeter art and height deliberately redesigned"
+  ]
+}

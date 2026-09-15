@@ -1,0 +1,305 @@
+{
+  "mesh_count": 12,
+  "total_triangles": 55632,
+  "policy": {
+    "max_triangles_per_piece": 6000,
+    "closed_mesh_islands": true,
+    "triangulated": true,
+    "unit_scale": true,
+    "bottom_center_origin": true
+  },
+  "meshes": [
+    {
+      "name": "MA_Lantern_Pawn",
+      "role": "Pawn",
+      "side": "Lantern",
+      "triangles": 3356,
+      "vertices": 1820,
+      "nonmanifold_edges": 0,
+      "degenerate_faces": 0,
+      "uv_layers": 1,
+      "modifiers": 0,
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        1.1679999828338623,
+        1.1679999828338623,
+        1.5521399974822998
+      ],
+      "min_local_z": 0.0,
+      "material_slots": 4
+    },
+    {
+      "name": "MA_Lantern_Knight",
+      "role": "Knight",
+      "side": "Lantern",
+      "triangles": 5696,
+      "vertices": 3008,
+      "nonmanifold_edges": 0,
+      "degenerate_faces": 0,
+      "uv_layers": 1,
+      "modifiers": 0,
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        1.2647018432617188,
+        1.1679999828338623,
+        1.7599999904632568
+      ],
+      "min_local_z": 0.0,
+      "material_slots": 6
+    },
+    {
+      "name": "MA_Lantern_Rook",
+      "role": "Rook",
+      "side": "Lantern",
+      "triangles": 4800,
+      "vertices": 2578,
+      "nonmanifold_edges": 0,
+      "degenerate_faces": 0,
+      "uv_layers": 1,
+      "modifiers": 0,
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        1.1679999828338623,
+        1.1679999828338623,
+        1.8799999952316284
+      ],
+      "min_local_z": 0.0,
+      "material_slots": 5
+    },
+    {
+      "name": "MA_Lantern_Bishop",
+      "role": "Bishop",
+      "side": "Lantern",
+      "triangles": 3880,
+      "vertices": 2032,
+      "nonmanifold_edges": 0,
+      "degenerate_faces": 0,
+      "uv_layers": 1,
+      "modifiers": 0,
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        1.1679999828338623,
+        1.1679999828338623,
+        2.1560864448547363
+      ],
+      "min_local_z": 0.0,
+      "material_slots": 8
+    },
+    {
+      "name": "MA_Lantern_Queen",
+      "role": "Queen",
+      "side": "Lantern",
+      "triangles": 5208,
+      "vertices": 2740,
+      "nonmanifold_edges": 0,
+      "degenerate_faces": 0,
+      "uv_layers": 1,
+      "modifiers": 0,
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        1.2239999771118164,
+        1.1679999828338623,
+        2.2100000381469727
+      ],
+      "min_local_z": 0.0,
+      "material_slots": 7
+    },
+    {
+      "name": "MA_Lantern_King",
+      "role": "King",
+      "side": "Lantern",
+      "triangles": 4876,
+      "vertices": 2548,
+      "nonmanifold_edges": 0,
+      "degenerate_faces": 0,
+      "uv_layers": 1,
+      "modifiers": 0,
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        1.238529920578003,
+        1.1679999828338623,
+        2.5
+      ],
+      "min_local_z": 0.0,
+      "material_slots": 9
+    },
+    {
+      "name": "MA_Moon_Pawn",
+      "role": "Pawn",
+      "side": "Moon",
+      "triangles": 3356,
+      "vertices": 1820,
+      "nonmanifold_edges": 0,
+      "degenerate_faces": 0,
+      "uv_layers": 1,
+      "modifiers": 0,
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        1.1679999828338623,
+        1.1679999828338623,
+        1.5521399974822998
+      ],
+      "min_local_z": 0.0,
+      "material_slots": 4
+    },
+    {
+      "name": "MA_Moon_Knight",
+      "role": "Knight",
+      "side": "Moon",
+      "triangles": 5696,
+      "vertices": 3008,
+      "nonmanifold_edges": 0,
+      "degenerate_faces": 0,
+      "uv_layers": 1,
+      "modifiers": 0,
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        1.2647018432617188,
+        1.1679999828338623,
+        1.7599999904632568
+      ],
+      "min_local_z": 0.0,
+      "material_slots": 6
+    },
+    {
+      "name": "MA_Moon_Rook",
+      "role": "Rook",
+      "side": "Moon",
+      "triangles": 4800,
+      "vertices": 2578,
+      "nonmanifold_edges": 0,
+      "degenerate_faces": 0,
+      "uv_layers": 1,
+      "modifiers": 0,
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        1.1679999828338623,
+        1.1679999828338623,
+        1.8799999952316284
+      ],
+      "min_local_z": 0.0,
+      "material_slots": 5
+    },
+    {
+      "name": "MA_Moon_Bishop",
+      "role": "Bishop",
+      "side": "Moon",
+      "triangles": 3880,
+      "vertices": 2032,
+      "nonmanifold_edges": 0,
+      "degenerate_faces": 0,
+      "uv_layers": 1,
+      "modifiers": 0,
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        1.1679999828338623,
+        1.1679999828338623,
+        2.1560864448547363
+      ],
+      "min_local_z": 0.0,
+      "material_slots": 9
+    },
+    {
+      "name": "MA_Moon_Queen",
+      "role": "Queen",
+      "side": "Moon",
+      "triangles": 5208,
+      "vertices": 2740,
+      "nonmanifold_edges": 0,
+      "degenerate_faces": 0,
+      "uv_layers": 1,
+      "modifiers": 0,
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        1.2239999771118164,
+        1.1679999828338623,
+        2.2100000381469727
+      ],
+      "min_local_z": 0.0,
+      "material_slots": 7
+    },
+    {
+      "name": "MA_Moon_King",
+      "role": "King",
+      "side": "Moon",
+      "triangles": 4876,
+      "vertices": 2548,
+      "nonmanifold_edges": 0,
+      "degenerate_faces": 0,
+      "uv_layers": 1,
+      "modifiers": 0,
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        1.238529920578003,
+        1.1679999828338623,
+        2.5
+      ],
+      "min_local_z": 0.0,
+      "material_slots": 9
+    }
+  ],
+  "fbx_roundtrip": {
+    "mesh_count": 12,
+    "triangles": 55632,
+    "materials_present": true,
+    "uv_present": true,
+    "result": "PASS"
+  },
+  "fbx_headers_verified": 13,
+  "preview": {
+    "file": "MidAutumn_Chess_Set_Preview.png",
+    "visually_reviewed": true,
+    "dimensions": [
+      1800,
+      1350
+    ]
+  }
+}
