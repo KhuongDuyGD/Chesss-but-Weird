@@ -1,13 +1,15 @@
 using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 public class AuthController : MonoBehaviour
 {
     private Action authenticatedCallback;
     private MainMenuAuthUI mainMenuAuthUI;
-    private string statusMessage = "Login or create an account on the backend server.";
     private bool requestInFlight;
+    private MainMenuAuthUI.AuthMode requestMode;
 
     public static AuthController Create(ChessGame game, Action onAuthenticated)
     {
@@ -16,7 +18,7 @@ public class AuthController : MonoBehaviour
         AuthController controller = root.AddComponent<AuthController>();
         controller.authenticatedCallback = onAuthenticated;
         controller.mainMenuAuthUI = root.AddComponent<MainMenuAuthUI>();
-        controller.mainMenuAuthUI.Initialize(null, PlayerAuthService.GetLastUsername(), controller.statusMessage);
+        controller.mainMenuAuthUI.Initialize(null, PlayerAuthService.GetLastUsername(), string.Empty);
         controller.mainMenuAuthUI.SubmitRequested += controller.Submit;
         controller.mainMenuAuthUI.GuestRequested += controller.PlayAsGuest;
         return controller;
@@ -36,28 +38,30 @@ public class AuthController : MonoBehaviour
         string username = mainMenuAuthUI.Username.Trim();
         string password = mainMenuAuthUI.Password;
         string confirmPassword = mainMenuAuthUI.ConfirmPassword;
+        requestMode = mainMenuAuthUI.CurrentMode;
 
         if (string.IsNullOrWhiteSpace(username))
         {
-            SetStatusMessage("Username / Email is required.");
+            ShowFailure("Enter your username or email address.");
             return;
         }
 
         if (string.IsNullOrWhiteSpace(password))
         {
-            SetStatusMessage("Password is required.");
+            ShowFailure("Enter your password.");
             return;
         }
 
         if (mainMenuAuthUI.CurrentMode == MainMenuAuthUI.AuthMode.SignUp && password != confirmPassword)
         {
-            SetStatusMessage("Passwords do not match.");
+            ShowFailure("Your passwords do not match. Please enter them again.");
             return;
         }
 
         requestInFlight = true;
         mainMenuAuthUI.SetInteractable(false);
-        SetStatusMessage(mainMenuAuthUI.CurrentMode == MainMenuAuthUI.AuthMode.SignUp ? "Creating account..." : "Logging in...");
+        AuthNotificationView.Show(requestMode == MainMenuAuthUI.AuthMode.SignUp ? "Creating your account..." : "Logging in...",
+            "Please wait a moment.", AuthNotificationView.ResultKind.Info);
 
         BackendAuthRequest request = new BackendAuthRequest
         {
@@ -83,13 +87,16 @@ public class AuthController : MonoBehaviour
         {
             mainMenuAuthUI?.SetInteractable(true);
             mainMenuAuthUI?.ClearSensitiveFields();
-            SetStatusMessage(string.IsNullOrWhiteSpace(sessionError)
+            ShowFailure(string.IsNullOrWhiteSpace(sessionError)
                 ? "The server returned an invalid login session. Please try again."
                 : sessionError);
             return;
         }
 
-        SetStatusMessage(string.IsNullOrWhiteSpace(response.message) ? "Authenticated." : response.message);
+        bool signedUp = requestMode == MainMenuAuthUI.AuthMode.SignUp;
+        AuthNotificationView.Show(signedUp ? "Sign-up successful!" : "Login successful!",
+            signedUp ? "Your account is ready. Let the games begin!" : "Welcome back! You're ready to play.",
+            AuthNotificationView.ResultKind.Success);
         authenticatedCallback?.Invoke();
         if (mainMenuAuthUI != null)
         {
@@ -105,29 +112,31 @@ public class AuthController : MonoBehaviour
         if (mainMenuAuthUI != null)
             mainMenuAuthUI.SetInteractable(true);
 
-        statusMessage = message;
+        string reason = message;
         if (response != null && response.errors != null && response.errors.Count > 0)
         {
             foreach (var entry in response.errors)
             {
-                statusMessage = $"{entry.Key}: {entry.Value}";
+                if (string.IsNullOrWhiteSpace(entry.Value)) continue;
+                reason = $"{entry.Key}: {entry.Value}";
                 break;
             }
         }
 
-        if (string.Equals(message, "Cannot connect to destination host", StringComparison.OrdinalIgnoreCase))
-            statusMessage = $"Cannot connect to backend: {BackendConfig.BaseUrl}";
+        if (string.Equals(message, "Cannot connect to destination host", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(message, "Cannot resolve destination host", StringComparison.OrdinalIgnoreCase))
+            reason = "We couldn't reach the server. Check your connection and try again.";
 
-        SetStatusMessage(statusMessage);
+        ShowFailure(reason);
         if (mainMenuAuthUI != null)
             mainMenuAuthUI.ClearSensitiveFields();
     }
 
-    private void SetStatusMessage(string message)
+    private void ShowFailure(string reason)
     {
-        statusMessage = message ?? string.Empty;
-        if (mainMenuAuthUI != null)
-            mainMenuAuthUI.SetStatusMessage(statusMessage);
+        AuthNotificationView.Show(requestMode == MainMenuAuthUI.AuthMode.SignUp ? "Sign-up unsuccessful" : "Login unsuccessful",
+            string.IsNullOrWhiteSpace(reason) ? "The server couldn't complete your request. Please try again." : reason,
+            AuthNotificationView.ResultKind.Error);
     }
 
     private void OnDestroy()
@@ -145,7 +154,7 @@ public class AuthController : MonoBehaviour
             return;
 
         PlayerAuthService.BeginGuestSession();
-        SetStatusMessage("Playing as Guest. Only Local mode is available.");
+        AuthNotificationView.Show("Playing as Guest", "Local play is ready. Log in to unlock account features.", AuthNotificationView.ResultKind.Info);
         authenticatedCallback?.Invoke();
         if (mainMenuAuthUI != null)
         {
@@ -157,6 +166,10 @@ public class AuthController : MonoBehaviour
 
     private static bool WasSubmitPressedThisFrame()
     {
+        // Buttons handle Submit themselves, including the banner's close button.
+        // Pressing Enter there must not also submit the authentication form.
+        var selected = EventSystem.current ? EventSystem.current.currentSelectedGameObject : null;
+        if (selected && selected.GetComponent<Button>()) return false;
         Keyboard keyboard = Keyboard.current;
         if (keyboard == null)
             return false;

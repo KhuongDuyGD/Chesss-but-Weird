@@ -28,7 +28,6 @@ public class MainMenuAuthUI : MonoBehaviour
     private const float ReferenceHeight = 941f;
 
     private HandDrawnMenuAssets sharedMenuAssets;
-    private TMP_Text statusLabel;
     private TMP_InputField loginUsernameField;
     private TMP_InputField loginPasswordField;
     private TMP_InputField signUpUsernameField;
@@ -100,10 +99,8 @@ public class MainMenuAuthUI : MonoBehaviour
 
     public void SetStatusMessage(string message)
     {
-        if (statusLabel == null)
-            return;
-
-        statusLabel.text = message ?? string.Empty;
+        if (!string.IsNullOrWhiteSpace(message))
+            AuthNotificationView.Show("Account", message, AuthNotificationView.ResultKind.Info);
     }
 
     public void RequestSubmit()
@@ -149,7 +146,12 @@ public class MainMenuAuthUI : MonoBehaviour
 
         RectTransform authMenuGroup = CreateGroup(root, "AuthMenuGroup");
         authMenuGroup.gameObject.AddComponent<ResponsiveSafeArea>();
-        BuildAuthPanels(authMenuGroup);
+        // Artwork and its invisible controls share one fitted coordinate space.
+        // Safe-area or aspect-ratio changes must never scale them independently.
+        RectTransform artworkRoot = new GameObject("Auth Artwork Layout", typeof(RectTransform)).GetComponent<RectTransform>();
+        artworkRoot.SetParent(authMenuGroup, false);
+        artworkRoot.gameObject.AddComponent<InventoryContentRootFitter>().Configure(ReferenceWidth, ReferenceHeight, 1f);
+        BuildAuthPanels(artworkRoot);
     }
 
     private void BuildAuthPanels(RectTransform parent)
@@ -166,53 +168,45 @@ public class MainMenuAuthUI : MonoBehaviour
         CreateSpriteButton(LoginMenuPanel.transform, "ConfirmLoginButton", confirmLoginSprite, new Vector2(255f, -317f), new Vector2(520f, 92f), RequestSubmit);
         CreateSpriteButton(SignUpMenuPanel.transform, "ConfirmSignUpButton", confirmSignUpSprite, new Vector2(258f, -395f), new Vector2(540f, 92f), RequestSubmit);
 
-        loginUsernameField = CreateInputField(
+        // Rectangles are measured inside the ink borders of the 1672 x 941 art,
+        // in pixels from its top-left corner, rather than offsets from the form.
+        loginUsernameField = CreateArtworkInputField(
             LoginMenuPanel.transform as RectTransform,
             "LoginUsernameField",
-            new Vector2(246.5f, -83.5f),
-            new Vector2(478f, 72f),
+            new Rect(864f, 522f, 470f, 68f),
             TMP_InputField.ContentType.Standard,
             false,
-            0f,
-            32f,
-            23f);
-        loginPasswordField = CreateInputField(
+            32f);
+        loginPasswordField = CreateArtworkInputField(
             LoginMenuPanel.transform as RectTransform,
             "LoginPasswordField",
-            new Vector2(245.5f, -247.5f),
-            new Vector2(478f, 72f),
+            new Rect(862f, 684f, 472f, 68f),
             TMP_InputField.ContentType.Password,
             true,
-            0f,
-            32f,
-            23f);
+            32f);
 
-        signUpUsernameField = CreateInputField(
+        signUpUsernameField = CreateArtworkInputField(
             SignUpMenuPanel.transform as RectTransform,
             "SignUpUsernameField",
-            new Vector2(247f, -26.5f),
-            new Vector2(576f, 62f),
+            new Rect(804f, 473f, 556f, 48f),
             TMP_InputField.ContentType.Standard,
             false,
-            0f);
-        signUpPasswordField = CreateInputField(
+            28f);
+        signUpPasswordField = CreateArtworkInputField(
             SignUpMenuPanel.transform as RectTransform,
             "SignUpPasswordField",
-            new Vector2(245f, -166f),
-            new Vector2(576f, 62f),
+            new Rect(802f, 612f, 558f, 48f),
             TMP_InputField.ContentType.Password,
             true,
-            0f);
-        signUpConfirmPasswordField = CreateInputField(
+            28f);
+        signUpConfirmPasswordField = CreateArtworkInputField(
             SignUpMenuPanel.transform as RectTransform,
             "SignUpConfirmPasswordField",
-            new Vector2(245f, -302f),
-            new Vector2(576f, 62f),
+            new Rect(805f, 749f, 551f, 48f),
             TMP_InputField.ContentType.Password,
             true,
-            0f);
+            28f);
 
-        statusLabel = CreateStatusLabel(parent, new Vector2(296f, -442f), new Vector2(760f, 44f));
     }
 
     private void PopulateInitialValues(string initialUsername, string initialStatus)
@@ -280,28 +274,31 @@ public class MainMenuAuthUI : MonoBehaviour
     private static GameObject CreatePanel(Transform parent, string name, Sprite sprite, Vector2 anchoredPosition, Vector2 size)
     {
         Image panel = CreateImage(parent, name, sprite, anchoredPosition, size);
+        // The source artwork is authored in ReferenceWidth/Height coordinates.
+        // Imported/cached textures may be resized to power-of-two dimensions;
+        // preserving that texture aspect would letterbox only the background,
+        // while every input and button keeps the original artwork coordinates.
+        panel.preserveAspect = false;
         panel.raycastTarget = false;
         return panel.gameObject;
     }
 
-    private static TMP_InputField CreateInputField(
+    private static TMP_InputField CreateArtworkInputField(
         RectTransform parent,
         string name,
-        Vector2 anchoredPosition,
-        Vector2 size,
+        Rect artworkRect,
         TMP_InputField.ContentType contentType,
         bool password,
-        float textOffsetY,
-        float fontSize = 28f,
-        float leftPadding = 18f)
+        float fontSize)
     {
         GameObject root = new GameObject(name, typeof(RectTransform), typeof(Image), typeof(TMP_InputField));
         RectTransform rect = root.GetComponent<RectTransform>();
         rect.SetParent(parent, false);
         rect.anchorMin = new Vector2(0.5f, 0.5f);
         rect.anchorMax = new Vector2(0.5f, 0.5f);
-        rect.anchoredPosition = anchoredPosition;
-        rect.sizeDelta = size;
+        rect.pivot = new Vector2(0.5f, 0.5f);
+        rect.anchoredPosition = new Vector2(artworkRect.center.x - ReferenceWidth * 0.5f, ReferenceHeight * 0.5f - artworkRect.center.y);
+        rect.sizeDelta = artworkRect.size;
 
         Image background = root.GetComponent<Image>();
         background.color = new Color(1f, 1f, 1f, 0.001f);
@@ -321,13 +318,14 @@ public class MainMenuAuthUI : MonoBehaviour
         textAreaRect.SetParent(root.transform, false);
         textAreaRect.anchorMin = Vector2.zero;
         textAreaRect.anchorMax = Vector2.one;
-        textAreaRect.offsetMin = new Vector2(leftPadding, 3f);
-        textAreaRect.offsetMax = new Vector2(-18f, -3f);
+        textAreaRect.pivot = new Vector2(0.5f, 0.5f);
+        textAreaRect.offsetMin = new Vector2(12f, 3f);
+        textAreaRect.offsetMax = new Vector2(-12f, -3f);
 
         GameObject placeholder = new GameObject("Placeholder", typeof(RectTransform), typeof(TextMeshProUGUI));
         RectTransform placeholderRect = placeholder.GetComponent<RectTransform>();
         placeholderRect.SetParent(textArea.transform, false);
-        ConfigureSingleLineTextRect(placeholderRect, textOffsetY);
+        ConfigureSingleLineTextRect(placeholderRect);
         TextMeshProUGUI placeholderText = placeholder.GetComponent<TextMeshProUGUI>();
         MainMenuAuthUI owner = parent.GetComponentInParent<MainMenuAuthUI>();
         ApplyInputTextStyle(placeholderText, owner != null ? owner.handwrittenFont : null, fontSize);
@@ -337,7 +335,7 @@ public class MainMenuAuthUI : MonoBehaviour
         GameObject text = new GameObject("Text", typeof(RectTransform), typeof(TextMeshProUGUI));
         RectTransform textRect = text.GetComponent<RectTransform>();
         textRect.SetParent(textArea.transform, false);
-        ConfigureSingleLineTextRect(textRect, textOffsetY);
+        ConfigureSingleLineTextRect(textRect);
         TextMeshProUGUI inputText = text.GetComponent<TextMeshProUGUI>();
         ApplyInputTextStyle(inputText, owner != null ? owner.handwrittenFont : null, fontSize);
         inputText.color = new Color(0.05f, 0.05f, 0.05f, 1f);
@@ -347,6 +345,8 @@ public class MainMenuAuthUI : MonoBehaviour
         inputField.textViewport = textAreaRect;
         inputField.textComponent = inputText;
         inputField.placeholder = placeholderText;
+        inputField.fontAsset = inputText.font;
+        inputField.pointSize = fontSize;
         inputField.customCaretColor = true;
         inputField.caretColor = new Color(0.05f, 0.05f, 0.05f, 1f);
         inputField.shouldHideMobileInput = true;
@@ -355,39 +355,20 @@ public class MainMenuAuthUI : MonoBehaviour
         return inputField;
     }
 
-    private static TMP_Text CreateStatusLabel(Transform parent, Vector2 anchoredPosition, Vector2 size)
-    {
-        GameObject labelObject = new GameObject("StatusLabel", typeof(RectTransform), typeof(TextMeshProUGUI));
-        RectTransform rect = labelObject.GetComponent<RectTransform>();
-        rect.SetParent(parent, false);
-        rect.anchorMin = new Vector2(0.5f, 0.5f);
-        rect.anchorMax = new Vector2(0.5f, 0.5f);
-        rect.anchoredPosition = anchoredPosition;
-        rect.sizeDelta = size;
-
-        TextMeshProUGUI label = labelObject.GetComponent<TextMeshProUGUI>();
-        MainMenuAuthUI owner = parent.GetComponentInParent<MainMenuAuthUI>();
-        ApplyInputTextStyle(label, owner != null ? owner.handwrittenFont : null);
-        label.alignment = TextAlignmentOptions.Center;
-        label.fontSize = 15f;
-        label.textWrappingMode = TextWrappingModes.Normal;
-        label.color = new Color(0.33f, 0.33f, 0.33f, 0.82f);
-        label.text = string.Empty;
-        return label;
-    }
-
     private static void ApplyInputTextStyle(TMP_Text text, TMP_FontAsset font, float fontSize = 28f)
     {
         text.font = font != null ? font : TMP_Settings.defaultFontAsset;
         text.fontSize = fontSize;
         text.textWrappingMode = TextWrappingModes.NoWrap;
-        text.overflowMode = TextOverflowModes.Ellipsis;
-        text.alignment = TextAlignmentOptions.MidlineLeft;
+        // Use the font's line metrics for a stable baseline, including masked
+        // passwords. Geometry/Midline alignment shifts as glyph shapes change.
+        text.overflowMode = TextOverflowModes.Overflow;
+        text.alignment = TextAlignmentOptions.Left;
         text.characterSpacing = 0.5f;
         text.margin = Vector4.zero;
     }
 
-    private static void ConfigureSingleLineTextRect(RectTransform rect, float textOffsetY)
+    private static void ConfigureSingleLineTextRect(RectTransform rect)
     {
         // Stretch to the complete input viewport. The previous fixed 34 px
         // baseline was clipped by RectMask2D whenever font size or Y offset grew.
@@ -396,7 +377,7 @@ public class MainMenuAuthUI : MonoBehaviour
         rect.pivot = new Vector2(0.5f, 0.5f);
         rect.offsetMin = Vector2.zero;
         rect.offsetMax = Vector2.zero;
-        rect.anchoredPosition = new Vector2(0f, textOffsetY);
+        rect.anchoredPosition = Vector2.zero;
     }
 
     private static void SetFieldInteractable(TMP_InputField field, bool interactable)

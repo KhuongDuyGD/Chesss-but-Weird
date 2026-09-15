@@ -15,6 +15,14 @@ public static class BackendRestClient
         Action<BackendApiResponse<T>> onSuccess,
         Action<string, BackendApiResponse<object>> onError)
     {
+        // Guest sessions have no account token. Reject locally without sending a
+        // request whose 401 response could otherwise clear the guest profile.
+        if (authorized && PlayerAuthService.IsGuestSession)
+        {
+            onError?.Invoke("This feature requires an account. You can continue playing as Guest.", null);
+            yield break;
+        }
+
         string url = BackendConfig.BaseUrl + path;
         UnityWebRequest request = new UnityWebRequest(url, method);
         request.downloadHandler = new DownloadHandlerBuffer();
@@ -48,7 +56,7 @@ public static class BackendRestClient
         }
 
         BackendApiResponse<object> errorResponse = SafeDeserialize<BackendApiResponse<object>>(responseText);
-        if (request.responseCode == 401)
+        if (authorized && request.responseCode == 401 && !PlayerAuthService.IsGuestSession)
             PlayerAuthService.Logout();
 
         string message = errorResponse != null && !string.IsNullOrWhiteSpace(errorResponse.message)

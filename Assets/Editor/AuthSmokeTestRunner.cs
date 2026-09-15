@@ -17,6 +17,7 @@ public static class AuthSmokeTestRunner
             PlayerAuthService.BeginGuestSession();
             AssertTrue(PlayerAuthService.IsGuestSession, "Guest session should be active.");
             AssertFalse(PlayerAuthService.CanUseOnlineFeatures, "Guest must not have online access.");
+            VerifyGuestAccessWarnings();
             PlayerAuthService.Logout();
             AssertFalse(PlayerAuthService.IsGuestSession, "Logout should clear the Guest flag.");
 
@@ -75,6 +76,50 @@ public static class AuthSmokeTestRunner
     {
         if (!value)
             throw new InvalidOperationException(message);
+    }
+
+    private static void VerifyGuestAccessWarnings()
+    {
+        var profile = PlayerAuthService.CurrentProfile;
+        var root = new GameObject("Guest access smoke test");
+        try
+        {
+            var menu = root.AddComponent<ChessTurnSelectionUI>();
+            foreach (string feature in new[] { "Inventory", "Gacha", "ARAM", "Shop", "Player Profile", "Multiplayer" })
+            {
+                AssertFalse(menu.RequireAccountAccess(feature), feature + " should be blocked.");
+                var warning = root.GetComponentInChildren<GuestAccessWarning>(true);
+                AssertTrue(warning && warning.gameObject.activeSelf, feature + " should show a warning.");
+                AssertTrue(PlayerAuthService.IsGuestSession, feature + " must not log out the guest.");
+                AssertTrue(ReferenceEquals(profile, PlayerAuthService.CurrentProfile), "Guest profile must be preserved.");
+                warning.Dismiss();
+                AssertFalse(warning.gameObject.activeSelf, "Continue as Guest should dismiss the warning.");
+            }
+
+            // Direct entry points must also stop before any loading or networking.
+            foreach (Action entry in new Action[] { menu.ShowAramModeSelection, menu.StartAramPracticeGame,
+                menu.ShowAramLanSetup, menu.ShowAramOnlineSetup, menu.ShowMultiplayerModeSelection,
+                menu.ShowLanSetup, menu.ShowOnlineSetup })
+            {
+                entry();
+                AssertTrue(PlayerAuthService.IsGuestSession, "Restricted entry must preserve the session.");
+                AssertTrue(root.GetComponentInChildren<GuestAccessWarning>().gameObject.activeSelf, "Restricted entry should show a warning.");
+            }
+            AssertEqual(1, root.GetComponentsInChildren<GuestAccessWarning>(true).Length, "Repeated attempts should reuse the modal.");
+
+            bool errorReported = false;
+            var request = BackendRestClient.Send<object>("GET", "/guest-access-smoke-test", null, true,
+                _ => throw new InvalidOperationException("Guest request must not succeed."),
+                (message, _) => errorReported = !string.IsNullOrWhiteSpace(message));
+            AssertFalse(request.MoveNext(), "Guest requests must stop before making a web request.");
+            AssertTrue(errorReported, "Blocked requests should notify their caller.");
+            AssertTrue(PlayerAuthService.IsGuestSession, "Blocked requests must preserve the guest session.");
+            AssertTrue(ReferenceEquals(profile, PlayerAuthService.CurrentProfile), "Blocked requests must preserve the profile.");
+        }
+        finally
+        {
+            UnityEngine.Object.DestroyImmediate(root);
+        }
     }
 
     private static void AssertFalse(bool value, string message)

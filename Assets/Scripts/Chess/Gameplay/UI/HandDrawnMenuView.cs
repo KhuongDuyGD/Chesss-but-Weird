@@ -47,12 +47,9 @@ public class HandDrawnMenuView : MonoBehaviour
     private Coroutine profileOverlayTransitionCoroutine;
     private Coroutine settingsOverlayTransitionCoroutine;
     private readonly List<Sprite> runtimeSprites = new List<Sprite>();
-    private readonly List<SkinOptionButton> skinOptionButtons = new List<SkinOptionButton>();
     private string selectedWhiteSkinId = PieceSkinCatalog.DefaultSkinId;
     private string selectedBlackSkinId = PieceSkinCatalog.DefaultSkinId;
     private bool skinSelectionVsBot;
-    private int whiteSkinPage;
-    private int blackSkinPage;
     private PieceTeam skinSelectionPlayerTeam = PieceTeam.White;
     private static Font uiFont;
 
@@ -129,6 +126,7 @@ public class HandDrawnMenuView : MonoBehaviour
 
     public void ShowAramModeSelection()
     {
+        if (!owner.RequireAccountAccess("ARAM mode")) return;
         GameMusicManager.PlayMainMenuHubMusic();
         SetVisible(true);
         SetInputEnabled(true);
@@ -142,7 +140,6 @@ public class HandDrawnMenuView : MonoBehaviour
         var saved = CosmeticSelection.Load();
         selectedWhiteSkinId = saved.whiteSkinId;
         selectedBlackSkinId = saved.blackSkinId;
-        whiteSkinPage = blackSkinPage = 0;
 
         SetVisible(true);
         SetInputEnabled(true);
@@ -151,6 +148,7 @@ public class HandDrawnMenuView : MonoBehaviour
 
     public void ShowMultiplayerModeSelection()
     {
+        if (!owner.RequireAccountAccess("Multiplayer")) return;
         GameMusicManager.PlayMainMenuHubMusic();
         if (!assets || !assets.HasMultiplayerModeSprites)
         {
@@ -165,6 +163,7 @@ public class HandDrawnMenuView : MonoBehaviour
 
     public void ShowGachaMenu()
     {
+        if (!owner.RequireAccountAccess("Gacha")) return;
         GameMusicManager.PlayGachaMusic();
         SetVisible(true);
         SetInputEnabled(true);
@@ -341,6 +340,7 @@ public class HandDrawnMenuView : MonoBehaviour
 
     private void ShowInventoryMenu()
     {
+        if (!owner.RequireAccountAccess("Inventory")) return;
         if (!inventoryOverlay)
             return;
 
@@ -360,6 +360,7 @@ public class HandDrawnMenuView : MonoBehaviour
 
     private void ShowProfileMenu()
     {
+        if (!owner.RequireAccountAccess("Player Profile")) return;
         if (!profileOverlay)
             return;
 
@@ -547,22 +548,18 @@ public class HandDrawnMenuView : MonoBehaviour
     private void RebuildSkinScreen()
     {
         ClearSkinScreen();
-        skinOptionButtons.Clear();
 
         AddBattleDoodles(skinScreen, true);
         AddMenuConfetti(skinScreen);
-        AddText(skinScreen, "Skin Title", "Choose Piece Skin", new Vector2(0f, 410f), new Vector2(980f, 110f), 66, TextAnchor.MiddleCenter, new Color(0.12f, 0.1f, 0.08f, 1f));
+        AddText(skinScreen, "Skin Title", "Match Appearance", new Vector2(0f, 410f), new Vector2(980f, 110f), 66, TextAnchor.MiddleCenter, new Color(0.12f, 0.1f, 0.08f, 1f));
 
         if (skinSelectionVsBot)
         {
-            AddSkinSection(skinSelectionPlayerTeam, new Vector2(0f, 90f), $"{skinSelectionPlayerTeam} Player");
             AddTextButton(skinScreen, "Start Bot Match", "Start", new Vector2(0f, -410f), new Vector2(330f, 115f), StartSelectedSkinMatch, new Color(0.98f, 0.83f, 0.32f, 1f));
             AddBackButton(skinScreen, new Vector2(-820f, -420f), () => ShowSideSelection());
         }
         else
         {
-            AddSkinSection(PieceTeam.White, new Vector2(-470f, 65f), "White Player");
-            AddSkinSection(PieceTeam.Black, new Vector2(470f, 65f), "Black Player");
             AddTextButton(skinScreen, "Start Local Match", "Start", new Vector2(0f, -430f), new Vector2(330f, 105f), StartSelectedSkinMatch, new Color(0.98f, 0.83f, 0.32f, 1f));
             AddBackButton(skinScreen, new Vector2(-820f, -430f), () => ShowLocalModeSelection());
         }
@@ -570,10 +567,9 @@ public class HandDrawnMenuView : MonoBehaviour
         var selection = CosmeticSelection.Load();
         var catalog = LoadingManager.For(chessGame).Catalog;
         AddTextButton(skinScreen, "Board selection", "Board: " + (catalog?.FindBoard(selection.boardId)?.displayName ?? "Classic"),
-            new Vector2(-260, -260), new Vector2(490, 65), () => CycleCosmetic(false), new Color(.86f, .88f, .95f));
+            new Vector2(0f, 100f), new Vector2(660f, 100f), () => CycleCosmetic(false), new Color(.86f, .88f, .95f));
         AddTextButton(skinScreen, "Environment selection", "Environment: " + (catalog?.FindEnvironment(selection.environmentId)?.displayName ?? "None"),
-            new Vector2(260, -260), new Vector2(490, 65), () => CycleCosmetic(true), new Color(.86f, .88f, .95f));
-        RefreshSkinOptionStates();
+            new Vector2(0f, -60f), new Vector2(660f, 100f), () => CycleCosmetic(true), new Color(.86f, .88f, .95f));
     }
 
     private void CycleCosmetic(bool environment)
@@ -597,103 +593,15 @@ public class HandDrawnMenuView : MonoBehaviour
             return;
 
         for (int i = skinScreen.childCount - 1; i >= 0; i--)
+        {
+            skinScreen.GetChild(i).gameObject.SetActive(false);
             Destroy(skinScreen.GetChild(i).gameObject);
-    }
-
-    private void AddSkinSection(PieceTeam team, Vector2 center, string title)
-    {
-        AddText(skinScreen, $"{team} Skin Section Title", title, center + new Vector2(0f, 215f), new Vector2(520f, 65f), 42, TextAnchor.MiddleCenter, new Color(0.12f, 0.1f, 0.08f, 1f));
-
-        IReadOnlyList<PieceSkinDefinition> skins = PieceSkinCatalog.All;
-        float startX = center.x - 135f;
-        float startY = center.y + 108f;
-        int pages = Mathf.Max(1, (skins.Count + 3) / 4);
-        int page = (team == PieceTeam.White ? whiteSkinPage : blackSkinPage) % pages;
-        for (int slot = 0; slot < 4 && page * 4 + slot < skins.Count; slot++)
-        {
-            int i = page * 4 + slot;
-            int column = slot % 2;
-            int row = slot / 2;
-            Vector2 position = new Vector2(startX + column * 270f, startY - row * 105f);
-            AddSkinOption(team, skins[i], position);
-        }
-        if (pages > 1)
-            AddTextButton(skinScreen, team + " More skins", $"More ({page + 1}/{pages})", center + new Vector2(0, -125), new Vector2(240, 58), () =>
-            {
-                if (team == PieceTeam.White) whiteSkinPage++; else blackSkinPage++;
-                RebuildSkinScreen();
-            }, new Color(.88f, .88f, .9f));
-    }
-
-    private void AddSkinOption(PieceTeam team, PieceSkinDefinition skin, Vector2 position)
-    {
-        GameObject optionObject = new GameObject($"{team} {skin.DisplayName}", typeof(RectTransform), typeof(Image), typeof(Button), typeof(CanvasGroup), typeof(Outline));
-        RectTransform rect = optionObject.GetComponent<RectTransform>();
-        rect.SetParent(skinScreen, false);
-        rect.anchorMin = new Vector2(0.5f, 0.5f);
-        rect.anchorMax = new Vector2(0.5f, 0.5f);
-        rect.anchoredPosition = position;
-        rect.sizeDelta = new Vector2(245f, 82f);
-
-        Image background = optionObject.GetComponent<Image>();
-        background.raycastTarget = true;
-
-        Button button = optionObject.GetComponent<Button>();
-        button.transition = Selectable.Transition.None;
-        button.targetGraphic = background;
-        button.onClick.AddListener(() => SelectSkinOption(team, skin));
-
-        Outline outline = optionObject.GetComponent<Outline>();
-        outline.effectDistance = new Vector2(5f, -5f);
-
-        Text label = AddText(rect, "Label", skin.DisplayName, Vector2.zero, rect.sizeDelta, 28, TextAnchor.MiddleCenter, Color.black);
-        label.fontStyle = FontStyle.Bold;
-
-        skinOptionButtons.Add(new SkinOptionButton
-        {
-            Team = team,
-            Skin = skin,
-            Button = button,
-            Background = background,
-            Label = label,
-            CanvasGroup = optionObject.GetComponent<CanvasGroup>(),
-            Outline = outline
-        });
-    }
-
-    private void SelectSkinOption(PieceTeam team, PieceSkinDefinition skin)
-    {
-        SetSelectedSkinId(team, skin.Id);
-        RefreshSkinOptionStates();
-    }
-
-    private void RefreshSkinOptionStates()
-    {
-        for (int i = 0; i < skinOptionButtons.Count; i++)
-        {
-            SkinOptionButton option = skinOptionButtons[i];
-            bool selected = string.Equals(GetSelectedSkinId(option.Team), option.Skin.Id, System.StringComparison.OrdinalIgnoreCase);
-            Color backgroundColor = option.Skin.SwatchColor;
-
-            option.Background.color = backgroundColor;
-            option.Label.color = GetReadableTextColor(backgroundColor);
-            option.CanvasGroup.alpha = 1f;
-            option.Outline.effectColor = selected ? new Color(1f, 0.72f, 0.08f, 1f) : new Color(0f, 0f, 0f, 0f);
-            option.Button.interactable = true;
         }
     }
 
     private string GetSelectedSkinId(PieceTeam team)
     {
         return team == PieceTeam.White ? selectedWhiteSkinId : selectedBlackSkinId;
-    }
-
-    private void SetSelectedSkinId(PieceTeam team, string skinId)
-    {
-        if (team == PieceTeam.White)
-            selectedWhiteSkinId = PieceSkinCatalog.NormalizeId(skinId);
-        else
-            selectedBlackSkinId = PieceSkinCatalog.NormalizeId(skinId);
     }
 
     private void StartSelectedSkinMatch()
@@ -1431,11 +1339,7 @@ public class HandDrawnMenuView : MonoBehaviour
     {
         return () =>
         {
-            if (!PlayerAuthService.CanUseOnlineFeatures)
-            {
-                owner.RequestAuthentication($"{featureLabel} requires a backend account. Please log in or sign up.");
-                return;
-            }
+            if (!owner.RequireAccountAccess(featureLabel)) return;
 
             action?.Invoke();
         };
@@ -1443,11 +1347,7 @@ public class HandDrawnMenuView : MonoBehaviour
 
     private void SelectMultiplayerMode(string modeLabel)
     {
-        if (!PlayerAuthService.CanUseOnlineFeatures)
-        {
-            owner.RequestAuthentication($"{modeLabel} requires a valid login session.");
-            return;
-        }
+        if (!owner.RequireAccountAccess(modeLabel)) return;
 
         if (string.Equals(modeLabel, "LAN"))
         {
@@ -1481,17 +1381,6 @@ public class HandDrawnMenuView : MonoBehaviour
 
         if (!eventSystem.GetComponent<InputSystemUIInputModule>())
             eventSystem.gameObject.AddComponent<InputSystemUIInputModule>();
-    }
-
-    private sealed class SkinOptionButton
-    {
-        public PieceTeam Team;
-        public PieceSkinDefinition Skin;
-        public Button Button;
-        public Image Background;
-        public Text Label;
-        public CanvasGroup CanvasGroup;
-        public Outline Outline;
     }
 
     private void OnDestroy()

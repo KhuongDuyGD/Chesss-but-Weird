@@ -163,6 +163,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
 
     public void ShowAramModeSelection()
     {
+        if (!RequireAccountAccess("ARAM mode")) return;
         showCheckWarning = false;
         lanController?.HideLanSetup();
         state = ScreenState.TurnSelection;
@@ -227,6 +228,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
 
     public void StartAramPracticeGame()
     {
+        if (!RequireAccountAccess("ARAM mode")) return;
         showCheckWarning = false;
         lanController?.HideLanSetup();
         analysisBoard?.SetVisible(true);
@@ -241,6 +243,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
 
     public void ShowAramLanSetup()
     {
+        if (!RequireAccountAccess("ARAM mode")) return;
         if (PrepareNetworkContent(ShowAramLanSetup)) return;
         GameMusicManager.PlayMainMenuHubMusic();
         showCheckWarning = false;
@@ -252,11 +255,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
 
     public void ShowAramOnlineSetup()
     {
-        if (!PlayerAuthService.CanUseOnlineFeatures)
-        {
-            RequestAuthentication("ARAM online play requires a valid backend login. Please log in or sign up.");
-            return;
-        }
+        if (!RequireAccountAccess("ARAM online play")) return;
 
         if (PrepareNetworkContent(ShowAramOnlineSetup)) return;
         GameMusicManager.PlayMainMenuHubMusic();
@@ -277,12 +276,8 @@ public class ChessTurnSelectionUI : MonoBehaviour
 
     public void ShowMultiplayerModeSelection()
     {
+        if (!RequireAccountAccess("Multiplayer")) return;
         GameMusicManager.PlayMainMenuHubMusic();
-        if (!PlayerAuthService.CanUseOnlineFeatures)
-        {
-            RequestAuthentication("Multiplayer requires a valid backend login. Please log in or sign up.");
-            return;
-        }
 
         showCheckWarning = false;
         lanController?.HideLanSetup();
@@ -293,6 +288,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
 
     public void ShowLanSetup()
     {
+        if (!RequireAccountAccess("LAN multiplayer")) return;
         if (PrepareNetworkContent(ShowLanSetup)) return;
         GameMusicManager.PlayMainMenuHubMusic();
         showCheckWarning = false;
@@ -304,11 +300,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
 
     public void ShowOnlineSetup()
     {
-        if (!PlayerAuthService.CanUseOnlineFeatures)
-        {
-            RequestAuthentication("Online play requires a valid backend login. Please log in or sign up.");
-            return;
-        }
+        if (!RequireAccountAccess("Online play")) return;
 
         if (PrepareNetworkContent(ShowOnlineSetup)) return;
         GameMusicManager.PlayMainMenuHubMusic();
@@ -319,8 +311,22 @@ public class ChessTurnSelectionUI : MonoBehaviour
         lanController?.ShowMultiplayerSetup();
     }
 
+    public bool RequireAccountAccess(string featureLabel)
+    {
+        if (PlayerAuthService.CanUseOnlineFeatures) return true;
+
+        RequestAuthentication($"{featureLabel} requires an account. Log in or sign up to unlock this feature.");
+        return false;
+    }
+
     public void RequestAuthentication(string message)
     {
+        if (PlayerAuthService.IsGuestSession)
+        {
+            GuestAccessWarning.Show(transform, message);
+            return;
+        }
+
         LogoutToAuthentication();
         Debug.Log($"[ChessTurnSelectionUI] Authentication requested. {message}");
     }
