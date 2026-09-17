@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 [DisallowMultipleComponent]
-public sealed class AramBuffRuntime : MonoBehaviour
+public sealed partial class AramBuffRuntime : MonoBehaviour
 {
     private const int PracticeRollOptionCount = 3;
     private const int CommandantPawnTargetCount = 3;
@@ -32,7 +32,7 @@ public sealed class AramBuffRuntime : MonoBehaviour
     public bool IsActive => active;
     public bool IsNetworkMatch => active && networkMatch;
     public bool IsSelectingSetupTargets => active && currentTargetKind != AramTargetKind.None;
-    internal AramRules DomainRules => domainRules;
+    internal AramRules DomainRules => networkMatch ? AramRules.LegacyV1 : domainRules;
 
     public IReadOnlyList<AramBuffDefinition> GetBuffs(PieceTeam team)
     {
@@ -45,6 +45,7 @@ public sealed class AramBuffRuntime : MonoBehaviour
         active = true;
         networkMatch = false;
         lastNetworkState = null;
+        ResetExtendedState();
         whiteState.Reset();
         blackState.Reset();
         draftPool.Clear();
@@ -61,12 +62,24 @@ public sealed class AramBuffRuntime : MonoBehaviour
         game = owner;
         active = true;
         networkMatch = true;
+        ResetExtendedState();
         visibleTeam = localTeam;
         lastNetworkState = serverState;
         whiteState.Reset();
         blackState.Reset();
         draftPool.Clear();
         draftPool.AddRange(AramBuffLibrary.CreateBuiltInDefinitions());
+        for (int i = draftPool.Count - 1; i >= 0; i--)
+            if ((int)draftPool[i].Id > 5) { Destroy(draftPool[i]); draftPool.RemoveAt(i); }
+        foreach(var definition in draftPool)
+        {
+            string description = definition.Description;
+            if(definition.Id==AramBuffId.FreestyleLeap) description="ARAM-V1: Knights gain additional two-by-two diagonal jumps.";
+            if(definition.Id==AramBuffId.StrongFortress) description="ARAM-V1: Castle out of or through check. Both pieces must be unmoved and the destination safe.";
+            if(definition.Id==AramBuffId.Doppelganger) description="ARAM-V1: One selected Knight and Bishop permanently exchange movement.";
+            if(definition.Id==AramBuffId.SuicideBomber) description="ARAM-V1: The original Queen explodes once when captured. Kings and the capturer are immune.";
+            definition.Configure(definition.Id,definition.Tier,definition.DisplayName,definition.ShortName,description,definition.AccentColor);
+        }
         EnsureDraftView();
 
         if (serverState != null)
@@ -80,6 +93,7 @@ public sealed class AramBuffRuntime : MonoBehaviour
 
     public void EndMatch()
     {
+        ResetExtendedState();
         active = false;
         networkMatch = false;
         lastNetworkState = null;
@@ -99,6 +113,7 @@ public sealed class AramBuffRuntime : MonoBehaviour
             return;
 
         GetState(team).TickTurnCooldowns();
+        if (!networkMatch) BeginExtendedTurn(team);
         ShowCurrentHud();
     }
 
@@ -137,14 +152,14 @@ public sealed class AramBuffRuntime : MonoBehaviour
             if (definition) flags |= (AramBuffs)(1 << (int)definition.Id);
         }
         return new AramPieceContext(flags, state.CommandantPawns.Contains(piece),
-            piece == state.SwappedKnight, piece == state.SwappedBishop,
-            piece == state.OriginalQueen, state.CanUseQueenTeleport(piece));
+            piece == state.SwappedKnight && IsSwapActive(piece.Team), piece == state.SwappedBishop && IsSwapActive(piece.Team),
+            piece == state.OriginalQueen, state.CanUseQueenTeleport(piece), bloodthirsty.Contains(piece), cannonTurns.ContainsKey(piece), decoys.Contains(piece));
     }
 
     public bool IsLegalAramMove(ChessPiece piece, Vector2Int from, Vector2Int destination, ChessPiece[,] board)
     {
         if (!active || !piece || board == null) return false;
-        return domainRules.Allows(new UnityBoardAdapter(board), UnityBoardAdapter.ToState(piece),
+        return DomainRules.Allows(new UnityBoardAdapter(board), UnityBoardAdapter.ToState(piece),
             UnityBoardAdapter.ToSquare(from), UnityBoardAdapter.ToSquare(destination), CreateDomainContext(piece));
     }
 
@@ -156,7 +171,7 @@ public sealed class AramBuffRuntime : MonoBehaviour
     public bool CanAramPieceAttackSquare(ChessPiece piece, Vector2Int square, ChessPiece[,] board)
     {
         if (!active || !piece || board == null) return false;
-        return domainRules.Allows(new UnityBoardAdapter(board), UnityBoardAdapter.ToState(piece),
+        return DomainRules.Allows(new UnityBoardAdapter(board), UnityBoardAdapter.ToState(piece),
             UnityBoardAdapter.ToSquare(piece.BoardPosition), UnityBoardAdapter.ToSquare(square),
             CreateDomainContext(piece), attack: true);
     }
@@ -198,13 +213,13 @@ public sealed class AramBuffRuntime : MonoBehaviour
             for (int y = center.y - 1; y <= center.y + 1; y++)
             {
                 Vector2Int position = new Vector2Int(x, y);
-                if (!ChessMoveRules.IsInsideBoard(position) || position == center)
+                if (!ChessMoveRules.IsInsideBoard(position) || (networkMatch && position == center))
                     continue;
 
                 ChessPiece victim = board[x, y];
                 if (!SuicideBomberBuff.IsVictim(UnityBoardAdapter.ToState(victim),
                     UnityBoardAdapter.ToState(movingPiece).Id, UnityBoardAdapter.ToSquare(center),
-                    UnityBoardAdapter.ToSquare(position)) || victims.Contains(victim))
+                    UnityBoardAdapter.ToSquare(position), networkMatch) || victims.Contains(victim))
                     continue;
 
                 victims.Add(victim);
@@ -434,10 +449,10 @@ public sealed class AramBuffRuntime : MonoBehaviour
         blackState.SetBuffs(blackBuffs);
         CaptureInitialTeamState(whiteState);
         CaptureInitialTeamState(blackState);
+        if (!networkMatch) ApplyInitialEffects();
         ClearMarkers();
         BuildTargetTaskQueue();
-        if (!TryStartNextTargetTask())
-            FinishSetup();
+        TryStartNextTargetTask();
     }
 
     private bool TrySelectCommandantPawn(ChessPiece piece)
@@ -550,6 +565,7 @@ public sealed class AramBuffRuntime : MonoBehaviour
         else
             draftView.ShowHud(whiteState.Buffs, blackState.Buffs);
         game?.SetAramInputLocked(false);
+        if (!networkMatch) EnsureActionView();
     }
 
     private bool HasValidTargets(AramTargetTask task)

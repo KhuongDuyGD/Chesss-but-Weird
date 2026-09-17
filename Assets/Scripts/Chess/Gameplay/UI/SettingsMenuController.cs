@@ -56,7 +56,12 @@ public sealed class SettingsMenuController : MonoBehaviour
         blocker.color = new Color(0.82f, 0.87f, 0.84f);
         blocker.raycastTarget = true;
 
-        contentRoot = CreateChild(root, "Settings Content Root", Vector2.zero, DesignSize);
+        var safeArea = CreateChild(root, "Settings Safe Area", Vector2.zero, Vector2.zero);
+        safeArea.anchorMin = Vector2.zero;
+        safeArea.anchorMax = Vector2.one;
+        safeArea.offsetMin = safeArea.offsetMax = Vector2.zero;
+        safeArea.gameObject.AddComponent<ResponsiveSafeArea>();
+        contentRoot = CreateChild(safeArea, "Settings Content Root", Vector2.zero, DesignSize);
         contentRoot.gameObject.AddComponent<InventoryContentRootFitter>().Configure(DesignWidth, DesignHeight, MenuViewportScale);
 
         BuildBackdrop();

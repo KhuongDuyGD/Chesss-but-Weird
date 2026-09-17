@@ -17,7 +17,7 @@ internal readonly struct UnityBoardAdapter : IReadOnlyBoard
         if (!piece) return default;
         // Transitional board-square identity. A future MatchSession will supply persistent IDs.
         int id = piece.BoardPosition.y * 8 + piece.BoardPosition.x + 1;
-        return new PieceState(id, (PieceKind)piece.Type, (Team)piece.Team, piece.HasMoved, piece.ForwardDirection);
+        return new PieceState(id, piece.GetComponent<AramDecoyTag>() ? PieceKind.Pawn : (PieceKind)piece.Type, (Team)piece.Team, piece.HasMoved, piece.ForwardDirection);
     }
     public static bool IsLegalPattern(ChessPiece piece, Vector2Int to, ChessPiece[,] board)
     {

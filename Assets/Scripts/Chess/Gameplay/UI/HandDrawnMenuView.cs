@@ -204,29 +204,68 @@ public class HandDrawnMenuView : MonoBehaviour
         root.offsetMin = Vector2.zero;
         root.offsetMax = Vector2.zero;
 
-        Image background = CreateImage(root, "Paper Background", null, Vector2.zero, Vector2.zero);
-        background.color = new Color(0.985f, 0.965f, 0.91f, 1f);
+        Image background = CreateImage(root, "Paper Background", assets.paperBackground, Vector2.zero, Vector2.zero);
+        background.color = assets.paperBackground ? Color.white : new Color(0.985f, 0.965f, 0.91f, 1f);
+        background.type = Image.Type.Tiled;
+        background.preserveAspect = false;
         Stretch(background.rectTransform);
     }
 
     private void BuildMainScreen()
     {
         mainScreen = CreateScreen("Main Menu");
-
-        AddBattleDoodles(mainScreen, false);
-        AddImage(mainScreen, "Doodle Face", assets.doodleFaceDecoration, new Vector2(-835f, 425f), new Vector2(225f, 178f), 1.2f, 0.45f);
-        AddImage(mainScreen, "Game Logo", assets.gameLogo, new Vector2(0f, 345f), new Vector2(720f, 398f), 0.6f, 0.2f);
-        AddInteractive(mainScreen, "Start", assets.startButton, new Vector2(0f, 42f), new Vector2(660f, 158f), () => chessGame.OpenTurnSelection(), false, 1.035f);
-        AddInteractive(mainScreen, "Settings", assets.settingsButton, new Vector2(0f, -142f), new Vector2(660f, 148f), ShowSettingsMenu, false, 1.035f);
-        AddInteractive(mainScreen, "Credits", assets.creditsButton, new Vector2(0f, -326f), new Vector2(660f, 158f), () => LogMenuClick("Credits"), false, 1.035f);
-
-        AddImage(mainScreen, "Crown Doodle", assets.backgroundDecoration4, new Vector2(-735f, -330f), new Vector2(205f, 158f), 0.45f, 0.2f);
-        AddImage(mainScreen, "Hearts Left", assets.backgroundDecoration2, new Vector2(-475f, -305f), new Vector2(92f, 82f), 0.25f, 0.1f);
-        AddImage(mainScreen, "Hearts Right", assets.backgroundDecoration2, new Vector2(475f, -305f), new Vector2(100f, 90f), 0.25f, 0.1f);
-        AddImage(mainScreen, "Stars Left", assets.backgroundDecoration3, new Vector2(-480f, -70f), new Vector2(86f, 58f), 0.2f, 0.08f);
-        AddImage(mainScreen, "Stars Right", assets.backgroundDecoration3, new Vector2(480f, -95f), new Vector2(86f, 58f), 0.2f, 0.08f);
-        AddImage(mainScreen, "Game Version", assets.gameVersion, new Vector2(735f, -410f), new Vector2(335f, 150f), 0f, 0f);
+        // Positions measured in the 1672 x 941 reference artwork.
+        AddReferenceDoodles(mainScreen, false);
+        AddReferenceAccents(mainScreen, false);
+        AddImage(mainScreen, "Doodle Face", assets.doodleFaceDecoration, M(148f, 108f), MS(265f, 185f), .4f, .15f);
+        AddImage(mainScreen, "Game Logo", assets.gameLogo, M(830f, 206f), MS(742f, 367f), .3f, .1f).preserveAspect = false;
+        AddInteractive(mainScreen, "Start", assets.startButton, M(835f, 470f), MS(590f, 141f), () => chessGame.OpenTurnSelection(), false, 1.025f);
+        AddInteractive(mainScreen, "Settings", assets.settingsButton, M(830f, 625f), MS(580f, 128f), ShowSettingsMenu, false, 1.025f);
+        AddInteractive(mainScreen, "Credits", assets.creditsButton, M(825f, 779f), MS(580f, 142f), () => LogMenuClick("Credits"), false, 1.025f);
+        AddImage(mainScreen, "Crown Doodle", assets.backgroundDecoration4, M(133f, 850f), MS(180f, 146f), .2f, .1f);
+        AddImage(mainScreen, "Game Version", assets.gameVersion, M(1410f, 849f), MS(440f, 185f), 0f, 0f);
         AddLogoutButton(mainScreen);
+    }
+
+    private static Vector2 M(float x, float y) => new Vector2((x / 1672f - .5f) * ReferenceWidth, (.5f - y / 941f) * ReferenceHeight);
+    private static Vector2 MS(float width, float height) => new Vector2(width / 1672f * ReferenceWidth, height / 941f * ReferenceHeight);
+
+    private void AddReferenceDoodles(RectTransform screen, bool hub)
+    {
+        Vector2[] points = hub
+            ? new[] { new Vector2(564, 240), new Vector2(838, 240), new Vector2(667, 424), new Vector2(992, 385), new Vector2(1197, 471), new Vector2(605, 573), new Vector2(854, 540), new Vector2(758, 703), new Vector2(1013, 674), new Vector2(1304, 674), new Vector2(627, 850), new Vector2(929, 844) }
+            : new[] { new Vector2(492, 84), new Vector2(339, 200), new Vector2(130, 329), new Vector2(351, 386), new Vector2(106, 500), new Vector2(307, 554), new Vector2(119, 689), new Vector2(354, 728), new Vector2(370, 873), new Vector2(644, 900), new Vector2(984, 911), new Vector2(1319, 78), new Vector2(1358, 239), new Vector2(1590, 239), new Vector2(1256, 363), new Vector2(1515, 401), new Vector2(1350, 528), new Vector2(1572, 551), new Vector2(1264, 677), new Vector2(1516, 702) };
+        foreach (Vector2 point in points)
+            AddImage(screen, "Battle Doodle", assets.backgroundDecoration1, M(point.x, point.y), MS(hub ? 145f : 150f, hub ? 98f : 102f), 0f, 0f);
+    }
+
+    private Sprite ArtworkFragment(Sprite source, Rect pixels, float sourceSize = 1254f)
+    {
+        Texture2D texture = source.texture;
+        Rect crop = new Rect(pixels.x / sourceSize * texture.width, (sourceSize - pixels.yMax) / sourceSize * texture.height, pixels.width / sourceSize * texture.width, pixels.height / sourceSize * texture.height);
+        Sprite sprite = Sprite.Create(texture, crop, new Vector2(.5f, .5f), 100f, 0, SpriteMeshType.FullRect);
+        runtimeSprites.Add(sprite);
+        return sprite;
+    }
+
+    private void AddReferenceAccents(RectTransform screen, bool hub)
+    {
+        Sprite heart = ArtworkFragment(assets.backgroundDecoration2, new Rect(419, 188, 545, 519));
+        Sprite smallHeart = ArtworkFragment(assets.backgroundDecoration2, new Rect(203, 705, 278, 293));
+        Sprite star = ArtworkFragment(assets.backgroundDecoration3, new Rect(238, 430, 319, 332));
+        Vector2[] hearts = hub ? new[] { new Vector2(1631, 231), new Vector2(1354, 421) } : new[] { new Vector2(1584, 75) };
+        Vector2[] smallHearts = hub ? new[] { new Vector2(31, 597), new Vector2(495, 629), new Vector2(495, 873) } : new[] { new Vector2(499, 737), new Vector2(1155, 764) };
+        Vector2[] stars = hub ? new[] { new Vector2(1010, 138), new Vector2(704, 303), new Vector2(1573, 278), new Vector2(1150, 581), new Vector2(50, 734) } : new[] { new Vector2(88, 218), new Vector2(1504, 137), new Vector2(490, 571), new Vector2(1162, 590) };
+        foreach (Vector2 p in hearts) AddImage(screen, "Heart", heart, M(p.x, p.y), MS(hub ? 44 : 70, hub ? 46 : 70), 0, 0);
+        foreach (Vector2 p in smallHearts) AddImage(screen, "Small Heart", smallHeart, M(p.x, p.y), MS(hub ? 36 : 42, hub ? 39 : 44), 0, 0);
+        foreach (Vector2 p in stars) AddImage(screen, "Star", star, M(p.x, p.y), MS(hub ? 39 : 40, hub ? 39 : 40), 0, 0);
+    }
+
+    private void AddSelectionDecorations(RectTransform screen)
+    {
+        // Leave title, cards, captions and navigation unobstructed.
+        foreach (Vector2 p in new[] { new Vector2(-800, 300), new Vector2(800, 300), new Vector2(-800, -200), new Vector2(800, -200), new Vector2(-510, -385), new Vector2(510, -385) })
+            AddDoodle(screen, p, 65f, 0f, .8f, false);
     }
 
     private void BuildModeScreen()
@@ -253,37 +292,33 @@ public class HandDrawnMenuView : MonoBehaviour
     {
         aramModeScreen = CreateScreen("ARAM Mode");
 
-        AddBattleDoodles(aramModeScreen, true);
-        AddMenuConfetti(aramModeScreen);
+        AddSelectionDecorations(aramModeScreen);
         AddText(aramModeScreen, "ARAM Mode Title", "ARAM Mode", new Vector2(0f, 340f), new Vector2(760f, 125f), 76, TextAnchor.MiddleCenter, new Color(0.12f, 0.1f, 0.08f, 1f));
-        AddTextButton(aramModeScreen, "ARAM Practice", "Practice", new Vector2(-430f, 35f), new Vector2(470f, 180f), owner.StartAramPracticeGame, new Color(0.98f, 0.78f, 0.3f, 1f));
-        AddTextButton(aramModeScreen, "ARAM LAN", "LAN", new Vector2(120f, 35f), new Vector2(430f, 160f), owner.ShowAramLanSetup, new Color(0.56f, 0.82f, 0.94f, 1f));
-        AddTextButton(aramModeScreen, "ARAM Multiplayer", "Multiplayer", new Vector2(600f, 35f), new Vector2(430f, 160f), owner.ShowAramOnlineSetup, new Color(0.74f, 0.66f, 0.96f, 1f));
-        AddText(aramModeScreen, "ARAM Practice Caption", "Practice local", new Vector2(-430f, -95f), new Vector2(470f, 48f), 30, TextAnchor.MiddleCenter, new Color(0.14f, 0.11f, 0.08f, 1f));
-        AddText(aramModeScreen, "ARAM LAN Caption", "Private LAN room", new Vector2(120f, -95f), new Vector2(430f, 48f), 28, TextAnchor.MiddleCenter, new Color(0.14f, 0.11f, 0.08f, 1f));
-        AddText(aramModeScreen, "ARAM Online Caption", "Online matchmaking", new Vector2(600f, -95f), new Vector2(430f, 48f), 28, TextAnchor.MiddleCenter, new Color(0.14f, 0.11f, 0.08f, 1f));
+        AddTextButton(aramModeScreen, "ARAM Practice", "Practice", new Vector2(-540f, 35f), new Vector2(470f, 180f), owner.StartAramPracticeGame, new Color(0.98f, 0.78f, 0.3f, 1f));
+        AddTextButton(aramModeScreen, "ARAM LAN", "LAN", new Vector2(0f, 35f), new Vector2(470f, 180f), owner.ShowAramLanSetup, new Color(0.56f, 0.82f, 0.94f, 1f));
+        AddTextButton(aramModeScreen, "ARAM Multiplayer", "Multiplayer", new Vector2(540f, 35f), new Vector2(470f, 180f), owner.ShowAramOnlineSetup, new Color(0.74f, 0.66f, 0.96f, 1f));
+        AddText(aramModeScreen, "ARAM Practice Caption", "Practice local", new Vector2(-540f, -105f), new Vector2(470f, 48f), 30, TextAnchor.MiddleCenter, new Color(0.14f, 0.11f, 0.08f, 1f));
+        AddText(aramModeScreen, "ARAM LAN Caption", "Private LAN room", new Vector2(0f, -105f), new Vector2(430f, 48f), 28, TextAnchor.MiddleCenter, new Color(0.14f, 0.11f, 0.08f, 1f));
+        AddText(aramModeScreen, "ARAM Online Caption", "Online matchmaking", new Vector2(540f, -105f), new Vector2(430f, 48f), 28, TextAnchor.MiddleCenter, new Color(0.14f, 0.11f, 0.08f, 1f));
         AddBackButton(aramModeScreen, new Vector2(-820f, -420f), () => ShowModeSelection());
     }
 
     private void BuildPlayHub(RectTransform screen)
     {
-        AddBattleDoodles(screen, true);
-        AddMenuConfetti(screen);
-
-        AddImage(screen, "Doodle Face", assets.doodleFaceDecoration, new Vector2(-840f, 430f), new Vector2(205f, 160f), 0.8f, 0.3f);
-        AddImage(screen, "Game Slogan", assets.gameSlogan, new Vector2(-240f, 438f), new Vector2(755f, 98f), 0.2f, 0.08f);
-        AddImage(screen, "Game Logo", assets.gameLogo, new Vector2(515f, 320f), new Vector2(540f, 285f), 0.4f, 0.12f);
-
-        AddInteractive(screen, "Local Gameplay", assets.localGameplayButton, new Vector2(-660f, 270f), new Vector2(475f, 132f), () => owner.ShowLocalModeSelection(), false, 1.035f);
-        AddInteractive(screen, "Online Play", assets.onlinePlayButton, new Vector2(-660f, 95f), new Vector2(475f, 132f), () => owner.ShowMultiplayerModeSelection(), false, 1.035f);
-        AddInteractive(screen, "ARAM Mode", assets.aramModeButton, new Vector2(-660f, -80f), new Vector2(475f, 132f), CreateAuthenticatedAction("ARAM", owner.ShowAramModeSelection), false, 1.035f);
-        AddInteractive(screen, "Shop", assets.shopButton, new Vector2(-660f, -255f), new Vector2(475f, 132f), CreateAuthenticatedAction("Shop", () => LogMenuClick("Shop")), false, 1.035f);
-
-        AddInteractive(screen, "Inventory", assets.inventoryButton, new Vector2(805f, 130f), new Vector2(132f, 132f), CreateAuthenticatedAction("Inventory", ShowInventoryMenu), false, 1.045f);
-        AddInteractive(screen, "Gacha", assets.gachaButton, new Vector2(805f, -50f), new Vector2(132f, 132f), CreateAuthenticatedAction("Gacha", ShowGachaMenu), false, 1.045f);
-        AddInteractive(screen, "Player Profile", assets.playerProfile, new Vector2(805f, -230f), new Vector2(136f, 136f), CreateAuthenticatedAction("Player Profile", ShowProfileMenu), false, 1.045f);
-        AddInteractive(screen, "Settings Icon", assets.settingsIcon, new Vector2(500f, -398f), new Vector2(118f, 118f), ShowSettingsMenu, false, 1.045f);
-        AddImage(screen, "Game Version", assets.gameVersion, new Vector2(735f, -415f), new Vector2(320f, 142f), 0f, 0f);
+        AddReferenceDoodles(screen, true);
+        AddReferenceAccents(screen, true);
+        AddImage(screen, "Doodle Face", assets.doodleFaceDecoration, M(141f, 115f), MS(258f, 182f), .3f, .1f);
+        AddImage(screen, "Game Slogan", assets.gameSlogan, M(625f, 110f), MS(635f, 82f), 0f, 0f);
+        AddImage(screen, "Game Logo", assets.gameLogo, M(1310f, 179f), MS(594f, 315f), .2f, .1f);
+        AddInteractive(screen, "Local Gameplay", assets.localGameplayButton, M(257f, 315f), MS(410f, 143f), () => owner.ShowLocalModeSelection(), false, 1.025f);
+        AddInteractive(screen, "Online Play", assets.onlinePlayButton, M(261f, 483f), MS(422f, 146f), () => owner.ShowMultiplayerModeSelection(), false, 1.025f);
+        AddInteractive(screen, "ARAM Mode", assets.aramModeButton, M(258f, 640f), MS(418f, 131f), CreateAuthenticatedAction("ARAM", owner.ShowAramModeSelection), false, 1.025f);
+        AddInteractive(screen, "Shop", assets.shopButton, M(257f, 804f), MS(418f, 155f), CreateAuthenticatedAction("Shop", () => LogMenuClick("Shop")), false, 1.025f);
+        AddInteractive(screen, "Inventory", assets.inventoryButton, M(1544f, 420f), MS(136f, 140f), CreateAuthenticatedAction("Inventory", ShowInventoryMenu), false, 1.045f);
+        AddInteractive(screen, "Gacha", assets.gachaButton, M(1544f, 560f), MS(150f, 125f), CreateAuthenticatedAction("Gacha", ShowGachaMenu), false, 1.045f);
+        AddInteractive(screen, "Player Profile", assets.playerProfile, M(1544f, 700f), MS(150f, 142f), CreateAuthenticatedAction("Player Profile", ShowProfileMenu), false, 1.045f);
+        AddInteractive(screen, "Settings Icon", assets.settingsIcon, M(1285f, 859f), MS(122f, 124f), ShowSettingsMenu, false, 1.045f);
+        AddImage(screen, "Game Version", assets.gameVersion, M(1494f, 870f), MS(284f, 122f), 0f, 0f);
         modeLogoutButton = AddLogoutButton(screen);
     }
 
@@ -531,13 +566,12 @@ public class HandDrawnMenuView : MonoBehaviour
     {
         sideScreen = CreateScreen("Choose Side");
 
-        AddBattleDoodles(sideScreen, true);
-        AddMenuConfetti(sideScreen);
+        AddSelectionDecorations(sideScreen);
         AddImage(sideScreen, "Choose Side Title", assets.chooseYourSide, new Vector2(0f, 365f), new Vector2(880f, 150f), 0f, 0f);
-        AddInteractive(sideScreen, "White Card", assets.whiteSideButton, new Vector2(-365f, -105f), new Vector2(560f, 745f), () => owner.ShowBotSkinSelection(PieceTeam.White), false, 1.035f);
-        AddInteractive(sideScreen, "Black Card", assets.blackSideButton, new Vector2(365f, -105f), new Vector2(560f, 745f), () => owner.ShowBotSkinSelection(PieceTeam.Black), false, 1.035f);
+        AddInteractive(sideScreen, "White Card", assets.whiteSideButton, new Vector2(-330f, -30f), new Vector2(470f, 590f), () => owner.ShowBotSkinSelection(PieceTeam.White), false, 1.035f);
+        AddInteractive(sideScreen, "Black Card", assets.blackSideButton, new Vector2(330f, -30f), new Vector2(477f, 590f), () => owner.ShowBotSkinSelection(PieceTeam.Black), false, 1.035f);
         AddImage(sideScreen, "Game Version", assets.gameVersion, new Vector2(735f, -420f), new Vector2(330f, 145f), 0f, 0f);
-        AddBackButton(sideScreen, new Vector2(-820f, -455f), () => ShowBotDifficultySelection(), new Vector2(300f, 125f));
+        AddBackButton(sideScreen, new Vector2(-720f, -435f), () => ShowBotDifficultySelection(), new Vector2(270f, 100f));
     }
 
     private void BuildSkinScreen()
@@ -723,9 +757,8 @@ public class HandDrawnMenuView : MonoBehaviour
     {
         GameObject screen = new GameObject(screenName, typeof(RectTransform));
         RectTransform rect = screen.GetComponent<RectTransform>();
-        rect.SetParent(transform, false);
+        rect.SetParent(MenuDesignFrame.Create(transform, screenName, new Vector2(ReferenceWidth, ReferenceHeight)), false);
         Stretch(rect);
-        screen.AddComponent<ResponsiveSafeArea>();
         return rect;
     }
 
@@ -834,6 +867,12 @@ public class HandDrawnMenuView : MonoBehaviour
         Image image = buttonObject.GetComponent<Image>();
         image.color = backgroundColor;
         image.raycastTarget = true;
+        if (parent == aramModeScreen && assets.optionFrame)
+        {
+            image.sprite = assets.optionFrame;
+            image.type = Image.Type.Sliced;
+            buttonObject.GetComponent<Outline>().enabled = false;
+        }
 
         Button button = buttonObject.GetComponent<Button>();
         button.transition = Selectable.Transition.None;
@@ -895,7 +934,7 @@ public class HandDrawnMenuView : MonoBehaviour
         if (uiFont)
             return uiFont;
 
-        uiFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        uiFont = ChessFontCatalog.RuntimeFont;
         if (!uiFont)
             uiFont = Resources.GetBuiltinResource<Font>("Arial.ttf");
 
@@ -918,7 +957,7 @@ public class HandDrawnMenuView : MonoBehaviour
             "Logout",
             assets.logoutButton,
             Vector2.zero,
-            new Vector2(285f, 95f),
+            MS(175f, 49f),
             () => owner.LogoutToAuthentication(),
             false,
             1.025f,
@@ -927,10 +966,8 @@ public class HandDrawnMenuView : MonoBehaviour
             0.5f);
 
         RectTransform rect = button.transform as RectTransform;
-        rect.anchorMin = Vector2.zero;
-        rect.anchorMax = Vector2.zero;
-        rect.pivot = Vector2.zero;
-        rect.anchoredPosition = new Vector2(34f, 28f);
+        rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(.5f, .5f);
+        rect.anchoredPosition = parent == mainScreen ? M(836f, 897f) : M(778f, 813f);
         return button;
     }
 
@@ -1454,21 +1491,22 @@ public sealed class GachaMenuController : MonoBehaviour
     private void BuildMainScreen()
     {
         mainScreen = CreateLayer("Gacha Main");
-        AddFullImage(mainScreen, "Gacha Menu Design", GetSprite("GachaMenuDesign.png"));
+        AddFullImage(mainScreen, "Gacha Menu Blank", GetSprite("GachaMenuDesignBlank.png"));
+        AddText(mainScreen, "Gacha Subtitle", D(1080f, 257f), new Vector2(225f, 48f), 40f, TextAlignmentOptions.Center, Color.black).text = "But Weird";
+        AddImage(mainScreen, "Standard Banner", GetSprite("StandardGacha.png"), D(274f, 362f), new Vector2(320f, 113f));
+        Image description = AddImage(mainScreen, "Banner Description", GetSprite("GachaTitle.png"), D(991f, 459f), new Vector2(1030f, 337f));
+        description.preserveAspect = false;
         AddResourceBars(mainScreen);
-        AddButton(mainScreen, "Back Gacha", GetSprite("BackGacha.png"), D(230f, 76f), S(90f, 90f), BackToModeSelection, 1.04f);
-
+        AddButton(mainScreen, "Back Gacha", GetSprite("BackGacha.png"), D(230f, 76f), new Vector2(83f, 80f), BackToModeSelection, 1.04f);
         AddPityPanel(mainScreen);
-        AddRewardButton(mainScreen, "Gold Reward", D(220f, 792f), S(122f, 122f), "Gold rewards: 100, 250, 500, 1,000, or jackpot 4,500 gold.");
-        AddRewardButton(mainScreen, "Diamond Reward", D(360f, 792f), S(122f, 122f), "Diamond rewards: 10, 30, 80, 120, or jackpot 1,200 diamonds.");
-        AddRewardButton(mainScreen, "Ticket Reward", D(501f, 792f), S(122f, 122f), "Ticket rewards: 1, 2, 5, or jackpot 10 summon tickets.");
-        AddRewardButton(mainScreen, "Skin Reward", D(641f, 792f), S(122f, 122f), "5-star skin reward rate is reserved for a later skin pool. Skin rolls are disabled for now.");
-
-        AddInvisibleButton(mainScreen, "Summon x1", D(966f, 707f), S(315f, 115f), () => StartSummon(1));
-        AddInvisibleButton(mainScreen, "Summon x10", D(1322f, 708f), S(315f, 115f), () => StartSummon(10));
-        AddInvisibleButton(mainScreen, "History", D(955f, 861f), S(260f, 72f), ShowHistory);
-
-        statusLabel = AddText(mainScreen, "Gacha Status", D(1145f, 858f), S(760f, 48f), F(28f), TextAlignmentOptions.Center, new Color(0.16f, 0.13f, 0.1f, 1f));
+        AddRewardButton(mainScreen, "Gold Reward", D(220f, 792f), new Vector2(115f, 126f), "Gold rewards: 100, 250, 500, 1,000, or jackpot 4,500 gold.");
+        AddRewardButton(mainScreen, "Diamond Reward", D(356f, 792f), new Vector2(118f, 126f), "Diamond rewards: 10, 30, 80, 120, or jackpot 1,200 diamonds.");
+        AddRewardButton(mainScreen, "Ticket Reward", D(495f, 791f), new Vector2(120f, 126f), "Ticket rewards: 1, 2, 5, or jackpot 10 summon tickets.");
+        AddRewardButton(mainScreen, "Skin Reward", D(640f, 791f), new Vector2(128f, 126f), "5-star skin reward rate is reserved for a later skin pool. Skin rolls are disabled for now.");
+        AddButton(mainScreen, "Summon x1", GetSprite("SummonX1.png"), D(967f, 728f), new Vector2(274f, 124f), () => StartSummon(1), 1.025f);
+        AddButton(mainScreen, "Summon x10", GetSprite("SummonX10.png"), D(1322f, 732f), new Vector2(322f, 128f), () => StartSummon(10), 1.025f);
+        AddButton(mainScreen, "History", GetSprite("HistoryButton.png"), D(948f, 874f), new Vector2(226f, 70f), ShowHistory, 1.025f);
+        statusLabel = AddText(mainScreen, "Gacha Status", D(1338f, 890f), new Vector2(505f, 62f), 25f, TextAlignmentOptions.Center, new Color(.16f, .13f, .1f, 1f));
         BuildTooltip(mainScreen);
         BuildHistory(mainScreen);
     }
@@ -1493,21 +1531,21 @@ public sealed class GachaMenuController : MonoBehaviour
 
     private void AddResourceBars(RectTransform parent)
     {
-        RectTransform gold = AddImage(parent, "Gold Counter", GetSprite("GoldGacha.png"), D(654f, 74f), S(335f, 92f)).rectTransform;
-        RectTransform diamond = AddImage(parent, "Diamond Counter", GetSprite("DiamondGacha.png"), D(976f, 74f), S(335f, 92f)).rectTransform;
-        RectTransform ticket = AddImage(parent, "Ticket Counter", GetSprite("SummonTicket.png"), D(1257f, 74f), S(260f, 92f)).rectTransform;
-        goldLabels.Add(AddText(gold, "Gold Amount", L(42f, 0f), S(178f, 54f), F(39f), TextAlignmentOptions.Center, Color.black));
-        diamondLabels.Add(AddText(diamond, "Diamond Amount", L(45f, 0f), S(178f, 54f), F(39f), TextAlignmentOptions.Center, Color.black));
-        ticketLabels.Add(AddText(ticket, "Ticket Amount", L(42f, 0f), S(95f, 54f), F(39f), TextAlignmentOptions.Center, Color.black));
+        RectTransform gold = AddImage(parent, "Gold Counter", GetSprite("GoldGacha.png"), D(657f, 74f), new Vector2(297f, 87f)).rectTransform;
+        RectTransform diamond = AddImage(parent, "Diamond Counter", GetSprite("DiamondGacha.png"), D(975f, 74f), new Vector2(274f, 85f)).rectTransform;
+        RectTransform ticket = AddImage(parent, "Ticket Counter", GetSprite("SummonTicket.png"), D(1247f, 74f), new Vector2(212f, 85f)).rectTransform;
+        goldLabels.Add(AddText(gold, "Gold Amount", new Vector2(12f, 0f), new Vector2(152f, 52f), 39f, TextAlignmentOptions.Center, Color.black));
+        diamondLabels.Add(AddText(diamond, "Diamond Amount", new Vector2(14f, 0f), new Vector2(125f, 52f), 39f, TextAlignmentOptions.Center, Color.black));
+        ticketLabels.Add(AddText(ticket, "Ticket Amount", new Vector2(39f, 0f), new Vector2(90f, 52f), 39f, TextAlignmentOptions.Center, Color.black));
     }
 
     private void AddPityPanel(RectTransform parent)
     {
-        RectTransform pity = AddImage(parent, "Pity Panel", GetSprite("PityGacha.png"), D(275f, 575f), S(360f, 205f)).rectTransform;
-        pityLabel = AddText(pity, "Pity Text", L(74f, 54f), S(105f, 42f), F(35f), TextAlignmentOptions.Center, Color.black);
-        Image fill = CreatePlainImage(pity, "Pity Fill", new Color(1f, 0.78f, 0.08f, 1f), L(-106f, 7f), S(1f, 26f));
+        RectTransform pity = AddImage(parent, "Pity Panel", GetSprite("PityGacha.png"), D(275f, 571f), new Vector2(319f, 183f)).rectTransform;
+        pityLabel = AddText(pity, "Pity Text", new Vector2(-10f, 54f), new Vector2(58f, 40f), 31f, TextAlignmentOptions.Center, Color.black);
+        Image fill = CreatePlainImage(pity, "Pity Fill", new Color(1f, .78f, .08f, 1f), new Vector2(-130f, 12f), new Vector2(0f, 20f));
         pityFill = fill.rectTransform;
-        pityFill.pivot = new Vector2(0f, 0.5f);
+        pityFill.pivot = new Vector2(0f, .5f);
     }
 
     private void BuildTooltip(RectTransform parent)
@@ -1865,7 +1903,7 @@ public sealed class GachaMenuController : MonoBehaviour
         if (pityLabel)
             pityLabel.text = remaining.ToString();
         if (pityFill)
-            pityFill.sizeDelta = S(Mathf.Lerp(26f, 265f, saveData.pityPulls / (float)PityLimit), 26f);
+            pityFill.sizeDelta = new Vector2(Mathf.Lerp(0f, 259f, saveData.pityPulls / (float)PityLimit), 20f);
     }
 
     private void SetStatus(string message)
@@ -1876,7 +1914,8 @@ public sealed class GachaMenuController : MonoBehaviour
 
     private Button AddRewardButton(RectTransform parent, string name, Vector2 position, Vector2 size, string tooltip)
     {
-        Button button = AddInvisibleButton(parent, name, position, size, () => ShowTooltip(tooltip));
+        string spriteName = name == "Gold Reward" ? "GoldPR.png" : name == "Diamond Reward" ? "DiamondPR.png" : name == "Ticket Reward" ? "SummonTicketPR.png" : "Skin5StarPR.png";
+        Button button = AddButton(parent, name, GetSprite(spriteName), position, size, () => ShowTooltip(tooltip), 1.03f);
         GachaRewardHoverTarget hover = button.gameObject.AddComponent<GachaRewardHoverTarget>();
         hover.Initialize(() => ShowTooltip(tooltip), HideTooltip);
         return button;
@@ -1949,6 +1988,7 @@ public sealed class GachaMenuController : MonoBehaviour
         rect.sizeDelta = size;
 
         TextMeshProUGUI text = textObject.GetComponent<TextMeshProUGUI>();
+        text.font = ChessFontCatalog.TmpFont != null ? ChessFontCatalog.TmpFont : TMP_Settings.defaultFontAsset;
         text.fontSize = fontSize;
         text.enableAutoSizing = true;
         text.fontSizeMin = Mathf.Max(14f, fontSize * 0.58f);
@@ -2021,10 +2061,10 @@ public sealed class GachaMenuController : MonoBehaviour
 
     private void LoadSprites()
     {
-        LoadSpriteToCache("GachaMenuDesign.png", false);
+        // Design PNGs are references only; compose the runtime menu on the Blank.
         LoadSpriteToCache("GachaMenuDesignBlank.png", false);
         LoadSpriteToCache("GachaResultBlank.png", false);
-        LoadSpriteToCache("GachaTitle.png", false);
+        LoadSpriteToCache("GachaTitle.png", true);
         LoadSpriteToCache("BackGacha.png", true);
         LoadSpriteToCache("BackButton.png", true);
         LoadSpriteToCache("GoldGacha.png", true);
@@ -2049,7 +2089,7 @@ public sealed class GachaMenuController : MonoBehaviour
     private Sprite LoadSprite(string fileName, bool trimTransparent)
     {
         string path = FullAssetPath(fileName);
-        if (CoreArtworkCache.GetSprite(path) is Sprite prepared) return prepared;
+        if (CoreArtworkCache.GetSprite(path, trimTransparent) is Sprite prepared) return prepared;
         if (!File.Exists(path))
         {
             Debug.LogWarning($"[GachaMenu] Missing asset: {fileName}");
@@ -2066,43 +2106,11 @@ public sealed class GachaMenuController : MonoBehaviour
 
         texture.name = Path.GetFileNameWithoutExtension(fileName);
         texture.filterMode = FilterMode.Bilinear;
-        Rect rect = trimTransparent ? FindOpaqueBounds(texture) : new Rect(0f, 0f, texture.width, texture.height);
+        Rect rect = trimTransparent ? MenuArtworkBounds.GetRect(AssetFolder + "/" + fileName, texture) : new Rect(0f, 0f, texture.width, texture.height);
         Sprite sprite = Sprite.Create(texture, rect, new Vector2(0.5f, 0.5f), 100f, 0u, SpriteMeshType.FullRect);
         texture.Apply(false, true);
         runtimeSprites.Add(sprite);
         return sprite;
-    }
-
-    private Rect FindOpaqueBounds(Texture2D texture)
-    {
-        Color32[] pixels = texture.GetPixels32();
-        int minX = texture.width;
-        int minY = texture.height;
-        int maxX = -1;
-        int maxY = -1;
-        for (int y = 0; y < texture.height; y++)
-        {
-            int row = y * texture.width;
-            for (int x = 0; x < texture.width; x++)
-            {
-                if (pixels[row + x].a <= 8)
-                    continue;
-                minX = Mathf.Min(minX, x);
-                minY = Mathf.Min(minY, y);
-                maxX = Mathf.Max(maxX, x);
-                maxY = Mathf.Max(maxY, y);
-            }
-        }
-
-        if (maxX < minX || maxY < minY)
-            return new Rect(0f, 0f, texture.width, texture.height);
-
-        int padding = 3;
-        minX = Mathf.Max(0, minX - padding);
-        minY = Mathf.Max(0, minY - padding);
-        maxX = Mathf.Min(texture.width - 1, maxX + padding);
-        maxY = Mathf.Min(texture.height - 1, maxY + padding);
-        return new Rect(minX, minY, maxX - minX + 1, maxY - minY + 1);
     }
 
     private void LoadSave()

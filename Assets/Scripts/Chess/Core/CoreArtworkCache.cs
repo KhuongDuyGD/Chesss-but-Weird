@@ -50,14 +50,16 @@ public static class CoreArtworkCache
         return texture;
     }
 
-    public static Sprite GetSprite(string path)
+    public static Sprite GetSprite(string path, bool trimTransparent = false)
     {
         path = NormalizePath(path);
-        if (sprites.TryGetValue(path, out var sprite)) return sprite;
+        string cacheKey = path + (trimTransparent ? "#trim" : "#full");
+        if (sprites.TryGetValue(cacheKey, out var sprite)) return sprite;
         var texture = GetTexture(path);
         if (!texture) return null;
-        sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(.5f, .5f), 100);
-        sprites[path] = sprite;
+        Rect rect = trimTransparent ? MenuArtworkBounds.GetRect(path, texture) : new Rect(0, 0, texture.width, texture.height);
+        sprite = Sprite.Create(texture, rect, new Vector2(.5f, .5f), 100, 0, SpriteMeshType.FullRect);
+        sprites[cacheKey] = sprite;
         return sprite;
     }
 

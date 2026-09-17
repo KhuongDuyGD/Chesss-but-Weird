@@ -11,7 +11,7 @@ using UnityEngine.InputSystem;
 using UnityEditor;
 #endif
 
-public class ChessGame : MonoBehaviour
+public partial class ChessGame : MonoBehaviour
 {
     public enum ChessGameStatus
     {
@@ -295,6 +295,7 @@ public class ChessGame : MonoBehaviour
     private void Update()
     {
         if (contentLoading) return;
+        if (aramMode && aramCoordinator != null && aramCoordinator.Runtime.HandleAbilityInput()) return;
         if (gameStarted && aramMode && aramCoordinator != null && aramCoordinator.IsSelectingSetupTargets)
         {
             if (pauseLocked || Mouse.current == null || !Mouse.current.leftButton.wasPressedThisFrame)
@@ -563,6 +564,10 @@ public class ChessGame : MonoBehaviour
         if (!gameStarted || inputLocked || pauseLocked || !piece || piece.Team != currentTurn || !CanControlPieceTeam(piece.Team))
             return false;
 
+        if (aramMode && selectedPiece && selectedPiece != piece && selectedPiece.Type == PieceType.Pawn &&
+            piece.Type == PieceType.Pawn && aramCoordinator.Runtime.HasBuff(currentTurn, AramBuffId.NobleSacrifice) &&
+            TryMoveSelectedPiece(piece.BoardPosition)) return true;
+
         if (selectedPiece == piece)
         {
             DeselectCurrentPiece(true);
@@ -689,6 +694,7 @@ public class ChessGame : MonoBehaviour
             capturedPiece = enPassantCapturedPiece;
 
         bool capturedAnyPiece = capturedPiece;
+        if (aramMode) aramCoordinator.Runtime.BeforeNormalMove(movingPiece, capturedPiece, from, destination);
 
         if (UsesClassicDomainSession && capturedPiece)
             RemoveLocalClassicPiece(capturedPiece);
@@ -713,7 +719,7 @@ public class ChessGame : MonoBehaviour
         aramCoordinator?.OnMoveAccepted(movingPiece, from, destination, pieces);
         lastMoveSummary = BuildMoveSummary(movingPiece, from, destination, capturedPiece, isCastling);
         moveHistory.Add(lastMoveSummary);
-        if (capturedPiece)
+        if (capturedPiece && capturedPiece.Team != movingPiece.Team)
             GetCapturedPieceList(movingPiece.Team).Add(capturedPiece.Type);
         List<ChessPiece> aramExplosionVictims = null;
         if (capturedPiece && aramCoordinator != null)
@@ -737,19 +743,26 @@ public class ChessGame : MonoBehaviour
             Destroy(capturedPiece.gameObject);
         if (aramExplosionVictims != null)
             DestroyAramExplosionVictims(aramExplosionVictims);
+        PieceTeam nextAramTurn = opponentTeam;
+        if (aramMode && !serverAuthoritativeMode)
+        {
+            nextAramTurn = aramCoordinator.Runtime.AfterNormalMove(movingPiece, capturedPiece, from, destination);
+            if (pieces[destination.x, destination.y] != movingPiece) movingPiece = null;
+            if (AramFinishIfKingMissing()) return true;
+        }
 
         if (isCastling)
             AnimatePieceToTile(castlingRook, castlingRookTo, 0f, moveAnimationDuration, moveArcHeight * 0.5f);
 
         if (movingPiece is PawnPiece promotedPawn && IsPromotionRank(promotedPawn))
         {
-            StartCoroutine(AnimateMoveAndPromptPromotion(promotedPawn, destination, opponentTeam));
+            StartCoroutine(AnimateMoveAndPromptPromotion(promotedPawn, destination, nextAramTurn));
             return true;
         }
 
         currentTurn = UsesClassicDomainSession
             ? (PieceTeam)localClassicCoordinator.Turn
-            : opponentTeam;
+            : nextAramTurn;
         aramCoordinator?.OnTurnStarted(currentTurn);
         NotifyMoveCommitted(new ChessLanMove(from, destination));
         turnSelectionUI?.SetTurn(currentTurn);
@@ -772,11 +785,13 @@ public class ChessGame : MonoBehaviour
 
     private bool TryFinishGameAfterCompletedMove(ChessPiece movingPiece, Vector2Int destination)
     {
+        if (aramMode && aramCoordinator.Runtime.HasPendingDecision) return false;
         RecordCurrentPosition();
 
         if (IsCheckmate(currentTurn))
         {
-            StartCoroutine(AnimateMoveAndFinishGame(movingPiece, destination, movingPiece.Team));
+            if (aramMode && aramCoordinator.Runtime.TryOfferEscape(currentTurn)) return true;
+            StartCoroutine(AnimateMoveAndFinishGame(movingPiece, destination, currentTurn == PieceTeam.White ? PieceTeam.Black : PieceTeam.White));
             return true;
         }
 
@@ -797,7 +812,7 @@ public class ChessGame : MonoBehaviour
         for (int i = 0; i < victims.Count; i++)
         {
             ChessPiece victim = victims[i];
-            if (!victim || victim.Type == PieceType.King)
+            if (!victim || (victim.Type == PieceType.King && !victim.GetComponent<AramDecoyTag>()))
                 continue;
 
             Vector2Int position = victim.BoardPosition;
@@ -805,6 +820,8 @@ public class ChessGame : MonoBehaviour
                 pieces[position.x, position.y] = null;
 
             pieceAnimator?.Cancel(victim);
+
+            if (aramMode && !serverAuthoritativeMode) aramCoordinator.Runtime.OnPieceRemoved(victim);
 
             Destroy(victim.gameObject);
         }
@@ -1125,6 +1142,7 @@ public class ChessGame : MonoBehaviour
 
     private bool IsLegalMoveAfterKingSafety(ChessPiece piece, Vector2Int from, Vector2Int destination)
     {
+        if (aramMode && !serverAuthoritativeMode && !aramCoordinator.Runtime.CanMove(piece, destination)) return false;
         if (UsesClassicDomainSession)
             return localClassicCoordinator.CanApply(UnityBoardAdapter.ToSquare(from), UnityBoardAdapter.ToSquare(destination));
 
@@ -1132,7 +1150,7 @@ public class ChessGame : MonoBehaviour
             return false;
 
         ChessPiece targetPiece = pieces[destination.x, destination.y];
-        if (targetPiece && targetPiece.Type == PieceType.King)
+        if (targetPiece && targetPiece.Type == PieceType.King && !targetPiece.GetComponent<AramDecoyTag>())
             return false;
 
         return DoesMoveKeepTeamKingSafe(piece, from, destination, piece.Team);
@@ -1217,7 +1235,8 @@ public class ChessGame : MonoBehaviour
         }
         bool explosion = aramCoordinator != null && aramCoordinator.WouldQueenExplode(pieces[destination.x, destination.y]);
         var simulation = new ChessButWeird.Domain.MoveBoardView<UnityBoardAdapter>(new UnityBoardAdapter(pieces),
-            UnityBoardAdapter.ToSquare(from), UnityBoardAdapter.ToSquare(destination), capture, rookFrom, rookTo, explosion);
+            UnityBoardAdapter.ToSquare(from), UnityBoardAdapter.ToSquare(destination), capture, rookFrom, rookTo, explosion, serverAuthoritativeMode,
+            aramMode && !serverAuthoritativeMode && aramCoordinator.Runtime.MovingPieceWillDie(piece,from,destination));
         return !ChessButWeird.Domain.KingSafetyRules.IsInCheck(simulation, (ChessButWeird.Domain.Team)team,
             new UnityBuffContextAdapter(pieces, aramCoordinator != null ? aramCoordinator.Runtime : null),
             aramCoordinator != null ? aramCoordinator.DomainRules : ChessButWeird.Domain.AramRules.BuiltIn);
@@ -1269,7 +1288,7 @@ public class ChessGame : MonoBehaviour
             return true;
         }
 
-        if (HasInsufficientMaterial())
+        if (!aramMode && HasInsufficientMaterial())
         {
             reason = "Insufficient Material";
             return true;
@@ -1358,7 +1377,7 @@ public class ChessGame : MonoBehaviour
             for (int y = 0; y < BoardSize; y++)
             {
                 ChessPiece piece = pieces[x, y];
-                if (piece && piece.Team == team && piece.Type == PieceType.King)
+                if (piece && piece.Team == team && piece.Type == PieceType.King && !piece.GetComponent<AramDecoyTag>())
                 {
                     CacheKing(piece);
                     return piece;
@@ -1404,6 +1423,13 @@ public class ChessGame : MonoBehaviour
             return false;
 
         bool strongFortress = aramCoordinator != null && aramCoordinator.AllowsStrongFortressCastle(piece.Team);
+        if (strongFortress && !serverAuthoritativeMode)
+        {
+            int violations = (piece.HasMoved ? 1 : 0) + (pieces[rookFrom.x, rookFrom.y].HasMoved ? 1 : 0) + (IsTeamInCheck(piece.Team) ? 1 : 0);
+            int step = destination.x > from.x ? 1 : -1;
+            if (IsSquareUnderAttack(new Vector2Int(from.x + step, from.y), piece.Team == PieceTeam.White ? PieceTeam.Black : PieceTeam.White)) violations++;
+            return violations <= 1;
+        }
         if (!strongFortress && IsTeamInCheck(piece.Team))
             return false;
 
@@ -1429,8 +1455,10 @@ public class ChessGame : MonoBehaviour
         rookFrom = default;
         rookTo = default;
 
-        if (!piece || piece.Type != PieceType.King || piece.HasMoved)
+        bool extendedFortress = aramMode && !serverAuthoritativeMode && aramCoordinator.Runtime.HasBuff(piece ? piece.Team : currentTurn, AramBuffId.StrongFortress);
+        if (!piece || piece.Type != PieceType.King || piece.GetComponent<AramDecoyTag>() || (piece.HasMoved && !extendedFortress))
             return false;
+        if (extendedFortress && (from.x != 4 || from.y != (piece.ForwardDirection > 0 ? 0 : 7))) return false;
 
         Vector2Int delta = destination - from;
         if (delta.y != 0 || Mathf.Abs(delta.x) != 2)
@@ -1446,7 +1474,7 @@ public class ChessGame : MonoBehaviour
             return false;
 
         rook = pieces[rookFrom.x, rookFrom.y];
-        if (!rook || rook.Team != piece.Team || rook.Type != PieceType.Rook || rook.HasMoved)
+        if (!rook || rook.Team != piece.Team || rook.Type != PieceType.Rook || (rook.HasMoved && !extendedFortress))
             return false;
 
         for (int x = from.x + direction; x != rookFrom.x; x += direction)

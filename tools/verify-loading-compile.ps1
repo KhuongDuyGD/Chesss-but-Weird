@@ -21,6 +21,18 @@ try {
     if (-not (Test-Path -LiteralPath $editorResponse)) { throw 'Missing Editor compiler response file.' }
     New-Item -ItemType Directory -Force -Path $outputRoot | Out-Null
 
+    # Compile the current package sources too; the Editor's cached reference may
+    # predate a Domain API change made while the Editor is open.
+    $domainResponse = Join-Path $runtimeResponse.DirectoryName 'Chess.Domain.rsp'
+    if (-not (Test-Path -LiteralPath $domainResponse)) { throw 'Missing Domain compiler response file.' }
+    $domainLines = @(Get-Content -LiteralPath $domainResponse | Where-Object { $_ -notmatch '^-(out|refout):' })
+    $domainLines += '-out:"Logs/loading-compile/Chess.Domain.dll"'
+    $domainLines += '-refout:"Logs/loading-compile/Chess.Domain.ref.dll"'
+    $domainPath = Join-Path $outputRoot 'domain.rsp'
+    $domainLines | Set-Content -LiteralPath $domainPath -Encoding utf8
+    & $dotnet exec $compiler /nostdlib /noconfig ('@' + $domainPath)
+    if ($LASTEXITCODE -ne 0) { throw 'Domain compilation failed.' }
+
     function Invoke-SourceCompile([string]$sourceResponse, [string]$name, [bool]$player, [bool]$editor) {
         $lines = [System.Collections.Generic.List[string]]::new()
         $sources = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
@@ -33,7 +45,9 @@ try {
                 }
                 continue
             }
-            if ($editor -and $line -match '^-r:.*[/\\]Assembly-CSharp\.ref\.dll"$') {
+            if ($line -match '^-r:.*[/\\]Chess\.Domain\.ref\.dll"$') {
+                $lines.Add('-r:"Logs/loading-compile/Chess.Domain.ref.dll"')
+            } elseif ($editor -and $line -match '^-r:.*[/\\]Assembly-CSharp\.ref\.dll"$') {
                 $lines.Add('-r:"Logs/loading-compile/runtime-editor.ref.dll"')
             } else {
                 $lines.Add($line)

@@ -17,10 +17,14 @@ namespace ChessButWeird.Domain
         private readonly Square from, to, capture, rookFrom, rookTo;
         private readonly PieceState moved, rook;
         private readonly bool explosion;
-        public MoveBoardView(TBoard board, Square from, Square to, Square capture, Square rookFrom, Square rookTo, bool explosion)
+        private readonly bool legacyExplosion;
+        private readonly bool removeMoving;
+        public MoveBoardView(TBoard board, Square from, Square to, Square capture, Square rookFrom, Square rookTo, bool explosion, bool legacyExplosion = false, bool removeMoving = false)
         {
             this.board = board; this.from = from; this.to = to; this.capture = capture;
             this.rookFrom = rookFrom; this.rookTo = rookTo; this.explosion = explosion;
+            this.legacyExplosion = legacyExplosion;
+            this.removeMoving = removeMoving;
             moved = board.GetPiece(from).Moved();
             PieceState originalRook = board.GetPiece(rookFrom);
             rook = originalRook.IsEmpty ? default : originalRook.Moved();
@@ -28,11 +32,11 @@ namespace ChessButWeird.Domain
         public PieceState GetPiece(Square square)
         {
             if (!square.IsValid) return default;
-            if (square == to) return moved;
+            if (square == to) return removeMoving || (explosion && SuicideBomberBuff.IsVictim(moved, moved.Id, to, to, legacyExplosion)) ? default : moved;
             if (rookTo.IsValid && square == rookTo) return rook;
             if (square == from || square == capture || (rookFrom.IsValid && square == rookFrom)) return default;
             PieceState piece = board.GetPiece(square);
-            return explosion && SuicideBomberBuff.IsVictim(piece, moved.Id, to, square) ? default : piece;
+            return explosion && SuicideBomberBuff.IsVictim(piece, moved.Id, to, square, legacyExplosion) ? default : piece;
         }
     }
 

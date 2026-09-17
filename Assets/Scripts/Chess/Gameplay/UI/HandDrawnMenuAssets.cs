@@ -10,6 +10,8 @@ public class HandDrawnMenuAssets : MonoBehaviour
 
     [Header("Shared Main Menu Artwork")]
     public Sprite gameLogo;
+    public Sprite paperBackground;
+    public Sprite optionFrame;
     public Sprite doodleFaceDecoration;
     public Sprite backgroundDecoration1;
     public Sprite backgroundDecoration2;
@@ -107,6 +109,27 @@ public class HandDrawnMenuAssets : MonoBehaviour
             () => { chooseYourSide = LoadRenamedSprite("ChooseYourSide.png", "choose_side_title", new SpriteCrop(2172f, 724f, 216f, 218f, 1797f, 253f)); },
             () => { whiteSideButton = LoadRenamedSprite("WhiteSideButton.png", "white_card", new SpriteCrop(1086f, 1448f, 109f, 167f, 876f, 1093f)); },
             () => { blackSideButton = LoadRenamedSprite("BlackSideButton.png", "black_card", new SpriteCrop(1086f, 1448f, 151f, 176f, 811f, 1002f)); },
+            () =>
+            {
+                Texture2D paper = LoadTextureFromProjectFile(Path.Combine(GachaMenuAssetFolder, "GachaMenuDesignBlank.png"));
+                if (paper)
+                {
+                    paper.wrapMode = TextureWrapMode.Clamp;
+                    paperBackground = Sprite.Create(paper, new Rect(0, 0, paper.width * .045f, paper.height * .08f), new Vector2(.5f, .5f), 100f);
+                    spriteCache["Paper Background"] = paperBackground;
+                }
+            },
+            () =>
+            {
+                // The empty input frame is from a Blank, never from a reference Design.
+                Texture2D blank = LoadTextureFromProjectFile("Assets/Materials/LANUI/LANUIBlank.png");
+                if (blank)
+                {
+                    float sx = blank.width / 1672f, sy = blank.height / 941f;
+                    optionFrame = Sprite.Create(blank, new Rect(643f * sx, (941f - 390f) * sy, 347f * sx, 73f * sy), new Vector2(.5f, .5f), 100f, 0, SpriteMeshType.FullRect, new Vector4(16f * sx, 16f * sy, 16f * sx, 16f * sy));
+                    spriteCache["Option Frame"] = optionFrame;
+                }
+            },
             () => IsPrepared = true
         };
     }

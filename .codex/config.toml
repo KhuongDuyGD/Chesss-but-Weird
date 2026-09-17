@@ -1,3 +1,4 @@
 [mcp_servers.mcp-unity]
 command = "node"
-args = ["Packages/com.gamelovers.mcp-unity/Server~/build/index.js"]
+args = ["Library/PackageCache/com.gamelovers.mcp-unity@382a43a30f4d/Server~/build/index.js"]
+env = { MCP_UNITY_SETTINGS_PATH = "D:/Game_Project/Chesss-but-Weird/ProjectSettings/McpUnitySettings.json", MCP_UNITY_AUTH_TOKEN_PATH = "D:/Game_Project/Chesss-but-Weird/Library/McpUnity/bridge-token" }

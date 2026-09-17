@@ -112,3 +112,4 @@ ProjectSettings/McpUnitySettings.json
 # Standalone shared-domain build and verification outputs
 /Tests/**/bin/
 /Tests/**/obj/
+!/Tests/Chess.Domain.Tests/Chess.Domain.Tests.csproj

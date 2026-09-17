@@ -11,7 +11,7 @@ public sealed class PlayerProfileMenuController : MonoBehaviour
 {
     private const float DesignWidth = 1672f;
     private const float DesignHeight = 941f;
-    private const float MenuViewportScale = 0.92f;
+    private const float MenuViewportScale = 1f;
     private const string AssetFolder = "Assets/Materials/PlayerProfile";
     private static readonly Vector2 DesignSize = new Vector2(DesignWidth, DesignHeight);
 
@@ -51,26 +51,26 @@ public sealed class PlayerProfileMenuController : MonoBehaviour
     private void Build()
     {
         Image blocker = root.gameObject.AddComponent<Image>();
-        blocker.color = new Color(0f, 0f, 0f, 0.01f);
+        blocker.color = new Color(.985f, .965f, .91f, 1f);
         blocker.raycastTarget = true;
 
         contentRoot = CreateChild(root, "Player Profile Content Root", Vector2.zero, DesignSize);
         contentRoot.gameObject.AddComponent<InventoryContentRootFitter>().Configure(DesignWidth, DesignHeight, MenuViewportScale);
 
         AddFullImage(contentRoot, "Player Profile Blank", GetSprite("PlayerProfileMainBlank.png"));
-        AddImage(contentRoot, "Basic Profile Panel", GetSprite("BasicProfileData.png"), D(620f, 250f), new Vector2(1088f, 365f));
-        AddImage(contentRoot, "Match History Panel", GetSprite("MatchHistory.png"), D(620f, 625f), new Vector2(1078f, 382f));
-        AddImage(contentRoot, "Achievement Title", GetSprite("AchievementTitle.png"), D(1352f, 514f), new Vector2(420f, 190f));
-        AddImage(contentRoot, "Streak Fire", GetSprite("Streaks.png"), D(1350f, 800f), new Vector2(205f, 205f));
+        AddImage(contentRoot, "Basic Profile Panel", GetSprite("BasicProfileData.png"), D(626f, 258f), new Vector2(1096f, 360f)).preserveAspect = false;
+        AddImage(contentRoot, "Match History Panel", GetSprite("MatchHistory.png"), D(610f, 666f), new Vector2(1062f, 390f)).preserveAspect = false;
+        AddImage(contentRoot, "Achievement Title", GetSprite("AchievementTitle.png"), D(1381f, 527f), new Vector2(414f, 151f));
+        AddImage(contentRoot, "Streak Fire", GetSprite("Streaks.png"), D(1365f, 775f), new Vector2(208f, 211f));
 
-        avatarImage = AddImage(contentRoot, "Current Avatar", GetSprite("Avatar0.png"), D(1360f, 172f), new Vector2(205f, 205f));
-        AddButton(contentRoot, "Change Profile", GetSprite("ChangeDataProfileButton.png"), D(1360f, 340f), new Vector2(320f, 91f), ShowEditPanel, 1.035f);
-        AddButton(contentRoot, "Back", GetSprite("Back.png"), D(205f, 860f), new Vector2(235f, 86f), Close, 1.035f);
+        avatarImage = AddImage(contentRoot, "Current Avatar", GetSprite("Avatar0.png"), D(1376f, 190f), new Vector2(247f, 232f));
+        AddButton(contentRoot, "Change Profile", GetSprite("ChangeDataProfileButton.png"), D(1384f, 362f), new Vector2(333f, 91f), ShowEditPanel, 1.035f);
+        AddButton(contentRoot, "Back", GetSprite("Back.png"), D(188f, 894f), new Vector2(180f, 44f), Close, 1.035f);
 
         AddProfileValues();
         AddHistoryRows();
-        achievementLabel = AddText(contentRoot, "Achievement Value", D(1352f, 556f), new Vector2(330f, 50f), 32f, TextAlignmentOptions.Center, Color.black);
-        streakLabel = AddText(contentRoot, "Streak Value", D(1350f, 810f), new Vector2(150f, 66f), 40f, TextAlignmentOptions.Center, Color.black);
+        achievementLabel = AddText(contentRoot, "Achievement Value", D(1360f, 559f), new Vector2(330f, 50f), 32f, TextAlignmentOptions.Center, Color.black);
+        streakLabel = AddText(contentRoot, "Streak Value", D(1365f, 808f), new Vector2(150f, 66f), 40f, TextAlignmentOptions.Center, Color.black);
         statusLabel = AddText(contentRoot, "Profile Status", D(835f, 890f), new Vector2(840f, 38f), 24f, TextAlignmentOptions.Center, new Color(0.18f, 0.14f, 0.1f, 0.82f));
         BuildEditPanel();
     }
@@ -90,7 +90,7 @@ public sealed class PlayerProfileMenuController : MonoBehaviour
     {
         for (int i = 0; i < 6; i++)
         {
-            TextMeshProUGUI row = AddText(contentRoot, $"Match History Row {i}", D(735f, 604f + i * 43f), new Vector2(745f, 38f), 25f, TextAlignmentOptions.Left, Color.black);
+            TextMeshProUGUI row = AddText(contentRoot, $"Match History Row {i}", D(610f, 589f + i * 44f), new Vector2(950f, 38f), 25f, TextAlignmentOptions.Left, Color.black);
             historyRows.Add(row);
         }
     }
@@ -379,7 +379,7 @@ public sealed class PlayerProfileMenuController : MonoBehaviour
     private Sprite LoadSprite(string fileName, bool trimTransparent)
     {
         string path = Path.Combine(Directory.GetCurrentDirectory(), AssetFolder, fileName);
-        if (CoreArtworkCache.GetSprite(path) is Sprite prepared) return prepared;
+        if (CoreArtworkCache.GetSprite(path, trimTransparent) is Sprite prepared) return prepared;
         if (!File.Exists(path))
         {
             Debug.LogWarning($"[PlayerProfile] Missing asset: {fileName}");
@@ -398,7 +398,7 @@ public sealed class PlayerProfileMenuController : MonoBehaviour
             return null;
         }
 
-        Rect rect = trimTransparent ? FindVisibleRect(texture) : new Rect(0f, 0f, texture.width, texture.height);
+        Rect rect = trimTransparent ? MenuArtworkBounds.GetRect(AssetFolder + "/" + fileName, texture) : new Rect(0f, 0f, texture.width, texture.height);
         Sprite sprite = Sprite.Create(texture, rect, new Vector2(0.5f, 0.5f), 100f, 0u, SpriteMeshType.FullRect);
         texture.Apply(false, true);
         runtimeAssets.Add(sprite);
@@ -406,37 +406,6 @@ public sealed class PlayerProfileMenuController : MonoBehaviour
         return sprite;
     }
 
-    private static Rect FindVisibleRect(Texture2D texture)
-    {
-        Color32[] pixels = texture.GetPixels32();
-        int minX = texture.width;
-        int minY = texture.height;
-        int maxX = -1;
-        int maxY = -1;
-        for (int y = 0; y < texture.height; y++)
-        {
-            int row = y * texture.width;
-            for (int x = 0; x < texture.width; x++)
-            {
-                if (pixels[row + x].a <= 8)
-                    continue;
-                minX = Mathf.Min(minX, x);
-                minY = Mathf.Min(minY, y);
-                maxX = Mathf.Max(maxX, x);
-                maxY = Mathf.Max(maxY, y);
-            }
-        }
-
-        if (maxX < minX || maxY < minY)
-            return new Rect(0f, 0f, texture.width, texture.height);
-
-        const int padding = 3;
-        minX = Mathf.Max(0, minX - padding);
-        minY = Mathf.Max(0, minY - padding);
-        maxX = Mathf.Min(texture.width - 1, maxX + padding);
-        maxY = Mathf.Min(texture.height - 1, maxY + padding);
-        return new Rect(minX, minY, maxX - minX + 1, maxY - minY + 1);
-    }
 
     private static string FormatDate(string utc)
     {

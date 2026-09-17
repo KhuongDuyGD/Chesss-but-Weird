@@ -1850,7 +1850,7 @@ public class ChessLanController : MonoBehaviour
             if (playerLabels[1])
                 playerLabels[1].text = owner.GetGuestPlayerLine();
             if (statusLabel)
-                statusLabel.text = owner.statusMessage ?? string.Empty;
+                statusLabel.text = (IsAramGameMode(owner.requestedGameMode) ? "ARAM - " : string.Empty) + (owner.statusMessage ?? string.Empty);
 
             if (serverLabel)
             {
@@ -1885,7 +1885,14 @@ public class ChessLanController : MonoBehaviour
             canvas.sortingOrder = 64;
 
             ResponsiveUi.ConfigureCanvasScaler(canvasRoot.GetComponent<CanvasScaler>(), DesignSize);
-            contentRoot = CreateChild(canvasRoot.transform, "Network Lobby Content", Vector2.zero, DesignSize);
+            Image paper = AddImage(canvasRoot.transform, "Lobby Paper", null, Vector2.zero, Vector2.zero);
+            paper.color = new Color(.985f, .965f, .91f, 1f);
+            paper.raycastTarget = true;
+            paper.rectTransform.anchorMin = Vector2.zero;
+            paper.rectTransform.anchorMax = Vector2.one;
+            paper.rectTransform.offsetMin = paper.rectTransform.offsetMax = Vector2.zero;
+            RectTransform frame = MenuDesignFrame.Create(canvasRoot.transform, "Network Lobby", DesignSize);
+            contentRoot = CreateChild(frame, "Network Lobby Content", Vector2.zero, DesignSize);
             canvasRoot.SetActive(false);
         }
 
@@ -1913,47 +1920,43 @@ public class ChessLanController : MonoBehaviour
         private void BuildLan()
         {
             AddImage(contentRoot, "LAN Background", LoadSprite("LANUIBlank.png"), Vector2.zero, DesignSize);
-            if (IsAramGameMode(owner.requestedGameMode))
-                AddText("ARAM Variant", D(836f, 80f), new Vector2(620f, 54f), 34f, TextAlignmentOptions.Center, new Color(0.36f, 0.16f, 0.62f, 1f)).text = "ARAM - PRIVATE BUFFS";
-            AddButton("Host", "HostButton.png", D(410f, 390f), new Vector2(360f, 142f), owner.RequestCreateRoom);
+            AddButton("Host", "HostButton.png", D(410f, 402f), new Vector2(282f, 122f), owner.RequestCreateRoom);
             joinInput = AddInput("Join Code Input", D(815f, 354f), new Vector2(330f, 58f));
-            AddButton("Join", "JoinButton.png", D(815f, 440f), new Vector2(360f, 112f), () => owner.RequestJoinRoom(joinInput != null ? joinInput.text : string.Empty));
-            roomCodeLabel = AddText("Room Code Value", D(838f, 612f), new Vector2(310f, 66f), 34f, TextAlignmentOptions.Center, Color.black);
-            AddButton("Copy", "CopyIcon.png", D(988f, 612f), new Vector2(92f, 92f), owner.RequestCopyRoomCode, 1.08f);
-            playerLabels[0] = AddText("Host Player", D(1316f, 353f), new Vector2(300f, 44f), 25f, TextAlignmentOptions.MidlineLeft, Color.black);
-            playerLabels[1] = AddText("Guest Player", D(1316f, 460f), new Vector2(300f, 44f), 25f, TextAlignmentOptions.MidlineLeft, Color.black);
-            statusLabel = AddText("Lobby Status", D(842f, 760f), new Vector2(890f, 48f), 25f, TextAlignmentOptions.Center, new Color(0.1f, 0.08f, 0.06f, 0.9f));
+            AddButton("Join", "JoinButton.png", D(816f, 448f), new Vector2(312f, 96f), () => owner.RequestJoinRoom(joinInput != null ? joinInput.text : string.Empty));
+            roomCodeLabel = AddText("Room Code Value", D(795f, 612f), new Vector2(265f, 60f), 34f, TextAlignmentOptions.Center, Color.black);
+            AddButton("Copy", "CopyIcon.png", D(983f, 605f), new Vector2(50f, 57f), owner.RequestCopyRoomCode, 1.08f);
+            playerLabels[0] = AddText("Host Player", D(1289f, 349f), new Vector2(330f, 52f), 25f, TextAlignmentOptions.MidlineLeft, Color.black);
+            playerLabels[1] = AddText("Guest Player", D(1289f, 445f), new Vector2(330f, 52f), 25f, TextAlignmentOptions.MidlineLeft, Color.black);
+            statusLabel = AddText("Lobby Status", D(803f, 752f), new Vector2(700f, 43f), 25f, TextAlignmentOptions.Center, new Color(0.1f, 0.08f, 0.06f, 0.9f));
 
-            AddButton("Ready", "ReadyButton.png", D(325f, 866f), new Vector2(270f, 108f), owner.RequestReady);
-            AddButton("Start", "StartButton.png", D(576f, 866f), new Vector2(270f, 108f), owner.RequestStartGame);
-            AddButton("Refresh", "RefreshButton.png", D(835f, 866f), new Vector2(270f, 108f), owner.RequestRefreshLobby);
-            AddButton("Leave", "LeaveButton.png", D(1096f, 866f), new Vector2(270f, 108f), owner.RequestLeaveToModeSelection);
-            AddButton("Back", "BackButton.png", D(1356f, 866f), new Vector2(270f, 108f), owner.RequestBackToMultiplayerChoice);
+            AddButton("Ready", "ReadyButton.png", D(325f, 868f), new Vector2(224f, 95f), owner.RequestReady);
+            AddButton("Start", "StartButton.png", D(576f, 868f), new Vector2(218f, 95f), owner.RequestStartGame);
+            AddButton("Refresh", "RefreshButton.png", D(835f, 868f), new Vector2(228f, 95f), owner.RequestRefreshLobby);
+            AddButton("Leave", "LeaveButton.png", D(1094f, 868f), new Vector2(222f, 95f), owner.RequestLeaveToModeSelection);
+            AddButton("Back", "BackButton.png", D(1350f, 868f), new Vector2(224f, 95f), owner.RequestBackToMultiplayerChoice);
         }
 
         private void BuildMultiplayer()
         {
             AddImage(contentRoot, "Multiplayer Background", LoadSprite("MultiplayerUIBlank.png"), Vector2.zero, DesignSize);
-            if (IsAramGameMode(owner.requestedGameMode))
-                AddText("ARAM Variant", D(836f, 80f), new Vector2(620f, 54f), 34f, TextAlignmentOptions.Center, new Color(0.36f, 0.16f, 0.62f, 1f)).text = "ARAM - PRIVATE BUFFS";
-            AddButton("Create Room", "CreateRoomButton.png", D(382f, 337f), new Vector2(360f, 142f), owner.RequestCreateRoom);
-            joinInput = AddInput("Join Code Input", D(807f, 310f), new Vector2(340f, 58f));
-            AddButton("Join Room", "JoinRoomButton.png", D(807f, 392f), new Vector2(360f, 112f), () => owner.RequestJoinRoom(joinInput != null ? joinInput.text : string.Empty));
-            roomCodeLabel = AddText("Room Code Value", D(702f, 620f), new Vector2(310f, 66f), 34f, TextAlignmentOptions.Center, Color.black);
-            AddButton("Copy", "CopyIcon.png", D(808f, 620f), new Vector2(92f, 92f), owner.RequestCopyRoomCode, 1.08f);
-            playerLabels[0] = AddText("Host Player", D(1310f, 303f), new Vector2(300f, 44f), 25f, TextAlignmentOptions.MidlineLeft, Color.black);
-            playerLabels[1] = AddText("Guest Player", D(1310f, 416f), new Vector2(300f, 44f), 25f, TextAlignmentOptions.MidlineLeft, Color.black);
-            recentLabels[0] = AddText("Recent Match 0", D(1320f, 554f), new Vector2(335f, 42f), 22f, TextAlignmentOptions.Center, Color.black);
-            recentLabels[1] = AddText("Recent Match 1", D(1320f, 636f), new Vector2(335f, 42f), 22f, TextAlignmentOptions.Center, Color.black);
-            recentLabels[2] = AddText("Recent Match 2", D(1320f, 716f), new Vector2(335f, 42f), 22f, TextAlignmentOptions.Center, Color.black);
-            statusLabel = AddText("Lobby Status", D(836f, 777f), new Vector2(1120f, 46f), 25f, TextAlignmentOptions.Center, new Color(0.1f, 0.08f, 0.06f, 0.9f));
-            serverLabel = AddText("Server Health", D(1452f, 93f), new Vector2(200f, 46f), 28f, TextAlignmentOptions.Center, Color.black);
+            AddButton("Create Room", "CreateRoomButton.png", D(383f, 338f), new Vector2(302f, 120f), owner.RequestCreateRoom);
+            joinInput = AddInput("Join Code Input", D(800f, 306f), new Vector2(320f, 54f));
+            AddButton("Join Room", "JoinRoomButton.png", D(800f, 393f), new Vector2(330f, 86f), () => owner.RequestJoinRoom(joinInput != null ? joinInput.text : string.Empty));
+            roomCodeLabel = AddText("Room Code Value", D(663f, 636f), new Vector2(210f, 56f), 34f, TextAlignmentOptions.Center, Color.black);
+            AddButton("Copy", "CopyIcon.png", D(798f, 631f), new Vector2(40f, 48f), owner.RequestCopyRoomCode, 1.08f);
+            playerLabels[0] = AddText("Host Player", D(1295f, 303f), new Vector2(292f, 52f), 25f, TextAlignmentOptions.MidlineLeft, Color.black);
+            playerLabels[1] = AddText("Guest Player", D(1295f, 392f), new Vector2(292f, 52f), 25f, TextAlignmentOptions.MidlineLeft, Color.black);
+            recentLabels[0] = AddText("Recent Match 0", D(1302f, 553f), new Vector2(267f, 42f), 22f, TextAlignmentOptions.Center, Color.black);
+            recentLabels[1] = AddText("Recent Match 1", D(1302f, 624f), new Vector2(267f, 42f), 22f, TextAlignmentOptions.Center, Color.black);
+            recentLabels[2] = AddText("Recent Match 2", D(1302f, 693f), new Vector2(267f, 42f), 22f, TextAlignmentOptions.Center, Color.black);
+            statusLabel = AddText("Lobby Status", D(819f, 774f), new Vector2(1050f, 42f), 25f, TextAlignmentOptions.Center, new Color(0.1f, 0.08f, 0.06f, 0.9f));
+            serverLabel = AddText("Server Health", D(1384f, 119f), new Vector2(158f, 34f), 28f, TextAlignmentOptions.Center, Color.black);
 
-            AddButton("Ready", "ReadyButton.png", D(180f, 866f), new Vector2(270f, 108f), owner.RequestReady);
-            AddButton("Start Game", "StartGameButton.png", D(486f, 866f), new Vector2(330f, 108f), owner.RequestStartGame);
-            AddButton("Refresh", "RefreshButton.png", D(815f, 866f), new Vector2(270f, 108f), owner.RequestRefreshLobby);
-            AddButton("Leave Room", "LeaveRoomButton.png", D(1142f, 866f), new Vector2(330f, 108f), owner.RequestLeaveToModeSelection);
-            AddButton("Back", "BackButton.png", D(1452f, 866f), new Vector2(270f, 108f), owner.RequestBackToMultiplayerChoice);
+            AddButton("Ready", "ReadyButton.png", D(179f, 873f), new Vector2(240f, 92f), owner.RequestReady);
+            AddButton("Start Game", "StartGameButton.png", D(488f, 873f), new Vector2(320f, 94f), owner.RequestStartGame);
+            AddButton("Refresh", "RefreshButton.png", D(825f, 873f), new Vector2(294f, 94f), owner.RequestRefreshLobby);
+            AddButton("Leave Room", "LeaveRoomButton.png", D(1152f, 873f), new Vector2(303f, 94f), owner.RequestLeaveToModeSelection);
+            AddButton("Back", "BackButton.png", D(1458f, 873f), new Vector2(247f, 94f), owner.RequestBackToMultiplayerChoice);
         }
 
         private Button AddButton(string name, string spriteName, Vector2 position, Vector2 size, Action action, float hoverScale = 1.035f)
@@ -2071,7 +2074,7 @@ public class ChessLanController : MonoBehaviour
                     return cached;
 
                 string fullPath = Path.Combine(Directory.GetCurrentDirectory(), folder, names[i]);
-                if (CoreArtworkCache.GetSprite(key) is Sprite prepared)
+                if (CoreArtworkCache.GetSprite(key, ShouldTrimSprite(names[i])) is Sprite prepared)
                     return prepared;
                 if (!File.Exists(fullPath))
                     continue;
@@ -2087,7 +2090,7 @@ public class ChessLanController : MonoBehaviour
                 texture.name = Path.GetFileNameWithoutExtension(names[i]);
                 texture.filterMode = FilterMode.Bilinear;
                 Rect spriteRect = ShouldTrimSprite(names[i])
-                    ? GetAlphaBounds(texture, 8)
+                    ? MenuArtworkBounds.GetRect(key, texture)
                     : new Rect(0f, 0f, texture.width, texture.height);
                 Sprite sprite = Sprite.Create(texture, spriteRect, new Vector2(0.5f, 0.5f), 100f);
                 sprite.name = texture.name;
@@ -2105,43 +2108,6 @@ public class ChessLanController : MonoBehaviour
         {
             return !spriteName.EndsWith("Blank.png", StringComparison.OrdinalIgnoreCase) &&
                    !spriteName.EndsWith("Design.png", StringComparison.OrdinalIgnoreCase);
-        }
-
-        private static Rect GetAlphaBounds(Texture2D texture, int padding)
-        {
-            Color32[] pixels = texture.GetPixels32();
-            int minX = texture.width;
-            int minY = texture.height;
-            int maxX = -1;
-            int maxY = -1;
-
-            for (int y = 0; y < texture.height; y++)
-            {
-                int row = y * texture.width;
-                for (int x = 0; x < texture.width; x++)
-                {
-                    if (pixels[row + x].a <= 8)
-                        continue;
-
-                    if (x < minX)
-                        minX = x;
-                    if (y < minY)
-                        minY = y;
-                    if (x > maxX)
-                        maxX = x;
-                    if (y > maxY)
-                        maxY = y;
-                }
-            }
-
-            if (maxX < minX || maxY < minY)
-                return new Rect(0f, 0f, texture.width, texture.height);
-
-            minX = Mathf.Max(0, minX - padding);
-            minY = Mathf.Max(0, minY - padding);
-            maxX = Mathf.Min(texture.width - 1, maxX + padding);
-            maxY = Mathf.Min(texture.height - 1, maxY + padding);
-            return new Rect(minX, minY, maxX - minX + 1, maxY - minY + 1);
         }
 
         private static Vector2 D(float x, float y)
