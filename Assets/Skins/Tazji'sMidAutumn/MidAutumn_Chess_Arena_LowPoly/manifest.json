@@ -1,0 +1,37 @@
+{
+  "name": "MidAutumn Chess Arena",
+  "style": "Vietnamese Mid-Autumn low-poly festival",
+  "original_prompt": "Tạo thêm 1 Bàn cờ phong cách lễ hội trung thu, yêu cầu kích cỡ các ô trên bàn cờ và 6 ô ở cạnh bên phải được đồng nhất với các bàn cờ đã làm. Bạn có thể trang trí, mở rộng bối cảnh xung quanh tùy thích.",
+  "provenance": "User-owned original Chess_Arena protected core plus new procedural decorations",
+  "source_reference_sha256": "90d6823e9fa804386445cb73889e5e1bf9301241f3329fa9117e33af2cfeb3f1",
+  "files": {
+    "MidAutumn_Chess_Arena_Source.blend": {
+      "bytes": 1082004,
+      "sha256": "62d0f27c02b083aefe075e591a5f752433c2f0293b762ed95d1b61ca19401e1d"
+    },
+    "MidAutumn_Chess_Arena.fbx": {
+      "bytes": 1153068,
+      "sha256": "e9931cdc619a18683dcc1966baf807c999ca5b22f83374e2c7dec8e2ce4fc970"
+    },
+    "MidAutumn_Chess_Arena_Preview.png": {
+      "bytes": 3572706,
+      "sha256": "616ae5adb7107d9bb4d7974882e06da243c670d7d1815d120ddba5032d09a568"
+    },
+    "MidAutumn_Chess_Arena_Top.png": {
+      "bytes": 2490573,
+      "sha256": "7eb7e9488c174c98e652539bf4f54cb2417a009113f0c597dfb81afe66911967"
+    },
+    "README.md": {
+      "bytes": 3289,
+      "sha256": "c437c75b38697307e171d7a35798892a83f39151688ac4063a3ca419a50b962b"
+    },
+    "layout.json": {
+      "bytes": 9319,
+      "sha256": "9402440e1f3b4b0c8a4caa90de174f6c3d03def352b42d47986ea45e43ca6170"
+    },
+    "validation.json": {
+      "bytes": 5148,
+      "sha256": "009a96f23a918d622c6df3c30b3fadbf3f604ae64cc545a0c61ccf60afbad3f7"
+    }
+  }
+}

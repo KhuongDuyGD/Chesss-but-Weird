@@ -1,0 +1,265 @@
+{
+  "source": "D:/Stuurdy/Blender/Chess_Arena/Chess_Arena_Source.blend",
+  "board": {
+    "cells": [
+      8,
+      8
+    ],
+    "cell_size": [
+      1,
+      1
+    ],
+    "playable_bounds": [
+      [
+        -4,
+        -4,
+        0
+      ],
+      [
+        4,
+        4,
+        0
+      ]
+    ],
+    "outer_size": [
+      8.68,
+      8.68
+    ]
+  },
+  "right_slots": {
+    "count": 6,
+    "outer_size": [
+      0.7,
+      0.9
+    ],
+    "inner_size": [
+      0.59,
+      0.79
+    ],
+    "x": 4.93,
+    "y": [
+      -3.15,
+      -1.89,
+      -0.63,
+      0.63,
+      1.89,
+      3.15
+    ],
+    "pitch": 1.26
+  },
+  "meshes": [
+    {
+      "name": "Chess_Board",
+      "triangles": 718,
+      "nonmanifold_edges": 0,
+      "degenerate_faces": 0,
+      "modifiers": 0,
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "max_vertex_error": 0.0,
+      "faces_match": true
+    },
+    {
+      "name": "Arena_Walkable_Floor",
+      "triangles": 256,
+      "nonmanifold_edges": 0,
+      "degenerate_faces": 0,
+      "modifiers": 0,
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "max_vertex_error": 0.0,
+      "faces_match": true
+    },
+    {
+      "name": "Arena_Floor_Inlays",
+      "triangles": 2200,
+      "nonmanifold_edges": 0,
+      "degenerate_faces": 0,
+      "modifiers": 0,
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "max_vertex_error": 0.0,
+      "faces_match": true
+    },
+    {
+      "name": "Arena_Floating_Island",
+      "triangles": 420,
+      "nonmanifold_edges": 0,
+      "degenerate_faces": 0,
+      "modifiers": 0,
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "max_vertex_error": 0.0,
+      "faces_match": true
+    },
+    {
+      "name": "MA_Arena_Architecture",
+      "triangles": 1764,
+      "nonmanifold_edges": 0,
+      "degenerate_faces": 0,
+      "modifiers": 0,
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    {
+      "name": "MA_Moon_Gate",
+      "triangles": 6556,
+      "nonmanifold_edges": 0,
+      "degenerate_faces": 0,
+      "modifiers": 0,
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    {
+      "name": "MA_Festival_Plaque",
+      "triangles": 3544,
+      "nonmanifold_edges": 0,
+      "degenerate_faces": 0,
+      "modifiers": 0,
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    {
+      "name": "MA_Festival_Lanterns",
+      "triangles": 16184,
+      "nonmanifold_edges": 0,
+      "degenerate_faces": 0,
+      "modifiers": 0,
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    {
+      "name": "MA_Mooncake_Market",
+      "triangles": 7304,
+      "nonmanifold_edges": 0,
+      "degenerate_faces": 0,
+      "modifiers": 0,
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    {
+      "name": "MA_Banyan_Tree",
+      "triangles": 380,
+      "nonmanifold_edges": 0,
+      "degenerate_faces": 0,
+      "modifiers": 0,
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    {
+      "name": "MA_Festival_Gardens",
+      "triangles": 4216,
+      "nonmanifold_edges": 0,
+      "degenerate_faces": 0,
+      "modifiers": 0,
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    {
+      "name": "MA_Front_Banners",
+      "triangles": 856,
+      "nonmanifold_edges": 0,
+      "degenerate_faces": 0,
+      "modifiers": 0,
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    {
+      "name": "MA_Rear_Lantern_Supports",
+      "triangles": 288,
+      "nonmanifold_edges": 0,
+      "degenerate_faces": 0,
+      "modifiers": 0,
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ]
+    }
+  ],
+  "total_triangles": 44686,
+  "raw_fbx_geometry": {
+    "Arena_Floating_Island": {
+      "vertex_count_match": true,
+      "max_vertex_error": 0.0,
+      "faces_exact": true
+    },
+    "Arena_Floor_Inlays": {
+      "vertex_count_match": true,
+      "max_vertex_error": 0.0,
+      "faces_exact": true
+    },
+    "Arena_Walkable_Floor": {
+      "vertex_count_match": true,
+      "max_vertex_error": 0.0,
+      "faces_exact": true
+    },
+    "Chess_Board": {
+      "vertex_count_match": true,
+      "max_vertex_error": 0.0,
+      "faces_exact": true
+    }
+  },
+  "fbx_units_axes_match_original": true,
+  "fbx_settings": {
+    "UpAxis": 1,
+    "UpAxisSign": 1,
+    "FrontAxis": 2,
+    "FrontAxisSign": 1,
+    "CoordAxis": 0,
+    "CoordAxisSign": 1,
+    "OriginalUpAxis": -1,
+    "OriginalUpAxisSign": 1,
+    "UnitScaleFactor": 100.0,
+    "OriginalUnitScaleFactor": 100.0
+  },
+  "matches_halloween_reference": true,
+  "decoration_overlap_hits": 0,
+  "roundtrip": {
+    "mesh_count": 13,
+    "triangles": 44686,
+    "materials_present": true,
+    "result": "PASS"
+  },
+  "visual_review": {
+    "hero": "PASS",
+    "orthographic_top": "PASS",
+    "board_and_all_six_right_slots_visible": true
+  }
+}
