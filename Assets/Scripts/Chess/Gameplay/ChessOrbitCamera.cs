@@ -19,7 +19,11 @@ public sealed class ChessOrbitCamera : MonoBehaviour
     [SerializeField] private float pivotSafeHeight = 0.9f;
     [SerializeField] private bool allowPieceLock = true;
     [SerializeField] private float gameplayDistance = 6.25f;
-    [SerializeField] private float gameplayPitch = 42f;
+    [SerializeField] private float gameplayPitch = 45f;
+    [SerializeField] private float gameplayYaw = 0f;
+
+    [Header("Pan")]
+    [SerializeField] private float panSensitivity = 0.0025f;
 
     private ChessGame chessGame;
     private Chessboard chessboard;
@@ -77,6 +81,7 @@ public sealed class ChessOrbitCamera : MonoBehaviour
             ReleaseLock();
 
         HandleOrbitInput();
+        HandlePanInput();
         HandleZoomInput();
 
         boardCenter = ResolveBoardCenter();
@@ -156,7 +161,7 @@ public sealed class ChessOrbitCamera : MonoBehaviour
     {
         ReleaseLock(false);
         hasFreePivot = false;
-        targetYaw = playerTeam == PieceTeam.Black ? baseYaw + 180f : baseYaw;
+        targetYaw = gameplayYaw;
         targetPitch = Mathf.Clamp(gameplayPitch, minPitch, maxPitch);
         targetDistance = Mathf.Clamp(gameplayDistance, minDistance, maxDistance);
 
@@ -234,6 +239,33 @@ public sealed class ChessOrbitCamera : MonoBehaviour
         Vector2 delta = mouse.delta.ReadValue();
         targetYaw += delta.x * rotationSpeed;
         targetPitch = Mathf.Clamp(targetPitch - delta.y * rotationSpeed, minPitch, maxPitch);
+    }
+
+    private void HandlePanInput()
+    {
+        Mouse mouse = Mouse.current;
+        if (mouse == null || !mouse.middleButton.isPressed)
+            return;
+
+        Vector2 delta = mouse.delta.ReadValue();
+        if (delta.sqrMagnitude < 0.0001f)
+            return;
+
+        // Pan theo mat phang ban co, giong thao tac nam-va-keo camera trong game chien thuat.
+        // Khoang cach camera duoc tinh vao sensitivity de toc do keo van tu nhien khi zoom.
+        if (lockedTarget != null)
+            ReleaseLock(false);
+
+        if (!hasFreePivot)
+        {
+            freePivot = currentPivot;
+            hasFreePivot = true;
+        }
+
+        Vector3 screenRight = Vector3.ProjectOnPlane(transform.right, Vector3.up).normalized;
+        Vector3 screenUp = Vector3.ProjectOnPlane(transform.up, Vector3.up).normalized;
+        float scaledSensitivity = panSensitivity * Mathf.Max(1f, currentDistance);
+        freePivot -= (screenRight * delta.x + screenUp * delta.y) * scaledSensitivity;
     }
 
     private void HandleZoomInput()

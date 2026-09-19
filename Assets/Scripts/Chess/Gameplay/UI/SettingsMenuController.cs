@@ -13,8 +13,9 @@ public sealed class SettingsMenuController : MonoBehaviour
     private const float DesignHeight = 941f;
     private const float MenuViewportScale = 0.88f;
     private static readonly Vector2 DesignSize = new Vector2(DesignWidth, DesignHeight);
-    private static readonly int[] FpsOptions = { 30, 60, 90, 120, 144, 165, 240 };
-    private static readonly string[] GraphicOptions = { "Low", "Medium", "High" };
+    private static readonly int[] FpsOptions = { 0, 30, 60, 90, 120, 144, 165, 240 };
+    private static readonly string[] GraphicOptions = { "Auto (Recommended)", "Low", "Medium", "High" };
+    private static readonly string[] AntiAliasingOptions = { "Auto", "Off", "FXAA", "SMAA", "MSAA 2x", "MSAA 4x" };
     private static readonly Color Ink = new Color(0.15f, 0.20f, 0.22f);
     private static readonly Color MutedInk = new Color(0.36f, 0.42f, 0.43f);
     private static readonly Color Paper = new Color(1f, 0.985f, 0.94f);
@@ -30,6 +31,7 @@ public sealed class SettingsMenuController : MonoBehaviour
     private SettingNumberControl soundControl;
     private SettingDropdownControl graphicDropdown;
     private SettingDropdownControl fpsDropdown;
+    private SettingDropdownControl antiAliasingDropdown;
     private TextMeshProUGUI statusLabel;
     private int graphicPreset;
     private int fpsValue;
@@ -47,7 +49,7 @@ public sealed class SettingsMenuController : MonoBehaviour
         HideDropdown();
         GameRuntimeSettings.ApplySaved();
         RefreshFromSettings();
-        SetStatus("All changes are saved automatically.");
+        SetStatus("Detected: " + GameRuntimeSettings.RecommendedSettingsLabel);
     }
 
     private void Build()
@@ -112,22 +114,23 @@ public sealed class SettingsMenuController : MonoBehaviour
         AddText(panel, "Settings Subtitle", new Vector2(-220f, 231f), new Vector2(870f, 40f), 27f, TextAlignmentOptions.MidlineLeft, MutedInk).text = "A little tuning before your next move.";
         AddButton(panel, "Close Settings", new Vector2(656f, 336f), new Vector2(58f, 58f), Close, "X", Paper, 26f);
 
-        RectTransform audio = BuildSection(panel, "Audio", "Set the mood for your match.", new Vector2(-342f, -19f), new Color(0.91f, 0.95f, 0.95f), Blue);
-        RectTransform display = BuildSection(panel, "Display", "Find your balance of detail and speed.", new Vector2(342f, -19f), new Color(0.94f, 0.95f, 0.88f), new Color(0.43f, 0.56f, 0.35f));
-        musicControl = AddNumberControl(audio, "Music", new Vector2(0f, 14f), 0, 100, OnMusicChanged);
-        soundControl = AddNumberControl(audio, "Sound effects", new Vector2(0f, -125f), 0, 100, OnSoundChanged);
-        graphicDropdown = AddDropdownControl(display, "Graphics quality", new Vector2(0f, 14f), GraphicOptions, OnGraphicDropdownChanged);
-        fpsDropdown = AddDropdownControl(display, "Frame rate limit", new Vector2(0f, -125f), GetFpsLabels(), OnFpsDropdownChanged);
+        RectTransform audio = BuildSection(panel, "Audio", "Set the mood for your match.", new Vector2(-342f, -34f), new Color(0.91f, 0.95f, 0.95f), Blue);
+        RectTransform display = BuildSection(panel, "Display", "Auto-tuned for this device, with manual overrides.", new Vector2(342f, -34f), new Color(0.94f, 0.95f, 0.88f), new Color(0.43f, 0.56f, 0.35f));
+        musicControl = AddNumberControl(audio, "Music", new Vector2(0f, 25f), 0, 100, OnMusicChanged);
+        soundControl = AddNumberControl(audio, "Sound effects", new Vector2(0f, -115f), 0, 100, OnSoundChanged);
+        graphicDropdown = AddDropdownControl(display, "Graphics quality", new Vector2(0f, 57f), GraphicOptions, OnGraphicDropdownChanged);
+        fpsDropdown = AddDropdownControl(display, "Frame rate limit", new Vector2(0f, -65f), GetFpsLabels(), OnFpsDropdownChanged);
+        antiAliasingDropdown = AddDropdownControl(display, "Anti-aliasing", new Vector2(0f, -187f), AntiAliasingOptions, OnAntiAliasingDropdownChanged);
 
-        AddFrameEdge(panel, "Footer Divider", new Vector2(0f, -270f), new Vector2(1310f, 2f), new Color(0.15f, 0.20f, 0.22f, 0.15f));
-        statusLabel = AddText(panel, "Settings Status", new Vector2(-315f, -330f), new Vector2(680f, 48f), 24f, TextAlignmentOptions.MidlineLeft, MutedInk);
-        AddButton(panel, "Reset Settings", new Vector2(238f, -336f), new Vector2(240f, 72f), ResetDefaults, "Reset defaults", Paper, 27f);
-        AddButton(panel, "Done Settings", new Vector2(537f, -336f), new Vector2(240f, 72f), Close, "Done", Sage, 32f);
+        AddFrameEdge(panel, "Footer Divider", new Vector2(0f, -304f), new Vector2(1310f, 2f), new Color(0.15f, 0.20f, 0.22f, 0.15f));
+        statusLabel = AddText(panel, "Settings Status", new Vector2(-315f, -356f), new Vector2(680f, 48f), 22f, TextAlignmentOptions.MidlineLeft, MutedInk);
+        AddButton(panel, "Reset Settings", new Vector2(238f, -356f), new Vector2(240f, 72f), ResetDefaults, "Auto-detect", Paper, 27f);
+        AddButton(panel, "Done Settings", new Vector2(537f, -356f), new Vector2(240f, 72f), Close, "Done", Sage, 32f);
     }
 
     private RectTransform BuildSection(RectTransform parent, string title, string subtitle, Vector2 position, Color color, Color accent)
     {
-        Image card = AddImage(parent, title + " Card", null, position, new Vector2(636f, 430f));
+        Image card = AddImage(parent, title + " Card", null, position, new Vector2(636f, 500f));
         card.color = color;
         AddSolidFrame(card.rectTransform, title + " Card Frame", card.rectTransform.sizeDelta, 2f, new Color(Ink.r, Ink.g, Ink.b, 0.28f));
         AddFrameEdge(card.rectTransform, title + " Accent", new Vector2(-314f, 152f), new Vector2(6f, 58f), accent);
@@ -259,10 +262,11 @@ public sealed class SettingsMenuController : MonoBehaviour
     {
         musicControl.SetValue(GameRuntimeSettings.MusicVolumePercent, false);
         soundControl.SetValue(GameRuntimeSettings.SoundVolumePercent, false);
-        graphicPreset = QualityToPreset(GameRuntimeSettings.QualityIndex);
+        graphicPreset = GameRuntimeSettings.AutomaticGraphics ? 0 : GameRuntimeSettings.GraphicsPreset + 1;
         graphicDropdown.SetSelectedIndex(graphicPreset, false);
-        fpsValue = ClosestFps(GameRuntimeSettings.TargetFps);
+        fpsValue = GameRuntimeSettings.AutomaticFrameRate ? 0 : ClosestFps(GameRuntimeSettings.TargetFps);
         fpsDropdown.SetSelectedIndex(FpsIndex(fpsValue), false);
+        antiAliasingDropdown.SetSelectedIndex((int)GameRuntimeSettings.AntiAliasing, false);
     }
 
     private void OnMusicChanged(int value)
@@ -280,18 +284,38 @@ public sealed class SettingsMenuController : MonoBehaviour
     private void OnGraphicDropdownChanged(int index)
     {
         graphicPreset = Mathf.Clamp(index, 0, GraphicOptions.Length - 1);
-        GameRuntimeSettings.QualityIndex = PresetToQuality(graphicPreset);
+        if (graphicPreset == 0)
+            GameRuntimeSettings.UseAutomaticGraphics();
+        else
+            GameRuntimeSettings.SetGraphicsPreset(graphicPreset - 1);
         graphicDropdown.SetSelectedIndex(graphicPreset, false);
-        SetStatus($"Saved: {GraphicOptions[graphicPreset].ToLowerInvariant()} graphics quality");
+        SetStatus(graphicPreset == 0
+            ? "Auto graphics: " + GameRuntimeSettings.RecommendedSettingsLabel
+            : $"Saved: {GraphicOptions[graphicPreset].ToLowerInvariant()} graphics quality");
     }
 
     private void OnFpsDropdownChanged(int index)
     {
         int clamped = Mathf.Clamp(index, 0, FpsOptions.Length - 1);
         fpsValue = FpsOptions[clamped];
-        GameRuntimeSettings.TargetFps = fpsValue;
+        if (fpsValue == 0)
+            GameRuntimeSettings.UseAutomaticFrameRate();
+        else
+            GameRuntimeSettings.SetTargetFps(fpsValue);
         fpsDropdown.SetSelectedIndex(clamped, false);
-        SetStatus($"Saved: frame rate limit {fpsValue} FPS");
+        SetStatus(fpsValue == 0
+            ? $"Auto frame rate: {GameRuntimeSettings.RecommendedTargetFps} FPS for this device"
+            : $"Saved: frame rate limit {fpsValue} FPS");
+    }
+
+    private void OnAntiAliasingDropdownChanged(int index)
+    {
+        GameAntiAliasingMode mode = (GameAntiAliasingMode)Mathf.Clamp(index, 0, AntiAliasingOptions.Length - 1);
+        GameRuntimeSettings.AntiAliasing = mode;
+        antiAliasingDropdown.SetSelectedIndex((int)mode, false);
+        SetStatus(mode == GameAntiAliasingMode.Auto
+            ? $"Auto anti-aliasing: {GameRuntimeSettings.AntiAliasingLabel(GameRuntimeSettings.AppliedAntiAliasing)}"
+            : $"Saved: anti-aliasing {GameRuntimeSettings.AntiAliasingLabel(mode)}");
     }
 
     private void ResetDefaults()
@@ -300,7 +324,7 @@ public sealed class SettingsMenuController : MonoBehaviour
         GameRuntimeSettings.SoundVolumePercent = 100;
         GameRuntimeSettings.ResetPerformanceToRecommended();
         RefreshFromSettings();
-        SetStatus("Reset to recommended defaults.");
+        SetStatus("Auto-detected: " + GameRuntimeSettings.RecommendedSettingsLabel);
     }
 
     private void Close()
@@ -538,7 +562,9 @@ public sealed class SettingsMenuController : MonoBehaviour
     {
         string[] labels = new string[FpsOptions.Length];
         for (int i = 0; i < FpsOptions.Length; i++)
-            labels[i] = FpsOptions[i].ToString(CultureInfo.InvariantCulture) + " FPS";
+            labels[i] = FpsOptions[i] == 0
+                ? "Auto"
+                : FpsOptions[i].ToString(CultureInfo.InvariantCulture) + " FPS";
         return labels;
     }
 
@@ -563,29 +589,6 @@ public sealed class SettingsMenuController : MonoBehaviour
             if (FpsOptions[i] == fps)
                 return i;
         return 1;
-    }
-
-    private static int QualityToPreset(int qualityIndex)
-    {
-        int max = Mathf.Max(0, QualitySettings.names.Length - 1);
-        if (max <= 1)
-            return qualityIndex <= 0 ? 0 : 2;
-        float normalized = Mathf.Clamp01(qualityIndex / (float)max);
-        if (normalized < 0.34f)
-            return 0;
-        if (normalized < 0.67f)
-            return 1;
-        return 2;
-    }
-
-    private static int PresetToQuality(int preset)
-    {
-        int max = Mathf.Max(0, QualitySettings.names.Length - 1);
-        if (preset <= 0)
-            return 0;
-        if (preset == 1)
-            return Mathf.RoundToInt(max * 0.5f);
-        return max;
     }
 
     private void OnDestroy()
