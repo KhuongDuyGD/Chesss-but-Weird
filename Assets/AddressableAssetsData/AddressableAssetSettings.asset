@@ -68,10 +68,12 @@ MonoBehaviour:
   m_overridePlayerVersion: '[UnityEditor.PlayerSettings.bundleVersion]'
   m_GroupAssets:
   - {fileID: 11400000, guid: 2c11e217c92a2b24b84a5e356dd6fbfd, type: 2}
+  - {fileID: 11400000, guid: 71411954f47328e4291ae60d2a906304, type: 2}
   - {fileID: 11400000, guid: 8eee9b17ddcdfa647b2058d91773a08d, type: 2}
   - {fileID: 11400000, guid: e512e4ecc573241458a7053bf8177bcf, type: 2}
   - {fileID: 11400000, guid: 0260127f24f127b4a968e92c7f5bc701, type: 2}
   - {fileID: 11400000, guid: 8f6cbd5aefd9c3b4e8d67f40001a4f82, type: 2}
+  - {fileID: 11400000, guid: 2464437c2e2f07a48b8bcefe8857b1b8, type: 2}
   - {fileID: 11400000, guid: 9a87c10f8af06dd49bf97089b1815713, type: 2}
   - {fileID: 11400000, guid: 6e7337ead0142d141b5bfe2afce0d953, type: 2}
   - {fileID: 11400000, guid: 9b3e3c4f986f02d499106a2488df991d, type: 2}
@@ -117,7 +119,6 @@ MonoBehaviour:
     m_LabelNames:
     - default
     - CoreUI
-    - AuthUI
   m_SchemaTemplates: []
   m_GroupTemplateObjects:
   - {fileID: 11400000, guid: ca51646cecd64214fbe916af9fd6e200, type: 2}

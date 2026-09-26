@@ -6,8 +6,9 @@ public static class PlayerAuthService
     private const string GuestProfileKey = "guest.profile";
 
     public static PlayerProfile CurrentProfile { get; private set; }
+    public static UserMeResponse CurrentApiUser { get; private set; }
     public static bool IsGuestSession { get; private set; }
-    public static bool IsAuthenticated => !IsGuestSession && CurrentProfile != null && BackendSessionStore.HasToken && !BackendSessionStore.IsTokenExpired;
+    public static bool IsAuthenticated => !IsGuestSession && CurrentProfile != null && (AuthStorage.HasSession() || (BackendSessionStore.HasToken && !BackendSessionStore.IsTokenExpired));
     public static string CurrentDisplayName => CurrentProfile != null ? CurrentProfile.displayName : Environment.MachineName;
     public static string Token => BackendSessionStore.Token;
     public static string UserId => CurrentProfile != null ? CurrentProfile.playerId : string.Empty;
@@ -15,6 +16,7 @@ public static class PlayerAuthService
 
     public static bool TryRestoreSession()
     {
+        if (AuthStorage.HasSession()) return false; // Restore through /users/me.
         if (!BackendSessionStore.HasToken || BackendSessionStore.IsTokenExpired)
         {
             BackendSessionStore.Clear();
@@ -86,25 +88,23 @@ public static class PlayerAuthService
     {
         ClearGuestSessionInternal(false);
         CurrentProfile = null;
+        CurrentApiUser = null;
         IsGuestSession = false;
         BackendSessionStore.Clear();
+        AuthStorage.Clear();
     }
 
     public static void BeginGuestSession()
     {
+        CurrentApiUser = null;
         BackendSessionStore.Clear();
+        AuthStorage.Clear();
         IsGuestSession = true;
         CurrentProfile = LoadGuestProfile();
         CurrentProfile.lastLoginAtUtc = DateTime.UtcNow.ToString("O");
         PlayerProfileStore.Reload();
         SaveGuestProfile();
         Debug.Log($"[PlayerAuthService] Guest session started for '{CurrentDisplayName}'.");
-    }
-
-    public static string GetLastUsername()
-    {
-        BackendUserProfileDto storedUser = BackendSessionStore.GetStoredUser();
-        return storedUser != null ? storedUser.username ?? string.Empty : string.Empty;
     }
 
     public static void RecordGameResult(
@@ -128,7 +128,35 @@ public static class PlayerAuthService
             SaveGuestProfile();
     }
 
-    public static bool CanUseOnlineFeatures => IsAuthenticated && !IsGuestSession;
+    public static void ApplyApiUser(UserMeResponse user)
+    {
+        if (user == null || string.IsNullOrWhiteSpace(user.userId))
+            throw new ApiException("The account profile is incomplete.");
+
+        ClearGuestSessionInternal(false);
+        BackendSessionStore.Clear();
+        IsGuestSession = false;
+        CurrentApiUser = user;
+        CurrentProfile = new PlayerProfile
+        {
+            playerId = user.userId,
+            username = user.username ?? string.Empty,
+            displayName = string.IsNullOrWhiteSpace(user.profile?.displayName) ? user.username : user.profile.displayName,
+            createdAtUtc = user.createdAt ?? string.Empty,
+            lastLoginAtUtc = DateTime.UtcNow.ToString("O"),
+            rating = user.stats?.elo ?? 0,
+            wins = user.stats?.wins ?? 0,
+            losses = user.stats?.losses ?? 0,
+            draws = user.stats?.draws ?? 0,
+            totalGames = user.stats?.gamesPlayed ?? 0,
+            gold = user.wallet?.golds ?? 0,
+            diamonds = user.wallet?.diamonds ?? 0,
+            tickets = user.wallet?.tickets ?? 0
+        };
+        PlayerProfileStore.Reload();
+        PlayerProfileStore.ApplyServerSnapshot(user);
+    }
+    public static bool CanUseOnlineFeatures => IsAuthenticated && !IsGuestSession && BackendSessionStore.HasToken && !BackendSessionStore.IsTokenExpired;
 
     private static void ApplyUser(BackendUserProfileDto user)
     {

@@ -1,0 +1,63 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
+  m_Name: PieceSkin_TazjiLowPoly
+  m_EditorClassIdentifier: Unity.Addressables.Editor::UnityEditor.AddressableAssets.Settings.AddressableAssetGroup
+  m_GroupName: PieceSkin_TazjiLowPoly
+  m_GUID: a18818b815ac1dc418089b91a2510398
+  m_SerializeEntries:
+  - m_GUID: 020eb3b37c3d396409e57486fce5029b
+    m_Address: PieceSkin/tazji_lowpoly
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 296887f8654a18440922d34298d3791e
+    m_Address: Pieces/TazjiLowPoly/King
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 4ee19bf4dba98234681fbd56a1029f84
+    m_Address: Pieces/TazjiLowPoly/Rook
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7633f589212b3d742b0eb1eba6996200
+    m_Address: Pieces/TazjiLowPoly/Knight
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 82a3c4599ed280d4ebee9d72c430fe70
+    m_Address: Pieces/TazjiLowPoly/Bishop
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 88aaa0db6b479a24b91fe55ae1acf3f7
+    m_Address: Pieces/TazjiLowPoly/Queen
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: de9fefa7246c35746ae6281cd71973c4
+    m_Address: Pieces/TazjiLowPoly/Pawn
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  m_ReadOnly: 0
+  m_Settings: {fileID: 11400000, guid: 8194c9a80f156474bbbfc1ccbf68345e, type: 2}
+  m_SchemaSet:
+    m_Schemas:
+    - {fileID: 11400000, guid: 81b85a4fc542dbf41b875084565f0616, type: 2}
+    - {fileID: 11400000, guid: dae3d10d20dee8549b8f88bb63f3eba3, type: 2}
+    m_SchemaDisplayOrder:
+    - PieceSkin_TazjiLowPoly_BundledAssetGroupSchema
+    - PieceSkin_TazjiLowPoly_ContentUpdateGroupSchema
+  m_IncludeInBuild: 1
+  m_IncludeInBuildMigrated: 1

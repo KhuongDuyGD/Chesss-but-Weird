@@ -51,12 +51,6 @@ MonoBehaviour:
     m_SerializedLabels:
     - CoreUI
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 0919d8f8f5f0f0f4bb6008c6d2ee764f
-    m_Address: Assets/Materials/Main_Menu/SignUpMenu.png
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - CoreUI
-    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 0c4fc681d8f96014fbd624a19da0cb14
     m_Address: Assets/Materials/Main_Menu/ShopButton.png
     m_ReadOnly: 0
@@ -153,13 +147,6 @@ MonoBehaviour:
     m_SerializedLabels:
     - CoreUI
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 250beaf966251fd478b9583191f436f9
-    m_Address: Assets/Materials/Main_Menu/ConfirmSignUp.png
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - AuthUI
-    - CoreUI
-    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 2585ef8cb3115664588f293cacf60222
     m_Address: Assets/Materials/PlayerProfile/Avatar0.png
     m_ReadOnly: 0
@@ -222,12 +209,6 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 377cd7fd40ead4f4cb4a26aa21221d99
     m_Address: Assets/Materials/PlayerProfile/Avatar5.png
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - CoreUI
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 3d3fff219ed431c418110a1055aac6f1
-    m_Address: Assets/Materials/Main_Menu/SignUpNonHover.png
     m_ReadOnly: 0
     m_SerializedLabels:
     - CoreUI
@@ -304,12 +285,6 @@ MonoBehaviour:
     m_SerializedLabels:
     - CoreUI
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 4e75c4c73faab8b4a8d9863dd8e9e4be
-    m_Address: Assets/Materials/Main_Menu/SignUpHover.png
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - CoreUI
-    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 4f5407df7dcc26e4387ed986fdc00ab8
     m_Address: Assets/Materials/Result_Menu/NewGameWin.png
     m_ReadOnly: 0
@@ -346,13 +321,6 @@ MonoBehaviour:
     m_SerializedLabels:
     - CoreUI
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 593d2f5fdfa41d94c8b09298fe25b194
-    m_Address: Assets/Materials/Main_Menu/LoginMainMenu.png
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - AuthUI
-    - CoreUI
-    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 5b5012298cb788b44b1faeb0db0edfc8
     m_Address: Assets/Materials/Main_Menu/EasyButton.png
     m_ReadOnly: 0
@@ -373,12 +341,6 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 6035a14209823744ca5dd923b8c38189
     m_Address: Assets/Materials/Gacha_menu/SummonTicket.png
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - CoreUI
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 6485a3a7b301c7e488d5111bf7b57c5e
-    m_Address: Assets/Materials/Main_Menu/LoginHover.png
     m_ReadOnly: 0
     m_SerializedLabels:
     - CoreUI
@@ -417,13 +379,6 @@ MonoBehaviour:
     m_Address: Assets/Materials/Result_Menu/StalemateKing.png
     m_ReadOnly: 0
     m_SerializedLabels:
-    - CoreUI
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 712685fcfa6c1d34aae4d61ac959f7f2
-    m_Address: Assets/Materials/Main_Menu/ConfirmLogin.png
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - AuthUI
     - CoreUI
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 75e3c26b9dd081b40ad86d0fa7d9218a
@@ -684,13 +639,6 @@ MonoBehaviour:
     m_SerializedLabels:
     - CoreUI
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: ad4602588deee87429a370628e687a1c
-    m_Address: Assets/Materials/Main_Menu/PlayAsGuest.png
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - AuthUI
-    - CoreUI
-    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: ad7f9be9386143dda6d05285cb609745
     m_Address: Assets/Materials/Gacha_menu/GachaRevealGlyph1.png
     m_ReadOnly: 0
@@ -719,13 +667,6 @@ MonoBehaviour:
     m_Address: Assets/Materials/Gacha_menu/StandardGacha.png
     m_ReadOnly: 0
     m_SerializedLabels:
-    - CoreUI
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: b4cd0d29253d4944ebcb0e0685bdeceb
-    m_Address: Assets/Materials/Main_Menu/SignUpMainMenu.png
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - AuthUI
     - CoreUI
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: b4fa68976cb60844eadeaf5a0c14948e
@@ -878,12 +819,6 @@ MonoBehaviour:
     m_SerializedLabels:
     - CoreUI
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: eb9c96c2d68be2246a197da7e4eadd15
-    m_Address: Assets/Materials/Main_Menu/LoginMenu.png
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - CoreUI
-    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: ef40de6ea7ba6de46bdd89c5829b13eb
     m_Address: Assets/Materials/Main_Menu/SettingsButton.png
     m_ReadOnly: 0
@@ -916,12 +851,6 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: f8807accc2d1e514e9ca68517316408e
     m_Address: Assets/Materials/SettingsMenu/SettingsMenuBlank.png
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - CoreUI
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: fbec7d3ff15f84b4e8d5941c24335da4
-    m_Address: Assets/Materials/Main_Menu/LoginNonHover.png
     m_ReadOnly: 0
     m_SerializedLabels:
     - CoreUI

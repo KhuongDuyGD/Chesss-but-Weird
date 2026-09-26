@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
+  m_Name: Board_TazjiLowPoly
+  m_EditorClassIdentifier: Unity.Addressables.Editor::UnityEditor.AddressableAssets.Settings.AddressableAssetGroup
+  m_GroupName: Board_TazjiLowPoly
+  m_GUID: 389322c312affbc42940cd275b2ce391
+  m_SerializeEntries:
+  - m_GUID: a05a0c4b4edbf9f47a136dd34f7058c7
+    m_Address: Board/tazji_lowpoly
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a9e3e140b2ed92b47ac95fc374c03aa5
+    m_Address: Boards/TazjiLowPoly
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  m_ReadOnly: 0
+  m_Settings: {fileID: 11400000, guid: 8194c9a80f156474bbbfc1ccbf68345e, type: 2}
+  m_SchemaSet:
+    m_Schemas:
+    - {fileID: 11400000, guid: 72c895e4ea5dafe4792d22f5a61a27c4, type: 2}
+    - {fileID: 11400000, guid: 0215bda10364ec24c98ec3753b540c34, type: 2}
+    m_SchemaDisplayOrder:
+    - Board_TazjiLowPoly_BundledAssetGroupSchema
+    - Board_TazjiLowPoly_ContentUpdateGroupSchema
+  m_IncludeInBuild: 1
+  m_IncludeInBuildMigrated: 1

@@ -39,6 +39,14 @@ MonoBehaviour:
       m_SubObjectType: 
       m_SubObjectGUID: 
       m_EditorAssetChanged: 0
+  - id: tazji_lowpoly
+    displayName: Tazji's Low Poly Chess Set
+    data:
+      m_AssetGUID: 020eb3b37c3d396409e57486fce5029b
+      m_SubObjectName:
+      m_SubObjectType:
+      m_SubObjectGUID:
+      m_EditorAssetChanged: 0
   boards:
   - id: default
     displayName: Classic
@@ -47,5 +55,13 @@ MonoBehaviour:
       m_SubObjectName: 
       m_SubObjectType: 
       m_SubObjectGUID: 
+      m_EditorAssetChanged: 0
+  - id: tazji_lowpoly
+    displayName: Tazji's Low Poly Arena
+    data:
+      m_AssetGUID: a05a0c4b4edbf9f47a136dd34f7058c7
+      m_SubObjectName:
+      m_SubObjectType:
+      m_SubObjectGUID:
       m_EditorAssetChanged: 0
   environments: []

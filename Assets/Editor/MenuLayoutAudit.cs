@@ -87,7 +87,7 @@ public static class MenuLayoutAudit
         try
         {
             var auth = fixture.AddComponent<MainMenuAuthUI>();
-            auth.Initialize(assets, "Layout preview", "");
+            auth.Initialize(assets, "preview@example.com", "");
             CaptureSizes(fixture.GetComponent<Canvas>(), folder, "auth-login");
             auth.ShowSignUp();
             CaptureSizes(fixture.GetComponent<Canvas>(), folder, "auth-signup");

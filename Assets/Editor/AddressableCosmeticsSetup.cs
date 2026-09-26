@@ -56,6 +56,7 @@ public static class AddressableCosmeticsSetup
         SetupExistingSkin(catalog, "dc", "DC", "Assets/Skins/DC/Prefabs", "DC");
         SetupExistingSkin(catalog, "corn", "Corn", "Assets/Skins/Corn/Prefabs", "Corn");
         SetupBoard(catalog);
+        DefaultLowPolyCosmeticsSetup.Setup();
         foreach (string folder in new[] { "Main_Menu", "Gacha_menu", "GameplayUI", "Inventory", "LANUI", "MultiplayerUI", "PlayerProfile", "Result_Menu", "SettingsMenu" })
         {
             string path = "Assets/Materials/" + folder;
@@ -65,9 +66,6 @@ public static class AddressableCosmeticsSetup
                 string assetPath = AssetDatabase.GUIDToAssetPath(guid);
                 var entry = Register(AssetDatabase.LoadAssetAtPath<Texture2D>(assetPath), "CoreUI", assetPath);
                 entry.SetLabel("CoreUI", true, true);
-                string name = Path.GetFileNameWithoutExtension(assetPath);
-                if (name == "LoginMainMenu" || name == "SignUpMainMenu" || name == "ConfirmLogin" || name == "ConfirmSignUp" || name == "PlayAsGuest")
-                    entry.SetLabel("AuthUI", true, true);
             }
         }
         foreach (string guid in AssetDatabase.FindAssets("t:AudioClip", new[] { "Assets/Audio/SFX" }))

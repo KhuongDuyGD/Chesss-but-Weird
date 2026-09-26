@@ -11,7 +11,6 @@ public sealed class GameBootstrap : MonoBehaviour
     {
         var loading = LoadingUI.Create(transform);
         yield return AssetLoader.Initialize(p => loading.Report(p * .6f, "Starting Chess but Weird..."));
-        yield return CoreArtworkCache.Prepare("AuthUI");
         loading.Report(1, "Ready");
         yield return loading.Finish();
         if (gameObject.scene.name == "Boot")

@@ -125,6 +125,26 @@ public static class PlayerProfileStore
         EnsureLoaded();
     }
 
+    public static void ApplyServerSnapshot(UserMeResponse user)
+    {
+        if (user == null) return;
+        EnsureLoaded();
+        data.displayName = string.IsNullOrWhiteSpace(user.profile?.displayName) ? user.username : user.profile.displayName;
+        if (user.wallet != null)
+        {
+            data.gold = user.wallet.golds;
+            data.diamonds = user.wallet.diamonds;
+            data.tickets = user.wallet.tickets;
+        }
+        if (user.stats != null)
+        {
+            data.wins = user.stats.wins;
+            data.losses = user.stats.losses;
+            data.draws = user.stats.draws;
+            data.totalGames = user.stats.gamesPlayed;
+        }
+        Save();
+    }
     public static void Save()
     {
         if (data == null)

@@ -233,11 +233,29 @@ public partial class ChessGame : MonoBehaviour
     }
 #endif
 
-    private void Start()
+    private async void Start()
     {
-        // Referenced board/piece assets already belong to the scene; prepare them after auth.
-        PlayerAuthService.TryRestoreSession();
-        if (PlayerAuthService.IsAuthenticated || PlayerAuthService.IsGuestSession)
+        // Restore the new API session by fetching current data from the server.
+        if (AuthStorage.HasSession())
+        {
+            try
+            {
+                UserMeResponse user = await new UserService().GetMeAsync();
+                if (this == null) return;
+                PlayerAuthService.ApplyApiUser(user);
+                QueueAuthenticatedSession();
+                return;
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning("[ChessGame] Session restore failed: " + exception.Message);
+                if (this == null) return;
+                if (exception is ApiException apiError && (apiError.StatusCode == 401 || apiError.StatusCode == 403))
+                    AuthStorage.Clear();
+            }
+        }
+
+        if (PlayerAuthService.IsGuestSession)
             QueueAuthenticatedSession();
         else
             AuthController.Create(this, QueueAuthenticatedSession);

@@ -25,6 +25,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
     private PieceTeam checkedTeam;
     private PieceTeam promotionTeam;
     private bool resultIsDraw;
+    private bool logoutInFlight;
     private string drawReason;
     private Action<PieceType> promotionCallback;
     private ScreenState state = ScreenState.MainMenu;
@@ -331,14 +332,26 @@ public class ChessTurnSelectionUI : MonoBehaviour
         Debug.Log($"[ChessTurnSelectionUI] Authentication requested. {message}");
     }
 
-    public void LogoutToAuthentication()
+    public async void LogoutToAuthentication()
     {
+        if (logoutInFlight) return;
         var loading = LoadingManager.For(chessGame);
         if (loading.IsBusy) return;
         if (loading.HasMatchContent) { loading.ReturnToMenu(LogoutToAuthentication); return; }
+        logoutInFlight = true;
         lanController?.ResetForAuthenticationChange();
         SessionLoadingController.For(chessGame).Cancel();
-        PlayerAuthService.Logout();
+        AuthNotificationView.Show("Logging out...", "Please wait for the server.", AuthNotificationView.ResultKind.Info);
+        try
+        {
+            await new AuthService().LogoutAsync();
+        }
+        catch (Exception error)
+        {
+            Debug.LogWarning("[ChessTurnSelectionUI] Server logout failed; local session was cleared: " + error.Message);
+        }
+        if (this == null || chessGame == null) return;
+        logoutInFlight = false;
         lanController?.HideLanSetup();
         analysisBoard?.SetVisible(false);
         handDrawnMenu?.HideForPlaying();
