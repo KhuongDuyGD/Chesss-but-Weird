@@ -19,18 +19,16 @@ public sealed class PlayerProfileMenuController : MonoBehaviour
     private readonly List<UnityEngine.Object> runtimeAssets = new List<UnityEngine.Object>();
     private readonly TextMeshProUGUI[] valueLabels = new TextMeshProUGUI[7];
     private readonly List<TextMeshProUGUI> historyRows = new List<TextMeshProUGUI>();
-    private readonly List<Button> avatarButtons = new List<Button>();
 
     private RectTransform root;
     private RectTransform contentRoot;
-    private RectTransform editPanel;
-    private TMP_InputField displayNameInput;
     private Image avatarImage;
     private TextMeshProUGUI streakLabel;
     private TextMeshProUGUI achievementLabel;
+    private TextMeshProUGUI avatarIdLabel;
     private TextMeshProUGUI statusLabel;
     private UnityAction closeAction;
-    private int pendingAvatarIndex;
+    private bool loadingProfile;
 
     public void Initialize(RectTransform newRoot, UnityAction newCloseAction)
     {
@@ -40,12 +38,28 @@ public sealed class PlayerProfileMenuController : MonoBehaviour
         Build();
     }
 
-    public void Open()
+    public async void Open()
     {
-        PlayerProfileStore.EnsureLoaded();
-        Refresh();
-        if (editPanel)
-            editPanel.gameObject.SetActive(false);
+        if (loadingProfile) return;
+        loadingProfile = true;
+        Refresh(PlayerAuthService.CurrentApiUser);
+        SetStatus("Loading profile from server...");
+        try
+        {
+            UserMeResponse user = await new UserService().GetMeAsync();
+            if (!this || !root) return;
+            PlayerAuthService.ApplyApiUser(user);
+            Refresh(user);
+            SetStatus("Profile updated from /api/users/me.");
+        }
+        catch (Exception error)
+        {
+            if (this) SetStatus("Could not load profile: " + error.Message);
+        }
+        finally
+        {
+            loadingProfile = false;
+        }
     }
 
     private void Build()
@@ -59,12 +73,33 @@ public sealed class PlayerProfileMenuController : MonoBehaviour
 
         AddFullImage(contentRoot, "Player Profile Blank", GetSprite("PlayerProfileMainBlank.png"));
         AddImage(contentRoot, "Basic Profile Panel", GetSprite("BasicProfileData.png"), D(626f, 258f), new Vector2(1096f, 360f)).preserveAspect = false;
+        Image basicMask = AddImage(contentRoot, "Live Profile Labels Background", null,
+            D(626f, 258f), new Vector2(1018f, 285f));
+        basicMask.color = new Color(0.995f, 0.983f, 0.955f, 1f);
+        basicMask.preserveAspect = false;
+        AddText(contentRoot, "Display Name Caption", D(220f, 140f), new Vector2(240f, 44f), 31f, TextAlignmentOptions.MidlineLeft, Color.black).text = "Name:";
+        AddText(contentRoot, "Elo Rating Caption", D(220f, 232f), new Vector2(240f, 44f), 31f, TextAlignmentOptions.MidlineLeft, Color.black).text = "ELO:";
+        AddText(contentRoot, "Gold Caption", D(220f, 302f), new Vector2(240f, 44f), 31f, TextAlignmentOptions.MidlineLeft, Color.black).text = "Gold:";
+        AddText(contentRoot, "User Id Caption", D(220f, 372f), new Vector2(240f, 44f), 31f, TextAlignmentOptions.MidlineLeft, Color.black).text = "ID:";
+        AddText(contentRoot, "Games Caption", D(805f, 232f), new Vector2(220f, 44f), 31f, TextAlignmentOptions.MidlineLeft, Color.black).text = "Games:";
+        AddText(contentRoot, "Diamonds Caption", D(805f, 302f), new Vector2(240f, 44f), 31f, TextAlignmentOptions.MidlineLeft, Color.black).text = "Diamonds:";
+        AddText(contentRoot, "Tickets Caption", D(805f, 372f), new Vector2(240f, 44f), 31f, TextAlignmentOptions.MidlineLeft, Color.black).text = "Tickets:";
         AddImage(contentRoot, "Match History Panel", GetSprite("MatchHistory.png"), D(610f, 666f), new Vector2(1062f, 390f)).preserveAspect = false;
-        AddImage(contentRoot, "Achievement Title", GetSprite("AchievementTitle.png"), D(1381f, 527f), new Vector2(414f, 151f));
-        AddImage(contentRoot, "Streak Fire", GetSprite("Streaks.png"), D(1365f, 775f), new Vector2(208f, 211f));
+        Image detailsMask = AddImage(contentRoot, "Account Details Background", null,
+            D(610f, 666f), new Vector2(985f, 310f));
+        detailsMask.color = new Color(0.995f, 0.983f, 0.955f, 1f);
+        detailsMask.preserveAspect = false;
+        AddText(contentRoot, "Account Details Title", D(610f, 522f), new Vector2(840f, 55f),
+            38f, TextAlignmentOptions.Center, Color.black).text = "ACCOUNT DETAILS";
+        AddText(contentRoot, "Elo Caption", D(1360f, 500f), new Vector2(330f, 52f), 33f,
+            TextAlignmentOptions.Center, Color.black).text = "ELO";
+        AddText(contentRoot, "Games Caption", D(1365f, 742f), new Vector2(330f, 52f), 33f,
+            TextAlignmentOptions.Center, Color.black).text = "GAMES PLAYED";
 
         avatarImage = AddImage(contentRoot, "Current Avatar", GetSprite("Avatar0.png"), D(1376f, 190f), new Vector2(247f, 232f));
-        AddButton(contentRoot, "Change Profile", GetSprite("ChangeDataProfileButton.png"), D(1384f, 362f), new Vector2(333f, 91f), ShowEditPanel, 1.035f);
+        avatarIdLabel = AddText(contentRoot, "Avatar ID", D(1380f, 309f), new Vector2(340f, 43f),
+            21f, TextAlignmentOptions.Center, Color.black);
+        AddButton(contentRoot, "Refresh Profile", null, D(1384f, 362f), new Vector2(333f, 91f), Open, 1.035f, "REFRESH");
         AddButton(contentRoot, "Back", GetSprite("Back.png"), D(188f, 894f), new Vector2(180f, 44f), Close, 1.035f);
 
         AddProfileValues();
@@ -72,7 +107,6 @@ public sealed class PlayerProfileMenuController : MonoBehaviour
         achievementLabel = AddText(contentRoot, "Achievement Value", D(1360f, 559f), new Vector2(330f, 50f), 32f, TextAlignmentOptions.Center, Color.black);
         streakLabel = AddText(contentRoot, "Streak Value", D(1365f, 808f), new Vector2(150f, 66f), 40f, TextAlignmentOptions.Center, Color.black);
         statusLabel = AddText(contentRoot, "Profile Status", D(835f, 890f), new Vector2(840f, 38f), 24f, TextAlignmentOptions.Center, new Color(0.18f, 0.14f, 0.1f, 0.82f));
-        BuildEditPanel();
     }
 
     private void AddProfileValues()
@@ -81,119 +115,54 @@ public sealed class PlayerProfileMenuController : MonoBehaviour
         valueLabels[1] = AddText(contentRoot, "Level Value", D(442f, 232f), new Vector2(150f, 42f), 31f, TextAlignmentOptions.MidlineLeft, Color.black);
         valueLabels[2] = AddText(contentRoot, "Gold Value", D(478f, 302f), new Vector2(225f, 42f), 31f, TextAlignmentOptions.MidlineLeft, Color.black);
         valueLabels[3] = AddText(contentRoot, "Id Value", D(500f, 372f), new Vector2(370f, 40f), 25f, TextAlignmentOptions.MidlineLeft, Color.black);
-        valueLabels[4] = AddText(contentRoot, "Exp Value", D(930f, 232f), new Vector2(170f, 42f), 31f, TextAlignmentOptions.MidlineLeft, Color.black);
-        valueLabels[5] = AddText(contentRoot, "Diamonds Value", D(1000f, 302f), new Vector2(160f, 42f), 31f, TextAlignmentOptions.MidlineLeft, Color.black);
-        valueLabels[6] = AddText(contentRoot, "Tickets Value", D(970f, 372f), new Vector2(170f, 42f), 31f, TextAlignmentOptions.MidlineLeft, Color.black);
+        valueLabels[4] = AddText(contentRoot, "Games Value", D(1020f, 232f), new Vector2(170f, 42f), 31f, TextAlignmentOptions.MidlineLeft, Color.black);
+        valueLabels[5] = AddText(contentRoot, "Diamonds Value", D(1040f, 302f), new Vector2(160f, 42f), 31f, TextAlignmentOptions.MidlineLeft, Color.black);
+        valueLabels[6] = AddText(contentRoot, "Tickets Value", D(1040f, 372f), new Vector2(170f, 42f), 31f, TextAlignmentOptions.MidlineLeft, Color.black);
     }
 
     private void AddHistoryRows()
     {
-        for (int i = 0; i < 6; i++)
+        for (int i = 0; i < 7; i++)
         {
             TextMeshProUGUI row = AddText(contentRoot, $"Match History Row {i}", D(610f, 589f + i * 44f), new Vector2(950f, 38f), 25f, TextAlignmentOptions.Left, Color.black);
             historyRows.Add(row);
         }
     }
 
-    private void BuildEditPanel()
+    private void Refresh(UserMeResponse user)
     {
-        editPanel = CreateChild(contentRoot, "Edit Profile Panel", D(836f, 520f), new Vector2(980f, 610f));
-        Image panel = editPanel.gameObject.AddComponent<Image>();
-        panel.color = new Color(0.985f, 0.965f, 0.91f, 0.97f);
-        panel.raycastTarget = true;
-        Outline outline = editPanel.gameObject.AddComponent<Outline>();
-        outline.effectColor = Color.black;
-        outline.effectDistance = new Vector2(3f, -3f);
+        valueLabels[0].text = Limit(user?.profile?.displayName ?? user?.username, 18);
+        valueLabels[1].text = user?.stats?.elo.ToString(CultureInfo.InvariantCulture) ?? "--";
+        valueLabels[2].text = user?.wallet?.golds.ToString("N0", CultureInfo.InvariantCulture) ?? "--";
+        valueLabels[3].text = Limit(user?.userId, 18);
+        valueLabels[4].text = user?.stats?.gamesPlayed.ToString(CultureInfo.InvariantCulture) ?? "--";
+        valueLabels[5].text = user?.wallet?.diamonds.ToString("N0", CultureInfo.InvariantCulture) ?? "--";
+        valueLabels[6].text = user?.wallet?.tickets.ToString("N0", CultureInfo.InvariantCulture) ?? "--";
 
-        AddText(editPanel, "Edit Title", new Vector2(0f, 250f), new Vector2(720f, 70f), 46f, TextAlignmentOptions.Center, Color.black).text = "Change Profile";
-        AddText(editPanel, "Display Name Label", new Vector2(-310f, 158f), new Vector2(260f, 54f), 34f, TextAlignmentOptions.Left, Color.black).text = "Name:";
-        displayNameInput = CreateInputField(editPanel, "Display Name Input", new Vector2(85f, 158f), new Vector2(560f, 68f));
+        achievementLabel.text = user?.stats == null ? "--" : user.stats.elo.ToString(CultureInfo.InvariantCulture);
+        streakLabel.text = user?.stats == null ? "--" : user.stats.gamesPlayed.ToString(CultureInfo.InvariantCulture);
+        avatarImage.sprite = GetSprite("Avatar0.png");
+        avatarIdLabel.text = "Avatar: " + (user?.profile?.avatarId ?? "default");
+        RefreshDetails(user);
+    }
 
-        AddText(editPanel, "Avatar Label", new Vector2(-300f, 62f), new Vector2(280f, 54f), 34f, TextAlignmentOptions.Left, Color.black).text = "Avatar:";
-        for (int i = 0; i < 6; i++)
+    private void RefreshDetails(UserMeResponse user)
+    {
+        string chessSet = user?.equipped?.chessSkinId == "6aacc041e50e17c25a690158"
+            ? "Tazji's Low Poly" : user?.equipped?.chessSkinId ?? "--";
+        string board = user?.equipped?.boardSkinId == "6aacc04be50e17c25a69015a"
+            ? "Tazji's Low Poly Arena" : user?.equipped?.boardSkinId ?? "--";
+        string[] details =
         {
-            int index = i;
-            Vector2 position = new Vector2(-305f + i * 122f, -55f);
-            Button button = AddButton(editPanel, $"Avatar {i}", GetSprite($"Avatar{i}.png"), position, new Vector2(98f, 98f), () => SelectAvatar(index), 1.06f);
-            avatarButtons.Add(button);
-        }
-
-        AddButton(editPanel, "Save Profile", null, new Vector2(-145f, -240f), new Vector2(255f, 86f), SaveEditPanel, 1.035f, "SAVE");
-        AddButton(editPanel, "Cancel Profile", null, new Vector2(165f, -240f), new Vector2(255f, 86f), HideEditPanel, 1.035f, "CANCEL");
-        editPanel.gameObject.SetActive(false);
-    }
-
-    private void Refresh()
-    {
-        PlayerProfileSaveData data = PlayerProfileStore.Data;
-        valueLabels[0].text = Limit(data.displayName, 18);
-        valueLabels[1].text = data.level.ToString(CultureInfo.InvariantCulture);
-        valueLabels[2].text = data.gold.ToString("N0", CultureInfo.InvariantCulture);
-        valueLabels[3].text = Limit(data.playerId, 18);
-        valueLabels[4].text = $"{data.experience % 100}/100";
-        valueLabels[5].text = data.diamonds.ToString("N0", CultureInfo.InvariantCulture);
-        valueLabels[6].text = data.tickets.ToString("N0", CultureInfo.InvariantCulture);
-
-        achievementLabel.text = Limit(data.achievementTitle, 18);
-        streakLabel.text = $"{data.loginStreakDays}d";
-        avatarImage.sprite = GetSprite($"Avatar{Mathf.Clamp(data.avatarIndex, 0, 5)}.png");
-        RefreshHistory(data);
-        SetStatus("Profile synced locally.");
-    }
-
-    private void RefreshHistory(PlayerProfileSaveData data)
-    {
-        for (int i = 0; i < historyRows.Count; i++)
-        {
-            if (data.matchHistory == null || i >= data.matchHistory.Count)
-            {
-                historyRows[i].text = i == 0 ? "No matches yet." : string.Empty;
-                continue;
-            }
-
-            PlayerMatchHistoryEntry entry = data.matchHistory[i];
-            string date = FormatDate(entry.playedAtUtc);
-            historyRows[i].text = $"{date}  {Limit(entry.mode, 10)}  {Limit(entry.result, 6)}  vs {Limit(entry.opponent, 14)}";
-        }
-    }
-
-    private void ShowEditPanel()
-    {
-        PlayerProfileSaveData data = PlayerProfileStore.Data;
-        pendingAvatarIndex = Mathf.Clamp(data.avatarIndex, 0, 5);
-        displayNameInput.text = data.displayName;
-        RefreshAvatarSelection();
-        editPanel.gameObject.SetActive(true);
-        displayNameInput.ActivateInputField();
-    }
-
-    private void HideEditPanel()
-    {
-        editPanel.gameObject.SetActive(false);
-    }
-
-    private void SelectAvatar(int index)
-    {
-        pendingAvatarIndex = Mathf.Clamp(index, 0, 5);
-        RefreshAvatarSelection();
-    }
-
-    private void RefreshAvatarSelection()
-    {
-        for (int i = 0; i < avatarButtons.Count; i++)
-        {
-            Image image = avatarButtons[i].targetGraphic as Image;
-            if (image)
-                image.color = i == pendingAvatarIndex ? new Color(1f, 0.95f, 0.55f, 1f) : Color.white;
-        }
-    }
-
-    private void SaveEditPanel()
-    {
-        PlayerProfileStore.SetIdentity(displayNameInput.text, pendingAvatarIndex);
-        HideEditPanel();
-        Refresh();
-        SetStatus("Profile updated.");
+            "Username: " + (user?.username ?? "--"),
+            "Email: " + (user?.email ?? "--"),
+            user?.stats == null ? "ELO: --" : $"ELO: {user.stats.elo}    W {user.stats.wins}  L {user.stats.losses}  D {user.stats.draws}",
+            "Games played: " + (user?.stats?.gamesPlayed.ToString(CultureInfo.InvariantCulture) ?? "--"),
+            "Chess set: " + chessSet,
+            "Board: " + board,
+            "Created: " + (user?.createdAt ?? "--")
+        };
+        for (int i = 0; i < historyRows.Count; i++) historyRows[i].text = details[i];
     }
 
     private void Close()
@@ -233,36 +202,6 @@ public sealed class PlayerProfileMenuController : MonoBehaviour
             AddText(image.rectTransform, $"{name} Label", Vector2.zero, size, 34f, TextAlignmentOptions.Center, Color.black).text = text;
 
         return button;
-    }
-
-    private TMP_InputField CreateInputField(RectTransform parent, string name, Vector2 position, Vector2 size)
-    {
-        GameObject rootObject = new GameObject(name, typeof(RectTransform), typeof(Image), typeof(TMP_InputField));
-        RectTransform rect = rootObject.GetComponent<RectTransform>();
-        rect.SetParent(parent, false);
-        rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 0.5f);
-        rect.anchoredPosition = position;
-        rect.sizeDelta = size;
-
-        Image background = rootObject.GetComponent<Image>();
-        background.color = Color.white;
-        background.raycastTarget = true;
-        Outline outline = rootObject.AddComponent<Outline>();
-        outline.effectColor = Color.black;
-        outline.effectDistance = new Vector2(2f, -2f);
-
-        TMP_InputField input = rootObject.GetComponent<TMP_InputField>();
-        input.characterLimit = 18;
-        input.lineType = TMP_InputField.LineType.SingleLine;
-        input.richText = false;
-
-        TextMeshProUGUI text = AddText(rect, "Text", Vector2.zero, new Vector2(size.x - 34f, size.y - 10f), 34f, TextAlignmentOptions.MidlineLeft, Color.black);
-        TextMeshProUGUI placeholder = AddText(rect, "Placeholder", Vector2.zero, new Vector2(size.x - 34f, size.y - 10f), 30f, TextAlignmentOptions.MidlineLeft, new Color(0f, 0f, 0f, 0.28f));
-        placeholder.text = "Display name";
-        input.textViewport = rect;
-        input.textComponent = text;
-        input.placeholder = placeholder;
-        return input;
     }
 
     private void AddSolidFrame(RectTransform parent, string name, Vector2 size, float thickness, Color color)
@@ -360,9 +299,6 @@ public sealed class PlayerProfileMenuController : MonoBehaviour
             "PlayerProfileMainBlank.png",
             "BasicProfileData.png",
             "MatchHistory.png",
-            "Streaks.png",
-            "AchievementTitle.png",
-            "ChangeDataProfileButton.png",
             "Back.png",
             "Avatar0.png",
             "Avatar1.png",
@@ -406,13 +342,6 @@ public sealed class PlayerProfileMenuController : MonoBehaviour
         return sprite;
     }
 
-
-    private static string FormatDate(string utc)
-    {
-        if (DateTime.TryParse(utc, null, DateTimeStyles.RoundtripKind, out DateTime parsed))
-            return parsed.ToLocalTime().ToString("MM/dd", CultureInfo.InvariantCulture);
-        return "--/--";
-    }
 
     private static string Limit(string value, int maxCharacters)
     {

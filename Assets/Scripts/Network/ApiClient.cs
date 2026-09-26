@@ -135,7 +135,8 @@ public sealed class ApiClient
             try
             {
                 var error = JObject.Parse(response.Body);
-                message = (string)error["message"] ?? (string)error["title"] ?? message;
+                message = (string)error["message"] ?? (string)error["title"] ??
+                    (string)error["code"] ?? message;
             }
             catch (JsonException) { }
         }

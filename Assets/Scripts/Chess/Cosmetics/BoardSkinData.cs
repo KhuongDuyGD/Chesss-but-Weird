@@ -4,8 +4,8 @@ using UnityEngine.AddressableAssets;
 [CreateAssetMenu(menuName = "Chess/Cosmetics/Board Skin")]
 public sealed class BoardSkinData : ScriptableObject
 {
-    public string boardId = "default";
-    public string displayName = "Classic";
+    public string boardId = CosmeticSelection.LowPolyId;
+    public string displayName = "Tazji's Low Poly Arena";
     public AssetReferenceSprite preview;
     public AssetReferenceGameObject boardPrefab;
     public Vector3 localPosition;

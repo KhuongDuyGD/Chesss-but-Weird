@@ -189,6 +189,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
 
     public void ShowTwoPlayerSkinSelection()
     {
+        if (!RequireAccountAccess("Two-player mode")) return;
         showCheckWarning = false;
         lanController?.HideLanSetup();
         state = ScreenState.TurnSelection;
@@ -204,6 +205,8 @@ public class ChessTurnSelectionUI : MonoBehaviour
 
     public void StartBotGameWithSkin(PieceTeam playerTeam, string playerSkinId)
     {
+        if (PlayerAuthService.IsGuestSession || string.IsNullOrWhiteSpace(playerSkinId))
+            playerSkinId = PieceSkinCatalog.DefaultSkinId;
         var selection = CosmeticSelection.Load();
         selection.whiteSkinId = playerTeam == PieceTeam.White ? playerSkinId : PieceSkinCatalog.DefaultSkinId;
         selection.blackSkinId = playerTeam == PieceTeam.Black ? playerSkinId : PieceSkinCatalog.DefaultSkinId;
@@ -217,6 +220,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
 
     public void StartLocalTwoPlayerGameWithSkins(string whiteSkinId, string blackSkinId)
     {
+        if (!RequireAccountAccess("Two-player mode")) return;
         var selection = CosmeticSelection.Load();
         selection.whiteSkinId = whiteSkinId; selection.blackSkinId = blackSkinId;
         selection.Save();
@@ -244,7 +248,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
 
     public void ShowAramLanSetup()
     {
-        if (!RequireAccountAccess("ARAM mode")) return;
+        if (!RequireOnlineAccess("ARAM mode")) return;
         if (PrepareNetworkContent(ShowAramLanSetup)) return;
         GameMusicManager.PlayMainMenuHubMusic();
         showCheckWarning = false;
@@ -256,7 +260,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
 
     public void ShowAramOnlineSetup()
     {
-        if (!RequireAccountAccess("ARAM online play")) return;
+        if (!RequireOnlineAccess("ARAM online play")) return;
 
         if (PrepareNetworkContent(ShowAramOnlineSetup)) return;
         GameMusicManager.PlayMainMenuHubMusic();
@@ -289,7 +293,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
 
     public void ShowLanSetup()
     {
-        if (!RequireAccountAccess("LAN multiplayer")) return;
+        if (!RequireOnlineAccess("LAN multiplayer")) return;
         if (PrepareNetworkContent(ShowLanSetup)) return;
         GameMusicManager.PlayMainMenuHubMusic();
         showCheckWarning = false;
@@ -301,7 +305,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
 
     public void ShowOnlineSetup()
     {
-        if (!RequireAccountAccess("Online play")) return;
+        if (!RequireOnlineAccess("Online play")) return;
 
         if (PrepareNetworkContent(ShowOnlineSetup)) return;
         GameMusicManager.PlayMainMenuHubMusic();
@@ -314,9 +318,26 @@ public class ChessTurnSelectionUI : MonoBehaviour
 
     public bool RequireAccountAccess(string featureLabel)
     {
-        if (PlayerAuthService.CanUseOnlineFeatures) return true;
+        if (PlayerAuthService.IsGuestSession)
+        {
+            GuestAccessWarning.Show(transform, "Guest account cannot access, please login :3");
+            return false;
+        }
+        if (PlayerAuthService.IsAuthenticated ||
+            !string.IsNullOrWhiteSpace(AuthStorage.GetAccessToken()) ||
+            !string.IsNullOrWhiteSpace(AuthStorage.GetRefreshToken())) return true;
 
-        RequestAuthentication($"{featureLabel} requires an account. Log in or sign up to unlock this feature.");
+        AuthNotificationView.Show("Login required",
+            $"{featureLabel} requires an account. Please log in again.", AuthNotificationView.ResultKind.Info);
+        return false;
+    }
+
+    private bool RequireOnlineAccess(string featureLabel)
+    {
+        if (!RequireAccountAccess(featureLabel)) return false;
+        if (PlayerAuthService.CanUseOnlineFeatures) return true;
+        AuthNotificationView.Show("Online unavailable",
+            "Online rooms require a compatible backend session.", AuthNotificationView.ResultKind.Info);
         return false;
     }
 
@@ -324,7 +345,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
     {
         if (PlayerAuthService.IsGuestSession)
         {
-            GuestAccessWarning.Show(transform, message);
+            GuestAccessWarning.Show(transform, "Guest account cannot access, please login :3");
             return;
         }
 

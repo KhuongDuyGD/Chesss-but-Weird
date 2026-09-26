@@ -143,9 +143,8 @@ public sealed class ChessPauseMenu : MonoBehaviour
         restartButton = CreateButton(buttonGroup.transform, "Restart Game", assets.restartButton,
             new Rect(0.085f, 0.124f, 0.836f, 0.688f), new Vector2(0f, 15f), RestartLocalGame, true);
 
-        Button settings = CreateButton(buttonGroup.transform, "Settings Locked", assets.settingsButton,
-            new Rect(0.062f, 0.180f, 0.882f, 0.640f), new Vector2(0f, -135f), null, false);
-        settings.image.color = new Color(0.72f, 0.72f, 0.72f, 0.72f);
+        CreateButton(buttonGroup.transform, "Settings", assets.settingsButton,
+            new Rect(0.062f, 0.180f, 0.882f, 0.640f), new Vector2(0f, -135f), ShowSettingsAccessMessage, true);
 
         quitButton = CreateButton(buttonGroup.transform, "Quit Game", assets.quitButton,
             new Rect(0.035f, 0.165f, 0.935f, 0.675f), new Vector2(0f, -285f), QuitGame, true);
@@ -188,6 +187,18 @@ public sealed class ChessPauseMenu : MonoBehaviour
 
         chessGame?.SetPauseLocked(opponentPaused);
         ShowCurrentState();
+    }
+
+    private void ShowSettingsAccessMessage()
+    {
+        if (PlayerAuthService.IsGuestSession)
+        {
+            GuestAccessWarning.Show(transform, "Guest account cannot access, please login :3");
+            return;
+        }
+
+        statusText.text = "Settings are unavailable during a match.";
+        statusText.gameObject.SetActive(true);
     }
 
     private void RestartLocalGame()

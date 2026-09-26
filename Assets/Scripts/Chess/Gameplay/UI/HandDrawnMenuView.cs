@@ -2,10 +2,12 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
+using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
-using UnityEngine.Events;
 using UnityEngine.EventSystems;
+using UnityEngine.Events;
 using UnityEngine.InputSystem.UI;
 using UnityEngine.UI;
 
@@ -135,6 +137,7 @@ public class HandDrawnMenuView : MonoBehaviour
 
     public void ShowPieceSkinSelection(bool vsBot, PieceTeam playerTeam)
     {
+        if (!vsBot && !owner.RequireAccountAccess("Two-player mode")) return;
         skinSelectionVsBot = vsBot;
         skinSelectionPlayerTeam = playerTeam;
         var saved = CosmeticSelection.Load();
@@ -221,7 +224,7 @@ public class HandDrawnMenuView : MonoBehaviour
         AddImage(mainScreen, "Game Logo", assets.gameLogo, M(830f, 206f), MS(742f, 367f), .3f, .1f).preserveAspect = false;
         AddInteractive(mainScreen, "Start", assets.startButton, M(835f, 470f), MS(590f, 141f), () => chessGame.OpenTurnSelection(), false, 1.025f);
         AddInteractive(mainScreen, "Settings", assets.settingsButton, M(830f, 625f), MS(580f, 128f), ShowSettingsMenu, false, 1.025f);
-        AddInteractive(mainScreen, "Credits", assets.creditsButton, M(825f, 779f), MS(580f, 142f), () => LogMenuClick("Credits"), false, 1.025f);
+        AddInteractive(mainScreen, "Credits", assets.creditsButton, M(825f, 779f), MS(580f, 142f), CreateAuthenticatedAction("Credits", () => LogMenuClick("Credits")), false, 1.025f);
         AddImage(mainScreen, "Crown Doodle", assets.backgroundDecoration4, M(133f, 850f), MS(180f, 146f), .2f, .1f);
         AddImage(mainScreen, "Game Version", assets.gameVersion, M(1410f, 849f), MS(440f, 185f), 0f, 0f);
         AddLogoutButton(mainScreen);
@@ -417,6 +420,7 @@ public class HandDrawnMenuView : MonoBehaviour
 
     private void ShowSettingsMenu()
     {
+        if (!owner.RequireAccountAccess("Settings")) return;
         if (!settingsOverlay)
             return;
 
@@ -598,27 +602,12 @@ public class HandDrawnMenuView : MonoBehaviour
             AddBackButton(skinScreen, new Vector2(-820f, -430f), () => ShowLocalModeSelection());
         }
 
-        var selection = CosmeticSelection.Load();
-        var catalog = LoadingManager.For(chessGame).Catalog;
-        AddTextButton(skinScreen, "Board selection", "Board: " + (catalog?.FindBoard(selection.boardId)?.displayName ?? "Classic"),
-            new Vector2(0f, 100f), new Vector2(660f, 100f), () => CycleCosmetic(false), new Color(.86f, .88f, .95f));
-        AddTextButton(skinScreen, "Environment selection", "Environment: " + (catalog?.FindEnvironment(selection.environmentId)?.displayName ?? "None"),
-            new Vector2(0f, -60f), new Vector2(660f, 100f), () => CycleCosmetic(true), new Color(.86f, .88f, .95f));
-    }
-
-    private void CycleCosmetic(bool environment)
-    {
-        var catalog = LoadingManager.For(chessGame).Catalog;
-        if (!catalog) return;
-        var items = environment ? catalog.environments : catalog.boards;
-        if (items == null || items.Count == 0) return;
-        var selection = CosmeticSelection.Load();
-        string current = environment ? selection.environmentId : selection.boardId;
-        int index = items.FindIndex(e => e != null && e.id == current) + 1;
-        string next = index >= items.Count ? (environment ? "" : items[0].id) : items[index].id;
-        if (environment) selection.environmentId = next; else selection.boardId = next;
-        selection.Save();
-        RebuildSkinScreen();
+        AddText(skinScreen, "Default Board", "Board: Tazji's Low Poly Arena",
+            new Vector2(0f, 100f), new Vector2(760f, 80f), 40, TextAnchor.MiddleCenter,
+            new Color(0.12f, 0.1f, 0.08f, 1f));
+        AddText(skinScreen, "Default Chess Set", "Chess set: Tazji's Low Poly",
+            new Vector2(0f, -60f), new Vector2(760f, 80f), 40, TextAnchor.MiddleCenter,
+            new Color(0.12f, 0.1f, 0.08f, 1f));
     }
 
     private void ClearSkinScreen()
@@ -1435,7 +1424,6 @@ public sealed class GachaMenuController : MonoBehaviour
     private const float ReferenceHeight = 1080f;
     private const float DesignWidth = 1672f;
     private const float DesignHeight = 941f;
-    private const int PityLimit = 90;
     private const string AssetFolder = "Assets/Materials/Gacha_menu";
 
     private readonly Dictionary<string, Sprite> sprites = new Dictionary<string, Sprite>();
@@ -1450,42 +1438,62 @@ public sealed class GachaMenuController : MonoBehaviour
     private RectTransform resultScreen;
     private RectTransform resultGrid;
     private RectTransform historyPanel;
-    private RectTransform tooltipPanel;
+    private RectTransform bannerDetailPanel;
     private RectTransform pityFill;
     private TextMeshProUGUI pityLabel;
+    private TextMeshProUGUI epicPityLabel;
     private TextMeshProUGUI statusLabel;
     private TextMeshProUGUI resultSummaryLabel;
-    private TextMeshProUGUI tooltipLabel;
+    private TextMeshProUGUI bannerLabel;
+    private TextMeshProUGUI alternateBannerLabel;
+    private TextMeshProUGUI historyPageLabel;
+    private TextMeshProUGUI bannerDetailText;
+    private Image bannerArt;
+    private Image alternateBannerArt;
+    private Button nextBannerButton;
+    private TextMeshProUGUI costOneLabel;
+    private TextMeshProUGUI costTenLabel;
     private GachaSummonRevealController summonReveal;
     private UnityAction backToModeSelection;
-    private GachaSaveData saveData;
+    private readonly GachaService gacha = new GachaService();
+    private List<GachaBannerSummaryResponse> banners = new List<GachaBannerSummaryResponse>();
+    private GachaBannerDetailResponse activeBanner;
+    private GachaPityResponse pity;
+    private GachaWalletResponse wallet;
+    private GachaHistoryResponse history;
+    private int bannerIndex;
+    private int historyPage = 1;
+    private bool loading;
     private List<GachaReward> pendingResults = new List<GachaReward>();
     private bool summonInProgress;
+    private Guid pendingRequestId;
+    private string pendingBannerCode;
+    private int pendingCount;
 
     public void Initialize(RectTransform newRoot, UnityAction newBackToModeSelection)
     {
         root = newRoot;
         backToModeSelection = newBackToModeSelection;
         LoadSprites();
-        LoadSave();
         BuildContentRoot();
         BuildMainScreen();
         BuildResultScreen();
         BuildSummonReveal();
-        RefreshAll();
         ShowMainScreen();
     }
 
     public void OpenMainScreen()
     {
         if (mainScreen && resultScreen)
+        {
             ShowMainScreen();
+            RefreshFromServer();
+        }
     }
 
     private void OnEnable()
     {
-        if (saveData != null)
-            RefreshAll();
+        if (mainScreen) RefreshAll();
     }
 
     private void BuildMainScreen()
@@ -1493,22 +1501,31 @@ public sealed class GachaMenuController : MonoBehaviour
         mainScreen = CreateLayer("Gacha Main");
         AddFullImage(mainScreen, "Gacha Menu Blank", GetSprite("GachaMenuDesignBlank.png"));
         AddText(mainScreen, "Gacha Subtitle", D(1080f, 257f), new Vector2(225f, 48f), 40f, TextAlignmentOptions.Center, Color.black).text = "But Weird";
-        AddImage(mainScreen, "Standard Banner", GetSprite("StandardGacha.png"), D(274f, 362f), new Vector2(320f, 113f));
+        bannerArt = AddImage(mainScreen, "Standard Banner", GetSprite("StandardGacha.png"), D(274f, 362f), new Vector2(320f, 113f));
+        alternateBannerArt = CreatePlainImage(mainScreen, "Other Banner", new Color(0.4f, 0.52f, 0.85f, 1f),
+            D(274f, 362f), new Vector2(320f, 113f));
+        alternateBannerLabel = AddText(alternateBannerArt.transform, "Other Banner Label", Vector2.zero,
+            new Vector2(290f, 80f), 35f, TextAlignmentOptions.Center, Color.white);
+        bannerLabel = AddText(mainScreen, "Active Banner", D(274f, 434f), new Vector2(420f, 52f), 27f, TextAlignmentOptions.Center, Color.black);
+        nextBannerButton = AddLabeledButton(mainScreen, "Next Banner", "NEXT BANNER", D(274f, 492f), new Vector2(240f, 54f), NextBanner);
         Image description = AddImage(mainScreen, "Banner Description", GetSprite("GachaTitle.png"), D(991f, 459f), new Vector2(1030f, 337f));
         description.preserveAspect = false;
         AddResourceBars(mainScreen);
         AddButton(mainScreen, "Back Gacha", GetSprite("BackGacha.png"), D(230f, 76f), new Vector2(83f, 80f), BackToModeSelection, 1.04f);
         AddPityPanel(mainScreen);
-        AddRewardButton(mainScreen, "Gold Reward", D(220f, 792f), new Vector2(115f, 126f), "Gold rewards: 100, 250, 500, 1,000, or jackpot 4,500 gold.");
-        AddRewardButton(mainScreen, "Diamond Reward", D(356f, 792f), new Vector2(118f, 126f), "Diamond rewards: 10, 30, 80, 120, or jackpot 1,200 diamonds.");
-        AddRewardButton(mainScreen, "Ticket Reward", D(495f, 791f), new Vector2(120f, 126f), "Ticket rewards: 1, 2, 5, or jackpot 10 summon tickets.");
-        AddRewardButton(mainScreen, "Skin Reward", D(640f, 791f), new Vector2(128f, 126f), "5-star skin reward rate is reserved for a later skin pool. Skin rolls are disabled for now.");
-        AddButton(mainScreen, "Summon x1", GetSprite("SummonX1.png"), D(967f, 728f), new Vector2(274f, 124f), () => StartSummon(1), 1.025f);
-        AddButton(mainScreen, "Summon x10", GetSprite("SummonX10.png"), D(1322f, 732f), new Vector2(322f, 128f), () => StartSummon(10), 1.025f);
+        AddText(mainScreen, "Live Pool Hint", D(425f, 792f), new Vector2(580f, 80f), 26f,
+            TextAlignmentOptions.Center, Color.black).text = "Rewards and rates are set by the server. Open DETAILS.";
+        Button one = AddButton(mainScreen, "Summon x1", GetSprite("SummonX1.png"), D(967f, 728f), new Vector2(274f, 124f), () => StartSummon(1), 1.025f);
+        Button ten = AddButton(mainScreen, "Summon x10", GetSprite("SummonX10.png"), D(1322f, 732f), new Vector2(322f, 128f), () => StartSummon(10), 1.025f);
+        costOneLabel = AddText(one.transform, "Cost x1", new Vector2(0f, -42f), new Vector2(245f, 36f),
+            23f, TextAlignmentOptions.Center, Color.black);
+        costTenLabel = AddText(ten.transform, "Cost x10", new Vector2(0f, -42f), new Vector2(275f, 36f),
+            23f, TextAlignmentOptions.Center, Color.black);
         AddButton(mainScreen, "History", GetSprite("HistoryButton.png"), D(948f, 874f), new Vector2(226f, 70f), ShowHistory, 1.025f);
+        AddLabeledButton(mainScreen, "Banner Details", "DETAILS", D(1190f, 874f), new Vector2(220f, 70f), ShowBannerDetails);
         statusLabel = AddText(mainScreen, "Gacha Status", D(1338f, 890f), new Vector2(505f, 62f), 25f, TextAlignmentOptions.Center, new Color(.16f, .13f, .1f, 1f));
-        BuildTooltip(mainScreen);
         BuildHistory(mainScreen);
+        BuildBannerDetails(mainScreen);
     }
 
     private void BuildContentRoot()
@@ -1541,24 +1558,17 @@ public sealed class GachaMenuController : MonoBehaviour
 
     private void AddPityPanel(RectTransform parent)
     {
-        RectTransform pity = AddImage(parent, "Pity Panel", GetSprite("PityGacha.png"), D(275f, 571f), new Vector2(319f, 183f)).rectTransform;
-        pityLabel = AddText(pity, "Pity Text", new Vector2(-10f, 54f), new Vector2(58f, 40f), 31f, TextAlignmentOptions.Center, Color.black);
+        RectTransform pity = CreateChild(parent, "Pity Panel", D(275f, 571f), new Vector2(319f, 183f));
+        Image background = pity.gameObject.AddComponent<Image>();
+        background.color = new Color(1f, 0.96f, 0.82f, 0.98f);
+        Outline border = pity.gameObject.AddComponent<Outline>();
+        border.effectColor = Color.black;
+        border.effectDistance = new Vector2(3f, -3f);
+        pityLabel = AddText(pity, "Pity Text", new Vector2(0f, 49f), new Vector2(285f, 48f), 29f, TextAlignmentOptions.Center, Color.black);
+        epicPityLabel = AddText(pity, "Epic Pity Text", new Vector2(0f, -19f), new Vector2(285f, 38f), 23f, TextAlignmentOptions.Center, Color.black);
         Image fill = CreatePlainImage(pity, "Pity Fill", new Color(1f, .78f, .08f, 1f), new Vector2(-130f, 12f), new Vector2(0f, 20f));
         pityFill = fill.rectTransform;
         pityFill.pivot = new Vector2(0f, .5f);
-    }
-
-    private void BuildTooltip(RectTransform parent)
-    {
-        tooltipPanel = CreateChild(parent, "Reward Tooltip", D(835f, 884f), S(760f, 76f));
-        Image backing = tooltipPanel.gameObject.AddComponent<Image>();
-        backing.color = new Color(1f, 0.98f, 0.9f, 0.97f);
-        backing.raycastTarget = false;
-        Outline outline = tooltipPanel.gameObject.AddComponent<Outline>();
-        outline.effectColor = new Color(0f, 0f, 0f, 0.7f);
-        outline.effectDistance = new Vector2(2f, -2f);
-        tooltipLabel = AddText(tooltipPanel, "Tooltip Text", Vector2.zero, S(720f, 60f), F(24f), TextAlignmentOptions.Center, Color.black);
-        tooltipPanel.gameObject.SetActive(false);
     }
 
     private void BuildHistory(RectTransform parent)
@@ -1571,183 +1581,274 @@ public sealed class GachaMenuController : MonoBehaviour
         outline.effectDistance = new Vector2(3f, -3f);
         AddText(historyPanel, "History Title", L(0f, 252f), S(650f, 50f), F(34f), TextAlignmentOptions.Center, Color.black).text = "Summon History";
         AddButton(historyPanel, "Close History", GetSprite("BackButton.png"), L(0f, -252f), S(215f, 76f), HideHistory, 1.025f);
+        AddLabeledButton(historyPanel, "Previous Page", "PREV", L(-240f, -200f), S(145f, 55f), PreviousHistoryPage);
+        AddLabeledButton(historyPanel, "Next Page", "NEXT", L(240f, -200f), S(145f, 55f), NextHistoryPage);
+        historyPageLabel = AddText(historyPanel, "History Page", L(0f, -200f), S(170f, 50f), F(24f), TextAlignmentOptions.Center, Color.black);
         historyPanel.gameObject.SetActive(false);
     }
 
-    private void StartSummon(int count)
+    private void BuildBannerDetails(RectTransform parent)
     {
+        bannerDetailPanel = CreateChild(parent, "Banner Details Panel", D(836f, 535f), S(820f, 650f));
+        Image panel = bannerDetailPanel.gameObject.AddComponent<Image>();
+        panel.color = new Color(1f, 0.98f, 0.91f, 0.99f);
+        Outline outline = bannerDetailPanel.gameObject.AddComponent<Outline>();
+        outline.effectColor = Color.black;
+        outline.effectDistance = new Vector2(3f, -3f);
+        AddText(bannerDetailPanel, "Details Title", L(0f, 280f), S(720f, 55f), F(34f),
+            TextAlignmentOptions.Center, Color.black).text = "Banner Details";
+        RectTransform viewport = CreateChild(bannerDetailPanel, "Details Viewport", L(0f, 5f), S(740f, 470f));
+        viewport.gameObject.AddComponent<RectMask2D>();
+        bannerDetailText = AddText(viewport, "Details Body", Vector2.zero, S(700f, 470f), F(23f),
+            TextAlignmentOptions.TopLeft, Color.black);
+        bannerDetailText.enableAutoSizing = false;
+        bannerDetailText.textWrappingMode = TextWrappingModes.Normal;
+        bannerDetailText.rectTransform.pivot = new Vector2(0.5f, 1f);
+        bannerDetailText.rectTransform.anchorMin = bannerDetailText.rectTransform.anchorMax = new Vector2(0.5f, 1f);
+        bannerDetailText.rectTransform.anchoredPosition = Vector2.zero;
+        ScrollRect scroll = bannerDetailPanel.gameObject.AddComponent<ScrollRect>();
+        scroll.viewport = viewport;
+        scroll.content = bannerDetailText.rectTransform;
+        scroll.horizontal = false;
+        scroll.vertical = true;
+        scroll.scrollSensitivity = 32f;
+        AddLabeledButton(bannerDetailPanel, "Close Details", "CLOSE", L(0f, -285f), S(200f, 65f), HideBannerDetails);
+        bannerDetailPanel.gameObject.SetActive(false);
+    }
+
+    private async void RefreshFromServer()
+    {
+        if (loading) return;
+        loading = true;
+        SetStatus("Loading banners and wallet...");
+        try
+        {
+            string previousCode = activeBanner?.code;
+            banners = await gacha.GetBannersAsync() ?? new List<GachaBannerSummaryResponse>();
+            if (!this) return;
+            if (banners.Count == 0)
+            {
+                activeBanner = null;
+                pity = null;
+                SetStatus("No active gacha banners are available.");
+                RefreshAll();
+                return;
+            }
+            int previousIndex = banners.FindIndex(item => item.code == previousCode);
+            int standardIndex = banners.FindIndex(item =>
+                string.Equals(item.code, "STANDARD_TICKET_BANNER", StringComparison.OrdinalIgnoreCase));
+            bannerIndex = previousIndex >= 0 ? previousIndex : standardIndex >= 0 ? standardIndex : 0;
+            await LoadSelectedBannerAsync();
+            UserMeResponse user = await new UserService().GetMeAsync();
+            if (!this) return;
+            PlayerAuthService.ApplyApiUser(user);
+            wallet = new GachaWalletResponse
+            {
+                golds = user.wallet?.golds ?? 0,
+                diamonds = user.wallet?.diamonds ?? 0,
+                tickets = user.wallet?.tickets ?? 0
+            };
+            RefreshAll();
+            SetStatus("Banner and wallet updated from server.");
+        }
+        catch (Exception error)
+        {
+            if (this) SetStatus("Could not load gacha: " + error.Message);
+        }
+        finally
+        {
+            if (this) loading = false;
+        }
+    }
+
+    private async Task LoadSelectedBannerAsync()
+    {
+        string code = banners[bannerIndex].code;
+        activeBanner = await gacha.GetBannerAsync(code);
+        pity = await gacha.GetPityAsync(code);
+        if (this) RefreshAll();
+    }
+
+    private async void NextBanner()
+    {
+        if (loading || banners.Count < 2) return;
+        if (pendingRequestId != Guid.Empty)
+        {
+            SetStatus("Retry the pending summon before changing banners.");
+            return;
+        }
+        loading = true;
+        int previousIndex = bannerIndex;
+        GachaBannerDetailResponse previousBanner = activeBanner;
+        GachaPityResponse previousPity = pity;
+        bannerIndex = (bannerIndex + 1) % banners.Count;
+        SetStatus("Loading banner...");
+        try
+        {
+            await LoadSelectedBannerAsync();
+            if (this) SetStatus("Showing " + activeBanner.name);
+        }
+        catch (Exception error)
+        {
+            bannerIndex = previousIndex;
+            activeBanner = previousBanner;
+            pity = previousPity;
+            if (this)
+            {
+                RefreshAll();
+                SetStatus("Could not load banner: " + error.Message);
+            }
+        }
+        finally
+        {
+            if (this) loading = false;
+        }
+    }
+
+    private void ShowBannerDetails()
+    {
+        if (!bannerDetailPanel || activeBanner == null) return;
+        HideHistory();
+        var text = new StringBuilder();
+        text.AppendLine(activeBanner.name + " (" + activeBanner.code + ")");
+        text.AppendLine(activeBanner.description);
+        text.AppendLine("Pity group: " + activeBanner.pityGroup);
+        text.AppendLine("Epic pity: " + activeBanner.pityLimit?.epic + " | Legendary pity: " + activeBanner.pityLimit?.legendary);
+        text.AppendLine("Rates (%): Common " + activeBanner.rarityRates?.common +
+            ", Rare " + activeBanner.rarityRates?.rare + ", Epic " + activeBanner.rarityRates?.epic +
+            ", Legendary " + activeBanner.rarityRates?.legendary);
+        text.AppendLine("Costs:");
+        if (activeBanner.costs != null)
+            foreach (GachaCostResponse cost in activeBanner.costs)
+                text.AppendLine("  x" + cost.rollCount + ": " + cost.amount.ToString("N0") + " " + cost.currency);
+        text.AppendLine("Pool:");
+        if (activeBanner.poolItems != null)
+            foreach (GachaPoolItemResponse item in activeBanner.poolItems)
+                text.AppendLine("  " + item.name + " | " + item.rarity + " | " + item.type + " | weight " + item.weight);
+        text.AppendLine("Duplicate rewards:");
+        if (activeBanner.duplicateRewards != null)
+            foreach (var reward in activeBanner.duplicateRewards)
+                text.AppendLine("  " + reward.Key + ": " + reward.Value.amount + " " + reward.Value.currency);
+        bannerDetailText.text = text.ToString();
+        bannerDetailText.rectTransform.sizeDelta = new Vector2(S(700f, 0f).x,
+            Mathf.Max(S(0f, 470f).y, bannerDetailText.preferredHeight + 32f));
+        bannerDetailPanel.gameObject.SetActive(true);
+        bannerDetailPanel.SetAsLastSibling();
+        bannerDetailPanel.GetComponent<ScrollRect>().verticalNormalizedPosition = 1f;
+    }
+
+    private void HideBannerDetails()
+    {
+        if (bannerDetailPanel) bannerDetailPanel.gameObject.SetActive(false);
+    }
+
+    private async void StartSummon(int count)
+    {
+        if (loading)
+        {
+            SetStatus("Wait for the banner to finish loading.");
+            return;
+        }
         if (summonInProgress)
         {
-            if (summonReveal && summonReveal.IsPlaying)
-                summonReveal.RequestSkip();
+            if (summonReveal && summonReveal.IsPlaying) summonReveal.RequestSkip();
+            return;
+        }
+        if (activeBanner == null || string.IsNullOrWhiteSpace(activeBanner.code))
+        {
+            SetStatus("No active banner is loaded.");
+            return;
+        }
+        if (activeBanner.costs == null || !activeBanner.costs.Exists(cost => cost.rollCount == count))
+        {
+            SetStatus("This banner does not offer that summon count.");
+            return;
+        }
+        if (pendingRequestId != Guid.Empty &&
+            (pendingBannerCode != activeBanner.code || pendingCount != count))
+        {
+            SetStatus("Retry the pending x" + pendingCount + " summon before choosing another count.");
             return;
         }
 
         HideHistory();
-        HideTooltip();
-        Debug.Log($"[GachaMenu] Summon requested. count={count}, gold={saveData.gold}, diamonds={saveData.diamonds}, tickets={saveData.tickets}, pity={saveData.pityPulls}/{PityLimit}");
-        if (!TrySpendForSummon(count, out string paymentMessage))
-        {
-            Debug.LogWarning($"[GachaMenu] Summon rejected. count={count}, gold={saveData.gold}, diamonds={saveData.diamonds}, tickets={saveData.tickets}");
-            SetStatus("Not enough summon tickets, gold, or diamonds.");
-            return;
-        }
-
-        pendingResults = RollRewards(count);
-        Debug.Log($"[GachaMenu] Summon rolled. count={count}, payment=\"{paymentMessage}\", rewards={DescribeRewardsForLog(pendingResults)}");
-        ApplyRewards(pendingResults);
-        saveData.pityPulls = Mathf.Clamp(saveData.pityPulls + count, 0, PityLimit);
-        AddHistory(count, paymentMessage, pendingResults);
-        Save();
-        RefreshAll();
+        HideBannerDetails();
         summonInProgress = true;
-        PlayPendingReveal();
-    }
-
-    private bool TrySpendForSummon(int count, out string paymentMessage)
-    {
-        if (saveData.tickets >= count)
+        SetStatus("Summoning from server...");
+        try
         {
-            saveData.tickets -= count;
-            paymentMessage = count == 1 ? "Used 1 ticket" : "Used 10 tickets";
-            return true;
-        }
-
-        if (count == 1)
-        {
-            if (saveData.diamonds >= 120)
+            if (pendingRequestId == Guid.Empty || pendingBannerCode != activeBanner.code || pendingCount != count)
             {
-                saveData.diamonds -= 120;
-                paymentMessage = "Spent 120 diamonds";
-                return true;
+                pendingRequestId = Guid.NewGuid();
+                pendingBannerCode = activeBanner.code;
+                pendingCount = count;
             }
-            if (saveData.gold >= 500)
+            GachaRollResponse roll = await gacha.RollAsync(activeBanner.code, count, pendingRequestId);
+            if (!this || roll == null || roll.results == null || roll.wallet == null || roll.pity == null)
+                throw new ApiException("The server returned an incomplete gacha result.");
+            wallet = roll.wallet;
+            pity = roll.pity;
+            pendingResults = new List<GachaReward>(roll.results.Count);
+            foreach (GachaRewardResponse result in roll.results)
+                pendingResults.Add(ToVisualReward(result));
+            if (pendingResults.Count != count)
+                throw new ApiException("The server returned the wrong number of rewards.");
+            pendingRequestId = Guid.Empty;
+
+            PlayerProfileStore.SetCurrency(ToLocalAmount(wallet.golds), ToLocalAmount(wallet.diamonds), ToLocalAmount(wallet.tickets));
+            UserMeResponse user = PlayerAuthService.CurrentApiUser;
+            if (user?.wallet != null)
             {
-                saveData.gold -= 500;
-                paymentMessage = "Spent 500 gold";
-                return true;
+                user.wallet.golds = ToLocalAmount(wallet.golds);
+                user.wallet.diamonds = ToLocalAmount(wallet.diamonds);
+                user.wallet.tickets = ToLocalAmount(wallet.tickets);
             }
-            paymentMessage = string.Empty;
-            return false;
+            RefreshAll();
+            PlayPendingReveal();
         }
-
-        if (saveData.diamonds >= 1000)
+        catch (Exception error)
         {
-            saveData.diamonds -= 1000;
-            paymentMessage = "Spent 1,000 diamonds";
-            return true;
+            if (this)
+            {
+                if (error is ApiException apiError && apiError.StatusCode >= 400 && apiError.StatusCode < 500)
+                    pendingRequestId = Guid.Empty;
+                summonInProgress = false;
+                SetStatus("Summon failed: " + error.Message + " (retry keeps the same request ID when outcome is unknown)");
+            }
         }
-        if (saveData.gold >= 4500)
-        {
-            saveData.gold -= 4500;
-            paymentMessage = "Spent 4,500 gold";
-            return true;
-        }
-
-        paymentMessage = string.Empty;
-        return false;
     }
 
-    private List<GachaReward> RollRewards(int count)
+    private static int ToLocalAmount(long amount) =>
+        amount < 0 ? 0 : amount > int.MaxValue ? int.MaxValue : (int)amount;
+
+    private static GachaReward ToVisualReward(GachaRewardResponse item)
     {
-        List<GachaReward> rewards = new List<GachaReward>(count);
-        bool hasFourStarOrBetter = false;
-        for (int i = 0; i < count; i++)
-        {
-            GachaReward reward = RollSingleReward(false);
-            rewards.Add(reward);
-            hasFourStarOrBetter |= reward.rarity >= 4;
-        }
-        if (count >= 10 && !hasFourStarOrBetter)
-            rewards[rewards.Count - 1] = RollSingleReward(true);
-        return rewards;
+        int rarity = RarityLevel(item?.rarity);
+        return new GachaReward(GachaRewardType.Skin, 1, rarity, rarity >= 5,
+            item?.itemName ?? item?.itemCode ?? "Unknown item", item?.isDuplicate ?? false,
+            item?.duplicateReward == null ? "" :
+                "+" + item.duplicateReward.amount.ToString("N0") + " " + item.duplicateReward.currency);
     }
 
-    private GachaReward RollSingleReward(bool rareOnly)
+    private static int RarityLevel(string rarity)
     {
-        RewardDrop[] table = rareOnly ? RareRewardTable : RewardTable;
-        float total = 0f;
-        for (int i = 0; i < table.Length; i++)
-            total += table[i].weight;
-
-        float roll = UnityEngine.Random.Range(0f, total);
-        for (int i = 0; i < table.Length; i++)
+        switch (rarity?.Trim().ToUpperInvariant())
         {
-            roll -= table[i].weight;
-            if (roll <= 0f)
-                return table[i].CreateReward();
-        }
-        return table[table.Length - 1].CreateReward();
-    }
-
-    private void ApplyRewards(List<GachaReward> rewards)
-    {
-        for (int i = 0; i < rewards.Count; i++)
-        {
-            GachaReward reward = rewards[i];
-            if (reward.type == GachaRewardType.Gold)
-                saveData.gold += reward.amount;
-            else if (reward.type == GachaRewardType.Diamond)
-                saveData.diamonds += reward.amount;
-            else if (reward.type == GachaRewardType.Ticket)
-                saveData.tickets += reward.amount;
+            case "LEGENDARY": return 5;
+            case "EPIC": return 4;
+            case "RARE": return 3;
+            default: return 2;
         }
     }
 
-    private void AddHistory(int count, string paymentMessage, List<GachaReward> rewards)
+    private static string SummarizeRewards(List<GachaReward> rewards)
     {
-        if (saveData.history == null)
-            saveData.history = new List<GachaHistoryEntry>();
-        saveData.history.Insert(0, new GachaHistoryEntry
-        {
-            timestampUtc = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss 'UTC'"),
-            pullCount = count,
-            payment = paymentMessage,
-            rewards = SummarizeRewards(rewards)
-        });
-        while (saveData.history.Count > 50)
-            saveData.history.RemoveAt(saveData.history.Count - 1);
+        if (rewards == null || rewards.Count == 0) return "No rewards returned.";
+        var names = new List<string>(rewards.Count);
+        foreach (GachaReward reward in rewards)
+            names.Add(reward.displayName + (reward.isDuplicate ? " (duplicate)" : ""));
+        return string.Join(", ", names);
     }
-
-    private string SummarizeRewards(List<GachaReward> rewards)
-    {
-        int gold = 0;
-        int diamonds = 0;
-        int tickets = 0;
-        for (int i = 0; i < rewards.Count; i++)
-        {
-            if (rewards[i].type == GachaRewardType.Gold)
-                gold += rewards[i].amount;
-            else if (rewards[i].type == GachaRewardType.Diamond)
-                diamonds += rewards[i].amount;
-            else if (rewards[i].type == GachaRewardType.Ticket)
-                tickets += rewards[i].amount;
-        }
-
-        List<string> parts = new List<string>();
-        if (gold > 0)
-            parts.Add($"+{gold:N0} Gold");
-        if (diamonds > 0)
-            parts.Add($"+{diamonds:N0} Diamonds");
-        if (tickets > 0)
-            parts.Add($"+{tickets:N0} Tickets");
-        return parts.Count == 0 ? "No reward" : string.Join(", ", parts);
-    }
-
-    private string DescribeRewardsForLog(List<GachaReward> rewards)
-    {
-        if (rewards == null || rewards.Count == 0)
-            return "none";
-
-        List<string> parts = new List<string>(rewards.Count);
-        for (int i = 0; i < rewards.Count; i++)
-        {
-            GachaReward reward = rewards[i];
-            parts.Add($"{reward.rarity}* {reward.type} x{reward.amount} top={reward.isTopReward}");
-        }
-        return string.Join("; ", parts);
-    }
-
     private void ShowPendingResults()
     {
         summonInProgress = false;
@@ -1769,24 +1870,9 @@ public sealed class GachaMenuController : MonoBehaviour
         mainScreen.gameObject.SetActive(false);
         resultScreen.gameObject.SetActive(false);
         if (summonReveal)
-            summonReveal.PlaySequence(pendingResults, reward => GetRewardSprite(reward.type), ShowPendingResults);
+            summonReveal.PlaySequence(pendingResults, GetRewardSprite, ShowPendingResults);
         else
             ShowPendingResults();
-    }
-
-    private GachaReward GetFeaturedReward()
-    {
-        if (pendingResults == null || pendingResults.Count == 0)
-            return new GachaReward(GachaRewardType.Ticket, 1, 3, false);
-
-        GachaReward featured = pendingResults[0];
-        for (int i = 1; i < pendingResults.Count; i++)
-        {
-            GachaReward candidate = pendingResults[i];
-            if (candidate.rarity > featured.rarity || (candidate.rarity == featured.rarity && candidate.isTopReward && !featured.isTopReward))
-                featured = candidate;
-        }
-        return featured;
     }
 
     private void PopulateResultGrid()
@@ -1821,14 +1907,15 @@ public sealed class GachaMenuController : MonoBehaviour
         Outline outline = card.gameObject.AddComponent<Outline>();
         outline.effectColor = new Color(0f, 0f, 0f, 0.78f);
         outline.effectDistance = new Vector2(3f, -3f);
-        AddImage(card, "Reward Icon", GetRewardSprite(reward.type), new Vector2(0f, 24f), size * 0.58f);
+        Sprite icon = GetRewardSprite(reward);
+        if (icon) AddImage(card, "Reward Icon", icon, new Vector2(0f, 24f), size * 0.58f);
         AddText(card, "Reward Amount", new Vector2(0f, -56f), new Vector2(size.x - 18f, 38f), 27f, TextAlignmentOptions.Center, Color.black).text = reward.AmountText;
     }
 
     private void ShowMainScreen()
     {
         HideHistory();
-        HideTooltip();
+        HideBannerDetails();
         mainScreen.gameObject.SetActive(true);
         resultScreen.gameObject.SetActive(false);
         RefreshAll();
@@ -1837,88 +1924,116 @@ public sealed class GachaMenuController : MonoBehaviour
     private void BackToModeSelection()
     {
         HideHistory();
-        HideTooltip();
+        HideBannerDetails();
         backToModeSelection?.Invoke();
     }
 
-    private void ShowHistory()
+    private async void ShowHistory()
     {
-        if (!historyPanel)
-            return;
+        if (!historyPanel || loading) return;
+        HideBannerDetails();
+        historyPanel.gameObject.SetActive(true);
+        historyPanel.SetAsLastSibling();
+        historyPageLabel.text = "Loading...";
+        try
+        {
+            history = await gacha.GetHistoryAsync(historyPage, 8);
+            if (!this || !historyPanel) return;
+            RenderHistory();
+        }
+        catch (Exception error)
+        {
+            if (this) historyPageLabel.text = "History failed: " + error.Message;
+        }
+    }
 
+    private void RenderHistory()
+    {
         for (int i = historyPanel.childCount - 1; i >= 0; i--)
         {
             Transform child = historyPanel.GetChild(i);
-            if (child.name.StartsWith("History Row", StringComparison.Ordinal))
-                Destroy(child.gameObject);
+            if (child.name.StartsWith("History Row", StringComparison.Ordinal)) Destroy(child.gameObject);
         }
-
-        if (saveData.history == null || saveData.history.Count == 0)
+        int pages = history == null ? 1 : Mathf.Max(1, (int)Math.Ceiling(history.total / 8d));
+        historyPageLabel.text = "Page " + historyPage + "/" + pages;
+        if (history?.items == null || history.items.Count == 0)
         {
-            AddText(historyPanel, "History Row Empty", L(0f, 120f), S(650f, 44f), F(26f), TextAlignmentOptions.Center, Color.black).text = "No summons yet.";
+            AddText(historyPanel, "History Row Empty", L(0f, 120f), S(650f, 44f), F(26f),
+                TextAlignmentOptions.Center, Color.black).text = "No summons yet.";
+            return;
         }
-        else
+        int visible = Mathf.Min(history.items.Count, 8);
+        for (int i = 0; i < visible; i++)
         {
-            int visible = Mathf.Min(saveData.history.Count, 8);
-            for (int i = 0; i < visible; i++)
-            {
-                GachaHistoryEntry entry = saveData.history[i];
-                TextMeshProUGUI row = AddText(historyPanel, $"History Row {i}", L(0f, 180f - i * 48f), S(680f, 42f), F(21f), TextAlignmentOptions.Left, Color.black);
-                row.text = $"{entry.timestampUtc}  x{entry.pullCount}  {entry.payment}  ->  {entry.rewards}";
-            }
+            GachaRollResponse roll = history.items[i];
+            string date = DateTime.TryParse(roll.createdAt, out DateTime parsed)
+                ? parsed.ToLocalTime().ToString("MM/dd HH:mm") : "--";
+            var names = new List<string>();
+            if (roll.results != null)
+                foreach (GachaRewardResponse item in roll.results)
+                    names.Add(item.itemName + (item.isDuplicate ? " (dup)" : ""));
+            TextMeshProUGUI row = AddText(historyPanel, "History Row " + i,
+                L(0f, 180f - i * 48f), S(700f, 42f), F(20f), TextAlignmentOptions.Left, Color.black);
+            row.text = date + "  x" + roll.count + "  " + roll.totalCost.ToString("N0") + " " + roll.currency
+                + " -> " + string.Join(", ", names);
         }
-        historyPanel.gameObject.SetActive(true);
     }
 
+    private void PreviousHistoryPage()
+    {
+        if (historyPage <= 1) return;
+        historyPage--;
+        ShowHistory();
+    }
+
+    private void NextHistoryPage()
+    {
+        if (history == null || (long)historyPage * 8 >= history.total) return;
+        historyPage++;
+        ShowHistory();
+    }
     private void HideHistory()
     {
         if (historyPanel)
             historyPanel.gameObject.SetActive(false);
     }
 
-    private void ShowTooltip(string text)
-    {
-        if (!tooltipPanel)
-            return;
-        tooltipLabel.text = text;
-        tooltipPanel.gameObject.SetActive(true);
-    }
-
-    private void HideTooltip()
-    {
-        if (tooltipPanel)
-            tooltipPanel.gameObject.SetActive(false);
-    }
-
     private void RefreshAll()
     {
         for (int i = 0; i < goldLabels.Count; i++)
-            goldLabels[i].text = saveData.gold.ToString("N0");
+            goldLabels[i].text = wallet?.golds.ToString("N0") ?? "--";
         for (int i = 0; i < diamondLabels.Count; i++)
-            diamondLabels[i].text = saveData.diamonds.ToString("N0");
+            diamondLabels[i].text = wallet?.diamonds.ToString("N0") ?? "--";
         for (int i = 0; i < ticketLabels.Count; i++)
-            ticketLabels[i].text = saveData.tickets.ToString("N0");
+            ticketLabels[i].text = wallet?.tickets.ToString("N0") ?? "--";
 
-        int remaining = Mathf.Max(0, PityLimit - saveData.pityPulls);
-        if (pityLabel)
-            pityLabel.text = remaining.ToString();
+        if (bannerLabel) bannerLabel.text = activeBanner?.name ?? "No active banner";
+        if (alternateBannerLabel) alternateBannerLabel.text = activeBanner?.name?.ToUpperInvariant() ?? string.Empty;
+        if (nextBannerButton) nextBannerButton.gameObject.SetActive(banners.Count > 1);
+        bool standard = string.Equals(activeBanner?.code, "STANDARD_TICKET_BANNER", StringComparison.OrdinalIgnoreCase);
+        if (bannerArt) bannerArt.gameObject.SetActive(standard);
+        if (alternateBannerArt) alternateBannerArt.gameObject.SetActive(activeBanner != null && !standard);
+        if (costOneLabel) costOneLabel.text = CostLabel(1);
+        if (costTenLabel) costTenLabel.text = CostLabel(10);
+        if (pityLabel) pityLabel.text = pity?.legendary == null ? "Pity --/--" :
+            $"Pity {pity.legendary.current}/{pity.legendary.limit}";
+        if (epicPityLabel) epicPityLabel.text = pity?.epic == null ? "Epic --/--" :
+            $"Epic {pity.epic.current}/{pity.epic.limit}";
         if (pityFill)
-            pityFill.sizeDelta = new Vector2(Mathf.Lerp(0f, 259f, saveData.pityPulls / (float)PityLimit), 20f);
+            pityFill.sizeDelta = new Vector2(pity?.legendary == null || pity.legendary.limit <= 0 ? 0f :
+                Mathf.Lerp(0f, 259f, Mathf.Clamp01(pity.legendary.current / (float)pity.legendary.limit)), 20f);
+    }
+
+    private string CostLabel(int count)
+    {
+        GachaCostResponse cost = activeBanner?.costs?.Find(item => item.rollCount == count);
+        return cost == null ? "--" : cost.amount.ToString("N0") + " " + cost.currency;
     }
 
     private void SetStatus(string message)
     {
         if (statusLabel)
             statusLabel.text = message;
-    }
-
-    private Button AddRewardButton(RectTransform parent, string name, Vector2 position, Vector2 size, string tooltip)
-    {
-        string spriteName = name == "Gold Reward" ? "GoldPR.png" : name == "Diamond Reward" ? "DiamondPR.png" : name == "Ticket Reward" ? "SummonTicketPR.png" : "Skin5StarPR.png";
-        Button button = AddButton(parent, name, GetSprite(spriteName), position, size, () => ShowTooltip(tooltip), 1.03f);
-        GachaRewardHoverTarget hover = button.gameObject.AddComponent<GachaRewardHoverTarget>();
-        hover.Initialize(() => ShowTooltip(tooltip), HideTooltip);
-        return button;
     }
 
     private Button AddInvisibleButton(RectTransform parent, string name, Vector2 position, Vector2 size, UnityAction action)
@@ -1942,6 +2057,19 @@ public sealed class GachaMenuController : MonoBehaviour
         button.onClick.AddListener(action);
         HandDrawnPressable pressable = image.gameObject.AddComponent<HandDrawnPressable>();
         pressable.Configure(hoverScale, 0.95f, 0.8f, new Color(1f, 0.96f, 0.72f, 1f));
+        return button;
+    }
+
+    private Button AddLabeledButton(RectTransform parent, string name, string label,
+        Vector2 position, Vector2 size, UnityAction action)
+    {
+        Button button = AddButton(parent, name, null, position, size, action, 1.025f);
+        button.image.color = new Color(0.98f, 0.84f, 0.49f, 1f);
+        Outline outline = button.gameObject.AddComponent<Outline>();
+        outline.effectColor = Color.black;
+        outline.effectDistance = new Vector2(2f, -2f);
+        AddText(button.transform, name + " Label", Vector2.zero, size, F(24f),
+            TextAlignmentOptions.Center, Color.black).text = label;
         return button;
     }
 
@@ -2039,15 +2167,16 @@ public sealed class GachaMenuController : MonoBehaviour
         return fontSize * DesignHeight / ReferenceHeight;
     }
 
-    private Sprite GetRewardSprite(GachaRewardType type)
+    private Sprite GetRewardSprite(GachaReward reward)
     {
+        GachaRewardType type = reward.type;
         if (type == GachaRewardType.Gold)
             return GetSprite("GoldPR.png");
         if (type == GachaRewardType.Diamond)
             return GetSprite("DiamondPR.png");
         if (type == GachaRewardType.Ticket)
             return GetSprite("SummonTicketPR.png");
-        return GetSprite("Skin5StarPR.png");
+        return reward.rarity >= 5 ? GetSprite("Skin5StarPR.png") : null;
     }
 
     private Sprite GetSprite(string fileName)
@@ -2071,7 +2200,6 @@ public sealed class GachaMenuController : MonoBehaviour
         LoadSpriteToCache("DiamondGacha.png", true);
         LoadSpriteToCache("SummonTicket.png", true);
         LoadSpriteToCache("StandardGacha.png", true);
-        LoadSpriteToCache("PityGacha.png", true);
         LoadSpriteToCache("GoldPR.png", true);
         LoadSpriteToCache("DiamondPR.png", true);
         LoadSpriteToCache("SummonTicketPR.png", true);
@@ -2113,60 +2241,6 @@ public sealed class GachaMenuController : MonoBehaviour
         return sprite;
     }
 
-    private void LoadSave()
-    {
-        string json = PlayerPrefs.GetString(SaveKey, string.Empty);
-        if (!string.IsNullOrWhiteSpace(json))
-        {
-            try
-            {
-                saveData = JsonUtility.FromJson<GachaSaveData>(json);
-            }
-            catch (Exception exception)
-            {
-                Debug.LogWarning($"[GachaMenu] Failed to load save data: {exception.Message}");
-            }
-        }
-
-        if (saveData == null)
-            saveData = GachaSaveData.CreateDefault();
-        if (saveData.history == null)
-            saveData.history = new List<GachaHistoryEntry>();
-        SyncCurrencyFromProfile();
-    }
-
-    private void Save()
-    {
-        SyncCurrencyToProfile();
-        PlayerPrefs.SetString(SaveKey, JsonUtility.ToJson(saveData));
-        PlayerPrefs.Save();
-    }
-
-    private void SyncCurrencyFromProfile()
-    {
-        PlayerProfileSaveData profile = PlayerProfileStore.Data;
-        saveData.gold = profile.gold;
-        saveData.diamonds = profile.diamonds;
-        saveData.tickets = profile.tickets;
-    }
-
-    private void SyncCurrencyToProfile()
-    {
-        if (saveData == null)
-            return;
-
-        PlayerProfileStore.SetCurrency(saveData.gold, saveData.diamonds, saveData.tickets);
-    }
-
-    private string SaveKey
-    {
-        get
-        {
-            string user = string.IsNullOrWhiteSpace(PlayerAuthService.Username) ? PlayerAuthService.CurrentDisplayName : PlayerAuthService.Username;
-            return $"chess_but_weird_gacha_{user}";
-        }
-    }
-
     private static string FullAssetPath(string fileName)
     {
         return Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), AssetFolder, fileName));
@@ -2193,33 +2267,6 @@ public sealed class GachaMenuController : MonoBehaviour
         }
     }
 
-    private static readonly RewardDrop[] RewardTable =
-    {
-        new RewardDrop(GachaRewardType.Gold, 100, 3, 20f, false),
-        new RewardDrop(GachaRewardType.Gold, 250, 3, 17f, false),
-        new RewardDrop(GachaRewardType.Gold, 500, 3, 12f, false),
-        new RewardDrop(GachaRewardType.Gold, 1000, 4, 7f, false),
-        new RewardDrop(GachaRewardType.Gold, 4500, 5, 1.5f, true),
-        new RewardDrop(GachaRewardType.Diamond, 10, 3, 18f, false),
-        new RewardDrop(GachaRewardType.Diamond, 30, 3, 10f, false),
-        new RewardDrop(GachaRewardType.Diamond, 80, 3, 5f, false),
-        new RewardDrop(GachaRewardType.Diamond, 120, 4, 2f, false),
-        new RewardDrop(GachaRewardType.Diamond, 1200, 5, 0.5f, true),
-        new RewardDrop(GachaRewardType.Ticket, 1, 3, 5f, false),
-        new RewardDrop(GachaRewardType.Ticket, 2, 3, 1.5f, false),
-        new RewardDrop(GachaRewardType.Ticket, 5, 4, 0.4f, false),
-        new RewardDrop(GachaRewardType.Ticket, 10, 5, 0.1f, true)
-    };
-
-    private static readonly RewardDrop[] RareRewardTable =
-    {
-        new RewardDrop(GachaRewardType.Gold, 1000, 4, 54f, false),
-        new RewardDrop(GachaRewardType.Gold, 4500, 5, 8f, true),
-        new RewardDrop(GachaRewardType.Diamond, 120, 4, 28f, false),
-        new RewardDrop(GachaRewardType.Diamond, 1200, 5, 5f, true),
-        new RewardDrop(GachaRewardType.Ticket, 5, 4, 4f, false),
-        new RewardDrop(GachaRewardType.Ticket, 10, 5, 1f, true)
-    };
 }
 
 public sealed class GachaContentRootFitter : MonoBehaviour
@@ -2274,37 +2321,6 @@ public sealed class GachaContentRootFitter : MonoBehaviour
     }
 }
 
-[Serializable]
-public sealed class GachaSaveData
-{
-    public int gold;
-    public int diamonds;
-    public int tickets;
-    public int pityPulls;
-    public List<GachaHistoryEntry> history = new List<GachaHistoryEntry>();
-
-    public static GachaSaveData CreateDefault()
-    {
-        return new GachaSaveData
-        {
-            gold = 12340,
-            diamonds = 1320,
-            tickets = 17,
-            pityPulls = 0,
-            history = new List<GachaHistoryEntry>()
-        };
-    }
-}
-
-[Serializable]
-public sealed class GachaHistoryEntry
-{
-    public string timestampUtc;
-    public int pullCount;
-    public string payment;
-    public string rewards;
-}
-
 public enum GachaRewardType
 {
     Gold,
@@ -2319,60 +2335,24 @@ public readonly struct GachaReward
     public readonly int amount;
     public readonly int rarity;
     public readonly bool isTopReward;
+    public readonly string itemName;
+    public readonly bool isDuplicate;
+    public readonly string duplicateText;
 
-    public string displayName => type.ToString();
-    public string AmountText => type == GachaRewardType.Skin ? "5* Skin" : $"+{amount:N0}";
+    public string displayName => string.IsNullOrWhiteSpace(itemName) ? type.ToString() : itemName;
+    public string AmountText => type == GachaRewardType.Skin
+        ? displayName + (isDuplicate ? " (duplicate " + duplicateText + ")" : "")
+        : $"+{amount:N0}";
 
-    public GachaReward(GachaRewardType type, int amount, int rarity, bool isTopReward)
+    public GachaReward(GachaRewardType type, int amount, int rarity, bool isTopReward,
+        string itemName = null, bool isDuplicate = false, string duplicateText = null)
     {
         this.type = type;
         this.amount = amount;
         this.rarity = rarity;
         this.isTopReward = isTopReward;
-    }
-}
-
-public readonly struct RewardDrop
-{
-    public readonly GachaRewardType type;
-    public readonly int amount;
-    public readonly int rarity;
-    public readonly float weight;
-    public readonly bool isTopReward;
-
-    public RewardDrop(GachaRewardType type, int amount, int rarity, float weight, bool isTopReward)
-    {
-        this.type = type;
-        this.amount = amount;
-        this.rarity = rarity;
-        this.weight = weight;
-        this.isTopReward = isTopReward;
-    }
-
-    public GachaReward CreateReward()
-    {
-        return new GachaReward(type, amount, rarity, isTopReward);
-    }
-}
-
-public sealed class GachaRewardHoverTarget : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
-{
-    private Action enter;
-    private Action exit;
-
-    public void Initialize(Action onEnter, Action onExit)
-    {
-        enter = onEnter;
-        exit = onExit;
-    }
-
-    public void OnPointerEnter(PointerEventData eventData)
-    {
-        enter?.Invoke();
-    }
-
-    public void OnPointerExit(PointerEventData eventData)
-    {
-        exit?.Invoke();
+        this.itemName = itemName;
+        this.isDuplicate = isDuplicate;
+        this.duplicateText = duplicateText;
     }
 }

@@ -20,7 +20,7 @@ public sealed class BoardSkinManager
         float highest = 0;
         Action<float> report = p => { highest = Mathf.Max(highest, p); progress?.Invoke(highest); };
         yield return LoadBoard(catalog, boardId, p => report(p * 0.7f));
-        string fallback = catalog ? catalog.defaultBoardId : "default";
+        string fallback = catalog ? catalog.defaultBoardId : CosmeticSelection.LowPolyId;
         if (!BoardPrefab && !string.Equals(boardId, fallback, StringComparison.OrdinalIgnoreCase))
             yield return LoadBoard(catalog, fallback, null);
         report(0.7f);

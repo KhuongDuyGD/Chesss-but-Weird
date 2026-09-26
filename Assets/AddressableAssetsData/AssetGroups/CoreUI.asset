@@ -225,12 +225,6 @@ MonoBehaviour:
     m_SerializedLabels:
     - CoreUI
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 41bab715657f9f342899c6b046013cad
-    m_Address: Assets/Materials/Gacha_menu/PityGacha.png
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - CoreUI
-    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 41dfce139d036694ca289c8e2e2de256
     m_Address: Assets/Materials/PlayerProfile/Avatar1.png
     m_ReadOnly: 0

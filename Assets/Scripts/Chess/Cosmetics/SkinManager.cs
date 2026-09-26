@@ -30,7 +30,7 @@ public sealed class SkinManager
 
     private IEnumerator LoadSide(CosmeticCatalog catalog, string id, Action<LoadedSkin> completed, Action<float> progress)
     {
-        string fallback = catalog ? catalog.defaultPieceSkinId : "default";
+        string fallback = catalog ? catalog.defaultPieceSkinId : CosmeticSelection.LowPolyId;
         LoadedSkin result = null;
         yield return LoadSkin(catalog, id, value => result = value, progress);
         if (result == null && !string.Equals(id, fallback, StringComparison.OrdinalIgnoreCase))

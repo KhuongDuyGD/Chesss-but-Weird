@@ -52,6 +52,12 @@ public static class DefaultLowPolyCosmeticsSetup
         Register(settings, board, "Board_TazjiLowPoly", "Board/" + CatalogId);
         UpsertEntry(catalog.boards, CatalogId, board.displayName, board);
 
+        catalog.defaultPieceSkinId = CatalogId;
+        catalog.defaultBoardId = CatalogId;
+        catalog.pieceSkins.RemoveAll(entry => entry == null ||
+            entry.id == "default" || entry.id == "dc" || entry.id == "corn");
+        catalog.boards.RemoveAll(entry => entry == null || entry.id == "default");
+
         EditorUtility.SetDirty(catalog);
         AssetDatabase.SaveAssets();
         Debug.Log("[Cosmetics] Tazji Low Poly board and six chess pieces registered.");
@@ -114,4 +120,3 @@ public static class DefaultLowPolyCosmeticsSetup
         settings.CreateOrMoveEntry(guid, group).address = address;
     }
 }
-

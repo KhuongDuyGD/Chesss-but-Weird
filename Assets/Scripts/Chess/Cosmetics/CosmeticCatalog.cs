@@ -8,8 +8,8 @@ using UnityEngine.AddressableAssets;
 public sealed class CosmeticCatalog : ScriptableObject
 {
     public const string Address = "Cosmetics/Catalog";
-    public string defaultPieceSkinId = "default";
-    public string defaultBoardId = "default";
+    public string defaultPieceSkinId = CosmeticSelection.LowPolyId;
+    public string defaultBoardId = CosmeticSelection.LowPolyId;
     public List<CosmeticCatalogEntry> pieceSkins = new List<CosmeticCatalogEntry>();
     public List<CosmeticCatalogEntry> boards = new List<CosmeticCatalogEntry>();
     public List<CosmeticCatalogEntry> environments = new List<CosmeticCatalogEntry>();

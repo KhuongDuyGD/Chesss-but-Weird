@@ -92,7 +92,7 @@ public sealed class GuestAccessWarning : MonoBehaviour, ICancelHandler
         Label(paper.transform, "Title", "Guest access limited", new Vector2(0f, 74f), new Vector2(700f, 60f), 44, FontStyle.Bold);
         messageLabel = Label(paper.transform, "Feature Message", "", new Vector2(0f, -9f), new Vector2(670f, 100f), 28);
         messageLabel.supportRichText = false;
-        Label(paper.transform, "Guest Reassurance", "You're still playing as Guest. Local play is available.", new Vector2(0f, -93f), new Vector2(690f, 44f), 24);
+        Label(paper.transform, "Guest Reassurance", "You can still play against the bot with the default set.", new Vector2(0f, -93f), new Vector2(690f, 44f), 24);
 
         var buttonImage = Box(paper.transform, "Continue as Guest", new Vector2(0f, -178f), new Vector2(380f, 76f), new Color(0.98f, 0.83f, 0.32f));
         buttonImage.raycastTarget = true;

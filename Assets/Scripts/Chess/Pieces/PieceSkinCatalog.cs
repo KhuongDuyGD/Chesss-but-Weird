@@ -36,17 +36,17 @@ public readonly struct PieceSkinPieceTuning
 
 public static class PieceSkinCatalog
 {
-    public const string DefaultSkinId = "default";
+    public const string DefaultSkinId = CosmeticSelection.LowPolyId;
 
     private static readonly List<PieceSkinDefinition> Skins = new List<PieceSkinDefinition>
     {
-        new PieceSkinDefinition(DefaultSkinId, "Classic", new Color(.96f, .93f, .84f))
+        new PieceSkinDefinition(DefaultSkinId, "Tazji's Low Poly", new Color(.96f, .93f, .84f))
     };
 
     public static void UseCatalog(CosmeticCatalog catalog)
     {
         Skins.Clear();
-        Skins.Add(new PieceSkinDefinition(DefaultSkinId, "Classic", new Color(.96f, .93f, .84f)));
+        Skins.Add(new PieceSkinDefinition(DefaultSkinId, "Tazji's Low Poly", new Color(.96f, .93f, .84f)));
         if (!catalog || catalog.pieceSkins == null) return;
         foreach (var entry in catalog.pieceSkins)
         {

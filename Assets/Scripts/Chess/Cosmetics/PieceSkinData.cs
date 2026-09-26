@@ -6,8 +6,8 @@ using UnityEngine.AddressableAssets;
 [CreateAssetMenu(menuName = "Chess/Cosmetics/Piece Skin")]
 public sealed class PieceSkinData : ScriptableObject
 {
-    public string skinId = "default";
-    public string displayName = "Classic";
+    public string skinId = CosmeticSelection.LowPolyId;
+    public string displayName = "Tazji's Low Poly Chess Set";
     public AssetReferenceSprite preview;
     public AssetReferenceGameObject pawn;
     public AssetReferenceGameObject rook;

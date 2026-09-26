@@ -28,7 +28,6 @@ public static class MenuArtworkBounds
         { "Assets/Materials/Gacha_menu/GoldGacha.png", new Vector4(0.190147330f, 0.227900552f, 0.631215470f, 0.553867403f) },
         { "Assets/Materials/Gacha_menu/GoldPR.png", new Vector4(0.228070175f, 0.222488038f, 0.536682616f, 0.580542265f) },
         { "Assets/Materials/Gacha_menu/HistoryButton.png", new Vector4(0.252762431f, 0.302486188f, 0.500920810f, 0.462707182f) },
-        { "Assets/Materials/Gacha_menu/PityGacha.png", new Vector4(0.115331492f, 0.222836096f, 0.769337017f, 0.593001842f) },
         { "Assets/Materials/Gacha_menu/Skin5StarPR.png", new Vector4(0.186602871f, 0.215311005f, 0.629186603f, 0.626794258f) },
         { "Assets/Materials/Gacha_menu/StandardGacha.png", new Vector4(0.160681400f, 0.121546961f, 0.686464088f, 0.725138122f) },
         { "Assets/Materials/Gacha_menu/SummonTicket.png", new Vector4(0.168047882f, 0.082872928f, 0.659760589f, 0.796961326f) },
