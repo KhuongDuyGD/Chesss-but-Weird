@@ -1,5 +1,4 @@
 using MatchReward = MatchRewardPolicy.MatchReward;
-using MeshComponentData = PieceVisualFactory.MeshComponentData;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -28,7 +27,6 @@ public partial class ChessGame : MonoBehaviour
     [SerializeField] private Chessboard chessboard;
     [SerializeField] private Transform piecesRoot;
     [SerializeField] private bool spawnDefaultPiecesOnStart = true;
-    [SerializeField] private bool hideImportedPieceRenderers = true;
     [SerializeField] private bool clearRuntimePiecesOnStart = true;
     [SerializeField] private float selectedPieceLiftHeight = 0.28f;
     [SerializeField] private float selectAnimationDuration = 0.12f;
@@ -52,7 +50,6 @@ public partial class ChessGame : MonoBehaviour
 
     private readonly ChessPiece[,] pieces = new ChessPiece[8, 8];
     private PieceAnimator pieceAnimator;
-    private readonly PieceVisualFactory visualFactory = new PieceVisualFactory();
     private PieceAnimator Animator => pieceAnimator ?? (pieceAnimator = new PieceAnimator(this));
     private readonly Dictionary<string, int> positionHistory = new Dictionary<string, int>();
     private readonly HashSet<ChessPiece> startingPlacementPieces = new HashSet<ChessPiece>();
@@ -464,6 +461,12 @@ public partial class ChessGame : MonoBehaviour
 
     private void BeginGameInternal(PieceTeam firstTurn, PieceTeam localPlayerTeam, bool restrictInput, PieceTeam frontTeam)
     {
+        // Direct scene play can enter here before the normal content loader prepares pieces.
+        if (!runtimePiecesRoot)
+        {
+            if (!chessboard) throw new InvalidOperationException("Cannot start a match without a Chessboard.");
+            PrepareGame();
+        }
         ClearLocalClassicSession();
         matchResultRecorder.Begin(Guid.NewGuid().ToString("N"));
         currentTurn = firstTurn;
@@ -933,7 +936,6 @@ public partial class ChessGame : MonoBehaviour
     {
         pieceAnimator?.CancelAll();
         aramCoordinator?.Dispose();
-        visualFactory.Dispose();
     }
 
     private void PrepareGame()
@@ -962,10 +964,7 @@ public partial class ChessGame : MonoBehaviour
         }
 
         if (spawnDefaultPiecesOnStart && runtimePiecesRoot.GetComponentsInChildren<ChessPiece>(true).Length == 0)
-            CreateRuntimePiecesFromVisualSet();
-
-        if (hideImportedPieceRenderers)
-            HideImportedPieceRenderers();
+            CreateDefaultPieces();
 
         RefreshPieceMap();
         AlignAllPiecesToBoard();
@@ -1777,39 +1776,9 @@ public partial class ChessGame : MonoBehaviour
 
     private ChessPiece CreatePromotedPieceObject(PieceTeam team, PieceType promotionType, Vector2Int boardPosition, int forwardDirection)
     {
-        if (LoadingManager.For(this).HasMatchContent)
-            return CreateCosmeticPiece(promotionType, team, boardPosition);
-        Transform sourceTransform = FindVisualChild(GetVisualSourceName(team, promotionType));
-        if (!sourceTransform)
-            return null;
-
-        MeshFilter sourceMeshFilter = sourceTransform.GetComponent<MeshFilter>();
-        MeshRenderer sourceRenderer = sourceTransform.GetComponent<MeshRenderer>();
-        if (!sourceMeshFilter || !sourceMeshFilter.sharedMesh || !sourceRenderer)
-            return null;
-
-        int sourcePieceCount = promotionType == PieceType.Queen ? 1 : 2;
-        List<MeshComponentData> components = visualFactory.SplitMeshIntoSpatialGroups(sourceMeshFilter.sharedMesh, sourcePieceCount);
-        if (components.Count == 0)
-            return null;
-
-        components.Sort((left, right) =>
-            sourceTransform.TransformPoint(left.pivot).x.CompareTo(sourceTransform.TransformPoint(right.pivot).x));
-
-        GameObject promotedObject = new GameObject($"{team} {promotionType} {boardPosition.x},{boardPosition.y}");
-        promotedObject.transform.SetParent(runtimePiecesRoot);
-        promotedObject.transform.position = sourceTransform.TransformPoint(components[0].pivot);
-        promotedObject.transform.rotation = sourceTransform.rotation;
-        promotedObject.transform.localScale = sourceTransform.lossyScale;
-
-        MeshFilter meshFilter = promotedObject.AddComponent<MeshFilter>();
-        meshFilter.sharedMesh = components[0].mesh;
-
-        MeshRenderer meshRenderer = promotedObject.AddComponent<MeshRenderer>();
-        meshRenderer.sharedMaterials = sourceRenderer.sharedMaterials;
-
-        ChessPiece promotedPiece = AddPieceComponent(promotedObject, promotionType);
-        return promotedPiece;
+        var piece = CreateCosmeticPiece(promotionType, team, boardPosition);
+        piece.Initialize(team, boardPosition, forwardDirection);
+        return piece;
     }
 
     private ChessPiece CreateFallbackPromotedPieceObject(GameObject pawnObject, PieceTeam team, PieceType promotionType, Vector2Int boardPosition, int forwardDirection)
@@ -1851,27 +1820,6 @@ public partial class ChessGame : MonoBehaviour
         ChessPiece[] scenePieces = runtimePiecesRoot.GetComponentsInChildren<ChessPiece>(true);
         for (int i = 0; i < scenePieces.Length; i++)
             ApplySkinToPiece(scenePieces[i]);
-    }
-
-    private string GetVisualSourceName(PieceTeam team, PieceType pieceType)
-    {
-        string suffix = team == PieceTeam.White ? "_1" : "_2";
-        switch (pieceType)
-        {
-            case PieceType.King:
-                return "King" + suffix;
-            case PieceType.Pawn:
-                return "Pawn" + suffix;
-            case PieceType.Rook:
-                return "Rook" + suffix;
-            case PieceType.Bishop:
-                return "Bishop" + suffix;
-            case PieceType.Knight:
-                return "Knight" + suffix;
-            case PieceType.Queen:
-            default:
-                return "Queen" + suffix;
-        }
     }
 
     private ChessPiece AddPieceComponent(GameObject targetObject, PieceType pieceType)
@@ -1966,32 +1914,16 @@ public partial class ChessGame : MonoBehaviour
         turnSelectionUI?.HideCheckWarning();
     }
 
-    private void CreateRuntimePiecesFromVisualSet()
+    private void CreateDefaultPieces()
     {
-        if (LoadingManager.For(this).HasMatchContent)
-        {
-            PieceType[] backRank = { PieceType.Rook, PieceType.Knight, PieceType.Bishop, PieceType.Queen, PieceType.King, PieceType.Bishop, PieceType.Knight, PieceType.Rook };
-            foreach (PieceTeam team in new[] { PieceTeam.White, PieceTeam.Black })
-                for (int file = 0; file < 8; file++)
-                {
-                    CreateCosmeticPiece(backRank[file], team, new Vector2Int(file, team == PieceTeam.White ? 0 : 7));
-                    CreateCosmeticPiece(PieceType.Pawn, team, new Vector2Int(file, team == PieceTeam.White ? 1 : 6));
-                }
-            return;
-        }
-        CreateSplitPieces<RookPiece>("Rook_1", PieceTeam.White, 0, new[] { 0, 7 });
-        CreateSplitPieces<KnightPiece>("Knight_1", PieceTeam.White, 0, new[] { 1, 6 });
-        CreateSplitPieces<BishopPiece>("Bishop_1", PieceTeam.White, 0, new[] { 2, 5 });
-        CreateSplitPieces<QueenPiece>("Queen_1", PieceTeam.White, 0, new[] { 3 });
-        CreateSplitPieces<KingPiece>("King_1", PieceTeam.White, 0, new[] { 4 });
-        CreateSplitPieces<PawnPiece>("Pawn_1", PieceTeam.White, 1, new[] { 0, 1, 2, 3, 4, 5, 6, 7 });
-
-        CreateSplitPieces<PawnPiece>("Pawn_2", PieceTeam.Black, 6, new[] { 0, 1, 2, 3, 4, 5, 6, 7 });
-        CreateSplitPieces<RookPiece>("Rook_2", PieceTeam.Black, 7, new[] { 0, 7 });
-        CreateSplitPieces<KnightPiece>("Knight_2", PieceTeam.Black, 7, new[] { 1, 6 });
-        CreateSplitPieces<BishopPiece>("Bishop_2", PieceTeam.Black, 7, new[] { 2, 5 });
-        CreateSplitPieces<QueenPiece>("Queen_2", PieceTeam.Black, 7, new[] { 3 });
-        CreateSplitPieces<KingPiece>("King_2", PieceTeam.Black, 7, new[] { 4 });
+        // LoadingManager prepares the selected set (Tazji by default) before gameplay.
+        PieceType[] backRank = { PieceType.Rook, PieceType.Knight, PieceType.Bishop, PieceType.Queen, PieceType.King, PieceType.Bishop, PieceType.Knight, PieceType.Rook };
+        foreach (PieceTeam team in new[] { PieceTeam.White, PieceTeam.Black })
+            for (int file = 0; file < 8; file++)
+            {
+                CreateCosmeticPiece(backRank[file], team, new Vector2Int(file, team == PieceTeam.White ? 0 : 7));
+                CreateCosmeticPiece(PieceType.Pawn, team, new Vector2Int(file, team == PieceTeam.White ? 1 : 6));
+            }
     }
 
     private ChessPiece CreateCosmeticPiece(PieceType type, PieceTeam team, Vector2Int position)
@@ -2017,77 +1949,6 @@ public partial class ChessGame : MonoBehaviour
         PieceViewGeometry.EnsurePieceCollider(root);
         MovePieceToTile(piece, position, 0);
         return piece;
-    }
-
-    private void CreateSplitPieces<T>(string sourceName, PieceTeam team, int rank, int[] files) where T : ChessPiece
-    {
-        Transform sourceTransform = FindVisualChild(sourceName);
-        if (!sourceTransform)
-        {
-            Debug.LogWarning($"Missing visual source mesh '{sourceName}'.");
-            return;
-        }
-
-        MeshFilter sourceMeshFilter = sourceTransform.GetComponent<MeshFilter>();
-        MeshRenderer sourceRenderer = sourceTransform.GetComponent<MeshRenderer>();
-        if (!sourceMeshFilter || !sourceMeshFilter.sharedMesh || !sourceRenderer)
-        {
-            Debug.LogWarning($"Visual source '{sourceName}' has no readable mesh renderer.");
-            return;
-        }
-
-        List<MeshComponentData> components = visualFactory.SplitMeshIntoSpatialGroups(sourceMeshFilter.sharedMesh, files.Length);
-        components.Sort((left, right) =>
-            sourceTransform.TransformPoint(left.pivot).x.CompareTo(sourceTransform.TransformPoint(right.pivot).x));
-
-        int spawnCount = Mathf.Min(components.Count, files.Length);
-        if (components.Count != files.Length)
-            Debug.LogWarning($"Visual source '{sourceName}' split into {components.Count} piece(s), expected {files.Length}.");
-
-        for (int i = 0; i < spawnCount; i++)
-        {
-            Vector2Int boardPosition = new Vector2Int(files[i], rank);
-            GameObject pieceObject = new GameObject($"{team} {typeof(T).Name.Replace("Piece", string.Empty)} {boardPosition.x},{boardPosition.y}");
-            pieceObject.transform.SetParent(runtimePiecesRoot);
-            pieceObject.transform.position = sourceTransform.TransformPoint(components[i].pivot);
-            pieceObject.transform.rotation = sourceTransform.rotation;
-            pieceObject.transform.localScale = sourceTransform.lossyScale;
-
-            MeshFilter meshFilter = pieceObject.AddComponent<MeshFilter>();
-            meshFilter.sharedMesh = components[i].mesh;
-
-            MeshRenderer meshRenderer = pieceObject.AddComponent<MeshRenderer>();
-            meshRenderer.sharedMaterials = sourceRenderer.sharedMaterials;
-
-            T piece = pieceObject.AddComponent<T>();
-            piece.Initialize(team, boardPosition, team == PieceTeam.White ? 1 : -1);
-            ApplySkinToPiece(piece);
-            PieceViewGeometry.EnsurePieceCollider(pieceObject);
-            MovePieceToTile(piece, boardPosition, 0f);
-        }
-    }
-
-    private Transform FindVisualChild(string objectName)
-    {
-        Transform visualRoot = GetVisualChessSetRoot();
-        if (!visualRoot)
-            return null;
-
-        Transform[] children = visualRoot.GetComponentsInChildren<Transform>(true);
-        for (int i = 0; i < children.Length; i++)
-            if (children[i].name == objectName)
-                return children[i];
-
-        return null;
-    }
-
-    private Transform GetVisualChessSetRoot()
-    {
-        if (!chessboard)
-            return null;
-
-        Transform visualRoot = chessboard.transform.Find("VisualChessSet");
-        return visualRoot ? visualRoot : chessboard.transform;
     }
 
     private void AlignAllPiecesToBoard()
@@ -2212,21 +2073,6 @@ public partial class ChessGame : MonoBehaviour
             bounds.Encapsulate(renderers[i].bounds);
 
         return piece.transform.position.y - bounds.min.y;
-    }
-
-    private void HideImportedPieceRenderers()
-    {
-        Transform visualRoot = GetVisualChessSetRoot();
-        if (!visualRoot)
-            return;
-
-        Renderer[] renderers = visualRoot.GetComponentsInChildren<Renderer>(true);
-        for (int i = 0; i < renderers.Length; i++)
-        {
-            Renderer currentRenderer = renderers[i];
-            if (!currentRenderer.gameObject.name.Contains("ChessBoard"))
-                currentRenderer.enabled = false;
-        }
     }
 
     private void DeselectCurrentPiece(bool animateToBoard, bool releaseCameraLock = true)
@@ -2909,91 +2755,9 @@ public partial class ChessGame : MonoBehaviour
 
     private ChessPiece CreateVisualPieceObject(PieceTeam team, PieceType pieceType, Vector2Int boardPosition, int forwardDirection)
     {
-        if (LoadingManager.For(this).HasMatchContent)
-        {
-            var cosmeticPiece = CreateCosmeticPiece(pieceType, team, boardPosition);
-            cosmeticPiece.Initialize(team, boardPosition, forwardDirection);
-            return cosmeticPiece;
-        }
-        string sourceName = GetVisualSourceName(team, pieceType);
-        Transform sourceTransform = FindVisualChild(sourceName);
-        GameObject pieceObject = new GameObject($"{team} {pieceType} {boardPosition.x},{boardPosition.y}");
-        pieceObject.transform.SetParent(runtimePiecesRoot);
-
-        if (sourceTransform)
-        {
-            pieceObject.transform.rotation = sourceTransform.rotation;
-            pieceObject.transform.localScale = sourceTransform.lossyScale;
-
-            MeshFilter sourceMeshFilter = sourceTransform.GetComponent<MeshFilter>();
-            MeshRenderer sourceRenderer = sourceTransform.GetComponent<MeshRenderer>();
-            if (sourceMeshFilter && sourceMeshFilter.sharedMesh)
-            {
-                List<MeshComponentData> components = visualFactory.SplitMeshIntoSpatialGroups(sourceMeshFilter.sharedMesh, GetExpectedGroupCount(pieceType));
-                if (components.Count > 0)
-                {
-                    components.Sort((left, right) =>
-                        sourceTransform.TransformPoint(left.pivot).x.CompareTo(sourceTransform.TransformPoint(right.pivot).x));
-                    int componentIndex = GetPreferredVisualIndex(pieceType, boardPosition.x, components.Count);
-                    pieceObject.transform.position = sourceTransform.TransformPoint(components[componentIndex].pivot);
-                    MeshFilter meshFilter = pieceObject.AddComponent<MeshFilter>();
-                    meshFilter.sharedMesh = components[componentIndex].mesh;
-                }
-                else
-                {
-                    pieceObject.transform.position = sourceTransform.position;
-                    MeshFilter meshFilter = pieceObject.AddComponent<MeshFilter>();
-                    meshFilter.sharedMesh = sourceMeshFilter.sharedMesh;
-                }
-            }
-
-            if (sourceRenderer)
-            {
-                MeshRenderer meshRenderer = pieceObject.AddComponent<MeshRenderer>();
-                meshRenderer.sharedMaterials = sourceRenderer.sharedMaterials;
-            }
-        }
-
-        ChessPiece piece = AddPieceComponent(pieceObject, pieceType);
+        var piece = CreateCosmeticPiece(pieceType, team, boardPosition);
         piece.Initialize(team, boardPosition, forwardDirection);
-        ApplySkinToPiece(piece);
-        PieceViewGeometry.EnsurePieceCollider(pieceObject);
         return piece;
-    }
-
-    private int GetExpectedGroupCount(PieceType pieceType)
-    {
-        switch (pieceType)
-        {
-            case PieceType.Pawn:
-                return 8;
-            case PieceType.Rook:
-            case PieceType.Bishop:
-            case PieceType.Knight:
-                return 2;
-            case PieceType.King:
-            case PieceType.Queen:
-            default:
-                return 1;
-        }
-    }
-
-    private int GetPreferredVisualIndex(PieceType pieceType, int file, int componentCount)
-    {
-        if (componentCount <= 1)
-            return 0;
-
-        switch (pieceType)
-        {
-            case PieceType.Pawn:
-                return Mathf.Clamp(file, 0, componentCount - 1);
-            case PieceType.Rook:
-            case PieceType.Bishop:
-            case PieceType.Knight:
-                return file <= 3 ? 0 : componentCount - 1;
-            default:
-                return 0;
-        }
     }
 
     private void ApplyFenMovementFlags(string castlingRights)

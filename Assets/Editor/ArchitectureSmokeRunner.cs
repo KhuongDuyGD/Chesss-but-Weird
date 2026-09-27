@@ -119,7 +119,6 @@ public static class ArchitectureSmokeRunner
             switch (step++)
             {
                 case 0:
-                    VerifyMeshCache();
                     VerifyNetworkDelayedMessages();
                     game = UnityEngine.Object.FindAnyObjectByType<ChessGame>();
                     Check(game, "Scene creates ChessGame");
@@ -294,33 +293,6 @@ public static class ArchitectureSmokeRunner
         game.BeginAramNetworkGame(PieceTeam.White, PieceTeam.White, state.seed, state);
         Check(game.ApplyFenState(fen), "Load ARAM fixture " + (bomber ? "SuicideBomber" : buff));
         game.ApplyAramNetworkState(state);
-    }
-
-    private static void VerifyMeshCache()
-    {
-        var factoryType = typeof(ChessGame).Assembly.GetType("PieceVisualFactory", true);
-        var factory = Activator.CreateInstance(factoryType, true);
-        var split = factoryType.GetMethod("SplitMeshIntoSpatialGroups");
-        var mesh = new Mesh { name = "Architecture synthetic split fixture" };
-        mesh.vertices = new[] { new Vector3(-3, 0, 0), new Vector3(-2, 1, 0), new Vector3(-1, 0, 0),
-            new Vector3(1, 0, 0), new Vector3(2, 1, 0), new Vector3(3, 0, 0) };
-        mesh.triangles = new[] { 0, 1, 2, 3, 4, 5 };
-        mesh.RecalculateBounds();
-        try
-        {
-            var first = (System.Collections.IList)split.Invoke(factory, new object[] { mesh, 2 });
-            var second = (System.Collections.IList)split.Invoke(factory, new object[] { mesh, 2 });
-            Check(first.Count == 2 && second.Count == 2, "Visual factory splits mesh into two parts");
-            var meshField = first[0].GetType().GetField("mesh");
-            Check(ReferenceEquals(meshField.GetValue(first[0]), meshField.GetValue(second[0])), "Repeated split reuses generated mesh");
-            first.Clear();
-            Check(second.Count == 2, "Sorting or clearing result does not mutate cache");
-        }
-        finally
-        {
-            ((IDisposable)factory).Dispose();
-            UnityEngine.Object.Destroy(mesh);
-        }
     }
 
     private static void Finish(Exception error)

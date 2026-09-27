@@ -21,10 +21,11 @@ public class Chessboard : MonoBehaviour
     [SerializeField] private Vector2 tileColliderSizeMultiplier = new Vector2(1.0f, 1.0f);
     [SerializeField] private bool showGeneratedTiles;
 
-    [Header("Visual board sync")]
-    [SerializeField] private Transform visualBoardRoot;
-    [SerializeField] private string visualBoardObjectName = "ChessBoard_Scene";
-    [SerializeField] private string visualBoardMaterialName = "ChessBoard_Final.001";
+    [Header("Logical board layout")]
+    [Tooltip("Local corner and surface height of the 8x8 grid, independent of cosmetic meshes.")]
+    [SerializeField] private Vector3 boardOrigin = Vector3.zero;
+    [SerializeField] private Vector2 tileSize = Vector2.one;
+
     [SerializeField] private bool drawBoardSyncGizmos = true;
 
     private const int TILE_COUNT_X = 8;
@@ -33,41 +34,6 @@ public class Chessboard : MonoBehaviour
     private static readonly int ColorId = Shader.PropertyToID("_Color");
     private static readonly int BaseMapId = Shader.PropertyToID("_BaseMap");
     private static readonly int MainTexId = Shader.PropertyToID("_MainTex");
-    private static readonly MeshPieceAnchor[] DefaultMeshPieceAnchors =
-    {
-        new MeshPieceAnchor("Rook_1", 2, 0, new Vector2Int(0, 0)),
-        new MeshPieceAnchor("Rook_1", 2, 1, new Vector2Int(7, 0)),
-        new MeshPieceAnchor("Knight_1", 2, 0, new Vector2Int(1, 0)),
-        new MeshPieceAnchor("Knight_1", 2, 1, new Vector2Int(6, 0)),
-        new MeshPieceAnchor("Bishop_1", 2, 0, new Vector2Int(2, 0)),
-        new MeshPieceAnchor("Bishop_1", 2, 1, new Vector2Int(5, 0)),
-        new MeshPieceAnchor("Queen_1", 1, 0, new Vector2Int(3, 0)),
-        new MeshPieceAnchor("King_1", 1, 0, new Vector2Int(4, 0)),
-        new MeshPieceAnchor("Pawn_1", 8, 0, new Vector2Int(0, 1)),
-        new MeshPieceAnchor("Pawn_1", 8, 1, new Vector2Int(1, 1)),
-        new MeshPieceAnchor("Pawn_1", 8, 2, new Vector2Int(2, 1)),
-        new MeshPieceAnchor("Pawn_1", 8, 3, new Vector2Int(3, 1)),
-        new MeshPieceAnchor("Pawn_1", 8, 4, new Vector2Int(4, 1)),
-        new MeshPieceAnchor("Pawn_1", 8, 5, new Vector2Int(5, 1)),
-        new MeshPieceAnchor("Pawn_1", 8, 6, new Vector2Int(6, 1)),
-        new MeshPieceAnchor("Pawn_1", 8, 7, new Vector2Int(7, 1)),
-        new MeshPieceAnchor("Pawn_2", 8, 0, new Vector2Int(0, 6)),
-        new MeshPieceAnchor("Pawn_2", 8, 1, new Vector2Int(1, 6)),
-        new MeshPieceAnchor("Pawn_2", 8, 2, new Vector2Int(2, 6)),
-        new MeshPieceAnchor("Pawn_2", 8, 3, new Vector2Int(3, 6)),
-        new MeshPieceAnchor("Pawn_2", 8, 4, new Vector2Int(4, 6)),
-        new MeshPieceAnchor("Pawn_2", 8, 5, new Vector2Int(5, 6)),
-        new MeshPieceAnchor("Pawn_2", 8, 6, new Vector2Int(6, 6)),
-        new MeshPieceAnchor("Pawn_2", 8, 7, new Vector2Int(7, 6)),
-        new MeshPieceAnchor("Rook_2", 2, 0, new Vector2Int(0, 7)),
-        new MeshPieceAnchor("Rook_2", 2, 1, new Vector2Int(7, 7)),
-        new MeshPieceAnchor("Knight_2", 2, 0, new Vector2Int(1, 7)),
-        new MeshPieceAnchor("Knight_2", 2, 1, new Vector2Int(6, 7)),
-        new MeshPieceAnchor("Bishop_2", 2, 0, new Vector2Int(2, 7)),
-        new MeshPieceAnchor("Bishop_2", 2, 1, new Vector2Int(5, 7)),
-        new MeshPieceAnchor("Queen_2", 1, 0, new Vector2Int(3, 7)),
-        new MeshPieceAnchor("King_2", 1, 0, new Vector2Int(4, 7))
-    };
 
     private GameObject[,] tiles;
     private MeshRenderer[,] tileRenderers;
@@ -341,17 +307,6 @@ public class Chessboard : MonoBehaviour
     {
         if (cosmeticBoard)
             foreach (var renderer in cosmeticBoard.GetComponentsInChildren<Renderer>(true)) renderer.enabled = presentationVisible;
-        Transform visualRoot = GetVisualBoardSearchRoot();
-        if (!visualRoot)
-            return;
-
-        Renderer[] renderers = visualRoot.GetComponentsInChildren<Renderer>(true);
-        for (int i = 0; i < renderers.Length; i++)
-        {
-            Renderer currentRenderer = renderers[i];
-            if (IsVisualBoardRenderer(currentRenderer))
-                currentRenderer.enabled = presentationVisible && !cosmeticBoard;
-        }
     }
 
     public Vector3 GetTileCenterWorld(Vector2Int tile)
@@ -428,350 +383,15 @@ public class Chessboard : MonoBehaviour
 
     private BoardLayout ResolveBoardLayout()
     {
-        if (TryCreatePieceAnchorLayout(out BoardLayout anchorLayout))
-            return anchorLayout;
-
-        if (TryCreateVisualBoardBoundsLayout(out BoardLayout visualBoardLayout))
-            return visualBoardLayout;
-
         return new BoardLayout
         {
-            origin = Vector3.zero,
-            surfaceY = 0f,
-            visualY = hoverDisplayHeightOffset,
-            colliderY = tileRaycastHeightOffset,
-            tileWidth = 1f,
-            tileDepth = 1f
+            origin = boardOrigin,
+            surfaceY = boardOrigin.y,
+            visualY = boardOrigin.y + hoverDisplayHeightOffset,
+            colliderY = boardOrigin.y + tileRaycastHeightOffset,
+            tileWidth = Mathf.Max(.01f, tileSize.x),
+            tileDepth = Mathf.Max(.01f, tileSize.y)
         };
-    }
-
-    private bool TryCreateVisualBoardBoundsLayout(out BoardLayout boardLayout)
-    {
-        boardLayout = default;
-        if (!TryGetVisualBoardBounds(out Bounds boardBounds))
-            return false;
-
-        float playableWidth = Mathf.Max(0.01f, boardBounds.size.x);
-        float playableDepth = Mathf.Max(0.01f, boardBounds.size.z);
-        float surfaceY = boardBounds.max.y;
-        float tileWidth = playableWidth / TILE_COUNT_X;
-        float tileDepth = playableDepth / TILE_COUNT_Y;
-
-        boardLayout = new BoardLayout
-        {
-            origin = new Vector3(
-                boardBounds.min.x,
-                surfaceY,
-                boardBounds.min.z),
-            surfaceY = surfaceY,
-            visualY = surfaceY + hoverDisplayHeightOffset,
-            colliderY = surfaceY + tileRaycastHeightOffset,
-            tileWidth = tileWidth,
-            tileDepth = tileDepth
-        };
-
-        return true;
-    }
-
-    private bool TryCreatePieceAnchorLayout(out BoardLayout boardLayout)
-    {
-        boardLayout = default;
-
-        float originX = 0f;
-        float originZ = 0f;
-        float tileWidth = 0f;
-        float tileDepth = 0f;
-        if (!TryFitAxis(DefaultMeshPieceAnchors, true, out originX, out tileWidth) ||
-            !TryFitAxis(DefaultMeshPieceAnchors, false, out originZ, out tileDepth))
-            return false;
-
-        float surfaceY = 0f;
-        if (TryGetVisualBoardBounds(out Bounds boardBounds))
-            surfaceY = boardBounds.max.y;
-
-        boardLayout = new BoardLayout
-        {
-            origin = new Vector3(originX, surfaceY, originZ),
-            surfaceY = surfaceY,
-            visualY = surfaceY + hoverDisplayHeightOffset,
-            colliderY = surfaceY + tileRaycastHeightOffset,
-            tileWidth = Mathf.Max(0.01f, tileWidth),
-            tileDepth = Mathf.Max(0.01f, tileDepth)
-        };
-
-        return true;
-    }
-
-    private bool TryFitAxis(MeshPieceAnchor[] anchors, bool useX, out float origin, out float tileSize)
-    {
-        origin = 0f;
-        tileSize = 0f;
-
-        float sumIndex = 0f;
-        float sumPosition = 0f;
-        float sumIndexPosition = 0f;
-        float sumIndexSquared = 0f;
-        int validAnchorCount = 0;
-
-        for (int i = 0; i < anchors.Length; i++)
-        {
-            if (!TryGetMeshAnchorLocalPosition(anchors[i], out Vector3 localPosition))
-                continue;
-
-            float index = useX ? anchors[i].boardPosition.x + 0.5f : anchors[i].boardPosition.y + 0.5f;
-            float position = useX ? localPosition.x : localPosition.z;
-            sumIndex += index;
-            sumPosition += position;
-            sumIndexPosition += index * position;
-            sumIndexSquared += index * index;
-            validAnchorCount++;
-        }
-
-        float denominator = validAnchorCount * sumIndexSquared - sumIndex * sumIndex;
-        if (validAnchorCount < 2 || Mathf.Abs(denominator) < 0.0001f)
-            return false;
-
-        tileSize = (validAnchorCount * sumIndexPosition - sumIndex * sumPosition) / denominator;
-        origin = (sumPosition - tileSize * sumIndex) / validAnchorCount;
-
-        if (tileSize < 0f)
-        {
-            tileSize = Mathf.Abs(tileSize);
-            origin -= tileSize * TILE_COUNT_X;
-        }
-
-        return true;
-    }
-
-    private bool TryGetMeshAnchorLocalPosition(MeshPieceAnchor anchor, out Vector3 localPosition)
-    {
-        localPosition = default;
-        Transform sourceTransform = FindVisualChild(anchor.objectName);
-        if (!sourceTransform)
-            return false;
-
-        MeshFilter meshFilter = sourceTransform.GetComponent<MeshFilter>();
-        if (!meshFilter || !meshFilter.sharedMesh)
-            return false;
-
-        List<Vector3> pivots = SplitMeshIntoComponentPivots(meshFilter.sharedMesh, anchor.componentCount);
-        if (pivots.Count <= anchor.componentIndex)
-            return false;
-
-        pivots.Sort((left, right) =>
-            sourceTransform.TransformPoint(left).x.CompareTo(sourceTransform.TransformPoint(right).x));
-
-        localPosition = transform.InverseTransformPoint(sourceTransform.TransformPoint(pivots[anchor.componentIndex]));
-        return true;
-    }
-
-    private List<Vector3> SplitMeshIntoComponentPivots(Mesh sourceMesh, int expectedGroupCount)
-    {
-        Vector3[] vertices = sourceMesh.vertices;
-        List<TriangleAxisData> triangles = new List<TriangleAxisData>();
-        int subMeshCount = Mathf.Max(1, sourceMesh.subMeshCount);
-        bool splitAlongZ = sourceMesh.bounds.size.z > sourceMesh.bounds.size.x;
-
-        for (int subMesh = 0; subMesh < subMeshCount; subMesh++)
-        {
-            int[] subMeshTriangles = sourceMesh.GetTriangles(subMesh);
-            for (int i = 0; i < subMeshTriangles.Length; i += 3)
-            {
-                int a = subMeshTriangles[i];
-                int b = subMeshTriangles[i + 1];
-                int c = subMeshTriangles[i + 2];
-                float centerAxis = splitAlongZ
-                    ? (vertices[a].z + vertices[b].z + vertices[c].z) / 3f
-                    : (vertices[a].x + vertices[b].x + vertices[c].x) / 3f;
-                triangles.Add(new TriangleAxisData(a, b, c, centerAxis));
-            }
-        }
-
-        List<Vector3> pivots = new List<Vector3>();
-        if (triangles.Count == 0)
-            return pivots;
-
-        int groupCount = Mathf.Clamp(expectedGroupCount, 1, triangles.Count);
-        List<TriangleAxisData>[] groups = GroupTrianglesByCenterAxis(triangles, groupCount);
-        for (int i = 0; i < groups.Length; i++)
-        {
-            if (groups[i].Count == 0)
-                continue;
-
-            Bounds localBounds = new Bounds(vertices[groups[i][0].a], Vector3.zero);
-            for (int j = 0; j < groups[i].Count; j++)
-            {
-                TriangleAxisData triangle = groups[i][j];
-                localBounds.Encapsulate(vertices[triangle.a]);
-                localBounds.Encapsulate(vertices[triangle.b]);
-                localBounds.Encapsulate(vertices[triangle.c]);
-            }
-
-            pivots.Add(new Vector3(localBounds.center.x, localBounds.min.y, localBounds.center.z));
-        }
-
-        return pivots;
-    }
-
-    private List<TriangleAxisData>[] GroupTrianglesByCenterAxis(List<TriangleAxisData> triangles, int groupCount)
-    {
-        List<TriangleAxisData>[] groups = CreateTriangleGroups(groupCount);
-        if (groupCount == 1)
-        {
-            groups[0].AddRange(triangles);
-            return groups;
-        }
-
-        float min = triangles[0].centerAxis;
-        float max = triangles[0].centerAxis;
-        for (int i = 1; i < triangles.Count; i++)
-        {
-            min = Mathf.Min(min, triangles[i].centerAxis);
-            max = Mathf.Max(max, triangles[i].centerAxis);
-        }
-
-        float[] centers = new float[groupCount];
-        float range = Mathf.Max(0.0001f, max - min);
-        for (int i = 0; i < centers.Length; i++)
-            centers[i] = min + range * ((i + 0.5f) / groupCount);
-
-        for (int iteration = 0; iteration < 12; iteration++)
-        {
-            groups = CreateTriangleGroups(groupCount);
-            for (int i = 0; i < triangles.Count; i++)
-                groups[FindNearestCenter(centers, triangles[i].centerAxis)].Add(triangles[i]);
-
-            for (int i = 0; i < groups.Length; i++)
-            {
-                if (groups[i].Count == 0)
-                    continue;
-
-                float sum = 0f;
-                for (int j = 0; j < groups[i].Count; j++)
-                    sum += groups[i][j].centerAxis;
-
-                centers[i] = sum / groups[i].Count;
-            }
-        }
-
-        return groups;
-    }
-
-    private List<TriangleAxisData>[] CreateTriangleGroups(int groupCount)
-    {
-        List<TriangleAxisData>[] groups = new List<TriangleAxisData>[groupCount];
-        for (int i = 0; i < groups.Length; i++)
-            groups[i] = new List<TriangleAxisData>();
-
-        return groups;
-    }
-
-    private int FindNearestCenter(float[] centers, float value)
-    {
-        int nearestIndex = 0;
-        float nearestDistance = Mathf.Abs(value - centers[0]);
-        for (int i = 1; i < centers.Length; i++)
-        {
-            float distance = Mathf.Abs(value - centers[i]);
-            if (distance >= nearestDistance)
-                continue;
-
-            nearestDistance = distance;
-            nearestIndex = i;
-        }
-
-        return nearestIndex;
-    }
-
-    private bool TryGetVisualBoardBounds(out Bounds boardBounds)
-    {
-        Renderer[] renderers = GetVisualBoardSearchRoot().GetComponentsInChildren<Renderer>(true);
-        bool foundBounds = false;
-        boardBounds = new Bounds();
-
-        for (int i = 0; i < renderers.Length; i++)
-        {
-            Renderer currentRenderer = renderers[i];
-            if (!IsVisualBoardRenderer(currentRenderer))
-                continue;
-
-            Bounds localBounds = WorldBoundsToLocalBounds(currentRenderer.bounds);
-            if (!foundBounds)
-            {
-                boardBounds = localBounds;
-                foundBounds = true;
-            }
-            else
-            {
-                boardBounds.Encapsulate(localBounds);
-            }
-        }
-
-        return foundBounds;
-    }
-
-    private Transform GetVisualBoardSearchRoot()
-    {
-        if (visualBoardRoot)
-            return visualBoardRoot;
-
-        Transform foundRoot = transform.Find("VisualChessSet");
-        return foundRoot ? foundRoot : transform;
-    }
-
-    private bool IsVisualBoardRenderer(Renderer currentRenderer)
-    {
-        if (!string.IsNullOrWhiteSpace(visualBoardObjectName) &&
-            currentRenderer.gameObject.name.Contains(visualBoardObjectName))
-            return true;
-
-        Material[] sharedMaterials = currentRenderer.sharedMaterials;
-        for (int i = 0; i < sharedMaterials.Length; i++)
-        {
-            Material sharedMaterial = sharedMaterials[i];
-            if (sharedMaterial &&
-                !string.IsNullOrWhiteSpace(visualBoardMaterialName) &&
-                sharedMaterial.name.StartsWith(visualBoardMaterialName))
-                return true;
-        }
-
-        return false;
-    }
-
-    private Transform FindVisualChild(string objectName)
-    {
-        if (string.IsNullOrWhiteSpace(objectName))
-            return null;
-
-        Transform searchRoot = GetVisualBoardSearchRoot();
-        Transform[] children = searchRoot.GetComponentsInChildren<Transform>(true);
-        for (int i = 0; i < children.Length; i++)
-            if (children[i].name == objectName)
-                return children[i];
-
-        return null;
-    }
-
-    private Bounds WorldBoundsToLocalBounds(Bounds worldBounds)
-    {
-        Vector3 min = new Vector3(float.PositiveInfinity, float.PositiveInfinity, float.PositiveInfinity);
-        Vector3 max = new Vector3(float.NegativeInfinity, float.NegativeInfinity, float.NegativeInfinity);
-
-        for (int x = 0; x <= 1; x++)
-            for (int y = 0; y <= 1; y++)
-                for (int z = 0; z <= 1; z++)
-                {
-                    Vector3 worldPoint = new Vector3(
-                        x == 0 ? worldBounds.min.x : worldBounds.max.x,
-                        y == 0 ? worldBounds.min.y : worldBounds.max.y,
-                        z == 0 ? worldBounds.min.z : worldBounds.max.z);
-                    Vector3 localPoint = transform.InverseTransformPoint(worldPoint);
-                    min = Vector3.Min(min, localPoint);
-                    max = Vector3.Max(max, localPoint);
-                }
-
-        Bounds localBounds = new Bounds((min + max) * 0.5f, max - min);
-        return localBounds;
     }
 
     private void OnDrawGizmosSelected()
@@ -935,35 +555,4 @@ public class Chessboard : MonoBehaviour
         public float tileDepth;
     }
 
-    private readonly struct MeshPieceAnchor
-    {
-        public readonly string objectName;
-        public readonly int componentCount;
-        public readonly int componentIndex;
-        public readonly Vector2Int boardPosition;
-
-        public MeshPieceAnchor(string objectName, int componentCount, int componentIndex, Vector2Int boardPosition)
-        {
-            this.objectName = objectName;
-            this.componentCount = componentCount;
-            this.componentIndex = componentIndex;
-            this.boardPosition = boardPosition;
-        }
-    }
-
-    private readonly struct TriangleAxisData
-    {
-        public readonly int a;
-        public readonly int b;
-        public readonly int c;
-        public readonly float centerAxis;
-
-        public TriangleAxisData(int a, int b, int c, float centerAxis)
-        {
-            this.a = a;
-            this.b = b;
-            this.c = c;
-            this.centerAxis = centerAxis;
-        }
-    }
 }

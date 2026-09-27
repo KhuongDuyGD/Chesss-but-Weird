@@ -159,9 +159,8 @@ MonoBehaviour:
   tileVisualSizeMultiplier: {x: 1, y: 1}
   tileColliderSizeMultiplier: {x: 1, y: 1}
   showGeneratedTiles: 0
-  visualBoardRoot: {fileID: 0}
-  visualBoardObjectName: ChessBoard_Scene
-  visualBoardMaterialName: ChessBoard_Final.001
+  boardOrigin: {x: 0, y: 0, z: 0}
+  tileSize: {x: 1, y: 1}
   drawBoardSyncGizmos: 1
 --- !u!4 &284885885
 Transform:

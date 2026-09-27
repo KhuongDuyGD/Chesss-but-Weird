@@ -52,10 +52,8 @@ public static class MenuLayoutAudit
             Invoke(view, "SetScreenImmediate", Field<RectTransform>(view, "modeScreen"));
             var profile = Field<RectTransform>(view, "profileOverlay");
             Invoke(view, "SetOverlayState", profile, true, 1f, 1f);
-            Field<PlayerProfileMenuController>(view, "profileController").Open();
+            Invoke(Field<PlayerProfileMenuController>(view, "profileController"), "Refresh", PlayerAuthService.CurrentApiUser);
             CaptureSizes(rootCanvas, folder, "profile");
-            Field<RectTransform>(Field<PlayerProfileMenuController>(view, "profileController"), "editPanel").gameObject.SetActive(true);
-            CaptureSizes(rootCanvas, folder, "profile-edit");
             profile.gameObject.SetActive(false);
             var inventory = Field<RectTransform>(view, "inventoryOverlay");
             Invoke(view, "SetOverlayState", inventory, true, 1f, 1f);
@@ -271,4 +269,3 @@ public static class MenuLayoutAudit
     private static T Field<T>(object target, string name) => (T)target.GetType().GetField(name, Flags).GetValue(target);
     private static void Invoke(object target, string name, params object[] args) => target.GetType().GetMethod(name, Flags | BindingFlags.Public).Invoke(target, args);
 }
-

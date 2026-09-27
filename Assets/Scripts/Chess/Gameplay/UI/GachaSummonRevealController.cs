@@ -442,7 +442,11 @@ public sealed class GachaSummonRevealController : MonoBehaviour
     {
         for (int i = 0; i < runtimeSprites.Count; i++)
             if (runtimeSprites[i])
-                Destroy(runtimeSprites[i].texture);
+            {
+                var texture = runtimeSprites[i].texture;
+                if (Application.isPlaying) { Destroy(runtimeSprites[i]); Destroy(texture); }
+                else { DestroyImmediate(runtimeSprites[i]); DestroyImmediate(texture); }
+            }
     }
 
     private static float Smooth01(float value)
