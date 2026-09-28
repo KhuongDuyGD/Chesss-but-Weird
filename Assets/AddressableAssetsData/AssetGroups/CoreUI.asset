@@ -291,12 +291,6 @@ MonoBehaviour:
     m_SerializedLabels:
     - CoreUI
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 5272c43d8ec7f65419905e83a71bf094
-    m_Address: Assets/Materials/Inventory/MusicButton.png
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - CoreUI
-    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 5393e6ecd9764f53831450728ee4df02
     m_Address: Assets/Materials/Gacha_menu/GachaRevealGlyph6.png
     m_ReadOnly: 0
@@ -411,12 +405,6 @@ MonoBehaviour:
     m_SerializedLabels:
     - CoreUI
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 7de9403b1d8346f4cb51091969c7c8a2
-    m_Address: Assets/Materials/Inventory/EffectButton.png
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - CoreUI
-    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 7df361332c15f4a43b04feba4259437e
     m_Address: Assets/Materials/MultiplayerUI/MultiplayerUIBlank.png
     m_ReadOnly: 0
@@ -465,12 +453,6 @@ MonoBehaviour:
     m_SerializedLabels:
     - CoreUI
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 893d4b22ebeb97e49a4b0704dce96689
-    m_Address: Assets/Materials/Inventory/SortButton.png
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - CoreUI
-    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 8b397c5f09a2763408bb02f49b66f4ba
     m_Address: Assets/Materials/Main_Menu/MultiplayerButton.png
     m_ReadOnly: 0
@@ -485,12 +467,6 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 9136f54d9526eac45bdfe1a75b0fd979
     m_Address: Assets/Materials/GameplayUI/AnalysisBoard.png
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - CoreUI
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 913d260eaed018940af98695f6c252ca
-    m_Address: Assets/Materials/Inventory/InventoryBlank.png
     m_ReadOnly: 0
     m_SerializedLabels:
     - CoreUI
@@ -539,12 +515,6 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 9b8695f48bb132a4f9359aa27de2c731
     m_Address: Assets/Materials/Main_Menu/LANButton.png
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - CoreUI
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 9d36633715a12954db094b20b7f7bbfd
-    m_Address: Assets/Materials/Inventory/InventoryDesign.png
     m_ReadOnly: 0
     m_SerializedLabels:
     - CoreUI
@@ -687,12 +657,6 @@ MonoBehaviour:
     m_SerializedLabels:
     - CoreUI
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: c06070a5b32385741b98a3292599cdca
-    m_Address: Assets/Materials/Inventory/SkinButton.png
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - CoreUI
-    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: c0c691db68b072a44ab1f14ef9d4f542
     m_Address: Assets/Materials/Main_Menu/GameLogo.png
     m_ReadOnly: 0
@@ -761,12 +725,6 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: dbda7d420f5c3364ca90942c981b8b02
     m_Address: Assets/Materials/Result_Menu/LoseBroken.png
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - CoreUI
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: dd8ceb756b3b38f48b805e96793c56b6
-    m_Address: Assets/Materials/Inventory/ExitButton.png
     m_ReadOnly: 0
     m_SerializedLabels:
     - CoreUI

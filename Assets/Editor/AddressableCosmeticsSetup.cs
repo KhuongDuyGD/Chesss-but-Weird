@@ -53,7 +53,7 @@ public static class AddressableCosmeticsSetup
         var catalog = GetOrCreate<CosmeticCatalog>(Root + "/Data/CosmeticCatalog.asset");
         Register(catalog, "CoreCatalog", CosmeticCatalog.Address);
         DefaultLowPolyCosmeticsSetup.Setup();
-        foreach (string folder in new[] { "Main_Menu", "Gacha_menu", "GameplayUI", "Inventory", "LANUI", "MultiplayerUI", "PlayerProfile", "Result_Menu", "SettingsMenu" })
+        foreach (string folder in new[] { "Main_Menu", "Gacha_menu", "GameplayUI", "LANUI", "MultiplayerUI", "PlayerProfile", "Result_Menu", "SettingsMenu" })
         {
             string path = "Assets/Materials/" + folder;
             if (!AssetDatabase.IsValidFolder(path)) continue;
