@@ -43,7 +43,7 @@ public static class MenuLayoutAudit
         try
         {
             rootCanvas.enabled = true;
-            foreach (string field in new[] { "mainScreen", "modeScreen", "localModeScreen", "botDifficultyScreen", "gachaScreen", "sideScreen", "multiplayerModeScreen", "aramModeScreen" })
+            foreach (string field in new[] { "mainScreen", "modeScreen", "inventoryScreen", "localModeScreen", "botDifficultyScreen", "gachaScreen", "sideScreen", "multiplayerModeScreen", "aramModeScreen" })
             {
                 var screen = Field<RectTransform>(view, field);
                 Invoke(view, "SetScreenImmediate", screen);
@@ -55,11 +55,6 @@ public static class MenuLayoutAudit
             Invoke(Field<PlayerProfileMenuController>(view, "profileController"), "Refresh", PlayerAuthService.CurrentApiUser);
             CaptureSizes(rootCanvas, folder, "profile");
             profile.gameObject.SetActive(false);
-            var inventory = Field<RectTransform>(view, "inventoryOverlay");
-            Invoke(view, "SetOverlayState", inventory, true, 1f, 1f);
-            Field<InventoryMenuController>(view, "inventoryController").Open();
-            CaptureSizes(rootCanvas, folder, "inventory");
-            inventory.gameObject.SetActive(false);
             Invoke(view, "SetAllScreensActive", false);
             var settings = Field<RectTransform>(view, "settingsOverlay");
             Invoke(view, "SetOverlayState", settings, true, 1f, 1f);

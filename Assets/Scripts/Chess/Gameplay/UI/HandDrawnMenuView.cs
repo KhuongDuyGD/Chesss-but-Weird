@@ -31,7 +31,7 @@ public class HandDrawnMenuView : MonoBehaviour
     private RectTransform aramModeScreen;
     private RectTransform multiplayerModeScreen;
     private RectTransform gachaScreen;
-    private RectTransform inventoryOverlay;
+    private RectTransform inventoryScreen;
     private RectTransform profileOverlay;
     private RectTransform settingsOverlay;
     private RectTransform botDifficultyScreen;
@@ -46,7 +46,6 @@ public class HandDrawnMenuView : MonoBehaviour
     private PlayerProfileMenuController profileController;
     private SettingsMenuController settingsController;
     private Coroutine screenTransitionCoroutine;
-    private Coroutine inventoryOverlayTransitionCoroutine;
     private Coroutine profileOverlayTransitionCoroutine;
     private Coroutine settingsOverlayTransitionCoroutine;
     private readonly List<Sprite> runtimeSprites = new List<Sprite>();
@@ -71,6 +70,7 @@ public class HandDrawnMenuView : MonoBehaviour
         BuildCanvas();
         BuildMainScreen();
         BuildModeScreen();
+        BuildInventoryScreen();
         BuildLocalModeScreen();
         BuildAramModeScreen();
         BuildMultiplayerModeScreen();
@@ -98,7 +98,6 @@ public class HandDrawnMenuView : MonoBehaviour
         SetInputEnabled(true);
         TransitionToScreen(modeScreen, () =>
         {
-            HideInventoryOverlayImmediate();
             HideProfileOverlayImmediate();
         });
     }
@@ -177,7 +176,6 @@ public class HandDrawnMenuView : MonoBehaviour
     public void HideForPlaying()
     {
         StopMenuTransitions();
-        HideInventoryOverlayImmediate();
         HideProfileOverlayImmediate();
         HideSettingsOverlayImmediate();
         SetVisible(false);
@@ -276,7 +274,6 @@ public class HandDrawnMenuView : MonoBehaviour
     {
         modeScreen = CreateScreen("Mode Select");
         BuildPlayHub(modeScreen);
-        BuildInventoryOverlay();
         BuildProfileOverlay();
     }
 
@@ -326,21 +323,11 @@ public class HandDrawnMenuView : MonoBehaviour
         modeLogoutButton = AddLogoutButton(screen);
     }
 
-    private void BuildInventoryOverlay()
+    private void BuildInventoryScreen()
     {
-        GameObject overlay = new GameObject("Inventory Overlay", typeof(RectTransform));
-        inventoryOverlay = overlay.GetComponent<RectTransform>();
-        inventoryOverlay.SetParent(modeScreen, false);
-        Stretch(inventoryOverlay);
-        inventoryOverlay.SetAsLastSibling();
-        CanvasGroup group = overlay.AddComponent<CanvasGroup>();
-        group.alpha = 1f;
-        group.interactable = true;
-        group.blocksRaycasts = false;
-
-        inventoryController = overlay.AddComponent<InventoryMenuController>();
-        inventoryController.Initialize(inventoryOverlay, CloseInventoryMenu);
-        overlay.SetActive(false);
+        inventoryScreen = CreateScreen("Inventory");
+        inventoryController = inventoryScreen.gameObject.AddComponent<InventoryMenuController>();
+        inventoryController.Initialize(inventoryScreen, ShowModeSelection);
     }
 
     private void BuildProfileOverlay()
@@ -380,21 +367,12 @@ public class HandDrawnMenuView : MonoBehaviour
     private void ShowInventoryMenu()
     {
         if (!owner.RequireAccountAccess("Inventory")) return;
-        if (!inventoryOverlay)
+        if (!inventoryScreen)
             return;
 
         SetVisible(true);
         SetInputEnabled(true);
-        TransitionToScreen(modeScreen, OpenInventoryOverlay);
-    }
-
-    private void CloseInventoryMenu()
-    {
-        if (inventoryOverlay)
-            inventoryOverlayTransitionCoroutine = StartOverlayTransition(inventoryOverlay, inventoryOverlayTransitionCoroutine, false);
-
-        if (!IsProfileOpen)
-            SetModeScreenBackgroundInteractable(true);
+        TransitionToScreen(inventoryScreen, () => inventoryController?.Open());
     }
 
     private void ShowProfileMenu()
@@ -415,8 +393,7 @@ public class HandDrawnMenuView : MonoBehaviour
 
         SetModeLogoutVisible(true);
 
-        if (!IsInventoryOpen)
-            SetModeScreenBackgroundInteractable(true);
+        SetModeScreenBackgroundInteractable(true);
     }
 
     private void ShowSettingsMenu()
@@ -427,7 +404,6 @@ public class HandDrawnMenuView : MonoBehaviour
 
         SetVisible(true);
         SetInputEnabled(true);
-        HideInventoryOverlayImmediate();
         HideProfileOverlayImmediate();
         settingsOverlay.SetAsLastSibling();
         settingsController?.Open();
@@ -440,42 +416,16 @@ public class HandDrawnMenuView : MonoBehaviour
             settingsOverlayTransitionCoroutine = StartOverlayTransition(settingsOverlay, settingsOverlayTransitionCoroutine, false);
     }
 
-    private void OpenInventoryOverlay()
-    {
-        if (!inventoryOverlay)
-            return;
-
-        HideProfileOverlayImmediate();
-        SetModeScreenBackgroundInteractable(false);
-        inventoryOverlay.SetAsLastSibling();
-        inventoryController?.Open();
-        inventoryOverlayTransitionCoroutine = StartOverlayTransition(inventoryOverlay, inventoryOverlayTransitionCoroutine, true);
-    }
-
     private void OpenProfileOverlay()
     {
         if (!profileOverlay)
             return;
 
-        HideInventoryOverlayImmediate();
         SetModeScreenBackgroundInteractable(false);
         profileOverlay.SetAsLastSibling();
         profileController?.Open();
         SetModeLogoutVisible(false);
         profileOverlayTransitionCoroutine = StartOverlayTransition(profileOverlay, profileOverlayTransitionCoroutine, true);
-    }
-
-    private void HideInventoryOverlayImmediate()
-    {
-        if (inventoryOverlayTransitionCoroutine != null)
-        {
-            StopCoroutine(inventoryOverlayTransitionCoroutine);
-            inventoryOverlayTransitionCoroutine = null;
-        }
-
-        SetOverlayState(inventoryOverlay, false, 1f, 0.96f);
-        if (!IsProfileOpen)
-            SetModeScreenBackgroundInteractable(true);
     }
 
     private void HideProfileOverlayImmediate()
@@ -488,8 +438,7 @@ public class HandDrawnMenuView : MonoBehaviour
 
         SetOverlayState(profileOverlay, false, 1f, 0.96f);
         SetModeLogoutVisible(true);
-        if (!IsInventoryOpen)
-            SetModeScreenBackgroundInteractable(true);
+        SetModeScreenBackgroundInteractable(true);
     }
 
     private void HideSettingsOverlayImmediate()
@@ -503,12 +452,11 @@ public class HandDrawnMenuView : MonoBehaviour
         SetOverlayState(settingsOverlay, false, 1f, 0.96f);
     }
 
-    private bool IsInventoryOpen => inventoryOverlay && inventoryOverlay.gameObject.activeSelf;
     private bool IsProfileOpen => profileOverlay && profileOverlay.gameObject.activeSelf;
 
     private void SetModeScreenBackgroundInteractable(bool interactable)
     {
-        // Inventory/Profile overlays already include a full-screen raycast blocker.
+        // Profile overlay includes a full-screen raycast blocker.
         // Do not flip Selectable.interactable here: Unity applies disabled tint,
         // which makes the hand-drawn buttons look permanently washed out during
         // fade transitions.
@@ -1042,12 +990,11 @@ public class HandDrawnMenuView : MonoBehaviour
 
     private void TransitionToScreen(RectTransform activeScreen, Action prepareAction)
     {
-        if (!mainScreen || !modeScreen || !localModeScreen || !aramModeScreen || !multiplayerModeScreen || !gachaScreen || !botDifficultyScreen || !sideScreen || !skinScreen || !activeScreen)
+        if (!mainScreen || !modeScreen || !inventoryScreen || !localModeScreen || !aramModeScreen || !multiplayerModeScreen || !gachaScreen || !botDifficultyScreen || !sideScreen || !skinScreen || !activeScreen)
             return;
 
         if (activeScreen != modeScreen)
         {
-            HideInventoryOverlayImmediate();
             HideProfileOverlayImmediate();
         }
 
@@ -1137,7 +1084,7 @@ public class HandDrawnMenuView : MonoBehaviour
 
     private void SetScreenImmediate(RectTransform activeScreen)
     {
-        if (!mainScreen || !modeScreen || !localModeScreen || !aramModeScreen || !multiplayerModeScreen || !gachaScreen || !botDifficultyScreen || !sideScreen || !skinScreen || !activeScreen)
+        if (!mainScreen || !modeScreen || !inventoryScreen || !localModeScreen || !aramModeScreen || !multiplayerModeScreen || !gachaScreen || !botDifficultyScreen || !sideScreen || !skinScreen || !activeScreen)
             return;
 
         RectTransform[] screens = GetMenuScreens();
@@ -1165,6 +1112,8 @@ public class HandDrawnMenuView : MonoBehaviour
             mainScreen.gameObject.SetActive(active);
         if (modeScreen)
             modeScreen.gameObject.SetActive(active);
+        if (inventoryScreen)
+            inventoryScreen.gameObject.SetActive(active);
         if (localModeScreen)
             localModeScreen.gameObject.SetActive(active);
         if (aramModeScreen)
@@ -1185,7 +1134,7 @@ public class HandDrawnMenuView : MonoBehaviour
 
     private RectTransform[] GetMenuScreens()
     {
-        return new[] { mainScreen, modeScreen, localModeScreen, aramModeScreen, multiplayerModeScreen, gachaScreen, botDifficultyScreen, sideScreen, skinScreen };
+        return new[] { mainScreen, modeScreen, inventoryScreen, localModeScreen, aramModeScreen, multiplayerModeScreen, gachaScreen, botDifficultyScreen, sideScreen, skinScreen };
     }
 
     private void ResetInactiveTransitionScreens(RectTransform previousScreen, RectTransform activeScreen)
@@ -1261,9 +1210,7 @@ public class HandDrawnMenuView : MonoBehaviour
 
         SetOverlayState(overlay, visible, 1f, endScale);
 
-        if (overlay == inventoryOverlay)
-            inventoryOverlayTransitionCoroutine = null;
-        else if (overlay == profileOverlay)
+        if (overlay == profileOverlay)
             profileOverlayTransitionCoroutine = null;
         else if (overlay == settingsOverlay)
             settingsOverlayTransitionCoroutine = null;
@@ -1320,12 +1267,6 @@ public class HandDrawnMenuView : MonoBehaviour
         {
             StopCoroutine(screenTransitionCoroutine);
             screenTransitionCoroutine = null;
-        }
-
-        if (inventoryOverlayTransitionCoroutine != null)
-        {
-            StopCoroutine(inventoryOverlayTransitionCoroutine);
-            inventoryOverlayTransitionCoroutine = null;
         }
 
         if (profileOverlayTransitionCoroutine != null)
