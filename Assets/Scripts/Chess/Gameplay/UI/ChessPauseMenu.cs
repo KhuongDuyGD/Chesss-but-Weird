@@ -325,7 +325,7 @@ public sealed class ChessPauseMenu : MonoBehaviour
 
     private static Image CreateImage(string name, Transform parent, Sprite sprite, Color color)
     {
-        GameObject imageObject = new GameObject(name, typeof(RectTransform), typeof(Image));
+        GameObject imageObject = new GameObject(name, typeof(RectTransform), typeof(AntialiasedMenuImage));
         imageObject.transform.SetParent(parent, false);
         Image image = imageObject.GetComponent<Image>();
         image.sprite = sprite;
@@ -363,14 +363,13 @@ public sealed class ChessPauseMenu : MonoBehaviour
         }
 
         RemoveConnectedCheckerboard(croppedPixels, sourceWidth, sourceHeight);
-        Texture2D croppedTexture = new Texture2D(sourceWidth, sourceHeight, TextureFormat.RGBA32, false)
+        Texture2D croppedTexture = new Texture2D(sourceWidth, sourceHeight, TextureFormat.RGBA32, true)
         {
             name = texture.name + " UI Crop",
-            filterMode = FilterMode.Bilinear,
             wrapMode = TextureWrapMode.Clamp
         };
         croppedTexture.SetPixels32(croppedPixels);
-        croppedTexture.Apply(false, true);
+        MenuTextureSampling.FinishRuntimeTexture(croppedTexture);
         return Sprite.Create(croppedTexture, new Rect(0f, 0f, sourceWidth, sourceHeight), new Vector2(0.5f, 0.5f), 100f);
     }
 

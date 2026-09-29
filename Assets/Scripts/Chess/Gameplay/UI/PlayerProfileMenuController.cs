@@ -45,7 +45,7 @@ public sealed class PlayerProfileMenuController : MonoBehaviour
         }
         catch (Exception error)
         {
-            if (this) SetStatus("Couldn't update your profile. " + error.Message);
+            if (this) SetStatus("Couldn't update your profile. " + PlayerNotificationText.FromException(error));
         }
         finally
         {
@@ -56,7 +56,7 @@ public sealed class PlayerProfileMenuController : MonoBehaviour
 
     private void Build()
     {
-        var backdrop = root.gameObject.GetComponent<Image>() ?? root.gameObject.AddComponent<Image>();
+        var backdrop = root.gameObject.GetComponent<Image>() ?? root.gameObject.AddComponent<AntialiasedMenuImage>();
         backdrop.color = UI.Paper;
         var page = UI.Node(root, "Player Notebook", new Rect(0, 0, 1672, 941));
         page.gameObject.AddComponent<InventoryContentRootFitter>().Configure(1672, 941, 1f);
@@ -136,10 +136,10 @@ public sealed class PlayerProfileMenuController : MonoBehaviour
         Sprite prepared = CoreArtworkCache.GetSprite(path, true);
         if (prepared) return prepared;
         if (!File.Exists(path)) return null;
-        avatarTexture = new Texture2D(2, 2, TextureFormat.RGBA32, false) { name = "Profile Avatar", filterMode = FilterMode.Bilinear };
+        avatarTexture = new Texture2D(2, 2, TextureFormat.RGBA32, true) { name = "Profile Avatar" };
         if (!avatarTexture.LoadImage(File.ReadAllBytes(path))) return null;
         avatarSprite = Sprite.Create(avatarTexture, MenuArtworkBounds.GetRect(path, avatarTexture), new Vector2(.5f, .5f), 100);
-        avatarTexture.Apply(false, true);
+        MenuTextureSampling.FinishRuntimeTexture(avatarTexture);
         return avatarSprite;
     }
 

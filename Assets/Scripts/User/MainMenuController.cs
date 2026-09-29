@@ -62,7 +62,7 @@ public sealed class MainMenuController : MonoBehaviour
         }
         catch (Exception error)
         {
-            if (this != null) Show(error.Message);
+            if (this != null) Show(PlayerNotificationText.FromException(error));
         }
         finally
         {
@@ -81,7 +81,7 @@ public sealed class MainMenuController : MonoBehaviour
         }
         catch (Exception error)
         {
-            if (this != null) Show(error.Message);
+            if (this != null) Show(PlayerNotificationText.FromException(error));
         }
         finally
         {
@@ -105,7 +105,7 @@ public sealed class MainMenuController : MonoBehaviour
         }
         catch (Exception error)
         {
-            if (this != null) Show(error.Message);
+            if (this != null) Show(PlayerNotificationText.FromException(error));
         }
         finally
         {
@@ -126,7 +126,7 @@ public sealed class MainMenuController : MonoBehaviour
         }
         catch (Exception error)
         {
-            if (this != null) Show("Local session cleared. Server response: " + error.Message);
+            if (this != null) Show("Local session cleared. " + PlayerNotificationText.FromException(error));
         }
         finally
         {

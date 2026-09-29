@@ -126,7 +126,7 @@ public sealed partial class GachaMenuController : MonoBehaviour
         }
         catch (Exception error)
         {
-            if (this) SetStatus("Could not load gacha: " + error.Message);
+            if (this) SetStatus("Could not load gacha: " + PlayerNotificationText.FromException(error));
         }
         finally
         {
@@ -171,7 +171,7 @@ public sealed partial class GachaMenuController : MonoBehaviour
             if (this)
             {
                 RefreshAll();
-                SetStatus("Could not load banner: " + error.Message);
+                SetStatus("Could not load banner: " + PlayerNotificationText.FromException(error));
             }
         }
         finally
@@ -294,7 +294,7 @@ public sealed partial class GachaMenuController : MonoBehaviour
                 if (error is ApiException apiError && apiError.StatusCode >= 400 && apiError.StatusCode < 500)
                     pendingRequestId = Guid.Empty;
                 summonInProgress = false;
-                SetStatus("Summon failed: " + error.Message + ". You can retry this summon safely.");
+                SetStatus("Summon failed: " + PlayerNotificationText.FromException(error) + " You can retry this summon safely.");
             }
         }
     }
@@ -420,7 +420,7 @@ public sealed partial class GachaMenuController : MonoBehaviour
         }
         catch (Exception error)
         {
-            if (this) historyPageLabel.text = "Couldn't load history. " + error.Message;
+            if (this) historyPageLabel.text = "Couldn't load history. " + PlayerNotificationText.FromException(error);
         }
         finally
         {
@@ -624,7 +624,7 @@ public sealed partial class GachaMenuController : MonoBehaviour
         }
 
         byte[] bytes = File.ReadAllBytes(path);
-        Texture2D texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+        Texture2D texture = new Texture2D(2, 2, TextureFormat.RGBA32, true);
         if (!texture.LoadImage(bytes))
         {
             Destroy(texture);
@@ -632,10 +632,9 @@ public sealed partial class GachaMenuController : MonoBehaviour
         }
 
         texture.name = Path.GetFileNameWithoutExtension(fileName);
-        texture.filterMode = FilterMode.Bilinear;
         Rect rect = trimTransparent ? MenuArtworkBounds.GetRect(AssetFolder + "/" + fileName, texture) : new Rect(0f, 0f, texture.width, texture.height);
         Sprite sprite = Sprite.Create(texture, rect, new Vector2(0.5f, 0.5f), 100f, 0u, SpriteMeshType.FullRect);
-        texture.Apply(false, true);
+        MenuTextureSampling.FinishRuntimeTexture(texture);
         runtimeSprites.Add(sprite);
         return sprite;
     }

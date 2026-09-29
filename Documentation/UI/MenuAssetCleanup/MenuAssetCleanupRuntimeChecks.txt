@@ -1,0 +1,27 @@
+PASS Menu is not ready before artwork preparation
+PASS Production artwork preparation succeeds after removing old Main Menu 1/2 sprites
+PASS Both redesigned menus use the single preserved original logo
+PASS Multiplayer title and both mode cards remain available
+PASS Side-selection title and both cards remain available
+PASS Shared submenu Back button remains available
+PASS Artwork used by local, multiplayer, side and transition screens remains available
+PASS ARAM option frame still loads from the LAN blank artwork
+PASS Repeated preparation does not reload artwork
+PASS Bot-difficulty catalog retains all six texture references
+PASS Unity resolves the protected bot-difficulty asset dependencies
+PASS Retired sprite slot is removed: gameLogo
+PASS Retired sprite slot is removed: startButton
+PASS Retired sprite slot is removed: settingsButton
+PASS Retired sprite slot is removed: creditsButton
+PASS Retired sprite slot is removed: logoutButton
+PASS Retired sprite slot is removed: gameSlogan
+PASS Retired sprite slot is removed: localGameplayButton
+PASS Retired sprite slot is removed: onlinePlayButton
+PASS Retired sprite slot is removed: aramModeButton
+PASS Retired sprite slot is removed: shopButton
+PASS Retired sprite slot is removed: inventoryButton
+PASS Retired sprite slot is removed: gachaButton
+PASS Retired sprite slot is removed: playerProfile
+PASS Retired sprite slot is removed: settingsIcon
+PASS Retired sprite slot is removed: doodleFaceDecoration
+PASS Retired sprite slot is removed: paperBackground

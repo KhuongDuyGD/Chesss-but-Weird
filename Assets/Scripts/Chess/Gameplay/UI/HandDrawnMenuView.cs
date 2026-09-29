@@ -41,6 +41,7 @@ public class HandDrawnMenuView : MonoBehaviour
     private CanvasGroup transitionVeilGroup;
     private RectTransform currentScreen;
     private Button modeLogoutButton;
+    private ModeSelectionPresentation modePresentation;
     private GachaMenuController gachaController;
     private InventoryMenuController inventoryController;
     private PlayerProfileMenuController profileController;
@@ -206,61 +207,17 @@ public class HandDrawnMenuView : MonoBehaviour
         root.offsetMin = Vector2.zero;
         root.offsetMax = Vector2.zero;
 
-        Image background = CreateImage(root, "Paper Background", assets.paperBackground, Vector2.zero, Vector2.zero);
-        background.color = assets.paperBackground ? Color.white : new Color(0.985f, 0.965f, 0.91f, 1f);
-        background.type = Image.Type.Tiled;
-        background.preserveAspect = false;
-        Stretch(background.rectTransform);
+        var background = new GameObject("Main Menu Paper Surface", typeof(RectTransform), typeof(MainMenuPaperGraphic));
+        background.transform.SetParent(root, false);
+        Stretch((RectTransform)background.transform);
     }
 
     private void BuildMainScreen()
     {
         mainScreen = CreateScreen("Main Menu");
-        // Positions measured in the 1672 x 941 reference artwork.
-        AddReferenceDoodles(mainScreen, false);
-        AddReferenceAccents(mainScreen, false);
-        AddImage(mainScreen, "Doodle Face", assets.doodleFaceDecoration, M(148f, 108f), MS(265f, 185f), .4f, .15f);
-        AddImage(mainScreen, "Game Logo", assets.gameLogo, M(830f, 206f), MS(742f, 367f), .3f, .1f).preserveAspect = false;
-        AddInteractive(mainScreen, "Start", assets.startButton, M(835f, 470f), MS(590f, 141f), () => chessGame.OpenTurnSelection(), false, 1.025f);
-        AddInteractive(mainScreen, "Settings", assets.settingsButton, M(830f, 625f), MS(580f, 128f), ShowSettingsMenu, false, 1.025f);
-        AddInteractive(mainScreen, "Credits", assets.creditsButton, M(825f, 779f), MS(580f, 142f), CreateAuthenticatedAction("Credits", () => LogMenuClick("Credits")), false, 1.025f);
-        AddImage(mainScreen, "Crown Doodle", assets.backgroundDecoration4, M(133f, 850f), MS(180f, 146f), .2f, .1f);
-        AddImage(mainScreen, "Game Version", assets.gameVersion, M(1410f, 849f), MS(440f, 185f), 0f, 0f);
-        AddLogoutButton(mainScreen);
-    }
-
-    private static Vector2 M(float x, float y) => new Vector2((x / 1672f - .5f) * ReferenceWidth, (.5f - y / 941f) * ReferenceHeight);
-    private static Vector2 MS(float width, float height) => new Vector2(width / 1672f * ReferenceWidth, height / 941f * ReferenceHeight);
-
-    private void AddReferenceDoodles(RectTransform screen, bool hub)
-    {
-        Vector2[] points = hub
-            ? new[] { new Vector2(564, 240), new Vector2(838, 240), new Vector2(667, 424), new Vector2(992, 385), new Vector2(1197, 471), new Vector2(605, 573), new Vector2(854, 540), new Vector2(758, 703), new Vector2(1013, 674), new Vector2(1304, 674), new Vector2(627, 850), new Vector2(929, 844) }
-            : new[] { new Vector2(492, 84), new Vector2(339, 200), new Vector2(130, 329), new Vector2(351, 386), new Vector2(106, 500), new Vector2(307, 554), new Vector2(119, 689), new Vector2(354, 728), new Vector2(370, 873), new Vector2(644, 900), new Vector2(984, 911), new Vector2(1319, 78), new Vector2(1358, 239), new Vector2(1590, 239), new Vector2(1256, 363), new Vector2(1515, 401), new Vector2(1350, 528), new Vector2(1572, 551), new Vector2(1264, 677), new Vector2(1516, 702) };
-        foreach (Vector2 point in points)
-            AddImage(screen, "Battle Doodle", assets.backgroundDecoration1, M(point.x, point.y), MS(hub ? 145f : 150f, hub ? 98f : 102f), 0f, 0f);
-    }
-
-    private Sprite ArtworkFragment(Sprite source, Rect pixels, float sourceSize = 1254f)
-    {
-        Texture2D texture = source.texture;
-        Rect crop = new Rect(pixels.x / sourceSize * texture.width, (sourceSize - pixels.yMax) / sourceSize * texture.height, pixels.width / sourceSize * texture.width, pixels.height / sourceSize * texture.height);
-        Sprite sprite = Sprite.Create(texture, crop, new Vector2(.5f, .5f), 100f, 0, SpriteMeshType.FullRect);
-        runtimeSprites.Add(sprite);
-        return sprite;
-    }
-
-    private void AddReferenceAccents(RectTransform screen, bool hub)
-    {
-        Sprite heart = ArtworkFragment(assets.backgroundDecoration2, new Rect(419, 188, 545, 519));
-        Sprite smallHeart = ArtworkFragment(assets.backgroundDecoration2, new Rect(203, 705, 278, 293));
-        Sprite star = ArtworkFragment(assets.backgroundDecoration3, new Rect(238, 430, 319, 332));
-        Vector2[] hearts = hub ? new[] { new Vector2(1631, 231), new Vector2(1354, 421) } : new[] { new Vector2(1584, 75) };
-        Vector2[] smallHearts = hub ? new[] { new Vector2(31, 597), new Vector2(495, 629), new Vector2(495, 873) } : new[] { new Vector2(499, 737), new Vector2(1155, 764) };
-        Vector2[] stars = hub ? new[] { new Vector2(1010, 138), new Vector2(704, 303), new Vector2(1573, 278), new Vector2(1150, 581), new Vector2(50, 734) } : new[] { new Vector2(88, 218), new Vector2(1504, 137), new Vector2(490, 571), new Vector2(1162, 590) };
-        foreach (Vector2 p in hearts) AddImage(screen, "Heart", heart, M(p.x, p.y), MS(hub ? 44 : 70, hub ? 46 : 70), 0, 0);
-        foreach (Vector2 p in smallHearts) AddImage(screen, "Small Heart", smallHeart, M(p.x, p.y), MS(hub ? 36 : 42, hub ? 39 : 44), 0, 0);
-        foreach (Vector2 p in stars) AddImage(screen, "Star", star, M(p.x, p.y), MS(hub ? 39 : 40, hub ? 39 : 40), 0, 0);
+        mainScreen.gameObject.AddComponent<MainMenuPresentation>().Build(
+            assets.mainMenuLogoOriginal,
+            () => chessGame.OpenTurnSelection(), ShowSettingsMenu, () => owner.LogoutToAuthentication());
     }
 
     private void AddSelectionDecorations(RectTransform screen)
@@ -306,21 +263,23 @@ public class HandDrawnMenuView : MonoBehaviour
 
     private void BuildPlayHub(RectTransform screen)
     {
-        AddReferenceDoodles(screen, true);
-        AddReferenceAccents(screen, true);
-        AddImage(screen, "Doodle Face", assets.doodleFaceDecoration, M(141f, 115f), MS(258f, 182f), .3f, .1f);
-        AddImage(screen, "Game Slogan", assets.gameSlogan, M(625f, 110f), MS(635f, 82f), 0f, 0f);
-        AddImage(screen, "Game Logo", assets.gameLogo, M(1310f, 179f), MS(594f, 315f), .2f, .1f);
-        AddInteractive(screen, "Local Gameplay", assets.localGameplayButton, M(257f, 315f), MS(410f, 143f), () => owner.ShowLocalModeSelection(), false, 1.025f);
-        AddInteractive(screen, "Online Play", assets.onlinePlayButton, M(261f, 483f), MS(422f, 146f), () => owner.ShowMultiplayerModeSelection(), false, 1.025f);
-        AddInteractive(screen, "ARAM Mode", assets.aramModeButton, M(258f, 640f), MS(418f, 131f), CreateAuthenticatedAction("ARAM", owner.ShowAramModeSelection), false, 1.025f);
-        AddInteractive(screen, "Shop", assets.shopButton, M(257f, 804f), MS(418f, 155f), CreateAuthenticatedAction("Shop", () => LogMenuClick("Shop")), false, 1.025f);
-        AddInteractive(screen, "Inventory", assets.inventoryButton, M(1544f, 420f), MS(136f, 140f), CreateAuthenticatedAction("Inventory", ShowInventoryMenu), false, 1.045f);
-        AddInteractive(screen, "Gacha", assets.gachaButton, M(1544f, 560f), MS(150f, 125f), CreateAuthenticatedAction("Gacha", ShowGachaMenu), false, 1.045f);
-        AddInteractive(screen, "Player Profile", assets.playerProfile, M(1544f, 700f), MS(150f, 142f), CreateAuthenticatedAction("Player Profile", ShowProfileMenu), false, 1.045f);
-        AddInteractive(screen, "Settings Icon", assets.settingsIcon, M(1285f, 859f), MS(122f, 124f), ShowSettingsMenu, false, 1.045f);
-        AddImage(screen, "Game Version", assets.gameVersion, M(1494f, 870f), MS(284f, 122f), 0f, 0f);
-        modeLogoutButton = AddLogoutButton(screen);
+        modePresentation = screen.gameObject.AddComponent<ModeSelectionPresentation>();
+        modePresentation.Build(assets.mainMenuLogoOriginal,
+            new ModeSelectionPresentation.Actions
+            {
+                Local = () => owner.ShowLocalModeSelection(),
+                Online = () => owner.ShowMultiplayerModeSelection(),
+                Aram = CreateAuthenticatedAction("ARAM", owner.ShowAramModeSelection),
+                Shop = CreateAuthenticatedAction("Shop", () => AuthNotificationView.Show("Shop coming soon",
+                    "The shop is not open yet. Visit Inventory or Gacha to explore your collection.", AuthNotificationView.ResultKind.Info)),
+                Inventory = CreateAuthenticatedAction("Inventory", ShowInventoryMenu),
+                Gacha = CreateAuthenticatedAction("Gacha", ShowGachaMenu),
+                Profile = CreateAuthenticatedAction("Player Profile", ShowProfileMenu),
+                Settings = ShowSettingsMenu,
+                Back = () => owner.ShowMainMenu(),
+                Logout = () => owner.LogoutToAuthentication()
+            });
+        modeLogoutButton = modePresentation.LogoutButton;
     }
 
     private void BuildInventoryScreen()
@@ -405,6 +364,7 @@ public class HandDrawnMenuView : MonoBehaviour
         SetVisible(true);
         SetInputEnabled(true);
         HideProfileOverlayImmediate();
+        SetModeScreenBackgroundInteractable(false);
         settingsOverlay.SetAsLastSibling();
         settingsController?.Open();
         settingsOverlayTransitionCoroutine = StartOverlayTransition(settingsOverlay, settingsOverlayTransitionCoroutine, true);
@@ -456,10 +416,8 @@ public class HandDrawnMenuView : MonoBehaviour
 
     private void SetModeScreenBackgroundInteractable(bool interactable)
     {
-        // Profile overlay includes a full-screen raycast blocker.
-        // Do not flip Selectable.interactable here: Unity applies disabled tint,
-        // which makes the hand-drawn buttons look permanently washed out during
-        // fade transitions.
+        modePresentation?.SetInputEnabled(interactable && !IsProfileOpen &&
+            !(settingsOverlay && settingsOverlay.gameObject.activeSelf));
     }
 
     private void SetModeLogoutVisible(bool visible)
@@ -794,7 +752,7 @@ public class HandDrawnMenuView : MonoBehaviour
 
     private Button AddTextButton(RectTransform parent, string buttonName, string label, Vector2 position, Vector2 size, UnityAction action, Color backgroundColor)
     {
-        GameObject buttonObject = new GameObject(buttonName, typeof(RectTransform), typeof(Image), typeof(Button), typeof(Outline));
+        GameObject buttonObject = new GameObject(buttonName, typeof(RectTransform), typeof(AntialiasedMenuImage), typeof(Button), typeof(Outline));
         RectTransform rect = buttonObject.GetComponent<RectTransform>();
         rect.SetParent(parent, false);
         rect.anchorMin = new Vector2(0.5f, 0.5f);
@@ -885,30 +843,6 @@ public class HandDrawnMenuView : MonoBehaviour
         return brightness > 0.58f ? new Color(0.12f, 0.1f, 0.08f, 1f) : Color.white;
     }
 
-    private Button AddLogoutButton(RectTransform parent)
-    {
-        if (!assets || !assets.logoutButton)
-            return null;
-
-        Button button = AddInteractive(
-            parent,
-            "Logout",
-            assets.logoutButton,
-            Vector2.zero,
-            MS(175f, 49f),
-            () => owner.LogoutToAuthentication(),
-            false,
-            1.025f,
-            new Color(1f, 0.92f, 0.92f, 1f),
-            0.965f,
-            0.5f);
-
-        RectTransform rect = button.transform as RectTransform;
-        rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(.5f, .5f);
-        rect.anchoredPosition = parent == mainScreen ? M(836f, 897f) : M(778f, 813f);
-        return button;
-    }
-
     private Button AddBackButton(RectTransform parent, Vector2 position, UnityAction action, Vector2? size = null)
     {
         if (!assets || !assets.backButton)
@@ -929,28 +863,9 @@ public class HandDrawnMenuView : MonoBehaviour
             1.4f);
     }
 
-    private Button AddGachaBackButton(RectTransform parent, Vector2 position, UnityAction action)
-    {
-        if (!assets || !assets.gachaBackButton)
-            return AddBackButton(parent, position, action);
-
-        return AddInteractive(
-            parent,
-            "Gacha Back Button",
-            assets.gachaBackButton,
-            position,
-            new Vector2(240f, 110f),
-            action,
-            true,
-            1.04f,
-            new Color(1f, 0.95f, 0.78f, 1f),
-            0.95f,
-            1.4f);
-    }
-
     private Image CreateImage(Transform parent, string imageName, Sprite sprite, Vector2 position, Vector2 size)
     {
-        GameObject imageObject = new GameObject(imageName, typeof(RectTransform), typeof(Image));
+        GameObject imageObject = new GameObject(imageName, typeof(RectTransform), typeof(AntialiasedMenuImage));
         RectTransform rect = imageObject.GetComponent<RectTransform>();
         rect.SetParent(parent, false);
         rect.anchorMin = new Vector2(0.5f, 0.5f);
@@ -967,7 +882,7 @@ public class HandDrawnMenuView : MonoBehaviour
 
     private void BuildTransitionVeil()
     {
-        GameObject veilObject = new GameObject("Menu Transition Veil", typeof(RectTransform), typeof(CanvasGroup), typeof(Image));
+        GameObject veilObject = new GameObject("Menu Transition Veil", typeof(RectTransform), typeof(CanvasGroup), typeof(AntialiasedMenuImage));
         transitionVeil = veilObject.GetComponent<RectTransform>();
         transitionVeil.SetParent(transform, false);
         Stretch(transitionVeil);
@@ -1042,10 +957,10 @@ public class HandDrawnMenuView : MonoBehaviour
         ShowTransitionVeil();
 
         previousGroup.alpha = 1f;
-        previousGroup.interactable = true;
+        previousGroup.interactable = false;
         previousGroup.blocksRaycasts = false;
         activeGroup.alpha = 0f;
-        activeGroup.interactable = true;
+        activeGroup.interactable = false;
         activeGroup.blocksRaycasts = false;
         previousScreen.anchoredPosition = Vector2.zero;
         activeScreen.anchoredPosition = new Vector2(direction * ScreenTransitionOffset, 0f);
@@ -1227,6 +1142,7 @@ public class HandDrawnMenuView : MonoBehaviour
         group.blocksRaycasts = visible;
         overlay.localScale = Vector3.one * scale;
         overlay.gameObject.SetActive(visible);
+        SetModeScreenBackgroundInteractable(true);
     }
 
     private void ShowTransitionVeil()

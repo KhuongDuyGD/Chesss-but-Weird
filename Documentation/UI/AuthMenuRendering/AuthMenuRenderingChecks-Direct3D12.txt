@@ -1,0 +1,50 @@
+PASS Parenting a live doodle graphic adds colour channels and preserves existing channels
+PASS Parenting a live solid Image adds colour channels
+PASS Doodle mesh submission restores missing channels before rendering
+PASS Solid Image mesh submission restores missing channels before rendering
+PASS Startup: colour channels exist before the first canvas rebuild
+PASS Login-Startup: both colour streams survive actual overlay rendering
+PASS Login-Startup: account card renders its light paper fill, rather than black
+PASS Login-Startup: selected menu button renders its coloured fill
+PASS Login-Startup: captured buffer shows the selected auth mode
+PASS Login-Startup: heading has visible text geometry
+PASS Login-Startup: heading renders readable ink pixels
+PASS Login-Untouched: both colour streams survive actual overlay rendering
+PASS Login-Untouched: account card renders its light paper fill, rather than black
+PASS Login-Untouched: selected menu button renders its coloured fill
+PASS Login-Untouched: captured buffer shows the selected auth mode
+PASS Login-Untouched: heading has visible text geometry
+PASS Login-Untouched: heading renders readable ink pixels
+PASS Signup: both colour streams survive actual overlay rendering
+PASS Signup: account card renders its light paper fill, rather than black
+PASS Signup: selected menu button renders its coloured fill
+PASS Signup: captured buffer shows the selected auth mode
+PASS Signup: heading has visible text geometry
+PASS Signup: heading renders readable ink pixels
+PASS Login-After-Switch: both colour streams survive actual overlay rendering
+PASS Login-After-Switch: account card renders its light paper fill, rather than black
+PASS Login-After-Switch: selected menu button renders its coloured fill
+PASS Login-After-Switch: captured buffer shows the selected auth mode
+PASS Login-After-Switch: heading has visible text geometry
+PASS Login-After-Switch: heading renders readable ink pixels
+PASS Logout 1: colour channels exist before the first canvas rebuild
+PASS Login-After-Logout-1: both colour streams survive actual overlay rendering
+PASS Login-After-Logout-1: account card renders its light paper fill, rather than black
+PASS Login-After-Logout-1: selected menu button renders its coloured fill
+PASS Login-After-Logout-1: captured buffer shows the selected auth mode
+PASS Login-After-Logout-1: heading has visible text geometry
+PASS Login-After-Logout-1: heading renders readable ink pixels
+PASS Logout 2: colour channels exist before the first canvas rebuild
+PASS Login-After-Logout-2: both colour streams survive actual overlay rendering
+PASS Login-After-Logout-2: account card renders its light paper fill, rather than black
+PASS Login-After-Logout-2: selected menu button renders its coloured fill
+PASS Login-After-Logout-2: captured buffer shows the selected auth mode
+PASS Login-After-Logout-2: heading has visible text geometry
+PASS Login-After-Logout-2: heading renders readable ink pixels
+PASS Logout 3: colour channels exist before the first canvas rebuild
+PASS Login-After-Logout-3: both colour streams survive actual overlay rendering
+PASS Login-After-Logout-3: account card renders its light paper fill, rather than black
+PASS Login-After-Logout-3: selected menu button renders its coloured fill
+PASS Login-After-Logout-3: captured buffer shows the selected auth mode
+PASS Login-After-Logout-3: heading has visible text geometry
+PASS Login-After-Logout-3: heading renders readable ink pixels

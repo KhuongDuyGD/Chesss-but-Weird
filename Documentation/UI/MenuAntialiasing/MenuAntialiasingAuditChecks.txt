@@ -1,0 +1,30 @@
+PASS The menu coverage shader is packaged and supported on the GPU
+PASS The UI shader compiles without errors
+PASS Menu importer excludes gameplay HUD and chess skins
+PASS Original menu logo receives the sampling policy
+PASS File fallback decodes a menu PNG with mipmaps requested
+PASS Runtime PNG path keeps the mip chain and releases CPU texture memory
+PASS Alpha-weighted mipmap can be read back from the GPU
+PASS NPOT mipmap includes the last column without darkening transparent ink edges (actual: RGBA(255, 80, 20, 85))
+PASS Transparent neighbour carries ink RGB while its alpha and silhouette stay unchanged
+PASS High-contrast ink mipmaps average in the project's colour space (actual: 188)
+PASS Preserved logo has a mip chain and Trilinear filtering
+PASS Root canvas retains both UI colour channels
+PASS Nested animated canvases retain the coverage colour channels
+PASS Turning MSAA on/off keeps menu edges stable (mean RGB byte difference: 0.033)
+PASS AA-off silhouette has a narrow, partially covered edge (pixels: 360)
+PASS Coverage survives fractional/low UI scale 0.25
+PASS Coverage survives fractional/low UI scale 0.5
+PASS Coverage survives fractional/low UI scale 1
+PASS Coverage survives fractional/low UI scale 1.375
+PASS Coverage survives fractional/low UI scale 2
+PASS Smoothed shapes preserve the standard UI colour in linear colour space
+PASS CanvasGroup fading affects fill and edge coverage
+PASS Button CanvasRenderer tint affects the smoothed graphic
+PASS Plain menu rectangles and diagonal chevrons have pixel coverage with AA off
+PASS Bitmap Images retain the standard UI texture shader
+PASS Transparent slider hit areas retain mesh depth for pointer raycasting
+PASS RectMask2D clips the antialiased menu shape
+PASS RectMask2D softness retains its smooth fade
+PASS UGUI stencil masks clip the antialiased menu shape
+PASS Rendered shader variants compile without errors

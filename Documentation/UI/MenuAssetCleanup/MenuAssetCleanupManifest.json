@@ -1,0 +1,387 @@
+{
+  "scope": "Superseded Main Menu 1 and Main Menu 2 artwork; preserve assets still used by other screens",
+  "deletedTextures": [
+    {
+      "path": "Assets/Materials/Main_Menu/ARAMModeButton.png",
+      "guid": "3d92d25a75cd58848bcae41246967761",
+      "bytes": 998592,
+      "sha256": "6E5C419E476719F66DD266E6BA2AF2439709C3EBDA36A43910BFE6A6E8CB4204"
+    },
+    {
+      "path": "Assets/Materials/Main_Menu/ChooseBotDifficultUI.png",
+      "guid": "2ed25c8a6fa67eb439b21d59fece7e65",
+      "bytes": 1794990,
+      "sha256": "38F465A7FE73305354D63654A9597A8B3F67D9A1A1BA9376B40ABE906CBF19E3"
+    },
+    {
+      "path": "Assets/Materials/Main_Menu/CreditsButton.png",
+      "guid": "8301cbe608a3f1946b597987c18dc1bc",
+      "bytes": 855744,
+      "sha256": "7697F90D298E80972F8AB035ED9AFFB97D58CFC410929B19F66C4360EF6193E9"
+    },
+    {
+      "path": "Assets/Materials/Main_Menu/DoodleFaceDecorateBackground.png",
+      "guid": "f02981e49788b474facbe90fd8c41b05",
+      "bytes": 267300,
+      "sha256": "63DFCB0550E41BBD7A66517459C3CB1AF982ECE34703BAD8D9477821E76F0697"
+    },
+    {
+      "path": "Assets/Materials/Main_Menu/GachaButton.png",
+      "guid": "cebf233263f07dc4586d27d25e2b59c8",
+      "bytes": 433298,
+      "sha256": "B3C1692F39A69FF289D0572BF3F52FB41DC0D2BA12AFC13170F85744542C506A"
+    },
+    {
+      "path": "Assets/Materials/Main_Menu/GameLogo.png",
+      "guid": "c0c691db68b072a44ab1f14ef9d4f542",
+      "bytes": 557263,
+      "sha256": "199E6CEA377322CD80F015F06CDF38E008E8BC92B071048DFA24BF7C6B4E8801"
+    },
+    {
+      "path": "Assets/Materials/Main_Menu/GameSlogan.png",
+      "guid": "79533ee1c7b819f49aefeac05f7061c6",
+      "bytes": 264525,
+      "sha256": "D6B9953D2054D94394E8CB856FABBE0B3D4DF563A4833E01EE25E5547BC030B3"
+    },
+    {
+      "path": "Assets/Materials/Main_Menu/InventoryButton.png",
+      "guid": "1618086fcaeec4d42932bd03b63624b1",
+      "bytes": 1393281,
+      "sha256": "A50014E978027EFCE496949C3CA7A75555664156A742DAC413A8182C8C9C6D3A"
+    },
+    {
+      "path": "Assets/Materials/Main_Menu/LocalGameplayButton.png",
+      "guid": "916700a762d653a4984059488e51f121",
+      "bytes": 1146333,
+      "sha256": "165F590FE1B459FEAB58ECF234AEB5170CB8BEBC33605EF254E4DC2EE49C0D4A"
+    },
+    {
+      "path": "Assets/Materials/Main_Menu/LogoutButton.png",
+      "guid": "9fee873cc46f3614b9e1fddb63648d14",
+      "bytes": 1676572,
+      "sha256": "A9F32AE22768ACF5F35CA0074B5F8792184CEE69C291C993989AC3528D227314"
+    },
+    {
+      "path": "Assets/Materials/Main_Menu/MainMenuDesgin2.png",
+      "guid": "a55c452ee23be5642bf760e129a3545c",
+      "bytes": 411368,
+      "sha256": "434157032E9CC31B7C678A8229F264C1B1B6369D5D24464AE0A50458D1D59910"
+    },
+    {
+      "path": "Assets/Materials/Main_Menu/MainMenuDesign.png",
+      "guid": "a67f31783b516114bb7bfbe69cefc2c7",
+      "bytes": 2716928,
+      "sha256": "8C7CEA8A2C2E8FAB0CCC41A133206B07185346CE0DEFF60B42E4F5374B06F60F"
+    },
+    {
+      "path": "Assets/Materials/Main_Menu/OnlinePlayButton.png",
+      "guid": "657293c7e04281f4dbdf94cc872b8066",
+      "bytes": 1115694,
+      "sha256": "FC3C82619413CEEED115B770A4C8B4AB362A2D74612D6AFE20BE435272046CA2"
+    },
+    {
+      "path": "Assets/Materials/Main_Menu/PlayerProfile.png",
+      "guid": "d74f9616a7649e04f8d6caf1bbb3f263",
+      "bytes": 1214146,
+      "sha256": "2973CD13849E17471397A22B3658DB2150FDC6C145D7029CB0C560411F4A13E5"
+    },
+    {
+      "path": "Assets/Materials/Main_Menu/SettingsButton.png",
+      "guid": "ef40de6ea7ba6de46bdd89c5829b13eb",
+      "bytes": 595692,
+      "sha256": "00C6CC583DC8795A2D9DDDA9907050DC0FF81BEC316C3A922FAF679EEE5FE375"
+    },
+    {
+      "path": "Assets/Materials/Main_Menu/SettingsIcon.png",
+      "guid": "f62d6214c79f4174da777d2486aab7bd",
+      "bytes": 565156,
+      "sha256": "D2A439DCD5DDD19D7A3EB8F8C8C9F46154402BD1C75E6418B1684771406ED59A"
+    },
+    {
+      "path": "Assets/Materials/Main_Menu/ShopButton.png",
+      "guid": "0c4fc681d8f96014fbd624a19da0cb14",
+      "bytes": 1025845,
+      "sha256": "FAC5329804FFDF15E79C98CC90BBD681AE7241CD093DE6B88E84819621197FA4"
+    },
+    {
+      "path": "Assets/Materials/Main_Menu/StartButton.png",
+      "guid": "854fc7eea3271534cafc4a04a669e6d5",
+      "bytes": 851644,
+      "sha256": "0E632A279B1E157ECBC7720C469B04BFD765A9E7245E222A35B3AC8713A45316"
+    },
+    {
+      "path": "Assets/Resources/Main_Menu/aram_button.png",
+      "guid": "01c06caf063000446ad8d51fc36c42c1",
+      "bytes": 1438236,
+      "sha256": "F1329418EAACF194F0A09F83B58A08FA93CB5141E89B0F8A100FD50966CE289F"
+    },
+    {
+      "path": "Assets/Resources/Main_Menu/credits_button.png",
+      "guid": "e3ae50bdb4eb0cb42bc1285a5113e138",
+      "bytes": 1198302,
+      "sha256": "758006EE61B0E52A219B2ACEB66E6895AFCDDE45D4467952C3E22C01BC591F24"
+    },
+    {
+      "path": "Assets/Resources/Main_Menu/gacha_icon.png",
+      "guid": "b749c2fd4ec3c6046bfe9b3a3d702f0c",
+      "bytes": 1127491,
+      "sha256": "41A9C13E3A561D863DCA1ED8FC6C78B5E0591BDC5E476360264B80C37A9E65C8"
+    },
+    {
+      "path": "Assets/Resources/Main_Menu/inventory_icon.png",
+      "guid": "51a0adc3ad99e324ea4a65d20932d8da",
+      "bytes": 1755383,
+      "sha256": "521484F2202EE5902C9DC9431DA5F91E9E38492E8B1C5B0F03237CFB9E33AA03"
+    },
+    {
+      "path": "Assets/Resources/Main_Menu/local_button.png",
+      "guid": "7b96c3af86b22e645986447f98f364eb",
+      "bytes": 1635852,
+      "sha256": "F882F0306846C2112A13D1EA4B781B2469216327220BCF036EBEA80D82261243"
+    },
+    {
+      "path": "Assets/Resources/Main_Menu/logo.png",
+      "guid": "e3c57d84f8ff17945870c4079fec84ca",
+      "bytes": 1274456,
+      "sha256": "87F638A92F3D90CF17EE79C125340AF23855FA2A62D6A294A8FE2BC845FF52C6"
+    },
+    {
+      "path": "Assets/Resources/Main_Menu/logout_button.png",
+      "guid": "3e3b2c999dfdf3b4288437520c2f6541",
+      "bytes": 1676572,
+      "sha256": "A9F32AE22768ACF5F35CA0074B5F8792184CEE69C291C993989AC3528D227314"
+    },
+    {
+      "path": "Assets/Resources/Main_Menu/mascot.png",
+      "guid": "63220dc0439d4cf46a464100a5fe7e30",
+      "bytes": 1027334,
+      "sha256": "62DA3C1AA863C45FFC719E3A2B6699B349F2A5F15C3D98548E5D6782C28660D5"
+    },
+    {
+      "path": "Assets/Resources/Main_Menu/online_button.png",
+      "guid": "b8b5d9127305eb441a0bc7b3b365731f",
+      "bytes": 1514856,
+      "sha256": "19F8A617539BB0E091FDBF82C37D3EBF299A8B914C6892B17D4EBB115991EB57"
+    },
+    {
+      "path": "Assets/Resources/Main_Menu/player_profile_icon.png",
+      "guid": "75ab3b6c40f829a4ca87e46395678784",
+      "bytes": 1718676,
+      "sha256": "B31B413D23E46F09A31FB3FB7F89080F3C938E04B59DE07553477D5EE7DFD7D8"
+    },
+    {
+      "path": "Assets/Resources/Main_Menu/settings_button.png",
+      "guid": "f450f138f6ee5744aab0bb1720eb73df",
+      "bytes": 1144067,
+      "sha256": "31A60EC7A7B6135D857B65408580C7666D7FDA7302ECE8D98B7A8169DB02E9EA"
+    },
+    {
+      "path": "Assets/Resources/Main_Menu/settings_icon.png",
+      "guid": "67e78f1b074d4784ebf438d1d3111e23",
+      "bytes": 1106662,
+      "sha256": "FBEA86AE88A536EFF3335102FA25C1BA890F4EEC6B00328101EA7EFD4A6E1467"
+    },
+    {
+      "path": "Assets/Resources/Main_Menu/shop_button.png",
+      "guid": "58a7d3ed565d18040aadd013d7501026",
+      "bytes": 1436411,
+      "sha256": "BE6B95093D84CADBA909BCD34AE64BE9940F195211B699D89324FE4DB58E8BDD"
+    },
+    {
+      "path": "Assets/Resources/Main_Menu/slogan.png",
+      "guid": "caaa3892fb10d274480a051d16126d52",
+      "bytes": 840501,
+      "sha256": "972E9593C6C2607FB907A2072E548369248933054BD941C6A3742CDA7627DC96"
+    },
+    {
+      "path": "Assets/Resources/Main_Menu/start_button.png",
+      "guid": "21818dff6596ca04c82d0fab84ad0923",
+      "bytes": 1299783,
+      "sha256": "B6A5CAB9C63E1CC3082773CCAE75145082FD7BB49320925C38B98E9A367CDEDF"
+    }
+  ],
+  "preservedMenuTextures": [
+    {
+      "path": "Assets/Materials/Main_Menu/Back.png",
+      "guid": "00c0deb89f6e9cb4ebd13101592461a0",
+      "bytes": 862453,
+      "sha256": "B321ADD1607A4605ECF543AB9093E432349AA3034DE255D30A7DA4819E5CB42C"
+    },
+    {
+      "path": "Assets/Materials/Main_Menu/BackgroundDecoration1.png",
+      "guid": "19fcb0d2bf610ef47833e1a4f3b84057",
+      "bytes": 461089,
+      "sha256": "3193AB6F4E5B3CEFC208F36C3A4351AA1B64BA30D93815433BF113C346A15AAB"
+    },
+    {
+      "path": "Assets/Materials/Main_Menu/BackgroundDecoration2.png",
+      "guid": "266b78009fa485c4c8701c8c567f16aa",
+      "bytes": 511013,
+      "sha256": "F788CF35F81F25B578F4C429F03854D9DF5EB3C543007363E590C092228B7E2A"
+    },
+    {
+      "path": "Assets/Materials/Main_Menu/BackgroundDecoration3.png",
+      "guid": "a4809aeedccc7f24ab5e7d60cc3fe1be",
+      "bytes": 130865,
+      "sha256": "9D102E4A90F0B62ED9136FDF27AE96F3A61AF7C851CBAE1D0FDF7A8BB22BDEBD"
+    },
+    {
+      "path": "Assets/Materials/Main_Menu/BackgroundDecoration4.png",
+      "guid": "49126035b139f1d469ae82c43d01d0ac",
+      "bytes": 259737,
+      "sha256": "6DD9200059556C3B1083BD6E4DD7B6E0D900AD93D6D58644E780E21CBFB9A7DA"
+    },
+    {
+      "path": "Assets/Materials/Main_Menu/BeginnerButton.png",
+      "guid": "7f14656516fa7ef4a865379f8381a8f7",
+      "bytes": 2147947,
+      "sha256": "CB4E9BA97F1138FCA1FB293C07DE513B972DB091EE0A1D9B745A4D5D223BE7D1"
+    },
+    {
+      "path": "Assets/Materials/Main_Menu/BlackSideButton.png",
+      "guid": "aed721ecd6960244e95249cc90b24469",
+      "bytes": 1699963,
+      "sha256": "8C267293EF4DF82DD395C1896B8A5CE3A53A3C016853C4888F348DEB1D1DD90F"
+    },
+    {
+      "path": "Assets/Materials/Main_Menu/ChooseBotDifficultUIBlank.png",
+      "guid": "5cb67219880c42ddb35ba1fe90a4ce70",
+      "bytes": 83573,
+      "sha256": "1E1F87C979849611222333B6AF8E9DB7E775621449956EECE26DF2C9E666C8DE"
+    },
+    {
+      "path": "Assets/Materials/Main_Menu/ChooseYour MultiplayerMode.png",
+      "guid": "4716ba080681e484eacaef8071069e82",
+      "bytes": 220159,
+      "sha256": "AE5602A59E0F11DB506272D16CDA82B6CF879237A59765720301604AF6DC9B6F"
+    },
+    {
+      "path": "Assets/Materials/Main_Menu/ChooseYourSide.png",
+      "guid": "b6f4256db2fa0e245852182892bd2791",
+      "bytes": 209683,
+      "sha256": "41C840F6B51C93BFCF20FE07AC6E2147B3F74088EA73496652EC8E2B2EDDEAF9"
+    },
+    {
+      "path": "Assets/Materials/Main_Menu/EasyButton.png",
+      "guid": "5b5012298cb788b44b1faeb0db0edfc8",
+      "bytes": 1716562,
+      "sha256": "E0F23481A574F5716D9E52EC103B845830983BE7F15DC49741E9287D11F0D660"
+    },
+    {
+      "path": "Assets/Materials/Main_Menu/ExpertButton.png",
+      "guid": "94fc3bd20fa0c914e96ea1288c436d8e",
+      "bytes": 1252910,
+      "sha256": "5B2195D45A3A0EB4BE5B373E6D1AB5FD541662FB588021DFD3C8D3160DF80336"
+    },
+    {
+      "path": "Assets/Materials/Main_Menu/GameVersionFake.png",
+      "guid": "cc6634c825da7d544a07ddca4becc725",
+      "bytes": 313556,
+      "sha256": "C41C63539B90885A24318B1CA7FCC4B06A4148A7CDBA46D6898F0874647FB6F5"
+    },
+    {
+      "path": "Assets/Materials/Main_Menu/HardButton.png",
+      "guid": "76af93227a840b84ab50b3d68f7114cd",
+      "bytes": 1530668,
+      "sha256": "9DFB5118D19DA481EE2D044DA2DFDB71DE4C689A06E48EA524F093E81C2C405D"
+    },
+    {
+      "path": "Assets/Materials/Main_Menu/LANButton.png",
+      "guid": "9b8695f48bb132a4f9359aa27de2c731",
+      "bytes": 1982148,
+      "sha256": "C66AD8882F86BE51A2A413D389611C92610B0FF1DE5B66E28430E574A49F0A02"
+    },
+    {
+      "path": "Assets/Materials/Main_Menu/MediumButton.png",
+      "guid": "e01530401c18cda42946423961409724",
+      "bytes": 1222318,
+      "sha256": "30E16DABDE377E5350B5A0D0FB779798A5B781EAEC01F35611CDB5B946F4F4D7"
+    },
+    {
+      "path": "Assets/Materials/Main_Menu/MultiplayerButton.png",
+      "guid": "8b397c5f09a2763408bb02f49b66f4ba",
+      "bytes": 2202924,
+      "sha256": "85F694D108D55FDF9A53730E6C14AA5EA65E5B476543D8F62767EF2F15C99047"
+    },
+    {
+      "path": "Assets/Materials/Main_Menu/WhiteSideButton.png",
+      "guid": "3218ec303b6e2974aaf8e54f9fb354a7",
+      "bytes": 1454744,
+      "sha256": "7CC8321D58196ED0215B926A3CF6060A2FC5A36FF63D210819338681BF579BE3"
+    },
+    {
+      "path": "Assets/Resources/Main_Menu/black_card.png",
+      "guid": "26e96a02ed3182e4e9089c79bea04a48",
+      "bytes": 1867125,
+      "sha256": "E966E249DF643F1F7B134F008C81AE5C92C4BF8220BACE33503770BF22A0F240"
+    },
+    {
+      "path": "Assets/Resources/Main_Menu/choose_side_title.png",
+      "guid": "24ecd9cbd3aa88144895e5b753a6990d",
+      "bytes": 791072,
+      "sha256": "D9B975373EF929B11C959399973C486E2B8FD2DEE2CCF45AB85DC6D9BADD859A"
+    },
+    {
+      "path": "Assets/Resources/Main_Menu/crown.png",
+      "guid": "87b942de2472d25408d73ecbd3b60af6",
+      "bytes": 999845,
+      "sha256": "2EBC47FB61ABC4F6FF376095FC80BECDB462DBEC0BE071584DA903E63704E61D"
+    },
+    {
+      "path": "Assets/Resources/Main_Menu/early_access.png",
+      "guid": "0d5a514b56fea2040a36c73e10afa3d9",
+      "bytes": 1024520,
+      "sha256": "4ADDEACDF0CB5DE7505C422720379F49690B85B46098BAB6DC48A35507E9A1A0"
+    },
+    {
+      "path": "Assets/Resources/Main_Menu/hearts.png",
+      "guid": "8dec12735c0b31b4a9046a586a2af06a",
+      "bytes": 1171007,
+      "sha256": "1807DF7F340D3F399201206EBF58D06A5943459028B3041D18162654373507F1"
+    },
+    {
+      "path": "Assets/Resources/Main_Menu/lan_card.png",
+      "guid": "b7ce7c7a2f644d25a2f4c7c01b0df934",
+      "bytes": 2012556,
+      "sha256": "5157848B0034AF857803EF49625D11120082E06B9700293C8EF65FE46D7562A1"
+    },
+    {
+      "path": "Assets/Resources/Main_Menu/multiplayer_mode_title.png",
+      "guid": "a3d0f5e997fb4a89a7a4d1fd49d0c11a",
+      "bytes": 789422,
+      "sha256": "1320052D97B2C86C9C6047539B364842D198249E715F0E1C9E64CBFE7BF49919"
+    },
+    {
+      "path": "Assets/Resources/Main_Menu/multiplayer_online_card.png",
+      "guid": "c59ef2f90ce7470f82de24b2e7891691",
+      "bytes": 2219987,
+      "sha256": "2FAAA333D29D4FEF4D77D99CC77ACF3D5FE10DEEDA7D8ACD1D3A0426EA72C1E8"
+    },
+    {
+      "path": "Assets/Resources/Main_Menu/punch_doodle.png",
+      "guid": "3988b8408400ec145b27d2dbc6bd27c6",
+      "bytes": 1272410,
+      "sha256": "5B1EFB35A96D8E15B64147A6FED2FEEDDE633705FCC49117BC5AC5DBA03E882E"
+    },
+    {
+      "path": "Assets/Resources/Main_Menu/stars.png",
+      "guid": "5cb3a09a25282f14cad024230b310686",
+      "bytes": 748112,
+      "sha256": "779B0A296280A685A2FA1443238755178DB7F4908730ED04772D086CDBF46EF0"
+    },
+    {
+      "path": "Assets/Resources/Main_Menu/white_card.png",
+      "guid": "9bdf60af0f9e30c42a4364288b75e857",
+      "bytes": 1801244,
+      "sha256": "96A7099E3E64B302422D1460637FE6D21663C137D743CE1F092A0E23A976CCE9"
+    },
+    {
+      "path": "Assets/Resources/MainMenu/MainMenuLogoOriginal.png",
+      "guid": "224204055cd942a79d99c7dbaea3d405",
+      "bytes": 557263,
+      "sha256": "199E6CEA377322CD80F015F06CDF38E008E8BC92B071048DFA24BF7C6B4E8801"
+    }
+  ],
+  "preservedOriginalLogo": "Assets/Resources/MainMenu/MainMenuLogoOriginal.png",
+  "preservedOriginalLogoSha256": "199E6CEA377322CD80F015F06CDF38E008E8BC92B071048DFA24BF7C6B4E8801"
+}

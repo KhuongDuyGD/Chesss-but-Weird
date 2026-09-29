@@ -78,7 +78,7 @@ public sealed class InventoryMenuController : MonoBehaviour
 
     private void Build()
     {
-        Image blocker = root.gameObject.GetComponent<Image>() ?? root.gameObject.AddComponent<Image>();
+        Image blocker = root.gameObject.GetComponent<Image>() ?? root.gameObject.AddComponent<AntialiasedMenuImage>();
         blocker.color = new Color(0f, 0f, 0f, 0.01f);
         blocker.raycastTarget = true;
 
@@ -194,7 +194,7 @@ public sealed class InventoryMenuController : MonoBehaviour
         }
         catch (Exception error)
         {
-            if (this) SetStatus("Could not load inventory: " + error.Message);
+            if (this) SetStatus("Could not load inventory: " + PlayerNotificationText.FromException(error));
         }
         finally
         {
@@ -440,7 +440,7 @@ public sealed class InventoryMenuController : MonoBehaviour
         }
         catch (Exception error)
         {
-            if (this) SetStatus("Could not equip skin: " + error.Message);
+            if (this) SetStatus("Could not equip skin: " + PlayerNotificationText.FromException(error));
         }
         finally
         {

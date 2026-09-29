@@ -32,6 +32,7 @@ public sealed class BackendWebSocketClient : IBackendWebSocketTransport
 
         cancellation = new CancellationTokenSource();
         socket = new ClientWebSocket();
+        socket.Options.SetRequestHeader("Accept-Language", "en");
         Uri uri = new Uri($"{BackendConfig.WebSocketUrl}?roomCode={Uri.EscapeDataString(roomCode)}&token={Uri.EscapeDataString(token)}");
 
         try
@@ -43,7 +44,11 @@ public sealed class BackendWebSocketClient : IBackendWebSocketTransport
         }
         catch (Exception exception)
         {
-            Post(() => Error?.Invoke($"WebSocket connect failed: {exception.Message}"));
+            Post(() =>
+            {
+                Debug.LogWarning($"[BackendWebSocketClient] Connect failed: {exception.Message}");
+                Error?.Invoke("Unable to connect to the room. Check your connection and try again.");
+            });
             await DisconnectAsync();
         }
     }
@@ -66,7 +71,11 @@ public sealed class BackendWebSocketClient : IBackendWebSocketTransport
         }
         catch (Exception exception)
         {
-            Post(() => Error?.Invoke($"WebSocket send failed: {exception.Message}"));
+            Post(() =>
+            {
+                Debug.LogWarning($"[BackendWebSocketClient] Send failed: {exception.Message}");
+                Error?.Invoke("Could not send your action. Check your connection and try again.");
+            });
         }
     }
 
@@ -135,7 +144,11 @@ public sealed class BackendWebSocketClient : IBackendWebSocketTransport
         }
         catch (Exception exception)
         {
-            Post(() => Error?.Invoke($"WebSocket receive failed: {exception.Message}"));
+            Post(() =>
+            {
+                Debug.LogWarning($"[BackendWebSocketClient] Receive failed: {exception.Message}");
+                Error?.Invoke("Connection to the room was interrupted. Please check your connection.");
+            });
             Post(() => Closed?.Invoke("WebSocket disconnected unexpectedly."));
         }
     }

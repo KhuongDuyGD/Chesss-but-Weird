@@ -48,7 +48,7 @@ public sealed class ApiClient
             response = await SendOnceAsync(method, path, json, token);
         }
 
-        EnsureSuccess(response);
+        EnsureSuccess(response, string.Equals(path, "/api/auth/login", StringComparison.Ordinal));
         if (string.IsNullOrWhiteSpace(response.Body))
             return default;
 
@@ -103,6 +103,7 @@ public sealed class ApiClient
             request.downloadHandler = new DownloadHandlerBuffer();
             request.timeout = ApiConfig.TimeoutSeconds;
             request.SetRequestHeader("Accept", "application/json");
+            request.SetRequestHeader("Accept-Language", "en");
             request.SetRequestHeader("Content-Type", "application/json");
             if (!string.IsNullOrWhiteSpace(accessToken))
                 request.SetRequestHeader("Authorization", "Bearer " + accessToken);
@@ -124,17 +125,19 @@ public sealed class ApiClient
         }
     }
 
-    private static void EnsureSuccess(HttpResponse response)
+    private static void EnsureSuccess(HttpResponse response, bool loginRequest = false)
     {
         if (!response.Failed && response.StatusCode >= 200 && response.StatusCode < 300)
             return;
 
         string message = response.Error;
+        string code = response.StatusCode == 0 ? "CONNECTION_FAILED" : null;
         if (!string.IsNullOrWhiteSpace(response.Body))
         {
             try
             {
                 var error = JObject.Parse(response.Body);
+                code = (string)error["code"] ?? code;
                 message = (string)error["message"] ?? (string)error["title"] ??
                     (string)error["code"] ?? message;
             }
@@ -143,7 +146,9 @@ public sealed class ApiClient
 
         if (string.IsNullOrWhiteSpace(message))
             message = response.StatusCode == 0 ? "Unable to contact server." : "HTTP " + response.StatusCode;
-        throw new ApiException(message, response.StatusCode, response.Body);
+        if (loginRequest && response.StatusCode == 401 && string.IsNullOrWhiteSpace(code))
+            code = "INVALID_CREDENTIALS";
+        throw new ApiException(message, response.StatusCode, response.Body, errorCode: code);
     }
 
     private sealed class HttpResponse

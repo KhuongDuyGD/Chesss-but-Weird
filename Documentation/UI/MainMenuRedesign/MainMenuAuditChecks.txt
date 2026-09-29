@@ -1,0 +1,190 @@
+PASS Descriptively named original logo loads from Resources in a player build
+PASS Main menu uses the original drawing
+PASS Original export padding is trimmed without changing the artwork proportions
+PASS START, SETTINGS, CREDITS, logout and modal back controls exist
+PASS Menu buttons have no hover or selection pointer arrows
+PASS START has over twice the width of each secondary action
+PASS One illustrated logo with its shadow; no repeated raster background doodles
+PASS Existing start, settings and logout callbacks fire exactly once
+PASS Explicit keyboard/controller navigation connects primary and secondary buttons
+PASS MainMenu-1920x1080.png: Chess Club Caption fits without clipped copy
+PASS MainMenu-1920x1080.png: Early Access Text fits without clipped copy
+PASS MainMenu-1920x1080.png: Main Menu Tagline fits without clipped copy
+PASS MainMenu-1920x1080.png: Start Label fits without clipped copy
+PASS MainMenu-1920x1080.png: Settings Label fits without clipped copy
+PASS MainMenu-1920x1080.png: Credits Label fits without clipped copy
+PASS MainMenu-1920x1080.png: Logout Label fits without clipped copy
+PASS MainMenu-1920x1080.png: Crown Margin Note fits without clipped copy
+PASS MainMenu-1920x1080.png: Chessboard Question fits without clipped copy
+PASS MainMenu-1920x1080.png: Friendly Footer fits without clipped copy
+PASS MainMenu-1920x1080.png: Main Menu Version fits without clipped copy
+PASS MainMenu-1920x1080.png: Start stays in viewport
+PASS MainMenu-1920x1080.png: Settings stays in viewport
+PASS MainMenu-1920x1080.png: Credits stays in viewport
+PASS MainMenu-1920x1080.png: Logout stays in viewport
+PASS MainMenu-1280x720.png: Chess Club Caption fits without clipped copy
+PASS MainMenu-1280x720.png: Early Access Text fits without clipped copy
+PASS MainMenu-1280x720.png: Main Menu Tagline fits without clipped copy
+PASS MainMenu-1280x720.png: Start Label fits without clipped copy
+PASS MainMenu-1280x720.png: Settings Label fits without clipped copy
+PASS MainMenu-1280x720.png: Credits Label fits without clipped copy
+PASS MainMenu-1280x720.png: Logout Label fits without clipped copy
+PASS MainMenu-1280x720.png: Crown Margin Note fits without clipped copy
+PASS MainMenu-1280x720.png: Chessboard Question fits without clipped copy
+PASS MainMenu-1280x720.png: Friendly Footer fits without clipped copy
+PASS MainMenu-1280x720.png: Main Menu Version fits without clipped copy
+PASS MainMenu-1280x720.png: Start stays in viewport
+PASS MainMenu-1280x720.png: Settings stays in viewport
+PASS MainMenu-1280x720.png: Credits stays in viewport
+PASS MainMenu-1280x720.png: Logout stays in viewport
+PASS MainMenu-1024x768.png: Chess Club Caption fits without clipped copy
+PASS MainMenu-1024x768.png: Early Access Text fits without clipped copy
+PASS MainMenu-1024x768.png: Main Menu Tagline fits without clipped copy
+PASS MainMenu-1024x768.png: Start Label fits without clipped copy
+PASS MainMenu-1024x768.png: Settings Label fits without clipped copy
+PASS MainMenu-1024x768.png: Credits Label fits without clipped copy
+PASS MainMenu-1024x768.png: Logout Label fits without clipped copy
+PASS MainMenu-1024x768.png: Crown Margin Note fits without clipped copy
+PASS MainMenu-1024x768.png: Chessboard Question fits without clipped copy
+PASS MainMenu-1024x768.png: Friendly Footer fits without clipped copy
+PASS MainMenu-1024x768.png: Main Menu Version fits without clipped copy
+PASS MainMenu-1024x768.png: Start stays in viewport
+PASS MainMenu-1024x768.png: Settings stays in viewport
+PASS MainMenu-1024x768.png: Credits stays in viewport
+PASS MainMenu-1024x768.png: Logout stays in viewport
+PASS MainMenu-800x600.png: Chess Club Caption fits without clipped copy
+PASS MainMenu-800x600.png: Early Access Text fits without clipped copy
+PASS MainMenu-800x600.png: Main Menu Tagline fits without clipped copy
+PASS MainMenu-800x600.png: Start Label fits without clipped copy
+PASS MainMenu-800x600.png: Settings Label fits without clipped copy
+PASS MainMenu-800x600.png: Credits Label fits without clipped copy
+PASS MainMenu-800x600.png: Logout Label fits without clipped copy
+PASS MainMenu-800x600.png: Crown Margin Note fits without clipped copy
+PASS MainMenu-800x600.png: Chessboard Question fits without clipped copy
+PASS MainMenu-800x600.png: Friendly Footer fits without clipped copy
+PASS MainMenu-800x600.png: Main Menu Version fits without clipped copy
+PASS MainMenu-800x600.png: Start stays in viewport
+PASS MainMenu-800x600.png: Settings stays in viewport
+PASS MainMenu-800x600.png: Credits stays in viewport
+PASS MainMenu-800x600.png: Logout stays in viewport
+PASS MainMenu-2560x1080.png: Chess Club Caption fits without clipped copy
+PASS MainMenu-2560x1080.png: Early Access Text fits without clipped copy
+PASS MainMenu-2560x1080.png: Main Menu Tagline fits without clipped copy
+PASS MainMenu-2560x1080.png: Start Label fits without clipped copy
+PASS MainMenu-2560x1080.png: Settings Label fits without clipped copy
+PASS MainMenu-2560x1080.png: Credits Label fits without clipped copy
+PASS MainMenu-2560x1080.png: Logout Label fits without clipped copy
+PASS MainMenu-2560x1080.png: Crown Margin Note fits without clipped copy
+PASS MainMenu-2560x1080.png: Chessboard Question fits without clipped copy
+PASS MainMenu-2560x1080.png: Friendly Footer fits without clipped copy
+PASS MainMenu-2560x1080.png: Main Menu Version fits without clipped copy
+PASS MainMenu-2560x1080.png: Start stays in viewport
+PASS MainMenu-2560x1080.png: Settings stays in viewport
+PASS MainMenu-2560x1080.png: Credits stays in viewport
+PASS MainMenu-2560x1080.png: Logout stays in viewport
+PASS MainMenu-3840x2160.png: Chess Club Caption fits without clipped copy
+PASS MainMenu-3840x2160.png: Early Access Text fits without clipped copy
+PASS MainMenu-3840x2160.png: Main Menu Tagline fits without clipped copy
+PASS MainMenu-3840x2160.png: Start Label fits without clipped copy
+PASS MainMenu-3840x2160.png: Settings Label fits without clipped copy
+PASS MainMenu-3840x2160.png: Credits Label fits without clipped copy
+PASS MainMenu-3840x2160.png: Logout Label fits without clipped copy
+PASS MainMenu-3840x2160.png: Crown Margin Note fits without clipped copy
+PASS MainMenu-3840x2160.png: Chessboard Question fits without clipped copy
+PASS MainMenu-3840x2160.png: Friendly Footer fits without clipped copy
+PASS MainMenu-3840x2160.png: Main Menu Version fits without clipped copy
+PASS MainMenu-3840x2160.png: Start stays in viewport
+PASS MainMenu-3840x2160.png: Settings stays in viewport
+PASS MainMenu-3840x2160.png: Credits stays in viewport
+PASS MainMenu-3840x2160.png: Logout stays in viewport
+PASS MainMenu-1080x1920.png: Chess Club Caption fits without clipped copy
+PASS MainMenu-1080x1920.png: Early Access Text fits without clipped copy
+PASS MainMenu-1080x1920.png: Main Menu Tagline fits without clipped copy
+PASS MainMenu-1080x1920.png: Start Label fits without clipped copy
+PASS MainMenu-1080x1920.png: Settings Label fits without clipped copy
+PASS MainMenu-1080x1920.png: Credits Label fits without clipped copy
+PASS MainMenu-1080x1920.png: Logout Label fits without clipped copy
+PASS MainMenu-1080x1920.png: Crown Margin Note fits without clipped copy
+PASS MainMenu-1080x1920.png: Chessboard Question fits without clipped copy
+PASS MainMenu-1080x1920.png: Friendly Footer fits without clipped copy
+PASS MainMenu-1080x1920.png: Main Menu Version fits without clipped copy
+PASS MainMenu-1080x1920.png: Start stays in viewport
+PASS MainMenu-1080x1920.png: Settings stays in viewport
+PASS MainMenu-1080x1920.png: Credits stays in viewport
+PASS MainMenu-1080x1920.png: Logout stays in viewport
+PASS Pointer hover produces a bounded soft lift and scale feedback
+PASS MainMenuStart-Hover.png: Chess Club Caption fits without clipped copy
+PASS MainMenuStart-Hover.png: Early Access Text fits without clipped copy
+PASS MainMenuStart-Hover.png: Main Menu Tagline fits without clipped copy
+PASS MainMenuStart-Hover.png: Start Label fits without clipped copy
+PASS MainMenuStart-Hover.png: Settings Label fits without clipped copy
+PASS MainMenuStart-Hover.png: Credits Label fits without clipped copy
+PASS MainMenuStart-Hover.png: Logout Label fits without clipped copy
+PASS MainMenuStart-Hover.png: Crown Margin Note fits without clipped copy
+PASS MainMenuStart-Hover.png: Chessboard Question fits without clipped copy
+PASS MainMenuStart-Hover.png: Friendly Footer fits without clipped copy
+PASS MainMenuStart-Hover.png: Main Menu Version fits without clipped copy
+PASS MainMenuStart-Hover.png: Start stays in viewport
+PASS MainMenuStart-Hover.png: Settings stays in viewport
+PASS MainMenuStart-Hover.png: Credits stays in viewport
+PASS MainMenuStart-Hover.png: Logout stays in viewport
+PASS Press compresses the button cleanly
+PASS MainMenuStart-Pressed.png: Chess Club Caption fits without clipped copy
+PASS MainMenuStart-Pressed.png: Early Access Text fits without clipped copy
+PASS MainMenuStart-Pressed.png: Main Menu Tagline fits without clipped copy
+PASS MainMenuStart-Pressed.png: Start Label fits without clipped copy
+PASS MainMenuStart-Pressed.png: Settings Label fits without clipped copy
+PASS MainMenuStart-Pressed.png: Credits Label fits without clipped copy
+PASS MainMenuStart-Pressed.png: Logout Label fits without clipped copy
+PASS MainMenuStart-Pressed.png: Crown Margin Note fits without clipped copy
+PASS MainMenuStart-Pressed.png: Chessboard Question fits without clipped copy
+PASS MainMenuStart-Pressed.png: Friendly Footer fits without clipped copy
+PASS MainMenuStart-Pressed.png: Main Menu Version fits without clipped copy
+PASS MainMenuStart-Pressed.png: Start stays in viewport
+PASS MainMenuStart-Pressed.png: Settings stays in viewport
+PASS MainMenuStart-Pressed.png: Credits stays in viewport
+PASS MainMenuStart-Pressed.png: Logout stays in viewport
+PASS Pointer exit settles to the original transform
+PASS Keyboard/controller selection shares hover feedback
+PASS Disabled buttons clear focus feedback and return to rest
+PASS CREDITS opens a readable modal without account access
+PASS Credits modal blocks underlying menu actions
+PASS MainMenuCredits-1920x1080.png: Chess Club Caption fits without clipped copy
+PASS MainMenuCredits-1920x1080.png: Early Access Text fits without clipped copy
+PASS MainMenuCredits-1920x1080.png: Main Menu Tagline fits without clipped copy
+PASS MainMenuCredits-1920x1080.png: Start Label fits without clipped copy
+PASS MainMenuCredits-1920x1080.png: Settings Label fits without clipped copy
+PASS MainMenuCredits-1920x1080.png: Credits Label fits without clipped copy
+PASS MainMenuCredits-1920x1080.png: Logout Label fits without clipped copy
+PASS MainMenuCredits-1920x1080.png: Crown Margin Note fits without clipped copy
+PASS MainMenuCredits-1920x1080.png: Chessboard Question fits without clipped copy
+PASS MainMenuCredits-1920x1080.png: Friendly Footer fits without clipped copy
+PASS MainMenuCredits-1920x1080.png: Main Menu Version fits without clipped copy
+PASS MainMenuCredits-1920x1080.png: Credits Title fits without clipped copy
+PASS MainMenuCredits-1920x1080.png: Credits Copy fits without clipped copy
+PASS MainMenuCredits-1920x1080.png: Close Credits Label fits without clipped copy
+PASS MainMenuCredits-1920x1080.png: Start stays in viewport
+PASS MainMenuCredits-1920x1080.png: Settings stays in viewport
+PASS MainMenuCredits-1920x1080.png: Credits stays in viewport
+PASS MainMenuCredits-1920x1080.png: Logout stays in viewport
+PASS MainMenuCredits-1920x1080.png: Close Credits stays in viewport
+PASS MainMenuCredits-1024x768.png: Chess Club Caption fits without clipped copy
+PASS MainMenuCredits-1024x768.png: Early Access Text fits without clipped copy
+PASS MainMenuCredits-1024x768.png: Main Menu Tagline fits without clipped copy
+PASS MainMenuCredits-1024x768.png: Start Label fits without clipped copy
+PASS MainMenuCredits-1024x768.png: Settings Label fits without clipped copy
+PASS MainMenuCredits-1024x768.png: Credits Label fits without clipped copy
+PASS MainMenuCredits-1024x768.png: Logout Label fits without clipped copy
+PASS MainMenuCredits-1024x768.png: Crown Margin Note fits without clipped copy
+PASS MainMenuCredits-1024x768.png: Chessboard Question fits without clipped copy
+PASS MainMenuCredits-1024x768.png: Friendly Footer fits without clipped copy
+PASS MainMenuCredits-1024x768.png: Main Menu Version fits without clipped copy
+PASS MainMenuCredits-1024x768.png: Credits Title fits without clipped copy
+PASS MainMenuCredits-1024x768.png: Credits Copy fits without clipped copy
+PASS MainMenuCredits-1024x768.png: Close Credits Label fits without clipped copy
+PASS MainMenuCredits-1024x768.png: Start stays in viewport
+PASS MainMenuCredits-1024x768.png: Settings stays in viewport
+PASS MainMenuCredits-1024x768.png: Credits stays in viewport
+PASS MainMenuCredits-1024x768.png: Logout stays in viewport
+PASS MainMenuCredits-1024x768.png: Close Credits stays in viewport
+PASS Closing credits restores main menu input

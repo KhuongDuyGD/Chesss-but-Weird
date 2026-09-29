@@ -38,7 +38,7 @@ public class AuthController : MonoBehaviour
         catch (Exception error)
         {
             if (this != null)
-                mainMenuAuthUI?.SetStatusMessage("Server may be waking up: " + error.Message);
+                mainMenuAuthUI?.SetStatusMessage("Server may be waking up: " + PlayerNotificationText.FromException(error));
         }
     }
 
@@ -102,7 +102,7 @@ public class AuthController : MonoBehaviour
             requestInFlight = false;
             mainMenuAuthUI.SetInteractable(true);
             mainMenuAuthUI.ClearSensitiveFields();
-            ShowFailure(error.Message);
+            ShowFailure(PlayerNotificationText.FromException(error));
         }
     }
 

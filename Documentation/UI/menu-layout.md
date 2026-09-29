@@ -1,20 +1,20 @@
 # Menu layout calibration
 
-Updated 2026-09-16. See `menu-layout-overview.jpg` for Unity-rendered previews.
+Originally calibrated 2026-09-16; main-menu implementation and asset ownership updated 2026-09-29. See the MainMenuRedesign and ModeSelectionRedesign folders for current main-menu previews.
 
 ## Reference artwork
 
 | Screen | Reference | Runtime composition |
 | --- | --- | --- |
-| Main Menu 1 | `Main_Menu/MainMenuDesign.png` | Separate original components, positions measured in 1672 × 941 coordinates |
-| Main Menu 2 | `Main_Menu/MainMenuDesgin2.png` | Separate original components, normalized from the 640 × 363 reference |
+| Main Menu 1 | `MainMenuRedesign/MainMenu-1920x1080.png` preview | `MainMenuPresentation`: original logo, procedural doodles and live controls |
+| Main Menu 2 | `ModeSelectionRedesign/ModeSelection-1920x1080.png` preview | `ModeSelectionPresentation`: original logo, organized mode cards and utility drawings |
 | Gacha | `Gacha_menu/GachaMenuDesign.png` | `GachaMenuDesignBlank.png` plus individual buttons, panels and live values |
 | LAN lobby | `LANUI/LANUIDesign.png` | `LANUIBlank.png` plus buttons and live text in the existing slots |
 | Multiplayer lobby | `MultiplayerUI/MultiplayerUIDesign.png` | `MultiplayerUIBlank.png` plus buttons and live text in the existing slots |
 | Profile | `PlayerProfile/PlayerProfileMain.png` | `PlayerProfileMainBlank.png` plus profile panels and live values |
 | Choose Side / ARAM | No complete reference supplied; manual layout confirmed by user | Existing artwork, balanced options, clear title/caption areas |
 
-All paths in this table are relative to `Assets/Materials`. Original PNGs and their import settings were not edited. No reference Design image is used as the Gacha runtime background. The shared paper sample and ARAM option border come from small empty regions of existing Blank images.
+Main-menu preview paths are relative to this documentation folder; other artwork paths are relative to `Assets/Materials`. Main menus use the original logo at `Assets/Resources/MainMenu/MainMenuLogoOriginal.png` and a procedural paper background. Superseded main-menu PNGs were removed; shared submenu artwork and active resource fallbacks remain. See [MenuAssetCleanup](MenuAssetCleanup/README.md) for the exact asset ledger. No reference Design image is used as the Gacha runtime background. The ARAM option border comes from an empty region of the existing LAN Blank image.
 
 ## Layout behavior
 

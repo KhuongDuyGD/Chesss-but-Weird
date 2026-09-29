@@ -133,10 +133,9 @@ public sealed class ResultMenuView : MonoBehaviour
             return null;
         }
 
-        Texture2D texture = new Texture2D(2, 2, TextureFormat.RGBA32, false)
+        Texture2D texture = new Texture2D(2, 2, TextureFormat.RGBA32, true)
         {
             name = Path.GetFileNameWithoutExtension(fileName),
-            filterMode = FilterMode.Bilinear,
             wrapMode = TextureWrapMode.Clamp
         };
         if (!texture.LoadImage(File.ReadAllBytes(path)))
@@ -147,7 +146,7 @@ public sealed class ResultMenuView : MonoBehaviour
 
         Rect sourceRect = trimTransparency ? FindVisibleRect(texture) : new Rect(0f, 0f, texture.width, texture.height);
         Sprite sprite = Sprite.Create(texture, sourceRect, new Vector2(0.5f, 0.5f), 100f, 0u, SpriteMeshType.FullRect);
-        texture.Apply(false, true);
+        MenuTextureSampling.FinishRuntimeTexture(texture);
         runtimeAssets.Add(sprite);
         runtimeAssets.Add(texture);
         return sprite;
@@ -204,7 +203,7 @@ public sealed class ResultMenuView : MonoBehaviour
 
     private static Image CreateImage(Transform parent, string name, Sprite sprite, Vector2 position, Vector2 size)
     {
-        GameObject imageObject = new GameObject(name, typeof(RectTransform), typeof(Image));
+        GameObject imageObject = new GameObject(name, typeof(RectTransform), typeof(AntialiasedMenuImage));
         RectTransform rect = imageObject.GetComponent<RectTransform>();
         rect.SetParent(parent, false);
         rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 0.5f);

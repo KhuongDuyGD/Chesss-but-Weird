@@ -51,7 +51,7 @@ public sealed class RegisterController : MonoBehaviour
         }
         catch (Exception error)
         {
-            if (this != null) Show(error.Message);
+            if (this != null) Show(PlayerNotificationText.FromException(error));
         }
         finally
         {

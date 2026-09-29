@@ -51,12 +51,6 @@ MonoBehaviour:
     m_SerializedLabels:
     - CoreUI
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 0c4fc681d8f96014fbd624a19da0cb14
-    m_Address: Assets/Materials/Main_Menu/ShopButton.png
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - CoreUI
-    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 0d0a7ffd14214734998a83d74be791f6
     m_Address: Assets/Materials/MultiplayerUI/ReadyButton.png
     m_ReadOnly: 0
@@ -77,12 +71,6 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 14f11ff5d2472ee4fb56c26b92e2366c
     m_Address: Assets/Materials/Result_Menu/NewGameDraw.png
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - CoreUI
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 1618086fcaeec4d42932bd03b63624b1
-    m_Address: Assets/Materials/Main_Menu/InventoryButton.png
     m_ReadOnly: 0
     m_SerializedLabels:
     - CoreUI
@@ -177,12 +165,6 @@ MonoBehaviour:
     m_SerializedLabels:
     - CoreUI
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 2ed25c8a6fa67eb439b21d59fece7e65
-    m_Address: Assets/Materials/Main_Menu/ChooseBotDifficultUI.png
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - CoreUI
-    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 2f57af0f61a006f48924a9ffa86c8303
     m_Address: Assets/Materials/Result_Menu/LoseUI.png
     m_ReadOnly: 0
@@ -209,12 +191,6 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 377cd7fd40ead4f4cb4a26aa21221d99
     m_Address: Assets/Materials/PlayerProfile/Avatar5.png
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - CoreUI
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 3d92d25a75cd58848bcae41246967761
-    m_Address: Assets/Materials/Main_Menu/ARAMModeButton.png
     m_ReadOnly: 0
     m_SerializedLabels:
     - CoreUI
@@ -333,12 +309,6 @@ MonoBehaviour:
     m_SerializedLabels:
     - CoreUI
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 657293c7e04281f4dbdf94cc872b8066
-    m_Address: Assets/Materials/Main_Menu/OnlinePlayButton.png
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - CoreUI
-    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 67b1e7eee3fe8254598f44d604ce9574
     m_Address: Assets/Materials/PlayerProfile/MatchHistory.png
     m_ReadOnly: 0
@@ -377,12 +347,6 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 76af93227a840b84ab50b3d68f7114cd
     m_Address: Assets/Materials/Main_Menu/HardButton.png
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - CoreUI
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 79533ee1c7b819f49aefeac05f7061c6
-    m_Address: Assets/Materials/Main_Menu/GameSlogan.png
     m_ReadOnly: 0
     m_SerializedLabels:
     - CoreUI
@@ -429,20 +393,8 @@ MonoBehaviour:
     m_SerializedLabels:
     - CoreUI
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 8301cbe608a3f1946b597987c18dc1bc
-    m_Address: Assets/Materials/Main_Menu/CreditsButton.png
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - CoreUI
-    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 832df800cffbfdc4591baf8c2060a306
     m_Address: Assets/Materials/Gacha_menu/GoldGacha.png
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - CoreUI
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 854fc7eea3271534cafc4a04a669e6d5
-    m_Address: Assets/Materials/Main_Menu/StartButton.png
     m_ReadOnly: 0
     m_SerializedLabels:
     - CoreUI
@@ -467,12 +419,6 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 9136f54d9526eac45bdfe1a75b0fd979
     m_Address: Assets/Materials/GameplayUI/AnalysisBoard.png
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - CoreUI
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 916700a762d653a4984059488e51f121
-    m_Address: Assets/Materials/Main_Menu/LocalGameplayButton.png
     m_ReadOnly: 0
     m_SerializedLabels:
     - CoreUI
@@ -525,12 +471,6 @@ MonoBehaviour:
     m_SerializedLabels:
     - CoreUI
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 9fee873cc46f3614b9e1fddb63648d14
-    m_Address: Assets/Materials/Main_Menu/LogoutButton.png
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - CoreUI
-    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: a0ff2aec9d1e01f49bfd25eeecf8fda5
     m_Address: Assets/Materials/Gacha_menu/SummonX10.png
     m_ReadOnly: 0
@@ -555,20 +495,8 @@ MonoBehaviour:
     m_SerializedLabels:
     - CoreUI
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: a55c452ee23be5642bf760e129a3545c
-    m_Address: Assets/Materials/Main_Menu/MainMenuDesgin2.png
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - CoreUI
-    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: a6345915a468b524f928a3c5265cd240
     m_Address: Assets/Materials/PlayerProfile/PlayerProfileMainBlank.png
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - CoreUI
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: a67f31783b516114bb7bfbe69cefc2c7
-    m_Address: Assets/Materials/Main_Menu/MainMenuDesign.png
     m_ReadOnly: 0
     m_SerializedLabels:
     - CoreUI
@@ -657,12 +585,6 @@ MonoBehaviour:
     m_SerializedLabels:
     - CoreUI
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: c0c691db68b072a44ab1f14ef9d4f542
-    m_Address: Assets/Materials/Main_Menu/GameLogo.png
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - CoreUI
-    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: c40cacf47b89dba49975611dc0f247ec
     m_Address: Assets/Materials/Result_Menu/MainMenuLose.png
     m_ReadOnly: 0
@@ -699,12 +621,6 @@ MonoBehaviour:
     m_SerializedLabels:
     - CoreUI
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: cebf233263f07dc4586d27d25e2b59c8
-    m_Address: Assets/Materials/Main_Menu/GachaButton.png
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - CoreUI
-    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: d2b49d7252ac8584884faf61fc250def
     m_Address: Assets/Materials/Gacha_menu/SummonX1.png
     m_ReadOnly: 0
@@ -713,12 +629,6 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: d5208be75bac8eb4c8dc2527f801494d
     m_Address: Assets/Materials/MultiplayerUI/StartGameButton.png
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - CoreUI
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: d74f9616a7649e04f8d6caf1bbb3f263
-    m_Address: Assets/Materials/Main_Menu/PlayerProfile.png
     m_ReadOnly: 0
     m_SerializedLabels:
     - CoreUI
@@ -771,26 +681,8 @@ MonoBehaviour:
     m_SerializedLabels:
     - CoreUI
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: ef40de6ea7ba6de46bdd89c5829b13eb
-    m_Address: Assets/Materials/Main_Menu/SettingsButton.png
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - CoreUI
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: f02981e49788b474facbe90fd8c41b05
-    m_Address: Assets/Materials/Main_Menu/DoodleFaceDecorateBackground.png
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - CoreUI
-    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: f06df8634ee61814d843a686260ec064
     m_Address: Assets/Materials/Gacha_menu/GachaResultDesign.png
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - CoreUI
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: f62d6214c79f4174da777d2486aab7bd
-    m_Address: Assets/Materials/Main_Menu/SettingsIcon.png
     m_ReadOnly: 0
     m_SerializedLabels:
     - CoreUI

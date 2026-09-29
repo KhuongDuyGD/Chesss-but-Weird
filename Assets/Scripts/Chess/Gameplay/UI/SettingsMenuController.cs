@@ -54,7 +54,7 @@ public sealed class SettingsMenuController : MonoBehaviour
 
     private void Build()
     {
-        Image blocker = root.gameObject.AddComponent<Image>();
+        Image blocker = root.gameObject.AddComponent<AntialiasedMenuImage>();
         blocker.color = new Color(0.82f, 0.87f, 0.84f);
         blocker.raycastTarget = true;
 
@@ -69,7 +69,7 @@ public sealed class SettingsMenuController : MonoBehaviour
         BuildBackdrop();
         BuildPanel();
         popupRoot = CreateChild(contentRoot, "Settings Popup Root", Vector2.zero, DesignSize);
-        Image dismissArea = popupRoot.gameObject.AddComponent<Image>();
+        Image dismissArea = popupRoot.gameObject.AddComponent<AntialiasedMenuImage>();
         dismissArea.color = new Color(0.10f, 0.16f, 0.15f, 0.08f);
         dismissArea.raycastTarget = true;
         Button dismissPopup = popupRoot.gameObject.AddComponent<Button>();
@@ -101,7 +101,7 @@ public sealed class SettingsMenuController : MonoBehaviour
         Image shadow = AddImage(contentRoot, "Settings Paper Shadow", null, new Vector2(12f, -14f), new Vector2(1460f, 820f));
         shadow.color = new Color(0.12f, 0.20f, 0.18f, 0.17f);
         RectTransform panel = CreateChild(contentRoot, "Settings Panel", Vector2.zero, new Vector2(1460f, 820f));
-        Image panelImage = panel.gameObject.AddComponent<Image>();
+        Image panelImage = panel.gameObject.AddComponent<AntialiasedMenuImage>();
         panelImage.color = Paper;
         panelImage.raycastTarget = true;
         AddSolidFrame(panel, "Settings Panel Frame", panel.sizeDelta, 3f, Ink);
@@ -162,7 +162,7 @@ public sealed class SettingsMenuController : MonoBehaviour
         AddText(row, $"{label} Label", new Vector2(0f, 31f), new Vector2(556f, 44f), 30f, TextAlignmentOptions.MidlineLeft, Ink).text = label;
 
         RectTransform box = CreateChild(row, $"{label} Dropdown", new Vector2(0f, -25f), new Vector2(556f, 58f));
-        Image boxImage = box.gameObject.AddComponent<Image>();
+        Image boxImage = box.gameObject.AddComponent<AntialiasedMenuImage>();
         boxImage.color = Paper;
         boxImage.raycastTarget = true;
         AddSolidFrame(box, $"{label} Dropdown Frame", box.sizeDelta, 2f, Ink);
@@ -188,7 +188,7 @@ public sealed class SettingsMenuController : MonoBehaviour
     private Slider CreateSlider(RectTransform parent, string name, Vector2 position, Vector2 size, int min, int max)
     {
         RectTransform sliderRoot = CreateChild(parent, name, position, size);
-        Image hitArea = sliderRoot.gameObject.AddComponent<Image>();
+        Image hitArea = sliderRoot.gameObject.AddComponent<AntialiasedMenuImage>();
         hitArea.color = new Color(1f, 1f, 1f, 0f);
         hitArea.raycastTarget = true;
 
@@ -234,7 +234,7 @@ public sealed class SettingsMenuController : MonoBehaviour
 
     private TMP_InputField CreateInputField(RectTransform parent, string name, Vector2 position, Vector2 size, int characterLimit)
     {
-        GameObject inputObject = new GameObject(name, typeof(RectTransform), typeof(Image), typeof(TMP_InputField));
+        GameObject inputObject = new GameObject(name, typeof(RectTransform), typeof(AntialiasedMenuImage), typeof(TMP_InputField));
         RectTransform rect = inputObject.GetComponent<RectTransform>();
         rect.SetParent(parent, false);
         rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 0.5f);
@@ -365,7 +365,7 @@ public sealed class SettingsMenuController : MonoBehaviour
         RectTransform popup = CreateChild(popupRoot, "Dropdown Popup", new Vector2(x, y), new Vector2(anchor.sizeDelta.x, height));
         popup.SetAsLastSibling();
         activeDropdownPopup = popup;
-        Image background = popup.gameObject.AddComponent<Image>();
+        Image background = popup.gameObject.AddComponent<AntialiasedMenuImage>();
         background.color = Paper;
         background.raycastTarget = true;
         AddSolidFrame(popup, "Dropdown Popup Frame", popup.sizeDelta, 2f, Ink);
@@ -462,7 +462,7 @@ public sealed class SettingsMenuController : MonoBehaviour
 
     private Image AddImage(Transform parent, string name, Sprite sprite, Vector2 position, Vector2 size)
     {
-        GameObject imageObject = new GameObject(name, typeof(RectTransform), typeof(Image));
+        GameObject imageObject = new GameObject(name, typeof(RectTransform), typeof(AntialiasedMenuImage));
         RectTransform rect = imageObject.GetComponent<RectTransform>();
         rect.SetParent(parent, false);
         rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 0.5f);
@@ -533,7 +533,7 @@ public sealed class SettingsMenuController : MonoBehaviour
 
     private void AddFrameEdge(RectTransform parent, string name, Vector2 position, Vector2 size, Color color)
     {
-        GameObject edgeObject = new GameObject(name, typeof(RectTransform), typeof(Image));
+        GameObject edgeObject = new GameObject(name, typeof(RectTransform), typeof(AntialiasedMenuImage));
         RectTransform rect = edgeObject.GetComponent<RectTransform>();
         rect.SetParent(parent, false);
         rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 0.5f);

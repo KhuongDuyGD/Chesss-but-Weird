@@ -36,15 +36,15 @@ public sealed class LoadingUI : MonoBehaviour
         var paper = ui.Rect("Paper", root.transform, Vector2.zero, Vector2.zero);
         paper.anchorMin = Vector2.zero; paper.anchorMax = Vector2.one;
         paper.offsetMin = paper.offsetMax = Vector2.zero;
-        paper.gameObject.AddComponent<Image>().color = new Color(.985f, .97f, .93f);
+        paper.gameObject.AddComponent<AntialiasedMenuImage>().color = new Color(.985f, .97f, .93f);
         ui.AddText("Chess but Weird", new Vector2(0, 145), 48);
         ui.label = ui.AddText("Preparing...", new Vector2(0, 40), 26);
         var track = ui.Rect("Progress", root.transform, new Vector2(0, -25), new Vector2(620, 14));
-        track.gameObject.AddComponent<Image>().color = new Color(.2f, .18f, .16f, .15f);
+        track.gameObject.AddComponent<AntialiasedMenuImage>().color = new Color(.2f, .18f, .16f, .15f);
         var fill = ui.Rect("Fill", track, Vector2.zero, Vector2.zero);
         fill.anchorMin = Vector2.zero; fill.anchorMax = Vector2.one;
         fill.offsetMin = fill.offsetMax = Vector2.zero;
-        ui.bar = fill.gameObject.AddComponent<Image>();
+        ui.bar = fill.gameObject.AddComponent<AntialiasedMenuImage>();
         ui.bar.color = new Color(.2f, .35f, .65f);
         ui.percentage = ui.AddText("0%", new Vector2(0, -75), 22);
         ui.retry = ui.AddButton("Retry", new Vector2(-145, -155));
@@ -74,7 +74,7 @@ public sealed class LoadingUI : MonoBehaviour
     private Button AddButton(string text, Vector2 position)
     {
         var rect = Rect(text, transform, position, new Vector2(260, 60));
-        rect.gameObject.AddComponent<Image>().color = new Color(.95f, .82f, .4f);
+        rect.gameObject.AddComponent<AntialiasedMenuImage>().color = new Color(.95f, .82f, .4f);
         var b = rect.gameObject.AddComponent<Button>();
         var t = AddText(text, Vector2.zero, 22);
         t.transform.SetParent(rect, false); t.rectTransform.sizeDelta = rect.sizeDelta;

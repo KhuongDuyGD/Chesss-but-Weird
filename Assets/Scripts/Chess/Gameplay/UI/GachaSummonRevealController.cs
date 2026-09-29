@@ -92,7 +92,7 @@ public sealed class GachaSummonRevealController : MonoBehaviour
         canvasGroup.blocksRaycasts = true;
         canvasGroup.interactable = true;
 
-        background = overlay.gameObject.AddComponent<Image>();
+        background = overlay.gameObject.AddComponent<AntialiasedMenuImage>();
         background.color = new Color(0.02f, 0.018f, 0.03f, 0f);
 
         topTierFlash = AddImage(overlay, "Top Tier Flash", null, Vector2.zero, new Vector2(DesignWidth, DesignHeight));
@@ -124,7 +124,7 @@ public sealed class GachaSummonRevealController : MonoBehaviour
         }
 
         RectTransform card = CreateRect(overlay, "Reward Reveal Card", new Vector2(0f, -12f), new Vector2(310f, 410f));
-        cardFrame = card.gameObject.AddComponent<Image>();
+        cardFrame = card.gameObject.AddComponent<AntialiasedMenuImage>();
         cardFrame.sprite = GetSprite("GachaRevealCardFrame.png");
         cardFrame.type = Image.Type.Sliced;
         cardFrame.color = new Color(1f, 0.97f, 0.78f, 0f);
@@ -143,7 +143,7 @@ public sealed class GachaSummonRevealController : MonoBehaviour
     private void BuildSkipButton()
     {
         RectTransform buttonRect = CreateRect(overlay, "Skip Reveal Button", new Vector2(684f, 362f), new Vector2(142f, 54f));
-        Image image = buttonRect.gameObject.AddComponent<Image>();
+        Image image = buttonRect.gameObject.AddComponent<AntialiasedMenuImage>();
         image.color = new Color(0.05f, 0.045f, 0.07f, 0.72f);
         image.raycastTarget = true;
 
@@ -358,7 +358,7 @@ public sealed class GachaSummonRevealController : MonoBehaviour
     private Image AddImage(RectTransform parent, string name, Sprite sprite, Vector2 position, Vector2 size)
     {
         RectTransform rect = CreateRect(parent, name, position, size);
-        Image image = rect.gameObject.AddComponent<Image>();
+        Image image = rect.gameObject.AddComponent<AntialiasedMenuImage>();
         image.sprite = sprite;
         image.raycastTarget = false;
         image.preserveAspect = true;
@@ -423,7 +423,7 @@ public sealed class GachaSummonRevealController : MonoBehaviour
             return null;
 
         byte[] bytes = File.ReadAllBytes(path);
-        Texture2D texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+        Texture2D texture = new Texture2D(2, 2, TextureFormat.RGBA32, true);
         if (!texture.LoadImage(bytes))
         {
             Destroy(texture);
@@ -431,9 +431,8 @@ public sealed class GachaSummonRevealController : MonoBehaviour
         }
 
         texture.name = Path.GetFileNameWithoutExtension(fileName);
-        texture.filterMode = FilterMode.Bilinear;
         Sprite sprite = Sprite.Create(texture, new Rect(0f, 0f, texture.width, texture.height), new Vector2(0.5f, 0.5f), 100f, 0u, SpriteMeshType.FullRect);
-        texture.Apply(false, true);
+        MenuTextureSampling.FinishRuntimeTexture(texture);
         runtimeSprites.Add(sprite);
         return sprite;
     }

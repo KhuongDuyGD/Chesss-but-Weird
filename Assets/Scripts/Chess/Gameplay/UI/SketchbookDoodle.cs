@@ -3,7 +3,7 @@ using UnityEngine.UI;
 
 // Small vector doodles share one mesh per icon; no textures or per-frame animation.
 [RequireComponent(typeof(RectTransform), typeof(CanvasRenderer))]
-public sealed class SketchbookDoodle : MaskableGraphic
+public sealed class SketchbookDoodle : AntialiasedUIGraphic
 {
     public enum Shape { Star, Pawn, Board, Coin, Diamond, Ticket, Scribble, Paper }
     private Shape shape;
@@ -69,28 +69,22 @@ public sealed class SketchbookDoodle : MaskableGraphic
     }
     private void Path(VertexHelper vh, Vector2[] points, bool close, Color ink, float width = 3.6f)
     {
-        for (int i = 1; i < points.Length; i++) Line(vh, points[i-1], points[i], width, ink);
-        if (close) Line(vh, points[points.Length-1], points[0], width, ink);
+        var localPoints = new Vector2[points.Length];
+        for (int i = 0; i < points.Length; i++) localPoints[i] = Point(points[i]);
+        float scale = Mathf.Min(rectTransform.rect.width, rectTransform.rect.height) / 100f;
+        UIEdgeMesh.Stroke(vh, localPoints, ink, width * scale, close);
     }
     private void Line(VertexHelper vh, Vector2 a, Vector2 b, float width, Color ink, bool normalize = true)
     {
         a = Point(a, normalize); b = Point(b, normalize);
         float scale = normalize ? Mathf.Min(rectTransform.rect.width, rectTransform.rect.height) / 100f : 1;
-        Vector2 edge = (b-a).normalized;
-        Vector2 n = new Vector2(-edge.y, edge.x) * width * scale * .5f;
-        int start = vh.currentVertCount;
-        vh.AddVert(a-n,ink,Vector2.zero); vh.AddVert(a+n,ink,Vector2.zero);
-        vh.AddVert(b+n,ink,Vector2.zero); vh.AddVert(b-n,ink,Vector2.zero);
-        vh.AddTriangle(start,start+1,start+2); vh.AddTriangle(start,start+2,start+3);
+        UIEdgeMesh.Stroke(vh, new[] { a, b }, ink, width * scale);
     }
     private void Polygon(VertexHelper vh, Vector2[] points, Color fill)
     {
-        if(fill.a <= 0) return;
-        int start=vh.currentVertCount;
-        Vector2 center=Vector2.zero; foreach(var p in points) center+=p; center/=points.Length;
-        vh.AddVert(Point(center),fill,Vector2.zero);
-        foreach(var p in points) vh.AddVert(Point(p),fill,Vector2.zero);
-        for(int i=0;i<points.Length;i++) vh.AddTriangle(start,start+1+i,start+1+(i+1)%points.Length);
+        var localPoints = new Vector2[points.Length];
+        for (int i = 0; i < points.Length; i++) localPoints[i] = Point(points[i]);
+        UIEdgeMesh.Fill(vh, localPoints, fill);
     }
     private void Circle(VertexHelper vh, Vector2 center, float radius, Color fill)
     {

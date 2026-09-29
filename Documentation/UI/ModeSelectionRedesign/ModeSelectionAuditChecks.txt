@@ -1,0 +1,467 @@
+PASS Original logo is reused with a descriptive player-resource name
+PASS Four mode cards, four utility controls, Back and Logout exist
+PASS Local forwards its action exactly once
+PASS Local has explicit controller navigation
+PASS Online forwards its action exactly once
+PASS Online has explicit controller navigation
+PASS Aram forwards its action exactly once
+PASS Aram has explicit controller navigation
+PASS Shop forwards its action exactly once
+PASS Shop has explicit controller navigation
+PASS Inventory forwards its action exactly once
+PASS Inventory has explicit controller navigation
+PASS Gacha forwards its action exactly once
+PASS Gacha has explicit controller navigation
+PASS Profile forwards its action exactly once
+PASS Profile has explicit controller navigation
+PASS Settings forwards its action exactly once
+PASS Settings has explicit controller navigation
+PASS Back forwards its action exactly once
+PASS Back has explicit controller navigation
+PASS Logout forwards its action exactly once
+PASS Logout has explicit controller navigation
+PASS Navigation connects the mode grid and utility column
+PASS No hover pointer arrows or repeated battle backgrounds
+PASS The only raster images are the preserved logo and its faint shadow
+PASS All modes and all four upgraded utility icons have distinct editable drawings
+PASS Only one small icon animates continuously at idle
+PASS The existing shop placeholder has an honest visible state
+PASS ModeSelection-1920x1080.png: Mode Hub Title fits without clipped copy (preferred: 551.04 x 90.37)
+PASS ModeSelection-1920x1080.png: Mode Hub Welcome fits without clipped copy (preferred: 347.61 x 42.45)
+PASS ModeSelection-1920x1080.png: Modes Section fits without clipped copy (preferred: 204.85 x 41.08)
+PASS ModeSelection-1920x1080.png: Tools Section fits without clipped copy (preferred: 155.71 x 41.08)
+PASS ModeSelection-1920x1080.png: Local Title fits without clipped copy (preferred: 174.46 x 83.52)
+PASS ModeSelection-1920x1080.png: Local Description fits without clipped copy (preferred: 261.63 x 39.71)
+PASS ModeSelection-1920x1080.png: Local Note fits without clipped copy (preferred: 178.86 x 32.86)
+PASS ModeSelection-1920x1080.png: Online Title fits without clipped copy (preferred: 212.01 x 83.52)
+PASS ModeSelection-1920x1080.png: Online Description fits without clipped copy (preferred: 244.05 x 39.71)
+PASS ModeSelection-1920x1080.png: Online Note fits without clipped copy (preferred: 249.1 x 32.86)
+PASS ModeSelection-1920x1080.png: Aram Title fits without clipped copy (preferred: 151.73 x 83.52)
+PASS ModeSelection-1920x1080.png: Aram Description fits without clipped copy (preferred: 280.77 x 39.71)
+PASS ModeSelection-1920x1080.png: Aram Note fits without clipped copy (preferred: 216.95 x 32.86)
+PASS ModeSelection-1920x1080.png: Shop Title fits without clipped copy (preferred: 134.51 x 83.52)
+PASS ModeSelection-1920x1080.png: Shop Description fits without clipped copy (preferred: 255.3 x 39.71)
+PASS ModeSelection-1920x1080.png: Shop Note fits without clipped copy (preferred: 156.37 x 32.86)
+PASS ModeSelection-1920x1080.png: Inventory Title fits without clipped copy (preferred: 172.62 x 47.92)
+PASS ModeSelection-1920x1080.png: Inventory Description fits without clipped copy (preferred: 231.45 x 31.5)
+PASS ModeSelection-1920x1080.png: Gacha Title fits without clipped copy (preferred: 104.26 x 47.92)
+PASS ModeSelection-1920x1080.png: Gacha Description fits without clipped copy (preferred: 234.39 x 31.5)
+PASS ModeSelection-1920x1080.png: Profile Title fits without clipped copy (preferred: 131.16 x 47.92)
+PASS ModeSelection-1920x1080.png: Profile Description fits without clipped copy (preferred: 178.55 x 31.5)
+PASS ModeSelection-1920x1080.png: Settings Title fits without clipped copy (preferred: 147.02 x 47.92)
+PASS ModeSelection-1920x1080.png: Settings Description fits without clipped copy (preferred: 184.91 x 31.5)
+PASS ModeSelection-1920x1080.png: Back Label fits without clipped copy (preferred: 63.27 x 39.71)
+PASS ModeSelection-1920x1080.png: Logout Label fits without clipped copy (preferred: 84.72 x 31.5)
+PASS ModeSelection-1920x1080.png: Mode Hub Footer fits without clipped copy (preferred: 380.44 x 35.6)
+PASS ModeSelection-1920x1080.png: Mode Hub Version fits without clipped copy (preferred: 46.85 x 34.23)
+PASS ModeSelection-1920x1080.png: Local stays in viewport
+PASS ModeSelection-1920x1080.png: Online stays in viewport
+PASS ModeSelection-1920x1080.png: Aram stays in viewport
+PASS ModeSelection-1920x1080.png: Shop stays in viewport
+PASS ModeSelection-1920x1080.png: Inventory stays in viewport
+PASS ModeSelection-1920x1080.png: Gacha stays in viewport
+PASS ModeSelection-1920x1080.png: Profile stays in viewport
+PASS ModeSelection-1920x1080.png: Settings stays in viewport
+PASS ModeSelection-1920x1080.png: Back stays in viewport
+PASS ModeSelection-1920x1080.png: Logout stays in viewport
+PASS ModeSelection-1280x720.png: Mode Hub Title fits without clipped copy (preferred: 551.04 x 90.37)
+PASS ModeSelection-1280x720.png: Mode Hub Welcome fits without clipped copy (preferred: 347.61 x 42.45)
+PASS ModeSelection-1280x720.png: Modes Section fits without clipped copy (preferred: 204.85 x 41.08)
+PASS ModeSelection-1280x720.png: Tools Section fits without clipped copy (preferred: 155.71 x 41.08)
+PASS ModeSelection-1280x720.png: Local Title fits without clipped copy (preferred: 174.46 x 83.52)
+PASS ModeSelection-1280x720.png: Local Description fits without clipped copy (preferred: 261.63 x 39.71)
+PASS ModeSelection-1280x720.png: Local Note fits without clipped copy (preferred: 178.86 x 32.86)
+PASS ModeSelection-1280x720.png: Online Title fits without clipped copy (preferred: 212.01 x 83.52)
+PASS ModeSelection-1280x720.png: Online Description fits without clipped copy (preferred: 244.05 x 39.71)
+PASS ModeSelection-1280x720.png: Online Note fits without clipped copy (preferred: 249.1 x 32.86)
+PASS ModeSelection-1280x720.png: Aram Title fits without clipped copy (preferred: 151.73 x 83.52)
+PASS ModeSelection-1280x720.png: Aram Description fits without clipped copy (preferred: 280.77 x 39.71)
+PASS ModeSelection-1280x720.png: Aram Note fits without clipped copy (preferred: 216.95 x 32.86)
+PASS ModeSelection-1280x720.png: Shop Title fits without clipped copy (preferred: 134.51 x 83.52)
+PASS ModeSelection-1280x720.png: Shop Description fits without clipped copy (preferred: 255.3 x 39.71)
+PASS ModeSelection-1280x720.png: Shop Note fits without clipped copy (preferred: 156.37 x 32.86)
+PASS ModeSelection-1280x720.png: Inventory Title fits without clipped copy (preferred: 172.62 x 47.92)
+PASS ModeSelection-1280x720.png: Inventory Description fits without clipped copy (preferred: 231.45 x 31.5)
+PASS ModeSelection-1280x720.png: Gacha Title fits without clipped copy (preferred: 104.26 x 47.92)
+PASS ModeSelection-1280x720.png: Gacha Description fits without clipped copy (preferred: 234.39 x 31.5)
+PASS ModeSelection-1280x720.png: Profile Title fits without clipped copy (preferred: 131.16 x 47.92)
+PASS ModeSelection-1280x720.png: Profile Description fits without clipped copy (preferred: 178.55 x 31.5)
+PASS ModeSelection-1280x720.png: Settings Title fits without clipped copy (preferred: 147.02 x 47.92)
+PASS ModeSelection-1280x720.png: Settings Description fits without clipped copy (preferred: 184.91 x 31.5)
+PASS ModeSelection-1280x720.png: Back Label fits without clipped copy (preferred: 63.27 x 39.71)
+PASS ModeSelection-1280x720.png: Logout Label fits without clipped copy (preferred: 84.72 x 31.5)
+PASS ModeSelection-1280x720.png: Mode Hub Footer fits without clipped copy (preferred: 380.44 x 35.6)
+PASS ModeSelection-1280x720.png: Mode Hub Version fits without clipped copy (preferred: 46.85 x 34.23)
+PASS ModeSelection-1280x720.png: Local stays in viewport
+PASS ModeSelection-1280x720.png: Online stays in viewport
+PASS ModeSelection-1280x720.png: Aram stays in viewport
+PASS ModeSelection-1280x720.png: Shop stays in viewport
+PASS ModeSelection-1280x720.png: Inventory stays in viewport
+PASS ModeSelection-1280x720.png: Gacha stays in viewport
+PASS ModeSelection-1280x720.png: Profile stays in viewport
+PASS ModeSelection-1280x720.png: Settings stays in viewport
+PASS ModeSelection-1280x720.png: Back stays in viewport
+PASS ModeSelection-1280x720.png: Logout stays in viewport
+PASS ModeSelection-1024x768.png: Mode Hub Title fits without clipped copy (preferred: 551.04 x 90.37)
+PASS ModeSelection-1024x768.png: Mode Hub Welcome fits without clipped copy (preferred: 347.61 x 42.45)
+PASS ModeSelection-1024x768.png: Modes Section fits without clipped copy (preferred: 204.85 x 41.08)
+PASS ModeSelection-1024x768.png: Tools Section fits without clipped copy (preferred: 155.71 x 41.08)
+PASS ModeSelection-1024x768.png: Local Title fits without clipped copy (preferred: 174.46 x 83.52)
+PASS ModeSelection-1024x768.png: Local Description fits without clipped copy (preferred: 261.63 x 39.71)
+PASS ModeSelection-1024x768.png: Local Note fits without clipped copy (preferred: 178.86 x 32.86)
+PASS ModeSelection-1024x768.png: Online Title fits without clipped copy (preferred: 212.01 x 83.52)
+PASS ModeSelection-1024x768.png: Online Description fits without clipped copy (preferred: 244.05 x 39.71)
+PASS ModeSelection-1024x768.png: Online Note fits without clipped copy (preferred: 249.1 x 32.86)
+PASS ModeSelection-1024x768.png: Aram Title fits without clipped copy (preferred: 151.73 x 83.52)
+PASS ModeSelection-1024x768.png: Aram Description fits without clipped copy (preferred: 280.77 x 39.71)
+PASS ModeSelection-1024x768.png: Aram Note fits without clipped copy (preferred: 216.95 x 32.86)
+PASS ModeSelection-1024x768.png: Shop Title fits without clipped copy (preferred: 134.51 x 83.52)
+PASS ModeSelection-1024x768.png: Shop Description fits without clipped copy (preferred: 255.3 x 39.71)
+PASS ModeSelection-1024x768.png: Shop Note fits without clipped copy (preferred: 156.37 x 32.86)
+PASS ModeSelection-1024x768.png: Inventory Title fits without clipped copy (preferred: 172.62 x 47.92)
+PASS ModeSelection-1024x768.png: Inventory Description fits without clipped copy (preferred: 231.45 x 31.5)
+PASS ModeSelection-1024x768.png: Gacha Title fits without clipped copy (preferred: 104.26 x 47.92)
+PASS ModeSelection-1024x768.png: Gacha Description fits without clipped copy (preferred: 234.39 x 31.5)
+PASS ModeSelection-1024x768.png: Profile Title fits without clipped copy (preferred: 131.16 x 47.92)
+PASS ModeSelection-1024x768.png: Profile Description fits without clipped copy (preferred: 178.55 x 31.5)
+PASS ModeSelection-1024x768.png: Settings Title fits without clipped copy (preferred: 147.02 x 47.92)
+PASS ModeSelection-1024x768.png: Settings Description fits without clipped copy (preferred: 184.91 x 31.5)
+PASS ModeSelection-1024x768.png: Back Label fits without clipped copy (preferred: 63.27 x 39.71)
+PASS ModeSelection-1024x768.png: Logout Label fits without clipped copy (preferred: 84.72 x 31.5)
+PASS ModeSelection-1024x768.png: Mode Hub Footer fits without clipped copy (preferred: 380.44 x 35.6)
+PASS ModeSelection-1024x768.png: Mode Hub Version fits without clipped copy (preferred: 46.85 x 34.23)
+PASS ModeSelection-1024x768.png: Local stays in viewport
+PASS ModeSelection-1024x768.png: Online stays in viewport
+PASS ModeSelection-1024x768.png: Aram stays in viewport
+PASS ModeSelection-1024x768.png: Shop stays in viewport
+PASS ModeSelection-1024x768.png: Inventory stays in viewport
+PASS ModeSelection-1024x768.png: Gacha stays in viewport
+PASS ModeSelection-1024x768.png: Profile stays in viewport
+PASS ModeSelection-1024x768.png: Settings stays in viewport
+PASS ModeSelection-1024x768.png: Back stays in viewport
+PASS ModeSelection-1024x768.png: Logout stays in viewport
+PASS ModeSelection-800x600.png: Mode Hub Title fits without clipped copy (preferred: 551.04 x 90.37)
+PASS ModeSelection-800x600.png: Mode Hub Welcome fits without clipped copy (preferred: 347.61 x 42.45)
+PASS ModeSelection-800x600.png: Modes Section fits without clipped copy (preferred: 204.85 x 41.08)
+PASS ModeSelection-800x600.png: Tools Section fits without clipped copy (preferred: 155.71 x 41.08)
+PASS ModeSelection-800x600.png: Local Title fits without clipped copy (preferred: 174.46 x 83.52)
+PASS ModeSelection-800x600.png: Local Description fits without clipped copy (preferred: 261.63 x 39.71)
+PASS ModeSelection-800x600.png: Local Note fits without clipped copy (preferred: 178.86 x 32.86)
+PASS ModeSelection-800x600.png: Online Title fits without clipped copy (preferred: 212.01 x 83.52)
+PASS ModeSelection-800x600.png: Online Description fits without clipped copy (preferred: 244.05 x 39.71)
+PASS ModeSelection-800x600.png: Online Note fits without clipped copy (preferred: 249.1 x 32.86)
+PASS ModeSelection-800x600.png: Aram Title fits without clipped copy (preferred: 151.73 x 83.52)
+PASS ModeSelection-800x600.png: Aram Description fits without clipped copy (preferred: 280.77 x 39.71)
+PASS ModeSelection-800x600.png: Aram Note fits without clipped copy (preferred: 216.95 x 32.86)
+PASS ModeSelection-800x600.png: Shop Title fits without clipped copy (preferred: 134.51 x 83.52)
+PASS ModeSelection-800x600.png: Shop Description fits without clipped copy (preferred: 255.3 x 39.71)
+PASS ModeSelection-800x600.png: Shop Note fits without clipped copy (preferred: 156.37 x 32.86)
+PASS ModeSelection-800x600.png: Inventory Title fits without clipped copy (preferred: 172.62 x 47.92)
+PASS ModeSelection-800x600.png: Inventory Description fits without clipped copy (preferred: 231.45 x 31.5)
+PASS ModeSelection-800x600.png: Gacha Title fits without clipped copy (preferred: 104.26 x 47.92)
+PASS ModeSelection-800x600.png: Gacha Description fits without clipped copy (preferred: 234.39 x 31.5)
+PASS ModeSelection-800x600.png: Profile Title fits without clipped copy (preferred: 131.16 x 47.92)
+PASS ModeSelection-800x600.png: Profile Description fits without clipped copy (preferred: 178.55 x 31.5)
+PASS ModeSelection-800x600.png: Settings Title fits without clipped copy (preferred: 147.02 x 47.92)
+PASS ModeSelection-800x600.png: Settings Description fits without clipped copy (preferred: 184.91 x 31.5)
+PASS ModeSelection-800x600.png: Back Label fits without clipped copy (preferred: 63.27 x 39.71)
+PASS ModeSelection-800x600.png: Logout Label fits without clipped copy (preferred: 84.72 x 31.5)
+PASS ModeSelection-800x600.png: Mode Hub Footer fits without clipped copy (preferred: 380.44 x 35.6)
+PASS ModeSelection-800x600.png: Mode Hub Version fits without clipped copy (preferred: 46.85 x 34.23)
+PASS ModeSelection-800x600.png: Local stays in viewport
+PASS ModeSelection-800x600.png: Online stays in viewport
+PASS ModeSelection-800x600.png: Aram stays in viewport
+PASS ModeSelection-800x600.png: Shop stays in viewport
+PASS ModeSelection-800x600.png: Inventory stays in viewport
+PASS ModeSelection-800x600.png: Gacha stays in viewport
+PASS ModeSelection-800x600.png: Profile stays in viewport
+PASS ModeSelection-800x600.png: Settings stays in viewport
+PASS ModeSelection-800x600.png: Back stays in viewport
+PASS ModeSelection-800x600.png: Logout stays in viewport
+PASS ModeSelection-2560x1080.png: Mode Hub Title fits without clipped copy (preferred: 551.04 x 90.37)
+PASS ModeSelection-2560x1080.png: Mode Hub Welcome fits without clipped copy (preferred: 347.61 x 42.45)
+PASS ModeSelection-2560x1080.png: Modes Section fits without clipped copy (preferred: 204.85 x 41.08)
+PASS ModeSelection-2560x1080.png: Tools Section fits without clipped copy (preferred: 155.71 x 41.08)
+PASS ModeSelection-2560x1080.png: Local Title fits without clipped copy (preferred: 174.46 x 83.52)
+PASS ModeSelection-2560x1080.png: Local Description fits without clipped copy (preferred: 261.63 x 39.71)
+PASS ModeSelection-2560x1080.png: Local Note fits without clipped copy (preferred: 178.86 x 32.86)
+PASS ModeSelection-2560x1080.png: Online Title fits without clipped copy (preferred: 212.01 x 83.52)
+PASS ModeSelection-2560x1080.png: Online Description fits without clipped copy (preferred: 244.05 x 39.71)
+PASS ModeSelection-2560x1080.png: Online Note fits without clipped copy (preferred: 249.1 x 32.86)
+PASS ModeSelection-2560x1080.png: Aram Title fits without clipped copy (preferred: 151.73 x 83.52)
+PASS ModeSelection-2560x1080.png: Aram Description fits without clipped copy (preferred: 280.77 x 39.71)
+PASS ModeSelection-2560x1080.png: Aram Note fits without clipped copy (preferred: 216.95 x 32.86)
+PASS ModeSelection-2560x1080.png: Shop Title fits without clipped copy (preferred: 134.51 x 83.52)
+PASS ModeSelection-2560x1080.png: Shop Description fits without clipped copy (preferred: 255.3 x 39.71)
+PASS ModeSelection-2560x1080.png: Shop Note fits without clipped copy (preferred: 156.37 x 32.86)
+PASS ModeSelection-2560x1080.png: Inventory Title fits without clipped copy (preferred: 172.62 x 47.92)
+PASS ModeSelection-2560x1080.png: Inventory Description fits without clipped copy (preferred: 231.45 x 31.5)
+PASS ModeSelection-2560x1080.png: Gacha Title fits without clipped copy (preferred: 104.26 x 47.92)
+PASS ModeSelection-2560x1080.png: Gacha Description fits without clipped copy (preferred: 234.39 x 31.5)
+PASS ModeSelection-2560x1080.png: Profile Title fits without clipped copy (preferred: 131.16 x 47.92)
+PASS ModeSelection-2560x1080.png: Profile Description fits without clipped copy (preferred: 178.55 x 31.5)
+PASS ModeSelection-2560x1080.png: Settings Title fits without clipped copy (preferred: 147.02 x 47.92)
+PASS ModeSelection-2560x1080.png: Settings Description fits without clipped copy (preferred: 184.91 x 31.5)
+PASS ModeSelection-2560x1080.png: Back Label fits without clipped copy (preferred: 63.27 x 39.71)
+PASS ModeSelection-2560x1080.png: Logout Label fits without clipped copy (preferred: 84.72 x 31.5)
+PASS ModeSelection-2560x1080.png: Mode Hub Footer fits without clipped copy (preferred: 380.44 x 35.6)
+PASS ModeSelection-2560x1080.png: Mode Hub Version fits without clipped copy (preferred: 46.85 x 34.23)
+PASS ModeSelection-2560x1080.png: Local stays in viewport
+PASS ModeSelection-2560x1080.png: Online stays in viewport
+PASS ModeSelection-2560x1080.png: Aram stays in viewport
+PASS ModeSelection-2560x1080.png: Shop stays in viewport
+PASS ModeSelection-2560x1080.png: Inventory stays in viewport
+PASS ModeSelection-2560x1080.png: Gacha stays in viewport
+PASS ModeSelection-2560x1080.png: Profile stays in viewport
+PASS ModeSelection-2560x1080.png: Settings stays in viewport
+PASS ModeSelection-2560x1080.png: Back stays in viewport
+PASS ModeSelection-2560x1080.png: Logout stays in viewport
+PASS ModeSelection-3840x2160.png: Mode Hub Title fits without clipped copy (preferred: 551.04 x 90.37)
+PASS ModeSelection-3840x2160.png: Mode Hub Welcome fits without clipped copy (preferred: 347.61 x 42.45)
+PASS ModeSelection-3840x2160.png: Modes Section fits without clipped copy (preferred: 204.85 x 41.08)
+PASS ModeSelection-3840x2160.png: Tools Section fits without clipped copy (preferred: 155.71 x 41.08)
+PASS ModeSelection-3840x2160.png: Local Title fits without clipped copy (preferred: 174.46 x 83.52)
+PASS ModeSelection-3840x2160.png: Local Description fits without clipped copy (preferred: 261.63 x 39.71)
+PASS ModeSelection-3840x2160.png: Local Note fits without clipped copy (preferred: 178.86 x 32.86)
+PASS ModeSelection-3840x2160.png: Online Title fits without clipped copy (preferred: 212.01 x 83.52)
+PASS ModeSelection-3840x2160.png: Online Description fits without clipped copy (preferred: 244.05 x 39.71)
+PASS ModeSelection-3840x2160.png: Online Note fits without clipped copy (preferred: 249.1 x 32.86)
+PASS ModeSelection-3840x2160.png: Aram Title fits without clipped copy (preferred: 151.73 x 83.52)
+PASS ModeSelection-3840x2160.png: Aram Description fits without clipped copy (preferred: 280.77 x 39.71)
+PASS ModeSelection-3840x2160.png: Aram Note fits without clipped copy (preferred: 216.95 x 32.86)
+PASS ModeSelection-3840x2160.png: Shop Title fits without clipped copy (preferred: 134.51 x 83.52)
+PASS ModeSelection-3840x2160.png: Shop Description fits without clipped copy (preferred: 255.3 x 39.71)
+PASS ModeSelection-3840x2160.png: Shop Note fits without clipped copy (preferred: 156.37 x 32.86)
+PASS ModeSelection-3840x2160.png: Inventory Title fits without clipped copy (preferred: 172.62 x 47.92)
+PASS ModeSelection-3840x2160.png: Inventory Description fits without clipped copy (preferred: 231.45 x 31.5)
+PASS ModeSelection-3840x2160.png: Gacha Title fits without clipped copy (preferred: 104.26 x 47.92)
+PASS ModeSelection-3840x2160.png: Gacha Description fits without clipped copy (preferred: 234.39 x 31.5)
+PASS ModeSelection-3840x2160.png: Profile Title fits without clipped copy (preferred: 131.16 x 47.92)
+PASS ModeSelection-3840x2160.png: Profile Description fits without clipped copy (preferred: 178.55 x 31.5)
+PASS ModeSelection-3840x2160.png: Settings Title fits without clipped copy (preferred: 147.02 x 47.92)
+PASS ModeSelection-3840x2160.png: Settings Description fits without clipped copy (preferred: 184.91 x 31.5)
+PASS ModeSelection-3840x2160.png: Back Label fits without clipped copy (preferred: 63.27 x 39.71)
+PASS ModeSelection-3840x2160.png: Logout Label fits without clipped copy (preferred: 84.72 x 31.5)
+PASS ModeSelection-3840x2160.png: Mode Hub Footer fits without clipped copy (preferred: 380.44 x 35.6)
+PASS ModeSelection-3840x2160.png: Mode Hub Version fits without clipped copy (preferred: 46.85 x 34.23)
+PASS ModeSelection-3840x2160.png: Local stays in viewport
+PASS ModeSelection-3840x2160.png: Online stays in viewport
+PASS ModeSelection-3840x2160.png: Aram stays in viewport
+PASS ModeSelection-3840x2160.png: Shop stays in viewport
+PASS ModeSelection-3840x2160.png: Inventory stays in viewport
+PASS ModeSelection-3840x2160.png: Gacha stays in viewport
+PASS ModeSelection-3840x2160.png: Profile stays in viewport
+PASS ModeSelection-3840x2160.png: Settings stays in viewport
+PASS ModeSelection-3840x2160.png: Back stays in viewport
+PASS ModeSelection-3840x2160.png: Logout stays in viewport
+PASS ModeSelection-1080x1920.png: Mode Hub Title fits without clipped copy (preferred: 551.04 x 90.37)
+PASS ModeSelection-1080x1920.png: Mode Hub Welcome fits without clipped copy (preferred: 347.61 x 42.45)
+PASS ModeSelection-1080x1920.png: Modes Section fits without clipped copy (preferred: 204.85 x 41.08)
+PASS ModeSelection-1080x1920.png: Tools Section fits without clipped copy (preferred: 155.71 x 41.08)
+PASS ModeSelection-1080x1920.png: Local Title fits without clipped copy (preferred: 174.46 x 83.52)
+PASS ModeSelection-1080x1920.png: Local Description fits without clipped copy (preferred: 261.63 x 39.71)
+PASS ModeSelection-1080x1920.png: Local Note fits without clipped copy (preferred: 178.86 x 32.86)
+PASS ModeSelection-1080x1920.png: Online Title fits without clipped copy (preferred: 212.01 x 83.52)
+PASS ModeSelection-1080x1920.png: Online Description fits without clipped copy (preferred: 244.05 x 39.71)
+PASS ModeSelection-1080x1920.png: Online Note fits without clipped copy (preferred: 249.1 x 32.86)
+PASS ModeSelection-1080x1920.png: Aram Title fits without clipped copy (preferred: 151.73 x 83.52)
+PASS ModeSelection-1080x1920.png: Aram Description fits without clipped copy (preferred: 280.77 x 39.71)
+PASS ModeSelection-1080x1920.png: Aram Note fits without clipped copy (preferred: 216.95 x 32.86)
+PASS ModeSelection-1080x1920.png: Shop Title fits without clipped copy (preferred: 134.51 x 83.52)
+PASS ModeSelection-1080x1920.png: Shop Description fits without clipped copy (preferred: 255.3 x 39.71)
+PASS ModeSelection-1080x1920.png: Shop Note fits without clipped copy (preferred: 156.37 x 32.86)
+PASS ModeSelection-1080x1920.png: Inventory Title fits without clipped copy (preferred: 172.62 x 47.92)
+PASS ModeSelection-1080x1920.png: Inventory Description fits without clipped copy (preferred: 231.45 x 31.5)
+PASS ModeSelection-1080x1920.png: Gacha Title fits without clipped copy (preferred: 104.26 x 47.92)
+PASS ModeSelection-1080x1920.png: Gacha Description fits without clipped copy (preferred: 234.39 x 31.5)
+PASS ModeSelection-1080x1920.png: Profile Title fits without clipped copy (preferred: 131.16 x 47.92)
+PASS ModeSelection-1080x1920.png: Profile Description fits without clipped copy (preferred: 178.55 x 31.5)
+PASS ModeSelection-1080x1920.png: Settings Title fits without clipped copy (preferred: 147.02 x 47.92)
+PASS ModeSelection-1080x1920.png: Settings Description fits without clipped copy (preferred: 184.91 x 31.5)
+PASS ModeSelection-1080x1920.png: Back Label fits without clipped copy (preferred: 63.27 x 39.71)
+PASS ModeSelection-1080x1920.png: Logout Label fits without clipped copy (preferred: 84.72 x 31.5)
+PASS ModeSelection-1080x1920.png: Mode Hub Footer fits without clipped copy (preferred: 380.44 x 35.6)
+PASS ModeSelection-1080x1920.png: Mode Hub Version fits without clipped copy (preferred: 46.85 x 34.23)
+PASS ModeSelection-1080x1920.png: Local stays in viewport
+PASS ModeSelection-1080x1920.png: Online stays in viewport
+PASS ModeSelection-1080x1920.png: Aram stays in viewport
+PASS ModeSelection-1080x1920.png: Shop stays in viewport
+PASS ModeSelection-1080x1920.png: Inventory stays in viewport
+PASS ModeSelection-1080x1920.png: Gacha stays in viewport
+PASS ModeSelection-1080x1920.png: Profile stays in viewport
+PASS ModeSelection-1080x1920.png: Settings stays in viewport
+PASS ModeSelection-1080x1920.png: Back stays in viewport
+PASS ModeSelection-1080x1920.png: Logout stays in viewport
+PASS Local Illustration has a bounded static mesh
+PASS Online Illustration has a bounded static mesh
+PASS Aram Illustration has a bounded static mesh
+PASS Shop Illustration has a bounded static mesh
+PASS Inventory Upgraded Icon has a bounded static mesh
+PASS Gacha Upgraded Icon has a bounded static mesh
+PASS Profile Upgraded Icon has a bounded static mesh
+PASS Settings Upgraded Icon has a bounded static mesh
+PASS All eight illustrations use fewer than 16000 cached vertices (actual: 6603)
+PASS ModeSelectionLocal uses soft hover lift and scale
+PASS ModeSelectionLocal-Hover.png: Mode Hub Title fits without clipped copy (preferred: 551.04 x 90.37)
+PASS ModeSelectionLocal-Hover.png: Mode Hub Welcome fits without clipped copy (preferred: 347.61 x 42.45)
+PASS ModeSelectionLocal-Hover.png: Modes Section fits without clipped copy (preferred: 204.85 x 41.08)
+PASS ModeSelectionLocal-Hover.png: Tools Section fits without clipped copy (preferred: 155.71 x 41.08)
+PASS ModeSelectionLocal-Hover.png: Local Title fits without clipped copy (preferred: 174.46 x 83.52)
+PASS ModeSelectionLocal-Hover.png: Local Description fits without clipped copy (preferred: 261.63 x 39.71)
+PASS ModeSelectionLocal-Hover.png: Local Note fits without clipped copy (preferred: 178.86 x 32.86)
+PASS ModeSelectionLocal-Hover.png: Online Title fits without clipped copy (preferred: 212.01 x 83.52)
+PASS ModeSelectionLocal-Hover.png: Online Description fits without clipped copy (preferred: 244.05 x 39.71)
+PASS ModeSelectionLocal-Hover.png: Online Note fits without clipped copy (preferred: 249.1 x 32.86)
+PASS ModeSelectionLocal-Hover.png: Aram Title fits without clipped copy (preferred: 151.73 x 83.52)
+PASS ModeSelectionLocal-Hover.png: Aram Description fits without clipped copy (preferred: 280.77 x 39.71)
+PASS ModeSelectionLocal-Hover.png: Aram Note fits without clipped copy (preferred: 216.95 x 32.86)
+PASS ModeSelectionLocal-Hover.png: Shop Title fits without clipped copy (preferred: 134.51 x 83.52)
+PASS ModeSelectionLocal-Hover.png: Shop Description fits without clipped copy (preferred: 255.3 x 39.71)
+PASS ModeSelectionLocal-Hover.png: Shop Note fits without clipped copy (preferred: 156.37 x 32.86)
+PASS ModeSelectionLocal-Hover.png: Inventory Title fits without clipped copy (preferred: 172.62 x 47.92)
+PASS ModeSelectionLocal-Hover.png: Inventory Description fits without clipped copy (preferred: 231.45 x 31.5)
+PASS ModeSelectionLocal-Hover.png: Gacha Title fits without clipped copy (preferred: 104.26 x 47.92)
+PASS ModeSelectionLocal-Hover.png: Gacha Description fits without clipped copy (preferred: 234.39 x 31.5)
+PASS ModeSelectionLocal-Hover.png: Profile Title fits without clipped copy (preferred: 131.16 x 47.92)
+PASS ModeSelectionLocal-Hover.png: Profile Description fits without clipped copy (preferred: 178.55 x 31.5)
+PASS ModeSelectionLocal-Hover.png: Settings Title fits without clipped copy (preferred: 147.02 x 47.92)
+PASS ModeSelectionLocal-Hover.png: Settings Description fits without clipped copy (preferred: 184.91 x 31.5)
+PASS ModeSelectionLocal-Hover.png: Back Label fits without clipped copy (preferred: 63.27 x 39.71)
+PASS ModeSelectionLocal-Hover.png: Logout Label fits without clipped copy (preferred: 84.72 x 31.5)
+PASS ModeSelectionLocal-Hover.png: Mode Hub Footer fits without clipped copy (preferred: 380.44 x 35.6)
+PASS ModeSelectionLocal-Hover.png: Mode Hub Version fits without clipped copy (preferred: 46.85 x 34.23)
+PASS ModeSelectionLocal-Hover.png: Local stays in viewport
+PASS ModeSelectionLocal-Hover.png: Online stays in viewport
+PASS ModeSelectionLocal-Hover.png: Aram stays in viewport
+PASS ModeSelectionLocal-Hover.png: Shop stays in viewport
+PASS ModeSelectionLocal-Hover.png: Inventory stays in viewport
+PASS ModeSelectionLocal-Hover.png: Gacha stays in viewport
+PASS ModeSelectionLocal-Hover.png: Profile stays in viewport
+PASS ModeSelectionLocal-Hover.png: Settings stays in viewport
+PASS ModeSelectionLocal-Hover.png: Back stays in viewport
+PASS ModeSelectionLocal-Hover.png: Logout stays in viewport
+PASS ModeSelectionLocal compresses on press
+PASS ModeSelectionLocal-Pressed.png: Mode Hub Title fits without clipped copy (preferred: 551.04 x 90.37)
+PASS ModeSelectionLocal-Pressed.png: Mode Hub Welcome fits without clipped copy (preferred: 347.61 x 42.45)
+PASS ModeSelectionLocal-Pressed.png: Modes Section fits without clipped copy (preferred: 204.85 x 41.08)
+PASS ModeSelectionLocal-Pressed.png: Tools Section fits without clipped copy (preferred: 155.71 x 41.08)
+PASS ModeSelectionLocal-Pressed.png: Local Title fits without clipped copy (preferred: 174.46 x 83.52)
+PASS ModeSelectionLocal-Pressed.png: Local Description fits without clipped copy (preferred: 261.63 x 39.71)
+PASS ModeSelectionLocal-Pressed.png: Local Note fits without clipped copy (preferred: 178.86 x 32.86)
+PASS ModeSelectionLocal-Pressed.png: Online Title fits without clipped copy (preferred: 212.01 x 83.52)
+PASS ModeSelectionLocal-Pressed.png: Online Description fits without clipped copy (preferred: 244.05 x 39.71)
+PASS ModeSelectionLocal-Pressed.png: Online Note fits without clipped copy (preferred: 249.1 x 32.86)
+PASS ModeSelectionLocal-Pressed.png: Aram Title fits without clipped copy (preferred: 151.73 x 83.52)
+PASS ModeSelectionLocal-Pressed.png: Aram Description fits without clipped copy (preferred: 280.77 x 39.71)
+PASS ModeSelectionLocal-Pressed.png: Aram Note fits without clipped copy (preferred: 216.95 x 32.86)
+PASS ModeSelectionLocal-Pressed.png: Shop Title fits without clipped copy (preferred: 134.51 x 83.52)
+PASS ModeSelectionLocal-Pressed.png: Shop Description fits without clipped copy (preferred: 255.3 x 39.71)
+PASS ModeSelectionLocal-Pressed.png: Shop Note fits without clipped copy (preferred: 156.37 x 32.86)
+PASS ModeSelectionLocal-Pressed.png: Inventory Title fits without clipped copy (preferred: 172.62 x 47.92)
+PASS ModeSelectionLocal-Pressed.png: Inventory Description fits without clipped copy (preferred: 231.45 x 31.5)
+PASS ModeSelectionLocal-Pressed.png: Gacha Title fits without clipped copy (preferred: 104.26 x 47.92)
+PASS ModeSelectionLocal-Pressed.png: Gacha Description fits without clipped copy (preferred: 234.39 x 31.5)
+PASS ModeSelectionLocal-Pressed.png: Profile Title fits without clipped copy (preferred: 131.16 x 47.92)
+PASS ModeSelectionLocal-Pressed.png: Profile Description fits without clipped copy (preferred: 178.55 x 31.5)
+PASS ModeSelectionLocal-Pressed.png: Settings Title fits without clipped copy (preferred: 147.02 x 47.92)
+PASS ModeSelectionLocal-Pressed.png: Settings Description fits without clipped copy (preferred: 184.91 x 31.5)
+PASS ModeSelectionLocal-Pressed.png: Back Label fits without clipped copy (preferred: 63.27 x 39.71)
+PASS ModeSelectionLocal-Pressed.png: Logout Label fits without clipped copy (preferred: 84.72 x 31.5)
+PASS ModeSelectionLocal-Pressed.png: Mode Hub Footer fits without clipped copy (preferred: 380.44 x 35.6)
+PASS ModeSelectionLocal-Pressed.png: Mode Hub Version fits without clipped copy (preferred: 46.85 x 34.23)
+PASS ModeSelectionLocal-Pressed.png: Local stays in viewport
+PASS ModeSelectionLocal-Pressed.png: Online stays in viewport
+PASS ModeSelectionLocal-Pressed.png: Aram stays in viewport
+PASS ModeSelectionLocal-Pressed.png: Shop stays in viewport
+PASS ModeSelectionLocal-Pressed.png: Inventory stays in viewport
+PASS ModeSelectionLocal-Pressed.png: Gacha stays in viewport
+PASS ModeSelectionLocal-Pressed.png: Profile stays in viewport
+PASS ModeSelectionLocal-Pressed.png: Settings stays in viewport
+PASS ModeSelectionLocal-Pressed.png: Back stays in viewport
+PASS ModeSelectionLocal-Pressed.png: Logout stays in viewport
+PASS ModeSelectionLocal settles to its original transform after pointer exit
+PASS ModeSelectionInventory uses soft hover lift and scale
+PASS ModeSelectionInventory-Hover.png: Mode Hub Title fits without clipped copy (preferred: 551.04 x 90.37)
+PASS ModeSelectionInventory-Hover.png: Mode Hub Welcome fits without clipped copy (preferred: 347.61 x 42.45)
+PASS ModeSelectionInventory-Hover.png: Modes Section fits without clipped copy (preferred: 204.85 x 41.08)
+PASS ModeSelectionInventory-Hover.png: Tools Section fits without clipped copy (preferred: 155.71 x 41.08)
+PASS ModeSelectionInventory-Hover.png: Local Title fits without clipped copy (preferred: 174.46 x 83.52)
+PASS ModeSelectionInventory-Hover.png: Local Description fits without clipped copy (preferred: 261.63 x 39.71)
+PASS ModeSelectionInventory-Hover.png: Local Note fits without clipped copy (preferred: 178.86 x 32.86)
+PASS ModeSelectionInventory-Hover.png: Online Title fits without clipped copy (preferred: 212.01 x 83.52)
+PASS ModeSelectionInventory-Hover.png: Online Description fits without clipped copy (preferred: 244.05 x 39.71)
+PASS ModeSelectionInventory-Hover.png: Online Note fits without clipped copy (preferred: 249.1 x 32.86)
+PASS ModeSelectionInventory-Hover.png: Aram Title fits without clipped copy (preferred: 151.73 x 83.52)
+PASS ModeSelectionInventory-Hover.png: Aram Description fits without clipped copy (preferred: 280.77 x 39.71)
+PASS ModeSelectionInventory-Hover.png: Aram Note fits without clipped copy (preferred: 216.95 x 32.86)
+PASS ModeSelectionInventory-Hover.png: Shop Title fits without clipped copy (preferred: 134.51 x 83.52)
+PASS ModeSelectionInventory-Hover.png: Shop Description fits without clipped copy (preferred: 255.3 x 39.71)
+PASS ModeSelectionInventory-Hover.png: Shop Note fits without clipped copy (preferred: 156.37 x 32.86)
+PASS ModeSelectionInventory-Hover.png: Inventory Title fits without clipped copy (preferred: 172.62 x 47.92)
+PASS ModeSelectionInventory-Hover.png: Inventory Description fits without clipped copy (preferred: 231.45 x 31.5)
+PASS ModeSelectionInventory-Hover.png: Gacha Title fits without clipped copy (preferred: 104.26 x 47.92)
+PASS ModeSelectionInventory-Hover.png: Gacha Description fits without clipped copy (preferred: 234.39 x 31.5)
+PASS ModeSelectionInventory-Hover.png: Profile Title fits without clipped copy (preferred: 131.16 x 47.92)
+PASS ModeSelectionInventory-Hover.png: Profile Description fits without clipped copy (preferred: 178.55 x 31.5)
+PASS ModeSelectionInventory-Hover.png: Settings Title fits without clipped copy (preferred: 147.02 x 47.92)
+PASS ModeSelectionInventory-Hover.png: Settings Description fits without clipped copy (preferred: 184.91 x 31.5)
+PASS ModeSelectionInventory-Hover.png: Back Label fits without clipped copy (preferred: 63.27 x 39.71)
+PASS ModeSelectionInventory-Hover.png: Logout Label fits without clipped copy (preferred: 84.72 x 31.5)
+PASS ModeSelectionInventory-Hover.png: Mode Hub Footer fits without clipped copy (preferred: 380.44 x 35.6)
+PASS ModeSelectionInventory-Hover.png: Mode Hub Version fits without clipped copy (preferred: 46.85 x 34.23)
+PASS ModeSelectionInventory-Hover.png: Local stays in viewport
+PASS ModeSelectionInventory-Hover.png: Online stays in viewport
+PASS ModeSelectionInventory-Hover.png: Aram stays in viewport
+PASS ModeSelectionInventory-Hover.png: Shop stays in viewport
+PASS ModeSelectionInventory-Hover.png: Inventory stays in viewport
+PASS ModeSelectionInventory-Hover.png: Gacha stays in viewport
+PASS ModeSelectionInventory-Hover.png: Profile stays in viewport
+PASS ModeSelectionInventory-Hover.png: Settings stays in viewport
+PASS ModeSelectionInventory-Hover.png: Back stays in viewport
+PASS ModeSelectionInventory-Hover.png: Logout stays in viewport
+PASS ModeSelectionInventory compresses on press
+PASS ModeSelectionInventory-Pressed.png: Mode Hub Title fits without clipped copy (preferred: 551.04 x 90.37)
+PASS ModeSelectionInventory-Pressed.png: Mode Hub Welcome fits without clipped copy (preferred: 347.61 x 42.45)
+PASS ModeSelectionInventory-Pressed.png: Modes Section fits without clipped copy (preferred: 204.85 x 41.08)
+PASS ModeSelectionInventory-Pressed.png: Tools Section fits without clipped copy (preferred: 155.71 x 41.08)
+PASS ModeSelectionInventory-Pressed.png: Local Title fits without clipped copy (preferred: 174.46 x 83.52)
+PASS ModeSelectionInventory-Pressed.png: Local Description fits without clipped copy (preferred: 261.63 x 39.71)
+PASS ModeSelectionInventory-Pressed.png: Local Note fits without clipped copy (preferred: 178.86 x 32.86)
+PASS ModeSelectionInventory-Pressed.png: Online Title fits without clipped copy (preferred: 212.01 x 83.52)
+PASS ModeSelectionInventory-Pressed.png: Online Description fits without clipped copy (preferred: 244.05 x 39.71)
+PASS ModeSelectionInventory-Pressed.png: Online Note fits without clipped copy (preferred: 249.1 x 32.86)
+PASS ModeSelectionInventory-Pressed.png: Aram Title fits without clipped copy (preferred: 151.73 x 83.52)
+PASS ModeSelectionInventory-Pressed.png: Aram Description fits without clipped copy (preferred: 280.77 x 39.71)
+PASS ModeSelectionInventory-Pressed.png: Aram Note fits without clipped copy (preferred: 216.95 x 32.86)
+PASS ModeSelectionInventory-Pressed.png: Shop Title fits without clipped copy (preferred: 134.51 x 83.52)
+PASS ModeSelectionInventory-Pressed.png: Shop Description fits without clipped copy (preferred: 255.3 x 39.71)
+PASS ModeSelectionInventory-Pressed.png: Shop Note fits without clipped copy (preferred: 156.37 x 32.86)
+PASS ModeSelectionInventory-Pressed.png: Inventory Title fits without clipped copy (preferred: 172.62 x 47.92)
+PASS ModeSelectionInventory-Pressed.png: Inventory Description fits without clipped copy (preferred: 231.45 x 31.5)
+PASS ModeSelectionInventory-Pressed.png: Gacha Title fits without clipped copy (preferred: 104.26 x 47.92)
+PASS ModeSelectionInventory-Pressed.png: Gacha Description fits without clipped copy (preferred: 234.39 x 31.5)
+PASS ModeSelectionInventory-Pressed.png: Profile Title fits without clipped copy (preferred: 131.16 x 47.92)
+PASS ModeSelectionInventory-Pressed.png: Profile Description fits without clipped copy (preferred: 178.55 x 31.5)
+PASS ModeSelectionInventory-Pressed.png: Settings Title fits without clipped copy (preferred: 147.02 x 47.92)
+PASS ModeSelectionInventory-Pressed.png: Settings Description fits without clipped copy (preferred: 184.91 x 31.5)
+PASS ModeSelectionInventory-Pressed.png: Back Label fits without clipped copy (preferred: 63.27 x 39.71)
+PASS ModeSelectionInventory-Pressed.png: Logout Label fits without clipped copy (preferred: 84.72 x 31.5)
+PASS ModeSelectionInventory-Pressed.png: Mode Hub Footer fits without clipped copy (preferred: 380.44 x 35.6)
+PASS ModeSelectionInventory-Pressed.png: Mode Hub Version fits without clipped copy (preferred: 46.85 x 34.23)
+PASS ModeSelectionInventory-Pressed.png: Local stays in viewport
+PASS ModeSelectionInventory-Pressed.png: Online stays in viewport
+PASS ModeSelectionInventory-Pressed.png: Aram stays in viewport
+PASS ModeSelectionInventory-Pressed.png: Shop stays in viewport
+PASS ModeSelectionInventory-Pressed.png: Inventory stays in viewport
+PASS ModeSelectionInventory-Pressed.png: Gacha stays in viewport
+PASS ModeSelectionInventory-Pressed.png: Profile stays in viewport
+PASS ModeSelectionInventory-Pressed.png: Settings stays in viewport
+PASS ModeSelectionInventory-Pressed.png: Back stays in viewport
+PASS ModeSelectionInventory-Pressed.png: Logout stays in viewport
+PASS ModeSelectionInventory settles to its original transform after pointer exit
+PASS Opening a modal blocks pointer and keyboard activation of the hub
+PASS Opening a modal clears the underlying selected control
+PASS Closing a modal restores hub input and the previous selection
+PASS Closing a modal restores focus when its Back button remains selected but inactive
+PASS A screen transition blocks keyboard actions through the parent CanvasGroup
+PASS Leaving the hub clears stale EventSystem selection

@@ -9,7 +9,7 @@ public sealed partial class GachaMenuController
 {
     private void BuildContentRoot()
     {
-        var background = root.gameObject.GetComponent<Image>() ?? root.gameObject.AddComponent<Image>();
+        var background = root.gameObject.GetComponent<Image>() ?? root.gameObject.AddComponent<AntialiasedMenuImage>();
         background.color = UI.Paper;
         contentRoot = CreateChild(root, "Gacha Content Root", Vector2.zero, new Vector2(DesignWidth, DesignHeight));
         contentRoot.gameObject.AddComponent<GachaContentRootFitter>().Configure(DesignWidth, DesignHeight);
@@ -111,7 +111,7 @@ public sealed partial class GachaMenuController
     private RectTransform CreateOverlay(RectTransform parent, string name, string title, UnityAction close, out RectTransform sheet)
     {
         var overlay = UI.Node(parent, name, new Rect(0, 0, DesignWidth, DesignHeight));
-        var dim = overlay.gameObject.AddComponent<Image>();
+        var dim = overlay.gameObject.AddComponent<AntialiasedMenuImage>();
         dim.color = new Color(.16f, .13f, .20f, .48f);
         sheet = UI.Card(overlay, name + " Paper", new Rect(236, 75, 1200, 792), UI.White).rectTransform;
         // The paper catches clicks on blank space, keeping the menu behind it inert.

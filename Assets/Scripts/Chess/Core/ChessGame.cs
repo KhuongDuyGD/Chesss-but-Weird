@@ -2443,7 +2443,7 @@ public partial class ChessGame : MonoBehaviour
     {
         if (string.Equals(result, "DRAW", StringComparison.OrdinalIgnoreCase))
         {
-            FinishDraw(string.IsNullOrWhiteSpace(reason) ? "Draw" : reason);
+            FinishDraw(PlayerNotificationText.MatchEndReason(reason, true));
             return;
         }
 

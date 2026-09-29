@@ -258,7 +258,7 @@ public sealed class MainMenuAuthUI : MonoBehaviour
 
     private static Image CreateImage(RectTransform parent, string name, Rect area, Color color)
     {
-        GameObject node = new GameObject(name, typeof(RectTransform), typeof(Image));
+        GameObject node = new GameObject(name, typeof(RectTransform), typeof(AntialiasedMenuImage));
         RectTransform rect = node.GetComponent<RectTransform>();
         rect.SetParent(parent, false);
         Place(rect, area, parent.rect.width, parent.rect.height);

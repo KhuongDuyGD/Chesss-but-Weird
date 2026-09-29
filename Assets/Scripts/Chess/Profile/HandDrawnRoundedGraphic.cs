@@ -4,7 +4,7 @@ using UnityEngine.UI;
 
 /// <summary>A paper card with a soft rounded, lightly uneven ink edge.</summary>
 [RequireComponent(typeof(RectTransform), typeof(CanvasRenderer))]
-public sealed class HandDrawnRoundedGraphic : MaskableGraphic
+public sealed class HandDrawnRoundedGraphic : AntialiasedUIGraphic
 {
     [SerializeField, Min(0f)] private float cornerRadius = 18f;
     [SerializeField, Min(0f)] private float strokeWidth = 3f;
@@ -44,36 +44,7 @@ public sealed class HandDrawnRoundedGraphic : MaskableGraphic
         float innerRadius = Mathf.Max(0f, outerRadius - strokeWidth);
         List<Vector2> outer = BuildContour(bounds, outerRadius);
         List<Vector2> inner = BuildContour(innerBounds, innerRadius);
-        int count = outer.Count;
-
-        UIVertex vertex = UIVertex.simpleVert;
-        vertex.color = color;
-        vertex.position = Vector2.zero;
-        helper.AddVert(vertex); // Center of the fill.
-        for (int i = 0; i < count; i++)
-        {
-            vertex.position = inner[i];
-            helper.AddVert(vertex);
-        }
-
-        vertex.color = strokeColor;
-        for (int i = 0; i < count; i++)
-        {
-            vertex.position = inner[i];
-            helper.AddVert(vertex);
-            vertex.position = outer[i];
-            helper.AddVert(vertex);
-        }
-
-        for (int i = 0; i < count; i++)
-        {
-            int next = (i + 1) % count;
-            helper.AddTriangle(0, 1 + i, 1 + next);
-            int first = 1 + count + i * 2;
-            int second = 1 + count + next * 2;
-            helper.AddTriangle(first, first + 1, second + 1);
-            helper.AddTriangle(first, second + 1, second);
-        }
+        UIEdgeMesh.Panel(helper, outer, inner, color, strokeColor, strokeWidth);
     }
 
     private List<Vector2> BuildContour(Rect rect, float radius)

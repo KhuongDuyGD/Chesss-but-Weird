@@ -108,7 +108,7 @@ public sealed class GuestAccessWarning : MonoBehaviour, ICancelHandler
 
     private static Image Box(Transform parent, string name, Vector2 position, Vector2 size, Color color)
     {
-        var go = new GameObject(name, typeof(RectTransform), typeof(Image));
+        var go = new GameObject(name, typeof(RectTransform), typeof(AntialiasedMenuImage));
         var rect = go.GetComponent<RectTransform>();
         rect.SetParent(parent, false);
         rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0.5f);

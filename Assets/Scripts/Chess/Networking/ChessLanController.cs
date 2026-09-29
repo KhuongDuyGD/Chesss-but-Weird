@@ -1249,7 +1249,7 @@ public class ChessLanController : MonoBehaviour
         lobbySession.CompleteMatch();
         opponentDrawOfferPending = false;
         OpponentPauseChanged?.Invoke(false, string.Empty);
-        statusMessage = $"Game over: {payload.result} ({payload.reason})";
+        statusMessage = $"Game over: {PlayerNotificationText.MatchResult(payload.result)} ({PlayerNotificationText.MatchEndReason(payload.reason)})";
         chessGame.ApplyServerGameOver(payload.result, payload.reason);
         StartCoroutine(LoadMatchHistoryCoroutine());
         if (string.Equals(payload.reason, "RESIGNATION", StringComparison.OrdinalIgnoreCase) &&
@@ -1277,9 +1277,7 @@ public class ChessLanController : MonoBehaviour
             startRequestInFlight = false;
 
         BackendSocketErrorPayload payload = payloadToken.ToObject<BackendSocketErrorPayload>();
-        string message = payload != null && !string.IsNullOrWhiteSpace(payload.message)
-            ? payload.message
-            : "Socket request failed.";
+        string message = PlayerNotificationText.FromServer(payload?.message, code: payload?.code);
         statusMessage = message;
 
         if (!string.IsNullOrWhiteSpace(requestId) && pendingLocalMoveRequestIds.Remove(requestId) && !string.IsNullOrWhiteSpace(lastConfirmedFen))
@@ -1975,7 +1973,7 @@ public class ChessLanController : MonoBehaviour
 
         private TMP_InputField AddInput(string name, Vector2 position, Vector2 size)
         {
-            GameObject inputObject = new GameObject(name, typeof(RectTransform), typeof(Image), typeof(TMP_InputField));
+            GameObject inputObject = new GameObject(name, typeof(RectTransform), typeof(AntialiasedMenuImage), typeof(TMP_InputField));
             RectTransform rect = inputObject.GetComponent<RectTransform>();
             rect.SetParent(contentRoot, false);
             rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 0.5f);
@@ -2007,7 +2005,7 @@ public class ChessLanController : MonoBehaviour
 
         private Image AddImage(Transform parent, string name, Sprite sprite, Vector2 position, Vector2 size)
         {
-            GameObject imageObject = new GameObject(name, typeof(RectTransform), typeof(Image));
+            GameObject imageObject = new GameObject(name, typeof(RectTransform), typeof(AntialiasedMenuImage));
             RectTransform rect = imageObject.GetComponent<RectTransform>();
             rect.SetParent(parent, false);
             rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 0.5f);
@@ -2080,7 +2078,7 @@ public class ChessLanController : MonoBehaviour
                     continue;
 
                 byte[] bytes = File.ReadAllBytes(fullPath);
-                Texture2D texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+                Texture2D texture = new Texture2D(2, 2, TextureFormat.RGBA32, true);
                 if (!texture.LoadImage(bytes))
                 {
                     UnityEngine.Object.Destroy(texture);
@@ -2088,13 +2086,12 @@ public class ChessLanController : MonoBehaviour
                 }
 
                 texture.name = Path.GetFileNameWithoutExtension(names[i]);
-                texture.filterMode = FilterMode.Bilinear;
                 Rect spriteRect = ShouldTrimSprite(names[i])
                     ? MenuArtworkBounds.GetRect(key, texture)
                     : new Rect(0f, 0f, texture.width, texture.height);
                 Sprite sprite = Sprite.Create(texture, spriteRect, new Vector2(0.5f, 0.5f), 100f);
                 sprite.name = texture.name;
-                texture.Apply(false, true);
+                MenuTextureSampling.FinishRuntimeTexture(texture);
                 runtimeAssets.Add(texture);
                 runtimeAssets.Add(sprite);
                 sprites[key] = sprite;
@@ -2187,7 +2184,7 @@ public class ChessLanController : MonoBehaviour
             return null;
 
         byte[] bytes = File.ReadAllBytes(fullPath);
-        Texture2D texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+        Texture2D texture = new Texture2D(2, 2, TextureFormat.RGBA32, true);
         if (!texture.LoadImage(bytes))
         {
             UnityEngine.Object.Destroy(texture);
@@ -2195,7 +2192,7 @@ public class ChessLanController : MonoBehaviour
         }
 
         texture.name = Path.GetFileNameWithoutExtension(projectRelativePath);
-        texture.filterMode = FilterMode.Bilinear;
+        MenuTextureSampling.FinishRuntimeTexture(texture);
         return texture;
     }
 }

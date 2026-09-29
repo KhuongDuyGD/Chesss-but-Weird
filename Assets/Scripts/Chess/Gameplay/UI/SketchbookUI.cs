@@ -88,7 +88,7 @@ public static class SketchbookUI
 
     public static Image Image(Transform parent, string name, Sprite sprite, Rect area)
     {
-        var image = Node(parent, name, area).gameObject.AddComponent<Image>();
+        var image = Node(parent, name, area).gameObject.AddComponent<AntialiasedMenuImage>();
         image.sprite = sprite;
         image.preserveAspect = true;
         image.raycastTarget = false;
@@ -115,7 +115,7 @@ public static class SketchbookUI
 
     public static void Background(RectTransform parent)
     {
-        var background = parent.gameObject.GetComponent<Image>() ?? parent.gameObject.AddComponent<Image>();
+        var background = parent.gameObject.GetComponent<Image>() ?? parent.gameObject.AddComponent<AntialiasedMenuImage>();
         background.color = Paper;
         background.raycastTarget = true;
         Doodle(parent, "Notebook Lines", new Rect(0, 0, 1672, 941), SketchbookDoodle.Shape.Paper,
@@ -136,7 +136,7 @@ public static class SketchbookUI
     public static RectTransform ScrollArea(Transform parent, string name, Rect area, out ScrollRect scroll)
     {
         var viewport = Node(parent, name, area);
-        var hit = viewport.gameObject.AddComponent<Image>();
+        var hit = viewport.gameObject.AddComponent<AntialiasedMenuImage>();
         hit.color = new Color(1, 1, 1, .001f);
         viewport.gameObject.AddComponent<RectMask2D>();
         var content = Node(viewport, name + " Content", new Rect(0, 0, area.width, area.height));

@@ -1,0 +1,341 @@
+PASS Retired texture and metadata are absent: Assets/Materials/Main_Menu/ARAMModeButton.png
+PASS Retired texture and metadata are absent: Assets/Materials/Main_Menu/ChooseBotDifficultUI.png
+PASS Retired texture and metadata are absent: Assets/Materials/Main_Menu/CreditsButton.png
+PASS Retired texture and metadata are absent: Assets/Materials/Main_Menu/DoodleFaceDecorateBackground.png
+PASS Retired texture and metadata are absent: Assets/Materials/Main_Menu/GachaButton.png
+PASS Retired texture and metadata are absent: Assets/Materials/Main_Menu/GameLogo.png
+PASS Retired texture and metadata are absent: Assets/Materials/Main_Menu/GameSlogan.png
+PASS Retired texture and metadata are absent: Assets/Materials/Main_Menu/InventoryButton.png
+PASS Retired texture and metadata are absent: Assets/Materials/Main_Menu/LocalGameplayButton.png
+PASS Retired texture and metadata are absent: Assets/Materials/Main_Menu/LogoutButton.png
+PASS Retired texture and metadata are absent: Assets/Materials/Main_Menu/MainMenuDesgin2.png
+PASS Retired texture and metadata are absent: Assets/Materials/Main_Menu/MainMenuDesign.png
+PASS Retired texture and metadata are absent: Assets/Materials/Main_Menu/OnlinePlayButton.png
+PASS Retired texture and metadata are absent: Assets/Materials/Main_Menu/PlayerProfile.png
+PASS Retired texture and metadata are absent: Assets/Materials/Main_Menu/SettingsButton.png
+PASS Retired texture and metadata are absent: Assets/Materials/Main_Menu/SettingsIcon.png
+PASS Retired texture and metadata are absent: Assets/Materials/Main_Menu/ShopButton.png
+PASS Retired texture and metadata are absent: Assets/Materials/Main_Menu/StartButton.png
+PASS Retired texture and metadata are absent: Assets/Resources/Main_Menu/aram_button.png
+PASS Retired texture and metadata are absent: Assets/Resources/Main_Menu/credits_button.png
+PASS Retired texture and metadata are absent: Assets/Resources/Main_Menu/gacha_icon.png
+PASS Retired texture and metadata are absent: Assets/Resources/Main_Menu/inventory_icon.png
+PASS Retired texture and metadata are absent: Assets/Resources/Main_Menu/local_button.png
+PASS Retired texture and metadata are absent: Assets/Resources/Main_Menu/logo.png
+PASS Retired texture and metadata are absent: Assets/Resources/Main_Menu/logout_button.png
+PASS Retired texture and metadata are absent: Assets/Resources/Main_Menu/mascot.png
+PASS Retired texture and metadata are absent: Assets/Resources/Main_Menu/online_button.png
+PASS Retired texture and metadata are absent: Assets/Resources/Main_Menu/player_profile_icon.png
+PASS Retired texture and metadata are absent: Assets/Resources/Main_Menu/settings_button.png
+PASS Retired texture and metadata are absent: Assets/Resources/Main_Menu/settings_icon.png
+PASS Retired texture and metadata are absent: Assets/Resources/Main_Menu/shop_button.png
+PASS Retired texture and metadata are absent: Assets/Resources/Main_Menu/slogan.png
+PASS Retired texture and metadata are absent: Assets/Resources/Main_Menu/start_button.png
+PASS Protected texture and metadata exist: Assets/Materials/Main_Menu/Back.png
+PASS Protected artwork bytes and GUID are unchanged: Assets/Materials/Main_Menu/Back.png
+PASS Protected texture and metadata exist: Assets/Materials/Main_Menu/BackgroundDecoration1.png
+PASS Protected artwork bytes and GUID are unchanged: Assets/Materials/Main_Menu/BackgroundDecoration1.png
+PASS Protected texture and metadata exist: Assets/Materials/Main_Menu/BackgroundDecoration2.png
+PASS Protected artwork bytes and GUID are unchanged: Assets/Materials/Main_Menu/BackgroundDecoration2.png
+PASS Protected texture and metadata exist: Assets/Materials/Main_Menu/BackgroundDecoration3.png
+PASS Protected artwork bytes and GUID are unchanged: Assets/Materials/Main_Menu/BackgroundDecoration3.png
+PASS Protected texture and metadata exist: Assets/Materials/Main_Menu/BackgroundDecoration4.png
+PASS Protected artwork bytes and GUID are unchanged: Assets/Materials/Main_Menu/BackgroundDecoration4.png
+PASS Protected texture and metadata exist: Assets/Materials/Main_Menu/BeginnerButton.png
+PASS Protected artwork bytes and GUID are unchanged: Assets/Materials/Main_Menu/BeginnerButton.png
+PASS Protected texture and metadata exist: Assets/Materials/Main_Menu/BlackSideButton.png
+PASS Protected artwork bytes and GUID are unchanged: Assets/Materials/Main_Menu/BlackSideButton.png
+PASS Protected texture and metadata exist: Assets/Materials/Main_Menu/ChooseBotDifficultUIBlank.png
+PASS Protected artwork bytes and GUID are unchanged: Assets/Materials/Main_Menu/ChooseBotDifficultUIBlank.png
+PASS Protected texture and metadata exist: Assets/Materials/Main_Menu/ChooseYour MultiplayerMode.png
+PASS Protected artwork bytes and GUID are unchanged: Assets/Materials/Main_Menu/ChooseYour MultiplayerMode.png
+PASS Protected texture and metadata exist: Assets/Materials/Main_Menu/ChooseYourSide.png
+PASS Protected artwork bytes and GUID are unchanged: Assets/Materials/Main_Menu/ChooseYourSide.png
+PASS Protected texture and metadata exist: Assets/Materials/Main_Menu/EasyButton.png
+PASS Protected artwork bytes and GUID are unchanged: Assets/Materials/Main_Menu/EasyButton.png
+PASS Protected texture and metadata exist: Assets/Materials/Main_Menu/ExpertButton.png
+PASS Protected artwork bytes and GUID are unchanged: Assets/Materials/Main_Menu/ExpertButton.png
+PASS Protected texture and metadata exist: Assets/Materials/Main_Menu/GameVersionFake.png
+PASS Protected artwork bytes and GUID are unchanged: Assets/Materials/Main_Menu/GameVersionFake.png
+PASS Protected texture and metadata exist: Assets/Materials/Main_Menu/HardButton.png
+PASS Protected artwork bytes and GUID are unchanged: Assets/Materials/Main_Menu/HardButton.png
+PASS Protected texture and metadata exist: Assets/Materials/Main_Menu/LANButton.png
+PASS Protected artwork bytes and GUID are unchanged: Assets/Materials/Main_Menu/LANButton.png
+PASS Protected texture and metadata exist: Assets/Materials/Main_Menu/MediumButton.png
+PASS Protected artwork bytes and GUID are unchanged: Assets/Materials/Main_Menu/MediumButton.png
+PASS Protected texture and metadata exist: Assets/Materials/Main_Menu/MultiplayerButton.png
+PASS Protected artwork bytes and GUID are unchanged: Assets/Materials/Main_Menu/MultiplayerButton.png
+PASS Protected texture and metadata exist: Assets/Materials/Main_Menu/WhiteSideButton.png
+PASS Protected artwork bytes and GUID are unchanged: Assets/Materials/Main_Menu/WhiteSideButton.png
+PASS Protected texture and metadata exist: Assets/Resources/Main_Menu/black_card.png
+PASS Protected artwork bytes and GUID are unchanged: Assets/Resources/Main_Menu/black_card.png
+PASS Protected texture and metadata exist: Assets/Resources/Main_Menu/choose_side_title.png
+PASS Protected artwork bytes and GUID are unchanged: Assets/Resources/Main_Menu/choose_side_title.png
+PASS Protected texture and metadata exist: Assets/Resources/Main_Menu/crown.png
+PASS Protected artwork bytes and GUID are unchanged: Assets/Resources/Main_Menu/crown.png
+PASS Protected texture and metadata exist: Assets/Resources/Main_Menu/early_access.png
+PASS Protected artwork bytes and GUID are unchanged: Assets/Resources/Main_Menu/early_access.png
+PASS Protected texture and metadata exist: Assets/Resources/Main_Menu/hearts.png
+PASS Protected artwork bytes and GUID are unchanged: Assets/Resources/Main_Menu/hearts.png
+PASS Protected texture and metadata exist: Assets/Resources/Main_Menu/lan_card.png
+PASS Protected artwork bytes and GUID are unchanged: Assets/Resources/Main_Menu/lan_card.png
+PASS Protected texture and metadata exist: Assets/Resources/Main_Menu/multiplayer_mode_title.png
+PASS Protected artwork bytes and GUID are unchanged: Assets/Resources/Main_Menu/multiplayer_mode_title.png
+PASS Protected texture and metadata exist: Assets/Resources/Main_Menu/multiplayer_online_card.png
+PASS Protected artwork bytes and GUID are unchanged: Assets/Resources/Main_Menu/multiplayer_online_card.png
+PASS Protected texture and metadata exist: Assets/Resources/Main_Menu/punch_doodle.png
+PASS Protected artwork bytes and GUID are unchanged: Assets/Resources/Main_Menu/punch_doodle.png
+PASS Protected texture and metadata exist: Assets/Resources/Main_Menu/stars.png
+PASS Protected artwork bytes and GUID are unchanged: Assets/Resources/Main_Menu/stars.png
+PASS Protected texture and metadata exist: Assets/Resources/Main_Menu/white_card.png
+PASS Protected artwork bytes and GUID are unchanged: Assets/Resources/Main_Menu/white_card.png
+PASS Protected texture and metadata exist: Assets/Resources/MainMenu/MainMenuLogoOriginal.png
+PASS Protected artwork bytes and GUID are unchanged: Assets/Resources/MainMenu/MainMenuLogoOriginal.png
+PASS The single retained logo matches the original drawing byte for byte
+PASS No deleted texture GUID remains referenced in game files
+PASS CoreUI no longer preloads: Assets/Materials/Main_Menu/ARAMModeButton.png
+PASS CoreUI no longer preloads: Assets/Materials/Main_Menu/ChooseBotDifficultUI.png
+PASS CoreUI no longer preloads: Assets/Materials/Main_Menu/CreditsButton.png
+PASS CoreUI no longer preloads: Assets/Materials/Main_Menu/DoodleFaceDecorateBackground.png
+PASS CoreUI no longer preloads: Assets/Materials/Main_Menu/GachaButton.png
+PASS CoreUI no longer preloads: Assets/Materials/Main_Menu/GameLogo.png
+PASS CoreUI no longer preloads: Assets/Materials/Main_Menu/GameSlogan.png
+PASS CoreUI no longer preloads: Assets/Materials/Main_Menu/InventoryButton.png
+PASS CoreUI no longer preloads: Assets/Materials/Main_Menu/LocalGameplayButton.png
+PASS CoreUI no longer preloads: Assets/Materials/Main_Menu/LogoutButton.png
+PASS CoreUI no longer preloads: Assets/Materials/Main_Menu/MainMenuDesgin2.png
+PASS CoreUI no longer preloads: Assets/Materials/Main_Menu/MainMenuDesign.png
+PASS CoreUI no longer preloads: Assets/Materials/Main_Menu/OnlinePlayButton.png
+PASS CoreUI no longer preloads: Assets/Materials/Main_Menu/PlayerProfile.png
+PASS CoreUI no longer preloads: Assets/Materials/Main_Menu/SettingsButton.png
+PASS CoreUI no longer preloads: Assets/Materials/Main_Menu/SettingsIcon.png
+PASS CoreUI no longer preloads: Assets/Materials/Main_Menu/ShopButton.png
+PASS CoreUI no longer preloads: Assets/Materials/Main_Menu/StartButton.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/PlayerProfile/PlayerProfileMain.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/PlayerProfile/PlayerProfileMain.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/Main_Menu/Back.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/Main_Menu/Back.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/LANUI/LANUIDesign.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/LANUI/LANUIDesign.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/Result_Menu/DrawUIBlank.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/Result_Menu/DrawUIBlank.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/Gacha_menu/BackGacha.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/Gacha_menu/BackGacha.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/MultiplayerUI/MultiplayerUIDesign.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/MultiplayerUI/MultiplayerUIDesign.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/MultiplayerUI/ReadyButton.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/MultiplayerUI/ReadyButton.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/LANUI/ReadyButton.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/LANUI/ReadyButton.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/Result_Menu/MainMenuDraw.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/Result_Menu/MainMenuDraw.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/Result_Menu/NewGameDraw.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/Result_Menu/NewGameDraw.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/Gacha_menu/DiamondPR.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/Gacha_menu/DiamondPR.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/Main_Menu/BackgroundDecoration1.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/Main_Menu/BackgroundDecoration1.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/Gacha_menu/GachaRevealGlyph4.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/Gacha_menu/GachaRevealGlyph4.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/Gacha_menu/GachaRevealCardFrame.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/Gacha_menu/GachaRevealCardFrame.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/MultiplayerUI/CreateRoomButton.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/MultiplayerUI/CreateRoomButton.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/Result_Menu/LoseUIBlank.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/Result_Menu/LoseUIBlank.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/LANUI/CopyIcon.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/LANUI/CopyIcon.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/Gacha_menu/SummonTicketPR.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/Gacha_menu/SummonTicketPR.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/Gacha_menu/GachaRevealSpark.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/Gacha_menu/GachaRevealSpark.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/MultiplayerUI/RefreshButton.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/MultiplayerUI/RefreshButton.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/PlayerProfile/Avatar0.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/PlayerProfile/Avatar0.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/Main_Menu/BackgroundDecoration2.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/Main_Menu/BackgroundDecoration2.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/GameplayUI/ShareButton.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/GameplayUI/ShareButton.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/Gacha_menu/BackButton.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/Gacha_menu/BackButton.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/GameplayUI/ReportButton.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/GameplayUI/ReportButton.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/Result_Menu/LoseUI.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/Result_Menu/LoseUI.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/Gacha_menu/GoldPR.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/Gacha_menu/GoldPR.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/Main_Menu/WhiteSideButton.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/Main_Menu/WhiteSideButton.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/Gacha_menu/DiamondGacha.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/Gacha_menu/DiamondGacha.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/PlayerProfile/Avatar5.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/PlayerProfile/Avatar5.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/Result_Menu/WinUI.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/Result_Menu/WinUI.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/PlayerProfile/Avatar1.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/PlayerProfile/Avatar1.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/GameplayUI/MoveListUI.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/GameplayUI/MoveListUI.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/Result_Menu/DrawUI.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/Result_Menu/DrawUI.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/Main_Menu/ChooseYour MultiplayerMode.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/Main_Menu/ChooseYour MultiplayerMode.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/MultiplayerUI/JoinRoomButton.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/MultiplayerUI/JoinRoomButton.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/Result_Menu/StalemateUI.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/Result_Menu/StalemateUI.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/Main_Menu/BackgroundDecoration4.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/Main_Menu/BackgroundDecoration4.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/PlayerProfile/Back.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/PlayerProfile/Back.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/Gacha_menu/GachaMenuDesign.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/Gacha_menu/GachaMenuDesign.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/Result_Menu/NewGameWin.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/Result_Menu/NewGameWin.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/LANUI/RefreshButton.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/LANUI/RefreshButton.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/Gacha_menu/GachaRevealGlyph6.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/Gacha_menu/GachaRevealGlyph6.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/Gacha_menu/GachaTitle.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/Gacha_menu/GachaTitle.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/LANUI/JoinButton.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/LANUI/JoinButton.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/Main_Menu/EasyButton.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/Main_Menu/EasyButton.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/Result_Menu/StalemateUIBlank.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/Result_Menu/StalemateUIBlank.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/Main_Menu/ChooseBotDifficultUIBlank.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/Main_Menu/ChooseBotDifficultUIBlank.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/Gacha_menu/SummonTicket.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/Gacha_menu/SummonTicket.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/PlayerProfile/MatchHistory.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/PlayerProfile/MatchHistory.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/Gacha_menu/GachaRevealGlyph3.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/Gacha_menu/GachaRevealGlyph3.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/Gacha_menu/GachaRevealGlyph2.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/Gacha_menu/GachaRevealGlyph2.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/PlayerProfile/PlayerProfileSketch.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/PlayerProfile/PlayerProfileSketch.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/Result_Menu/StalemateKing.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/Result_Menu/StalemateKing.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/Gacha_menu/HistoryButton.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/Gacha_menu/HistoryButton.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/Main_Menu/HardButton.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/Main_Menu/HardButton.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/LANUI/HostButton.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/LANUI/HostButton.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/SettingsMenu/SettingsButton.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/SettingsMenu/SettingsButton.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/Gacha_menu/GachaResultBlank.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/Gacha_menu/GachaResultBlank.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/MultiplayerUI/MultiplayerUIBlank.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/MultiplayerUI/MultiplayerUIBlank.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/Main_Menu/BeginnerButton.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/Main_Menu/BeginnerButton.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/PlayerProfile/Avatar3.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/PlayerProfile/Avatar3.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/Gacha_menu/GachaRevealGlyph5.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/Gacha_menu/GachaRevealGlyph5.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/Gacha_menu/GoldGacha.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/Gacha_menu/GoldGacha.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/Result_Menu/SpectatedDraw.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/Result_Menu/SpectatedDraw.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/Main_Menu/MultiplayerButton.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/Main_Menu/MultiplayerButton.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/Gacha_menu/GachaRevealRay.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/Gacha_menu/GachaRevealRay.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/GameplayUI/AnalysisBoard.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/GameplayUI/AnalysisBoard.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/PlayerProfile/AchievementTitle.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/PlayerProfile/AchievementTitle.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/LANUI/BackButton.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/LANUI/BackButton.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/Main_Menu/ExpertButton.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/Main_Menu/ExpertButton.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/LANUI/LeaveButton.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/LANUI/LeaveButton.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/GameplayUI/ReplyButton.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/GameplayUI/ReplyButton.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/LANUI/LANUIBlank.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/LANUI/LANUIBlank.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/Main_Menu/LANButton.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/Main_Menu/LANButton.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/PlayerProfile/ChangeDataProfileButton.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/PlayerProfile/ChangeDataProfileButton.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/Gacha_menu/SummonX10.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/Gacha_menu/SummonX10.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/Result_Menu/SpectatedLose.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/Result_Menu/SpectatedLose.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/Result_Menu/MainMenuWin.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/Result_Menu/MainMenuWin.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/Main_Menu/BackgroundDecoration3.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/Main_Menu/BackgroundDecoration3.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/PlayerProfile/PlayerProfileMainBlank.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/PlayerProfile/PlayerProfileMainBlank.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/PlayerProfile/Avatar4.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/PlayerProfile/Avatar4.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/Gacha_menu/GachaMenuDesignBlank.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/Gacha_menu/GachaMenuDesignBlank.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/Result_Menu/NewGameLose.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/Result_Menu/NewGameLose.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/PlayerProfile/Streaks.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/PlayerProfile/Streaks.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/Gacha_menu/Skin5StarPR.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/Gacha_menu/Skin5StarPR.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/Gacha_menu/GachaRevealGlyph1.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/Gacha_menu/GachaRevealGlyph1.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/MultiplayerUI/CopyIcon.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/MultiplayerUI/CopyIcon.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/Main_Menu/BlackSideButton.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/Main_Menu/BlackSideButton.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/SettingsMenu/ResumeGameButton.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/SettingsMenu/ResumeGameButton.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/Gacha_menu/StandardGacha.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/Gacha_menu/StandardGacha.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/Result_Menu/WinUIBlank.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/Result_Menu/WinUIBlank.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/Main_Menu/ChooseYourSide.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/Main_Menu/ChooseYourSide.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/Result_Menu/WinChampion.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/Result_Menu/WinChampion.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/PlayerProfile/BasicProfileData.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/PlayerProfile/BasicProfileData.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/Result_Menu/MainMenuLose.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/Result_Menu/MainMenuLose.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/MultiplayerUI/BackButton.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/MultiplayerUI/BackButton.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/PlayerProfile/Avatar2.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/PlayerProfile/Avatar2.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/Result_Menu/SpectatedWin.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/Result_Menu/SpectatedWin.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/LANUI/StartButton.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/LANUI/StartButton.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/Main_Menu/GameVersionFake.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/Main_Menu/GameVersionFake.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/Gacha_menu/SummonX1.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/Gacha_menu/SummonX1.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/MultiplayerUI/StartGameButton.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/MultiplayerUI/StartGameButton.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/Result_Menu/LoseBroken.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/Result_Menu/LoseBroken.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/Main_Menu/MediumButton.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/Main_Menu/MediumButton.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/GameplayUI/AnalysisBoardBlank.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/GameplayUI/AnalysisBoardBlank.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/SettingsMenu/QuitGameButton.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/SettingsMenu/QuitGameButton.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/MultiplayerUI/LeaveRoomButton.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/MultiplayerUI/LeaveRoomButton.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/SettingsMenu/RestartGameButton.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/SettingsMenu/RestartGameButton.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/Gacha_menu/GachaRevealRing.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/Gacha_menu/GachaRevealRing.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/Result_Menu/DrawDraw.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/Result_Menu/DrawDraw.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/Gacha_menu/GachaResultDesign.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/Gacha_menu/GachaResultDesign.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/SettingsMenu/SettingsMenu.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/SettingsMenu/SettingsMenu.png
+PASS CoreUI entry resolves to an existing asset: Assets/Materials/SettingsMenu/SettingsMenuBlank.png
+PASS CoreUI entry retains the correct GUID: Assets/Materials/SettingsMenu/SettingsMenuBlank.png

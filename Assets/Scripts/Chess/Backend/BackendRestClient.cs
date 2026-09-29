@@ -27,6 +27,7 @@ public static class BackendRestClient
         UnityWebRequest request = new UnityWebRequest(url, method);
         request.downloadHandler = new DownloadHandlerBuffer();
         request.SetRequestHeader("Accept", "application/json");
+        request.SetRequestHeader("Accept-Language", "en");
 
         if (body != null)
         {
@@ -65,7 +66,7 @@ public static class BackendRestClient
                 ? $"HTTP {(int)request.responseCode}"
                 : request.error;
 
-        onError?.Invoke(message, errorResponse);
+        onError?.Invoke(PlayerNotificationText.FromServer(message, request.responseCode), errorResponse);
     }
 
     private static T SafeDeserialize<T>(string json) where T : class

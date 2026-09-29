@@ -136,7 +136,7 @@ public sealed class AuthNotificationView : MonoBehaviour
         card.pivot = new Vector2(0.5f, 1f);
         group = card.gameObject.AddComponent<CanvasGroup>();
         group.alpha = 0f;
-        paper = card.gameObject.AddComponent<Image>();
+        paper = card.gameObject.AddComponent<AntialiasedMenuImage>();
         paper.raycastTarget = true;
         var shadow = card.gameObject.AddComponent<Shadow>();
         shadow.effectColor = new Color(0.12f, 0.12f, 0.08f, 0.22f);
@@ -157,7 +157,7 @@ public sealed class AuthNotificationView : MonoBehaviour
 
         var body = Rect(card, "Reason Viewport", new Vector2(78f, -58f), new Vector2(580f, 52f));
         body.gameObject.AddComponent<RectMask2D>();
-        var bodyHit = body.gameObject.AddComponent<Image>();
+        var bodyHit = body.gameObject.AddComponent<AntialiasedMenuImage>();
         bodyHit.color = Color.clear;
         bodyHit.raycastTarget = true;
         messageScroll = body.gameObject.AddComponent<ScrollRect>();
@@ -240,7 +240,7 @@ public sealed class AuthNotificationView : MonoBehaviour
 
     private static Image Box(Transform parent, string name, Vector2 position, Vector2 size, Color color)
     {
-        var image = Rect(parent, name, position, size).gameObject.AddComponent<Image>();
+        var image = Rect(parent, name, position, size).gameObject.AddComponent<AntialiasedMenuImage>();
         image.color = color;
         image.raycastTarget = false;
         return image;

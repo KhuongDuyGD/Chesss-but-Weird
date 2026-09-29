@@ -30,7 +30,13 @@ public static class CoreArtworkCache
                 {
                     string key = location.PrimaryKey;
                     if (!textures.ContainsKey(key))
-                        yield return assets.Load<Texture2D>(key, texture => { if (texture) { textures[key] = texture; acquiredKeys.Add(key); } });
+                        yield return assets.Load<Texture2D>(key, texture =>
+                        {
+                            if (!texture) return;
+                            if (MenuTextureSampling.IsMenuArtwork(key)) MenuTextureSampling.Configure(texture);
+                            textures[key] = texture;
+                            acquiredKeys.Add(key);
+                        });
                 }
                 readyLabels.Add(label);
                 scopes[label] = assets;
