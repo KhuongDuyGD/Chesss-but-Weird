@@ -222,18 +222,20 @@ var buffBoard = new BoardState();
 var knight = new PieceState(1, PieceKind.Knight, Team.White);
 var origin = new Square(3, 3);
 buffBoard.SetPiece(origin, knight);
-var leap = new AramPieceContext(AramBuffs.FreestyleLeap);
-Check(AramRules.BuiltIn.Allows(buffBoard, knight, origin, new Square(5, 5), leap), "Freestyle 2x2 leap");
-Check(!AramRules.BuiltIn.Allows(buffBoard, knight, origin, new Square(4, 4), leap), "Freestyle rejects 1x1 leap");
+var leap = new AramPieceContext(AramBuffs.FreestyleLeap,selectedFreestyle:true);
+Check(!AramRules.BuiltIn.Allows(buffBoard, knight, origin, new Square(5, 5), leap), "Selected Freestyle excludes 2x2 diagonal");
+Check(AramRules.BuiltIn.Allows(buffBoard, knight, origin, new Square(4, 4), leap), "Selected Freestyle includes an intermediate L route square");
+Check(!AramRules.BuiltIn.Allows(buffBoard,knight,origin,new Square(4,4),new AramPieceContext(AramBuffs.FreestyleLeap)),"Unselected Knight retains normal movement");
+Check(AramRules.LegacyV1.Allows(buffBoard,knight,origin,new Square(5,5),new AramPieceContext(AramBuffs.FreestyleLeap)),"Online V1 Freestyle contract preserved");
 var swap = new AramPieceContext(AramBuffs.Doppelganger, swappedKnight: true);
 Check(AramRules.SuppressesStandardMovement(swap) &&
     AramRules.BuiltIn.Allows(buffBoard, knight, origin, new Square(6, 6), swap), "Doppelganger replaces movement");
 Check(!AramRules.BuiltIn.Allows(buffBoard, knight, origin, new Square(5, 4), swap), "Swapped knight loses L move");
 buffBoard.SetPiece(new Square(4, 4), new PieceState(2, PieceKind.Pawn, Team.Black));
 Check(!AramRules.BuiltIn.Allows(buffBoard, knight, origin, new Square(6, 6), swap), "Swapped bishop movement blocked");
-Check(AramRules.BuiltIn.Allows(buffBoard, knight, origin, new Square(5, 5),
-    new AramPieceContext(AramBuffs.Doppelganger | AramBuffs.FreestyleLeap, swappedKnight: true)),
-    "Existing combination policy: freestyle leap survives swap");
+Check(AramRules.BuiltIn.Allows(buffBoard, knight, origin, new Square(4, 3),
+    new AramPieceContext(AramBuffs.Doppelganger | AramBuffs.FreestyleLeap, swappedKnight: true,selectedFreestyle:true)),
+    "Selected freestyle extension combines with swapped movement");
 var pawn = new PieceState(3, PieceKind.Pawn, Team.White, true);
 var commandant = new AramPieceContext(AramBuffs.CommandantPawn, commandant: true);
 Check(AramRules.BuiltIn.Allows(buffBoard, pawn, origin, new Square(3, 5), commandant), "Commandant moved pawn double step");
@@ -247,7 +249,8 @@ Check(!AramRules.BuiltIn.Allows(buffBoard, queen, origin, new Square(1, 6),
     new AramPieceContext(AramBuffs.FlyingThunderGod, originalQueen: true)), "Teleport unavailable during cooldown");
 Check(StrongFortressBuff.WaivesCastleAttackChecks(AramBuffs.StrongFortress), "Fortress attack waiver");
 Check(!SuicideBomberBuff.IsVictim(new PieceState(5, PieceKind.King, Team.White), 4, origin, new Square(4, 4)), "Explosion king immunity");
-Check(!SuicideBomberBuff.IsVictim(queen, 4, origin, new Square(4, 4)), "Explosion capturing piece immunity");
+Check(SuicideBomberBuff.IsVictim(queen, 4, origin, new Square(4, 4)), "Document explosion includes the capturer");
+Check(!SuicideBomberBuff.IsVictim(queen,4,origin,new Square(4,4),legacy:true),"Online V1 explosion capturer immunity preserved");
 Check(SuicideBomberBuff.IsVictim(pawn, 4, origin, new Square(4, 4)), "Explosion adjacent victim");
 var none = new Square(-1, -1);
 var explosionBoard = new BoardState();
@@ -262,7 +265,7 @@ var simulated = new MoveBoardView<BoardState>(explosionBoard, new Square(1, 2), 
 Check(simulated.GetPiece(new Square(4, 3)).IsEmpty && !explosionBoard.GetPiece(new Square(4, 3)).IsEmpty,
     "Explosion simulation removes blocker without changing source");
 Check(KingSafetyRules.IsInCheck(simulated, Team.White, new NoBuffs()), "Explosion revealing rook check is unsafe");
-Check(simulated.GetPiece(new Square(3, 3)).Id == 6, "Capturing piece survives simulated explosion");
+Check(simulated.GetPiece(new Square(3, 3)).IsEmpty, "Capturing piece dies in document explosion simulation");
 var charges = new LimitedUseState(5);
 Check(charges.TryConsume(5, out var cooling) && cooling.Uses == 1 && cooling.Cooldown == 5, "Charge consumption sets cooldown");
 Check(!cooling.TryConsume(5, out _), "Cannot consume while cooling down");
@@ -280,10 +283,44 @@ Check(KingSafetyRules.IsInCheck(customSafetyBoard, Team.White, new NoBuffs(), ex
     "Injected movement registry contributes to attack and king safety");
 Check(!KingSafetyRules.IsInCheck(customSafetyBoard, Team.White, new NoBuffs(), AramRules.BuiltIn),
     "Built-in registry remains isolated from custom movement behavior");
+var movementBoard=new BoardState();
+movementBoard.SetPiece(origin,pawn);movementBoard.SetPiece(new Square(4,4),new PieceState(15,PieceKind.Pawn,Team.White));
+Check(AramRules.BuiltIn.Allows(movementBoard,pawn,origin,new Square(4,4),new AramPieceContext(AramBuffs.NobleSacrifice)),"Unchanged Pawn can sacrifice an allied Pawn");
+Check(!AramRules.BuiltIn.Allows(movementBoard,pawn,origin,new Square(4,4),new AramPieceContext(AramBuffs.NobleSacrifice,bloodthirsty:true)),"Bloodthirsty cannot sacrifice another ally");
+Check(!AramRules.BuiltIn.Allows(movementBoard,pawn,origin,new Square(3,2),new AramPieceContext(AramBuffs.NobleSacrifice,bloodthirsty:true)),"Bloodthirsty does not independently gain retreat");
+Check(AramRules.BuiltIn.Allows(movementBoard,pawn,origin,new Square(3,2),new AramPieceContext(AramBuffs.RiseOfPawn)),"Devolution grants noncapture retreat");
+var trapped=new AramPieceContext(AramBuffs.None,trapPawn:true);
+Check(AramRules.SuppressesStandardMovement(trapped)&&AramRules.BuiltIn.Allows(movementBoard,pawn,origin,new Square(3,2),trapped),"Trapped Pawn uses orthogonal retreat");
+Check(!AramRules.BuiltIn.Allows(movementBoard,pawn,origin,new Square(4,4),trapped,attack:true),"Trapped Pawn loses diagonal attack");
+Check(AramRules.BuiltIn.Allows(movementBoard,knight,origin,new Square(3,7),new AramPieceContext(AramBuffs.UltimateQuest,queenMastery:true)),"Quest winner gains clear Queen ray");
+var rook=new PieceState(20,PieceKind.Rook,Team.White);
+movementBoard.SetPiece(origin,rook);movementBoard.SetPiece(new Square(3,4),pawn);
+Check(AramRules.BuiltIn.Allows(movementBoard,rook,origin,new Square(3,7),new AramPieceContext(AramBuffs.MonsterTruck)),"Monster Truck passes allies to empty square");
+Check(!AramRules.BuiltIn.Allows(movementBoard,rook,origin,new Square(3,7),new AramPieceContext(AramBuffs.MonsterTruck),attack:true),"Monster Truck cannot check through allies");
+movementBoard.SetPiece(new Square(3,7),new PieceState(21,PieceKind.Queen,Team.Black));
+Check(!AramRules.BuiltIn.Allows(movementBoard,rook,origin,new Square(3,7),new AramPieceContext(AramBuffs.MonsterTruck)),"Monster Truck cannot capture through allies");
+Check(AramRules.BuiltIn.Allows(movementBoard,rook,origin,new Square(3,7),new AramPieceContext(AramBuffs.GhostArmy)),"Ghost Army can capture through allies");
+Check((ulong)AramBuffs.Paratrooper==1UL<<34&&((AramBuffs.Paratrooper|AramBuffs.CommandantPawn)&AramBuffs.CommandantPawn)!=0,"35-bit buff mask preserves low and high IDs");
+Check(AramBalanceRules.ExpiryAfterCapture(12,4)==17,"Four subsequent combined plies expire after the capture ply");
+Check(AramBalanceRules.BetrayalChance(0)==.1f&&Math.Abs(AramBalanceRules.BetrayalChance(1)-.15f)<.00001f&&AramBalanceRules.BetrayalChance(50)==1,"Betrayal grows and caps at certainty");
+Check(AramBalanceRules.CanPurchase(0,false,PieceKind.Queen)&&!AramBalanceRules.CanPurchase(-1,false,PieceKind.Pawn)&&!AramBalanceRules.CanPurchase(20,true,PieceKind.Rook),"Credit purchase debt and per-turn limits");
+Check(AramBalanceRules.PurchasePrice(PieceKind.Queen)==10&&AramBalanceRules.CapturePoints(PieceKind.Queen)==9,"Purchase and capture point scales are distinct");
+var placement=new PlacementBoardView<BoardState>(movementBoard,new Square(2,2),rook,origin);
+Check(placement.GetPiece(origin).IsEmpty&&placement.GetPiece(new Square(2,2)).Id==rook.Id&&movementBoard.GetPiece(origin).Id==rook.Id,"Deployment projection leaves original board untouched");
+var blastBoard=new BoardState();blastBoard.SetPiece(new Square(3,3),new PieceState(5,PieceKind.Queen,Team.Black));
+blastBoard.SetPiece(new Square(4,4),new PieceState(7,PieceKind.Queen,Team.White));blastBoard.SetPiece(new Square(5,5),new PieceState(8,PieceKind.Pawn,Team.Black));
+blastBoard.SetPiece(new Square(5,4),new PieceState(9,PieceKind.King,Team.White));
+var chain=new ExplosionChainBoardView<BoardState>(blastBoard,new Square(3,3),new TestArmedQueen());
+Check(chain.GetPiece(new Square(5,5)).IsEmpty&&!blastBoard.GetPiece(new Square(5,5)).IsEmpty,"Second armed Queen extends projected blast without changing the board");
+Check(chain.GetPiece(new Square(5,4)).Kind==PieceKind.King,"Chained blast preserves royal King immunity");
 Console.WriteLine($"{count} checks passed.");
 
 sealed class TestOneStepBuff : IAramMovementBuff
 {
     public bool Allows<TBoard>(TBoard board, PieceState piece, Square from, Square to, AramPieceContext context, bool attack)
         where TBoard : IReadOnlyBoard => to.File == from.File && to.Rank == from.Rank + 1;
+}
+sealed class TestArmedQueen : IBuffContextProvider
+{
+    public AramPieceContext GetContext(PieceState piece)=>piece.Id==7?new AramPieceContext(AramBuffs.SuicideBomber,originalQueen:true,bomberArmed:true):default;
 }

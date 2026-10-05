@@ -16,9 +16,11 @@ public sealed partial class AramBuffRuntime : MonoBehaviour
     private readonly List<AramBuffPieceMarker> activeMarkers = new List<AramBuffPieceMarker>();
     private readonly Queue<AramTargetTask> targetTasks = new Queue<AramTargetTask>();
     private readonly List<ChessPiece> pendingTargetPieces = new List<ChessPiece>();
+    private readonly AramBuffDefinition[] disguisedBuff = new AramBuffDefinition[2];
+    private readonly List<AramBuffDefinition>[] displayBuffs = { new List<AramBuffDefinition>(), new List<AramBuffDefinition>() };
+    private readonly System.Random presentationRandom = new System.Random();
     // Keep one registry for movement, attack queries, and hypothetical king-safety moves.
-    // The current Unity adapter intentionally uses the built-in ARAM-V1 set; a future
-    // ruleset can replace this instance without changing the callers.
+    // Local games use the document rules; network games retain the server's V1 contract.
     private readonly AramRules domainRules = AramRules.BuiltIn;
     private ChessGame game;
     private AramBuffDraftView draftView;
@@ -37,6 +39,28 @@ public sealed partial class AramBuffRuntime : MonoBehaviour
     public IReadOnlyList<AramBuffDefinition> GetBuffs(PieceTeam team)
     {
         return GetState(team).Buffs;
+    }
+
+    public bool DisguisesBuff(PieceTeam team, PieceTeam viewer) =>
+        active && !networkMatch && team != viewer && HasBuff(team, AramBuffId.Doppelganger);
+
+    public IReadOnlyList<AramBuffDefinition> GetDisplayBuffs(PieceTeam team, PieceTeam viewer)
+    {
+        if (networkMatch && team != visibleTeam) return Array.Empty<AramBuffDefinition>();
+        var actual = GetBuffs(team);
+        if (!DisguisesBuff(team, viewer)) return actual;
+        int side = Side(team);
+        if (!disguisedBuff[side])
+        {
+            var candidates = new List<AramBuffDefinition>();
+            foreach (var buff in draftPool)
+                if (buff && buff.Tier == AramBuffTier.Gold && buff.Id != AramBuffId.Doppelganger) candidates.Add(buff);
+            if (candidates.Count == 0) return Array.Empty<AramBuffDefinition>();
+            disguisedBuff[side] = candidates[presentationRandom.Next(candidates.Count)];
+        }
+        var display = displayBuffs[side]; display.Clear();
+        foreach (var buff in actual) display.Add(buff && buff.Id == AramBuffId.Doppelganger ? disguisedBuff[side] : buff);
+        return display;
     }
 
     public void BeginMatch(ChessGame owner)
@@ -74,10 +98,10 @@ public sealed partial class AramBuffRuntime : MonoBehaviour
         foreach(var definition in draftPool)
         {
             string description = definition.Description;
-            if(definition.Id==AramBuffId.FreestyleLeap) description="ARAM-V1: Knights gain additional two-by-two diagonal jumps.";
-            if(definition.Id==AramBuffId.StrongFortress) description="ARAM-V1: Castle out of or through check. Both pieces must be unmoved and the destination safe.";
-            if(definition.Id==AramBuffId.Doppelganger) description="ARAM-V1: One selected Knight and Bishop permanently exchange movement.";
-            if(definition.Id==AramBuffId.SuicideBomber) description="ARAM-V1: The original Queen explodes once when captured. Kings and the capturer are immune.";
+            if(definition.Id==AramBuffId.FreestyleLeap) description="Online rules: Knights gain additional two-by-two diagonal jumps.";
+            if(definition.Id==AramBuffId.StrongFortress) description="Online rules: Castle out of or through check. Both pieces must be unmoved and the destination safe.";
+            if(definition.Id==AramBuffId.Doppelganger) description="Online rules: One selected Knight and Bishop permanently exchange movement.";
+            if(definition.Id==AramBuffId.SuicideBomber) description="Online rules: The original Queen explodes once when captured. Kings and the capturer are immune.";
             definition.Configure(definition.Id,definition.Tier,definition.DisplayName,definition.ShortName,description,definition.AccentColor);
         }
         EnsureDraftView();
@@ -89,6 +113,7 @@ public sealed partial class AramBuffRuntime : MonoBehaviour
 
         game?.SetAramInputLocked(false);
         ShowCurrentHud();
+        EnsureActionView();
     }
 
     public void EndMatch()
@@ -134,7 +159,7 @@ public sealed partial class AramBuffRuntime : MonoBehaviour
                 Vector2Int destination = new Vector2Int(x, y);
                 if (moves.Contains(destination))
                     continue;
-                if (IsLegalAramMove(piece, piece.BoardPosition, destination, board))
+                if (IsLegalAramMove(piece, piece.BoardPosition, destination, board) || IsSniperAttack(piece,destination))
                     scratchMoves.Add(destination);
             }
 
@@ -149,11 +174,13 @@ public sealed partial class AramBuffRuntime : MonoBehaviour
         for (int i = 0; i < state.Buffs.Count; i++)
         {
             AramBuffDefinition definition = state.Buffs[i];
-            if (definition) flags |= (AramBuffs)(1 << (int)definition.Id);
+            if (definition) flags |= (AramBuffs)(1UL << (int)definition.Id);
         }
         return new AramPieceContext(flags, state.CommandantPawns.Contains(piece),
             piece == state.SwappedKnight && IsSwapActive(piece.Team), piece == state.SwappedBishop && IsSwapActive(piece.Team),
-            piece == state.OriginalQueen, state.CanUseQueenTeleport(piece), bloodthirsty.Contains(piece), cannonTurns.ContainsKey(piece), decoys.Contains(piece));
+            piece == state.OriginalQueen, state.CanUseQueenTeleport(piece), bloodthirsty.Contains(piece), cannonTurns.ContainsKey(piece), decoys.Contains(piece),
+            piece==state.FreestyleKnight,queenMastery.Contains(piece),trapPawns.Contains(piece),
+            piece==state.OriginalQueen&&state.HasBuff(AramBuffId.SuicideBomber)&&!state.SuicideBomberUsed);
     }
 
     public bool IsLegalAramMove(ChessPiece piece, Vector2Int from, Vector2Int destination, ChessPiece[,] board)
@@ -188,6 +215,8 @@ public sealed partial class AramBuffRuntime : MonoBehaviour
             return;
 
         AramTeamState state = GetState(piece.Team);
+        if(!networkMatch&&piece.Type==PieceType.King&&from.y==destination.y&&Mathf.Abs(destination.x-from.x)>=2&&
+            (destination.x==2||destination.x==6)&&HasBuff(piece.Team,AramBuffId.StrongFortress))castledWings[Side(piece.Team)]|=destination.x==6?1:2;
         if (!state.HasBuff(AramBuffId.FlyingThunderGod) || piece != state.OriginalQueen)
             return;
 
@@ -262,6 +291,9 @@ public sealed partial class AramBuffRuntime : MonoBehaviour
                 return TrySelectDoppelgangerKnight(piece);
             case AramTargetKind.DoppelgangerBishop:
                 return TrySelectDoppelgangerBishop(piece);
+            case AramTargetKind.FreestyleKnight:
+                if(piece.Type!=PieceType.Knight){ShowTargetWarning("Choose a Knight for Freestyle Leap.");return true;}
+                GetState(piece.Team).FreestyleKnight=piece;TryStartNextTargetTask();return true;
             default:
                 return true;
         }
@@ -411,8 +443,6 @@ public sealed partial class AramBuffRuntime : MonoBehaviour
 
         if (networkMatch)
             draftView.ShowPrivateHud(visibleTeam, GetState(visibleTeam).Buffs);
-        else
-            draftView.RefreshHud(whiteState.Buffs, blackState.Buffs);
     }
 
     private static uint StableHash(string value)
@@ -524,6 +554,8 @@ public sealed partial class AramBuffRuntime : MonoBehaviour
 
     private void EnqueueTargetTasks(AramTeamState state)
     {
+        var freestyle=state.GetBuff(AramBuffId.FreestyleLeap);
+        if(freestyle&&!networkMatch)targetTasks.Enqueue(new AramTargetTask(state.Team,freestyle,AramTargetKind.FreestyleKnight));
         AramBuffDefinition commandant = state.GetBuff(AramBuffId.CommandantPawn);
         if (commandant)
             targetTasks.Enqueue(new AramTargetTask(state.Team, commandant, AramTargetKind.CommandantPawn));
@@ -565,7 +597,7 @@ public sealed partial class AramBuffRuntime : MonoBehaviour
         else
             draftView.ShowHud(whiteState.Buffs, blackState.Buffs);
         game?.SetAramInputLocked(false);
-        if (!networkMatch) EnsureActionView();
+        if (!networkMatch){game?.AramInitializeDrawTracking();EnsureActionView();}
     }
 
     private bool HasValidTargets(AramTargetTask task)
@@ -575,6 +607,7 @@ public sealed partial class AramBuffRuntime : MonoBehaviour
             case AramTargetKind.CommandantPawn:
                 return CountPieces(task.Team, PieceType.Pawn) > 0;
             case AramTargetKind.DoppelgangerKnight:
+            case AramTargetKind.FreestyleKnight:
                 return CountPieces(task.Team, PieceType.Knight) > 0;
             case AramTargetKind.DoppelgangerBishop:
                 return CountPieces(task.Team, PieceType.Bishop) > 0;
@@ -599,6 +632,9 @@ public sealed partial class AramBuffRuntime : MonoBehaviour
                 break;
             case AramTargetKind.DoppelgangerBishop:
                 message = $"{currentTargetTask.Team} Doppelganger: select the Bishop that will move like a Knight.";
+                break;
+            case AramTargetKind.FreestyleKnight:
+                message=$"{currentTargetTask.Team} Freestyle Leap: select one Knight.";
                 break;
             default:
                 message = string.Empty;
@@ -627,6 +663,7 @@ public sealed partial class AramBuffRuntime : MonoBehaviour
                 AddCandidateMarkers(currentTargetTask.Team, PieceType.Pawn, currentTargetTask.Buff, "PICK", pendingTargetPieces);
                 break;
             case AramTargetKind.DoppelgangerKnight:
+            case AramTargetKind.FreestyleKnight:
                 AddCandidateMarkers(currentTargetTask.Team, PieceType.Knight, currentTargetTask.Buff, "PICK", null);
                 break;
             case AramTargetKind.DoppelgangerBishop:
@@ -745,6 +782,7 @@ public sealed partial class AramBuffRuntime : MonoBehaviour
         state.CommandantPawns.Clear();
         state.SwappedKnight = null;
         state.SwappedBishop = null;
+        state.FreestyleKnight = null;
         state.OriginalQueen = null;
 
         List<ChessPiece> pieces = game != null ? game.GetActivePiecesForAram(state.Team) : null;
@@ -785,9 +823,8 @@ public sealed partial class AramBuffRuntime : MonoBehaviour
         if (state.HasBuff(AramBuffId.FreestyleLeap))
         {
             AramBuffDefinition buff = state.GetBuff(AramBuffId.FreestyleLeap);
-            for (int i = 0; i < pieces.Count; i++)
-                if (pieces[i] && pieces[i].Type == PieceType.Knight)
-                    AddMarker(pieces[i], buff, "LEAP");
+            if(networkMatch){for(int i=0;i<pieces.Count;i++)if(pieces[i]&&pieces[i].Type==PieceType.Knight)AddMarker(pieces[i],buff,"");}
+            else AddMarker(state.FreestyleKnight,buff,"");
         }
 
         if (state.HasBuff(AramBuffId.Doppelganger))
@@ -812,7 +849,7 @@ public sealed partial class AramBuffRuntime : MonoBehaviour
         AramBuffPieceMarker marker = piece.GetComponent<AramBuffPieceMarker>();
         if (!marker)
             marker = piece.gameObject.AddComponent<AramBuffPieceMarker>();
-        marker.Configure(buff.AccentColor, label);
+        marker.Configure(buff.AccentColor, label=="PICK"?label:string.Empty,.35f,.55f);
         if (!activeMarkers.Contains(marker))
             activeMarkers.Add(marker);
     }
@@ -821,7 +858,7 @@ public sealed partial class AramBuffRuntime : MonoBehaviour
     {
         for (int i = activeMarkers.Count - 1; i >= 0; i--)
             if (activeMarkers[i])
-                Destroy(activeMarkers[i]);
+                activeMarkers[i].enabled=false;
         activeMarkers.Clear();
     }
 
@@ -887,7 +924,8 @@ public sealed partial class AramBuffRuntime : MonoBehaviour
         None,
         CommandantPawn,
         DoppelgangerKnight,
-        DoppelgangerBishop
+        DoppelgangerBishop,
+        FreestyleKnight
     }
 
     private readonly struct AramTargetTask
@@ -920,6 +958,7 @@ public sealed partial class AramBuffRuntime : MonoBehaviour
         public HashSet<ChessPiece> CommandantPawns { get; } = new HashSet<ChessPiece>();
         public ChessPiece SwappedKnight { get; set; }
         public ChessPiece SwappedBishop { get; set; }
+        public ChessPiece FreestyleKnight { get; set; }
         public ChessPiece OriginalQueen { get; set; }
         public bool SuicideBomberUsed { get; set; }
 
@@ -931,6 +970,7 @@ public sealed partial class AramBuffRuntime : MonoBehaviour
             queenTeleport = new LimitedUseState(FlyingThunderGodBuff.MaximumUses);
             SwappedKnight = null;
             SwappedBishop = null;
+            FreestyleKnight = null;
             OriginalQueen = null;
             SuicideBomberUsed = false;
         }

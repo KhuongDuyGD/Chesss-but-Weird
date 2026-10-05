@@ -10,6 +10,33 @@ namespace ChessButWeird.Domain
         public AramPieceContext GetContext(PieceState piece) => default;
     }
 
+    /// <summary>Read-only deployment/replacement projection, including a vacated source.</summary>
+    public readonly struct PlacementBoardView<TBoard> : IReadOnlyBoard where TBoard : IReadOnlyBoard
+    {
+        private readonly TBoard board;
+        private readonly Square destination, removed;
+        private readonly PieceState placed;
+        public PlacementBoardView(TBoard board, Square destination, PieceState placed, Square removed)
+        { this.board=board; this.destination=destination; this.placed=placed; this.removed=removed; }
+        public PieceState GetPiece(Square square) => !square.IsValid ? default :
+            square==destination ? placed : square==removed ? default : board.GetPiece(square);
+    }
+
+    public readonly struct RemovalBoardView<TBoard> : IReadOnlyBoard where TBoard : IReadOnlyBoard
+    {
+        private readonly TBoard board;
+        private readonly Square removed;
+        private readonly bool explosion;
+        public RemovalBoardView(TBoard board,Square removed,bool explosion)
+        {this.board=board;this.removed=removed;this.explosion=explosion;}
+        public PieceState GetPiece(Square square)
+        {
+            if(!square.IsValid||square==removed)return default;
+            var piece=board.GetPiece(square);
+            return explosion&&SuicideBomberBuff.IsVictim(piece,0,removed,square)?default:piece;
+        }
+    }
+
     /// <summary>A read-only hypothetical move. No temporary writes to the live board or allocations.</summary>
     public readonly struct MoveBoardView<TBoard> : IReadOnlyBoard where TBoard : IReadOnlyBoard
     {
@@ -54,7 +81,7 @@ namespace ChessButWeird.Domain
             {
                 Square square = new Square(x, y);
                 PieceState piece = board.GetPiece(square);
-                if (!piece.IsEmpty && piece.Team == team && piece.Kind == PieceKind.King)
+                if (!piece.IsEmpty && piece.Team == team && piece.Kind == PieceKind.King && !buffs.GetContext(piece).IsDecoy)
                     return IsAttacked(board, square, ClassicRules.Opponent(team), buffs, rules);
             }
             return true;

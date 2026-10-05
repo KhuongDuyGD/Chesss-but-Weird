@@ -63,6 +63,7 @@ public class BackendMatchMoveDto
 [Serializable]
 public class BackendMatchDto
 {
+    public BackendMatchStatistics statistics;
     public string id;
     public string roomCode;
     public string whitePlayerId;
@@ -122,6 +123,7 @@ public class BackendPlayerReadyPayload
 [Serializable]
 public class BackendGameStartPayload
 {
+    public BackendMatchStatistics statistics;
     public string matchId;
     public string whitePlayerId;
     public string whiteUsername;
@@ -147,6 +149,7 @@ public class BackendMovePayload
 [Serializable]
 public class BackendMoveResultPayload
 {
+    public BackendMatchStatistics statistics;
     public bool accepted;
     public bool newlyProcessed;
     public string matchId;
@@ -167,6 +170,7 @@ public class BackendMoveResultPayload
 [Serializable]
 public class BackendGameStatePayload
 {
+    public BackendMatchStatistics statistics;
     public string matchId;
     public string status;
     public string fen;
@@ -218,6 +222,7 @@ public class BackendAramTeamStatePayload
 [Serializable]
 public class BackendGameOverPayload
 {
+    public BackendMatchStatistics statistics;
     public string matchId;
     public string result;
     public string reason;

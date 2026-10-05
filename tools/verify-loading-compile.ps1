@@ -25,7 +25,11 @@ try {
     # predate a Domain API change made while the Editor is open.
     $domainResponse = Join-Path $runtimeResponse.DirectoryName 'Chess.Domain.rsp'
     if (-not (Test-Path -LiteralPath $domainResponse)) { throw 'Missing Domain compiler response file.' }
-    $domainLines = @(Get-Content -LiteralPath $domainResponse | Where-Object { $_ -notmatch '^-(out|refout):' })
+    $domainLines = @(Get-Content -LiteralPath $domainResponse | Where-Object { $_ -notmatch '^-(out|refout):' -and $_ -notmatch '^".+\.cs"$' })
+    foreach($file in (Get-ChildItem -LiteralPath 'Packages/com.chessbutweird.domain/Runtime' -Filter '*.cs')) {
+        $relative=[IO.Path]::GetRelativePath($projectRoot,$file.FullName).Replace('\','/')
+        $domainLines+='"'+$relative+'"'
+    }
     $domainLines += '-out:"Logs/loading-compile/Chess.Domain.dll"'
     $domainLines += '-refout:"Logs/loading-compile/Chess.Domain.ref.dll"'
     $domainPath = Join-Path $outputRoot 'domain.rsp'

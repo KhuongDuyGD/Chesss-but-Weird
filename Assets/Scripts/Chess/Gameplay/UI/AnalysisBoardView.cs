@@ -1,639 +1,266 @@
-using System.Collections.Generic;
+using System;
 using System.Text;
+using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem.UI;
 using UnityEngine.UI;
 
+/// <summary>Compact match HUD. Journal expansion never moves the camera or mutates the match.</summary>
 [DisallowMultipleComponent]
 public sealed class AnalysisBoardView : MonoBehaviour
 {
-    private const float SourceWidth = 1122f;
-    private const float SourceHeight = 1402f;
-    private const float PanelWidth = 576f;
     private static AnalysisBoardView activeInstance;
-
-    private ChessGame chessGame;
+    private ChessGame game;
     private GameObject canvasObject;
-    private Canvas canvas;
+    private RectTransform root, top, whiteCard, blackCard, journal, content, statusRect, controls,buffSummary;
     private GraphicRaycaster raycaster;
-    private RectTransform panel;
-    private RectTransform whiteCapturedContainer;
-    private RectTransform blackCapturedContainer;
-    private Text whiteScoreText;
-    private Text blackScoreText;
-    private Text timeText;
-    private Text moveListText;
-    private ScrollRect moveListScroll;
-    private Text toggleLabel;
-    private GameObject whiteTurnIndicator;
-    private GameObject blackTurnIndicator;
-    private Material transparentWhiteMaterial;
-    private float nextRefreshAt;
-    private int lastMoveCount = -1;
-    private int lastWhiteCaptureCount = -1;
-    private int lastBlackCaptureCount = -1;
-    private static Font runtimeFont;
-    private Camera gameplayCamera;
-    private Camera backgroundCamera;
+    private TextMeshProUGUI whiteName,blackName,whiteState,blackState,status,elapsed,history,hint;
+    private Button journalButton,focusButton,latestButton,historyTab,capturesTab;
+    private ScrollRect scroll;
+    private Camera cameraOwner;
     private Rect originalCameraRect;
-    private bool cameraRectCaptured;
-    private Vector2 originalLensShift;
     private float originalFieldOfView;
-    private bool isVisible;
-    private bool isExpanded = true;
-    private PieceTeam lastDisplayedTurn;
-    private bool hasDisplayedTurn;
-    private bool ownsCanvas;
-    private Vector2Int lastScreenSize = new Vector2Int(-1, -1);
-    private bool panelPreferenceSet;
+    private bool cameraCaptured,visible,expanded,focus,historyLayoutDirty,updatingHistory,showCaptures;
+    private bool followLatest=true;
+    private int lastRevision=-1;
+    private float nextRefresh,lastBottom;
+    private bool lastAram;
+    private Vector2 lastSize;
+    private string preferenceMode;
+    private TextMeshProUGUI whiteMoves,blackMoves,whiteBuff,blackBuff;
+    private MatchHudTooltip tooltip;
 
-    public void Initialize(ChessGame game)
+    public void Initialize(ChessGame source)
     {
-        if (activeInstance && activeInstance != this)
-            activeInstance.ReleaseOwnership();
-        activeInstance = this;
-        ownsCanvas = true;
-        chessGame = game;
-        if (canvasObject)
-            return;
-        Build();
-        SetVisible(false);
+        if(activeInstance&&activeInstance!=this)activeInstance.Release();
+        activeInstance=this;game=source;if(!canvasObject)Build();SetVisible(false);
     }
-
-    public void SetVisible(bool visible)
+    public void SetVisible(bool value)
     {
-        if (!ownsCanvas || activeInstance != this || !canvasObject)
-            return;
-        isVisible = visible;
-        if (visible && !panelPreferenceSet)
-            isExpanded = IsWideEnoughForSidePanel();
-        canvasObject.SetActive(visible);
-        ApplyExpansionState();
+        if(activeInstance!=this||!canvasObject)return;
+        if(visible==value){canvasObject.SetActive(value);if(value)Refresh();else RestoreCamera();return;}
+        visible=value;canvasObject.SetActive(value);
+        if(!value){RestoreCamera();tooltip?.Hide();}else{LoadPreference();Layout();Refresh();}
     }
-
-    public void SetInteractionEnabled(bool enabled)
+    public void SetInteractionEnabled(bool value)
+    {if(raycaster)raycaster.enabled=value||(game&&game.GameOver);}
+    private void OnDestroy(){Release();if(activeInstance==this)activeInstance=null;}
+    private void OnDisable(){RestoreCamera();}
+    private void OnEnable()
     {
-        if (raycaster)
-            raycaster.enabled = enabled;
+        if(!game)return;
+        if(activeInstance&&activeInstance!=this)activeInstance.Release();
+        activeInstance=this;
+        if(visible&&canvasObject){Layout();Refresh();}
     }
-
-    private void OnDestroy()
+    private void Release(){RestoreCamera();visible=false;if(canvasObject){canvasObject.SetActive(false);Destroy(canvasObject);canvasObject=null;}}
+    private bool LoadPreference()
     {
-        if (activeInstance == this)
-            activeInstance = null;
-        if (gameplayCamera && cameraRectCaptured)
-            RestoreCameraPresentation();
-        if (transparentWhiteMaterial)
-            Destroy(transparentWhiteMaterial);
-        if (canvasObject)
-            Destroy(canvasObject);
-        if (backgroundCamera)
-            Destroy(backgroundCamera.gameObject);
+        if(preferenceMode==game.StatisticsMode)return false;preferenceMode=game.StatisticsMode;
+        expanded=PlayerPrefs.GetInt("MatchHud.Journal."+preferenceMode,0)!=0;
+        focus=PlayerPrefs.GetInt("MatchHud.Focus."+preferenceMode,0)!=0;
+        if(focus)expanded=false;lastRevision=-1;return true;
     }
-
-    private void ReleaseOwnership()
-    {
-        ownsCanvas = false;
-        if (gameplayCamera && cameraRectCaptured)
-            RestoreCameraPresentation();
-        if (canvasObject)
-        {
-            canvasObject.SetActive(false);
-            Destroy(canvasObject);
-            canvasObject = null;
-        }
-        enabled = false;
-    }
-
     private void Update()
     {
-        if (!canvasObject || !canvasObject.activeInHierarchy || chessGame == null)
-            return;
-
-        if (lastScreenSize.x != Screen.width || lastScreenSize.y != Screen.height)
-        {
-            lastScreenSize = new Vector2Int(Screen.width, Screen.height);
-            if (!panelPreferenceSet)
-                isExpanded = IsWideEnoughForSidePanel();
-            ApplyExpansionState();
-        }
-
-        if (Time.unscaledTime < nextRefreshAt)
-            return;
-
-        nextRefreshAt = Time.unscaledTime + 0.1f;
-        RefreshDynamicContent();
+        if(!visible||!game||activeInstance!=this)return;
+        bool modeChanged=LoadPreference();
+        if(modeChanged||root.rect.size!=lastSize||lastBottom!=game.StatisticsHudBottom||lastAram!=game.IsAramGame)Layout();
+        if(Time.unscaledTime<nextRefresh)return;nextRefresh=Time.unscaledTime+.1f;Refresh();
     }
-
     private void Build()
     {
-        AnalysisBoardAssetCatalog assets = AnalysisBoardAssetCatalog.Load();
-        if (!assets || !assets.board || !assets.moveList)
+        if(!EventSystem.current)new GameObject("EventSystem",typeof(EventSystem),typeof(InputSystemUIInputModule));
+        canvasObject=new GameObject("Analysis Board Canvas",typeof(RectTransform),typeof(Canvas),typeof(CanvasScaler),typeof(GraphicRaycaster));
+        canvasObject.transform.SetParent(game.transform,false);var canvas=canvasObject.GetComponent<Canvas>();
+        canvas.renderMode=RenderMode.ScreenSpaceOverlay;canvas.sortingOrder=18;
+        ResponsiveUi.ConfigureCanvasScaler(canvasObject.GetComponent<CanvasScaler>(),new Vector2(1280,720));
+        root=MatchHudStyle.Rect(canvasObject.transform,"Statistics Safe Area",Vector2.zero,Vector2.one,Vector2.zero,Vector2.zero);
+        root.gameObject.AddComponent<ResponsiveSafeArea>();
+        raycaster=canvasObject.GetComponent<GraphicRaycaster>();
+        top=MatchHudStyle.Rect(root,"Players",Vector2.one,Vector2.one,new Vector2(900,88),new Vector2(0,-62));
+        whiteCard=Player(top,"White",out whiteName,out whiteState);blackCard=Player(top,"Black",out blackName,out blackState);
+        statusRect=MatchHudStyle.Rect(root,"Match status",new Vector2(.5f,1),new Vector2(.5f,1),new Vector2(660,32),new Vector2(0,-104));
+        MatchHudStyle.Surface(statusRect,false);status=MatchHudStyle.Text(statusRect,"State","",20);status.alignment=TextAlignmentOptions.Center;
+        status.rectTransform.sizeDelta=new Vector2(-24,-4);
+        controls=MatchHudStyle.Rect(root,"Journal controls",Vector2.one,Vector2.one,new Vector2(330,48),new Vector2(-185,-128));
+        journalButton=MatchHudStyle.Button(controls,"Journal","Match journal",ToggleJournal);
+        MatchHudStyle.Place((RectTransform)journalButton.transform,new Vector2(0,.5f),new Vector2(198,46),new Vector2(99,0));
+        focusButton=MatchHudStyle.Button(controls,"Focus","Focus",ToggleFocus);
+        MatchHudStyle.Place((RectTransform)focusButton.transform,new Vector2(1,.5f),new Vector2(120,46),new Vector2(-60,0));
+        buffSummary=MatchHudStyle.Rect(root,"ARAM move and buff summary",Vector2.one,Vector2.one,new Vector2(330,70),new Vector2(-185,-91));
+        MatchHudStyle.Surface(buffSummary,false);
+        whiteMoves=SummaryLabel(buffSummary,"White moves",new Vector2(-112,17),new Vector2(86,30));
+        blackMoves=SummaryLabel(buffSummary,"Black moves",new Vector2(-112,-17),new Vector2(86,30));
+        whiteBuff=SummaryLabel(buffSummary,"White buff",new Vector2(46,17),new Vector2(220,30));
+        blackBuff=SummaryLabel(buffSummary,"Black buff",new Vector2(46,-17),new Vector2(220,30));
+        tooltip=canvasObject.AddComponent<MatchHudTooltip>();tooltip.Initialize(root);
+        whiteBuff.raycastTarget=blackBuff.raycastTarget=true;
+        whiteBuff.gameObject.AddComponent<MatchHudTooltipTarget>();blackBuff.gameObject.AddComponent<MatchHudTooltipTarget>();
+        journal=MatchHudStyle.Rect(root,"Match journal",Vector2.one,Vector2.one,new Vector2(390,650),new Vector2(-215,-539));MatchHudStyle.Surface(journal);
+        var title=MatchHudStyle.Text(journal,"Title","Match journal",24);
+        MatchHudStyle.Place(title.rectTransform,new Vector2(0,1),new Vector2(190,34),new Vector2(111,-23));
+        elapsed=MatchHudStyle.Text(journal,"Elapsed","",18);elapsed.alignment=TextAlignmentOptions.MidlineRight;
+        MatchHudStyle.Place(elapsed.rectTransform,Vector2.one,new Vector2(172,34),new Vector2(-102,-23));
+        var tabs=MatchHudStyle.Rect(journal,"Journal tabs",new Vector2(0,1),Vector2.one,new Vector2(-32,36),new Vector2(0,-62));
+        historyTab=MatchHudStyle.Button(tabs,"History","History",()=>SelectJournalTab(false));
+        capturesTab=MatchHudStyle.Button(tabs,"Captures","Captures",()=>SelectJournalTab(true));
+        var hr=(RectTransform)historyTab.transform;hr.anchorMin=Vector2.zero;hr.anchorMax=new Vector2(.5f,1);hr.offsetMin=Vector2.zero;hr.offsetMax=new Vector2(-4,0);
+        var cr=(RectTransform)capturesTab.transform;cr.anchorMin=new Vector2(.5f,0);cr.anchorMax=Vector2.one;cr.offsetMin=new Vector2(4,0);cr.offsetMax=Vector2.zero;
+        historyTab.GetComponentInChildren<TextMeshProUGUI>().rectTransform.sizeDelta=new Vector2(-16,-4);
+        capturesTab.GetComponentInChildren<TextMeshProUGUI>().rectTransform.sizeDelta=new Vector2(-16,-4);
+        hint=MatchHudStyle.Text(journal,"Availability","",17);PlaceText(hint,28,-94);
+        var viewport=MatchHudStyle.Rect(journal,"History viewport",Vector2.zero,Vector2.one,new Vector2(-32,-154),new Vector2(0,-31));
+        viewport.gameObject.AddComponent<Image>().color=new Color(1,1,1,.01f);viewport.gameObject.AddComponent<RectMask2D>();
+        scroll=viewport.gameObject.AddComponent<ScrollRect>();scroll.horizontal=false;scroll.vertical=true;scroll.viewport=viewport;
+        scroll.movementType=ScrollRect.MovementType.Clamped;scroll.scrollSensitivity=32;
+        content=MatchHudStyle.Rect(viewport,"Rows",Vector2.up,Vector2.one,Vector2.zero,Vector2.zero);content.pivot=new Vector2(.5f,1);
+        history=content.gameObject.AddComponent<TextMeshProUGUI>();history.font=elapsed.font;history.fontSize=22;history.color=MatchHudStyle.Ink;
+        history.richText=false;history.alignment=TextAlignmentOptions.TopLeft;history.overflowMode=TextOverflowModes.Overflow;history.raycastTarget=false;scroll.content=content;
+        latestButton=MatchHudStyle.Button(journal,"Latest","Jump to latest",()=>{followLatest=true;scroll.verticalNormalizedPosition=0;latestButton.gameObject.SetActive(false);});
+        MatchHudStyle.Place((RectTransform)latestButton.transform,new Vector2(.5f,0),new Vector2(350,34),new Vector2(0,23));latestButton.gameObject.SetActive(false);
+        var latestLabel=latestButton.GetComponentInChildren<TextMeshProUGUI>();latestLabel.fontSize=18;latestLabel.rectTransform.sizeDelta=new Vector2(-16,-4);
+        scroll.onValueChanged.AddListener(_=>
         {
-            Debug.LogWarning("[AnalysisBoard] Missing Resources/GameplayUI/AnalysisBoardAssets. Run Tools/Chess/Rebuild Analysis Board Assets.");
-            return;
+            if(updatingHistory)return;
+            if(showCaptures)return;
+            followLatest=content.rect.height<=scroll.viewport.rect.height||scroll.verticalNormalizedPosition<=.025f;
+            latestButton.gameObject.SetActive(!followLatest);
+        });
+    }
+    private static void PlaceText(TextMeshProUGUI text,float height,float y)
+    {
+        var r=text.rectTransform;r.anchorMin=new Vector2(0,1);r.anchorMax=Vector2.one;
+        r.sizeDelta=new Vector2(-32,height);r.anchoredPosition=new Vector2(0,y);
+    }
+    private static RectTransform Player(Transform parent,string label,out TextMeshProUGUI name,out TextMeshProUGUI state)
+    {
+        var r=MatchHudStyle.Rect(parent,label,Vector2.zero,Vector2.one,Vector2.zero,Vector2.zero);MatchHudStyle.Surface(r,false);
+        name=MatchHudStyle.Text(r,"Name",label,20);
+        name.rectTransform.anchorMin=name.rectTransform.anchorMax=Vector2.one*.5f;
+        name.rectTransform.sizeDelta=new Vector2(280,32);name.rectTransform.anchoredPosition=Vector2.zero;
+        state=MatchHudStyle.Text(r,"Turn",label,20);
+        state.rectTransform.anchorMin=state.rectTransform.anchorMax=Vector2.one*.5f;
+        state.rectTransform.sizeDelta=new Vector2(350,27);state.rectTransform.anchoredPosition=new Vector2(0,-18);
+        state.color=MatchHudStyle.Muted;state.gameObject.SetActive(false);return r;
+    }
+    private static TextMeshProUGUI SummaryLabel(RectTransform parent,string name,Vector2 position,Vector2 size)
+    {var label=MatchHudStyle.Text(parent,name,"",19);MatchHudStyle.Place(label.rectTransform,Vector2.one*.5f,size,position);return label;}
+    private void Layout()
+    {
+        Canvas.ForceUpdateCanvases();lastSize=root.rect.size;float width=Mathf.Min(620,lastSize.x-410),card=(width-10)/2;
+        MatchHudStyle.Place(top,new Vector2(0,1),new Vector2(width,42),new Vector2(20+width/2,-30));
+        MatchHudStyle.Place(whiteCard,new Vector2(0,.5f),new Vector2(card,42),new Vector2(card/2,0));
+        MatchHudStyle.Place(blackCard,new Vector2(1,.5f),new Vector2(card,42),new Vector2(-card/2,0));
+        whiteName.rectTransform.sizeDelta=blackName.rectTransform.sizeDelta=new Vector2(card-24,32);
+        whiteState.rectTransform.sizeDelta=blackState.rectTransform.sizeDelta=new Vector2(card-32,27);
+        statusRect.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal,Mathf.Min(660,lastSize.x-40));
+        float jw=Mathf.Min(410,lastSize.x-40),bottom=Mathf.Max(20,game.StatisticsHudBottom+12);
+        float start=game.IsAramGame?138:58,jh=Mathf.Max(190,Mathf.Min(650,lastSize.y-start-bottom));
+        MatchHudStyle.Place(journal,Vector2.one,new Vector2(jw,jh),new Vector2(-20-jw/2,-start-jh/2));ApplyPanels();
+        lastBottom=game.StatisticsHudBottom;lastAram=game.IsAramGame;
+        if(!cameraOwner){cameraOwner=Camera.main;cameraCaptured=false;}
+        if(cameraOwner)
+        {
+            if(!cameraCaptured){originalCameraRect=cameraOwner.rect;originalFieldOfView=cameraOwner.fieldOfView;cameraCaptured=true;}
+            // Keep rendering the entire world. A clipped viewport leaves unrendered bars in Game View.
+            cameraOwner.rect=new Rect(0,0,1,1);
+            float safeFraction=game.IsAramGame?.76f:.88f;
+            cameraOwner.fieldOfView=2*Mathf.Atan(Mathf.Tan(originalFieldOfView*Mathf.Deg2Rad*.5f)/safeFraction)*Mathf.Rad2Deg;
         }
-
-        EnsureEventSystem();
-        RemoveOrphanedCanvases();
-        canvasObject = new GameObject("Analysis Board Canvas", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
-        // Chess Game has no Canvas, so this remains an independent root Canvas while its
-        // lifetime is tied to the gameplay scene instead of becoming an orphan object.
-        canvasObject.transform.SetParent(chessGame.transform, false);
-        canvas = canvasObject.GetComponent<Canvas>();
-        raycaster = canvasObject.GetComponent<GraphicRaycaster>();
-        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-        canvas.sortingOrder = 18;
-
-        CanvasScaler scaler = canvasObject.GetComponent<CanvasScaler>();
-        ResponsiveUi.ConfigureCanvasScaler(scaler, new Vector2(ResponsiveUi.ReferenceWidth, ResponsiveUi.ReferenceHeight));
-
-        // Fixed virtual width keeps the panel readable without letting it become
-        // oversized on ultrawide displays; it still resolves to 30% at 16:9.
-        panel = CreateRect(canvasObject.transform, "Analysis Board", new Vector2(1f, 0f), Vector2.one, new Vector2(1f, 0.5f), new Vector2(PanelWidth, 0f), Vector2.zero);
-        RawImage boardImage = panel.gameObject.AddComponent<RawImage>();
-        boardImage.texture = assets.board;
-        boardImage.raycastTarget = false;
-
-        CreatePanelToggle();
-
-        Text whiteIndicator = CreateText("White Turn Indicator", 280f, 342f, 110f, 55f, 42, TextAnchor.MiddleCenter);
-        whiteIndicator.text = "▼";
-        whiteIndicator.color = new Color(0.10f, 0.48f, 1f, 1f);
-        whiteTurnIndicator = whiteIndicator.gameObject;
-        Text blackIndicator = CreateText("Black Turn Indicator", 842f, 342f, 110f, 55f, 42, TextAnchor.MiddleCenter);
-        blackIndicator.text = "▼";
-        blackIndicator.color = new Color(1f, 0.23f, 0.62f, 1f);
-        blackTurnIndicator = blackIndicator.gameObject;
-
-        whiteCapturedContainer = CreateCapturedContainer("White Captured", 280f, 503f, 330f, 110f);
-        blackCapturedContainer = CreateCapturedContainer("Black Captured", 842f, 503f, 330f, 110f);
-        whiteScoreText = CreateText("White Score", 280f, 678f, 250f, 70f, 42, TextAnchor.MiddleCenter);
-        blackScoreText = CreateText("Black Score", 842f, 678f, 250f, 70f, 42, TextAnchor.MiddleCenter);
-        timeText = CreateText("Elapsed Time", 690f, 790f, 360f, 70f, 40, TextAnchor.MiddleLeft);
-
-        RawImage moveList = CreateRawImage("Move List Background", assets.moveList, 561f, 1080f, 880f, 350f, false);
-        moveList.uvRect = new Rect(0.04f, 0.235f, 0.92f, 0.51f);
-        CreateScrollableMoveList();
-
-        if (assets.transparentWhiteShader)
-            transparentWhiteMaterial = new Material(assets.transparentWhiteShader) { name = "Analysis Button Transparency (Runtime)" };
-
-        CreateLockedButton("Replay (Locked)", assets.replayButton, 278f, 1313f, 220f, 155f);
-        CreateLockedButton("Report (Locked)", assets.reportButton, 560f, 1313f, 220f, 155f);
-        CreateLockedButton("Share (Locked)", assets.shareButton, 844f, 1313f, 220f, 155f);
-
-        RefreshDynamicContent();
+        historyLayoutDirty=true;
     }
-
-    private void RefreshDynamicContent()
+    private void RestoreCamera(){if(cameraOwner&&cameraCaptured){cameraOwner.rect=originalCameraRect;cameraOwner.fieldOfView=originalFieldOfView;}cameraCaptured=false;}
+    private void ApplyPanels()
     {
-        IReadOnlyList<PieceType> whiteCaptured = chessGame.GetCapturedPieces(PieceTeam.White);
-        IReadOnlyList<PieceType> blackCaptured = chessGame.GetCapturedPieces(PieceTeam.Black);
-        timeText.text = FormatTime(chessGame.MatchElapsedSeconds);
-
-        if (whiteCaptured.Count != lastWhiteCaptureCount || blackCaptured.Count != lastBlackCaptureCount)
+        top.gameObject.SetActive(!focus);journal.gameObject.SetActive(expanded);
+        buffSummary.gameObject.SetActive(game.IsAramGame);
+        float statusWidth=Mathf.Min(620,lastSize.x-410);
+        MatchHudStyle.Place(statusRect,new Vector2(0,1),new Vector2(statusWidth,36),new Vector2(20+statusWidth/2,focus?-30:-72));
+        MatchHudStyle.Place(controls,Vector2.one,new Vector2(330,38),new Vector2(-185,-30));
+        ((RectTransform)journalButton.transform).SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical,38);
+        ((RectTransform)focusButton.transform).SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical,38);
+        journalButton.GetComponentInChildren<TextMeshProUGUI>().rectTransform.sizeDelta=new Vector2(-16,-4);
+        focusButton.GetComponentInChildren<TextMeshProUGUI>().rectTransform.sizeDelta=new Vector2(-16,-4);
+        journalButton.GetComponentInChildren<TextMeshProUGUI>().text=expanded?"Close journal":"Match journal";
+        focusButton.GetComponentInChildren<TextMeshProUGUI>().text=focus?"Focus: on":"Focus";
+    }
+    private void ToggleJournal(){expanded=!expanded;if(expanded)focus=false;SavePreference();ApplyPanels();Refresh();}
+    private void ToggleFocus(){focus=!focus;if(focus)expanded=false;SavePreference();ApplyPanels();Refresh();}
+    private void SelectJournalTab(bool capturesSelected)
+    {if(showCaptures==capturesSelected)return;showCaptures=capturesSelected;historyLayoutDirty=true;followLatest=true;Refresh();}
+    private void SavePreference(){PlayerPrefs.SetInt("MatchHud.Journal."+preferenceMode,expanded?1:0);PlayerPrefs.SetInt("MatchHud.Focus."+preferenceMode,focus?1:0);}
+    private void Refresh()
+    {
+        if(!game||!history)return;whiteName.text="WHITE · "+game.StatisticsPlayerName(PieceTeam.White);blackName.text="BLACK · "+game.StatisticsPlayerName(PieceTeam.Black);
+        bool ended=game.GameOver;
+        whiteState.text=TurnLabel(PieceTeam.White,ended);blackState.text=TurnLabel(PieceTeam.Black,ended);
+        MatchHudStyle.Highlight(whiteCard,!ended&&game.CurrentTurn==PieceTeam.White);
+        MatchHudStyle.Highlight(blackCard,!ended&&game.CurrentTurn==PieceTeam.Black);
+        string state=ended?(game.Status==ChessGame.ChessGameStatus.Draw?"Draw · "+game.DrawReason:game.WinningTeam+" wins"):
+            game.PauseLocked?"Paused":game.HasPendingPromotion?"Choose promotion":game.IsCurrentTeamChecked?"CHECK · "+game.CurrentTurn+" King":game.CurrentTurn+" to move";
+        status.text=game.StatisticsMode+" · "+state+(game.IsNetworkGame?" · "+game.StatisticsConnectionState:"");
+        elapsed.text=game.StatisticsTimeKnown?"Elapsed · "+TimeLabel(game.MatchElapsedSeconds):"Time unavailable";
+        if(game.IsAramGame)RefreshBuffSummary();
+        if(lastRevision==game.Statistics.Revision&&!historyLayoutDirty)return;
+        bool follow=lastRevision<0||followLatest;
+        float readingOffset=content.anchoredPosition.y;lastRevision=game.Statistics.Revision;historyLayoutDirty=false;
+        updatingHistory=true;
+        var builder=new StringBuilder();foreach(var row in game.Statistics.Entries)
         {
-            lastWhiteCaptureCount = whiteCaptured.Count;
-            lastBlackCaptureCount = blackCaptured.Count;
-            RefreshCapturedContainer(whiteCapturedContainer, whiteCaptured, PieceTeam.Black);
-            RefreshCapturedContainer(blackCapturedContainer, blackCaptured, PieceTeam.White);
-
-            int balance = chessGame.GetCapturedMaterialScore(PieceTeam.White) - chessGame.GetCapturedMaterialScore(PieceTeam.Black);
-            whiteScoreText.text = FormatSigned(balance);
-            blackScoreText.text = FormatSigned(-balance);
+            if(builder.Length>0)builder.Append('\n');builder.Append(row.IsMove?MatchHudStyle.MoveCountLabel(row.MoveNumber):"·").Append("  ").Append(row.Actor).Append("  ").Append(row.Text);
+            if(row.Pending)builder.Append("  [pending]");
         }
-
-        if (chessGame.MoveHistory.Count != lastMoveCount)
+        string captureSummary=game.Statistics.CapturesComplete?"White captured: "+CaptureLabel(PieceTeam.White)+"\nBlack captured: "+CaptureLabel(PieceTeam.Black):"Capture history unavailable\nPosition alone cannot recover captures.";
+        if(!game.IsAramGame&&game.Statistics.CapturesComplete)
         {
-            lastMoveCount = chessGame.MoveHistory.Count;
-            moveListText.text = BuildMoveRows(chessGame.MoveHistory, chessGame.MoveHistoryFirstTurn);
-            Canvas.ForceUpdateCanvases();
-            moveListScroll.verticalNormalizedPosition = 0f;
+            int balance=game.GetCapturedMaterialScore(PieceTeam.White)-game.GetCapturedMaterialScore(PieceTeam.Black);
+            captureSummary+="\nCaptured material: "+(balance>0?"White +"+balance:balance<0?"Black +"+(-balance):"equal");
         }
-
-        if (!hasDisplayedTurn || lastDisplayedTurn != chessGame.CurrentTurn)
+        history.text=showCaptures?captureSummary:builder.Length==0?"No moves yet":builder.ToString();
+        MatchHudStyle.Highlight((RectTransform)historyTab.transform,!showCaptures);
+        MatchHudStyle.Highlight((RectTransform)capturesTab.transform,showCaptures);
+        content.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical,history.GetPreferredValues(history.text,Mathf.Max(80,content.rect.width),0).y+16);
+        Canvas.ForceUpdateCanvases();
+        if(showCaptures)scroll.verticalNormalizedPosition=1;
+        else if(follow)scroll.verticalNormalizedPosition=0;
+        else content.anchoredPosition=new Vector2(content.anchoredPosition.x,Mathf.Clamp(readingOffset,0,Mathf.Max(0,content.rect.height-scroll.viewport.rect.height)));
+        updatingHistory=false;followLatest=follow;latestButton.gameObject.SetActive(!showCaptures&&!follow&&content.rect.height>scroll.viewport.rect.height);
+        hint.text=showCaptures?"Captures exclude sacrifice and destruction":game.Statistics.HistoryComplete?"Move · Side · Notation / event":"Partial history · server sync needed";
+    }
+    private void RefreshBuffSummary()
+    {
+        int white=0,black=0;foreach(var row in game.Statistics.Entries)if(row.IsMove){if((PieceTeam)row.Actor==PieceTeam.White)white++;else black++;}
+        whiteMoves.text="W · "+(game.Statistics.HistoryComplete?MatchHudStyle.MoveCountLabel(white):"?");
+        blackMoves.text="B · "+(game.Statistics.HistoryComplete?MatchHudStyle.MoveCountLabel(black):"?");
+        RefreshBuffLabel(PieceTeam.White,whiteBuff);RefreshBuffLabel(PieceTeam.Black,blackBuff);
+    }
+    private void RefreshBuffLabel(PieceTeam side,TextMeshProUGUI label)
+    {
+        var names=new StringBuilder();var details=new StringBuilder();
+        if(!game.StatisticsBuffsVisible(side)){label.text="Buff hidden";label.GetComponent<MatchHudTooltipTarget>().Configure(tooltip,"Hidden buff","Your opponent's buff is private.");return;}
+        foreach(var buff in game.StatisticsBuffs(side))if(buff)
         {
-            hasDisplayedTurn = true;
-            lastDisplayedTurn = chessGame.CurrentTurn;
-            whiteTurnIndicator.SetActive(lastDisplayedTurn == PieceTeam.White);
-            blackTurnIndicator.SetActive(lastDisplayedTurn == PieceTeam.Black);
+            if(names.Length>0){names.Append(", ");details.Append("\n\n");}
+            names.Append(buff.ShortName);details.Append(buff.DisplayName).Append(" · ").Append(buff.Tier).Append('\n').Append(buff.Description);
+            var progress=game.StatisticsBuffProgress(side,buff.Id);
+            if(!string.IsNullOrEmpty(progress))details.Append("\n\n").Append(progress);
         }
+        label.text=names.Length>0?names.ToString():"No buff";
+        label.GetComponent<MatchHudTooltipTarget>().Configure(tooltip,side+" buffs",details.Length>0?details.ToString():"No buff selected.");
     }
-
-    private void CreatePanelToggle()
+    private string TurnLabel(PieceTeam team,bool ended)
     {
-        RectTransform toggleRect = CreateRect(canvasObject.transform, "Analysis Board Toggle", new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(58f, 116f), new Vector2(-PanelWidth - 10f, 0f));
-        Image background = toggleRect.gameObject.AddComponent<Image>();
-        background.color = new Color(0.97f, 0.97f, 0.95f, 0.98f);
-        Outline outline = toggleRect.gameObject.AddComponent<Outline>();
-        outline.effectColor = new Color(0.04f, 0.04f, 0.05f, 0.95f);
-        outline.effectDistance = new Vector2(3f, -3f);
-
-        Button button = toggleRect.gameObject.AddComponent<Button>();
-        button.targetGraphic = background;
-        ColorBlock colors = button.colors;
-        colors.normalColor = Color.white;
-        colors.highlightedColor = new Color(0.72f, 0.88f, 1f, 1f);
-        colors.pressedColor = new Color(0.52f, 0.76f, 1f, 1f);
-        colors.selectedColor = colors.highlightedColor;
-        colors.fadeDuration = 0.1f;
-        button.colors = colors;
-        button.onClick.AddListener(ToggleExpanded);
-
-        RectTransform labelRect = CreateRect(toggleRect, "Arrow", Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
-        toggleLabel = labelRect.gameObject.AddComponent<Text>();
-        toggleLabel.font = GetRuntimeFont();
-        toggleLabel.fontSize = 48;
-        toggleLabel.resizeTextForBestFit = true;
-        toggleLabel.resizeTextMinSize = 24;
-        toggleLabel.resizeTextMaxSize = 48;
-        toggleLabel.alignment = TextAnchor.MiddleCenter;
-        toggleLabel.color = new Color(0.04f, 0.04f, 0.05f, 1f);
-        toggleLabel.raycastTarget = false;
+        if(ended)return "Match finished";if(game.CurrentTurn!=team)return "Waiting";
+        return (game.IsNetworkGame||game.IsBotGame)&&game.PlayerTeam==team?"Your turn":"To move";
     }
-
-    private void CreateScrollableMoveList()
+    private string CaptureLabel(PieceTeam team)
     {
-        RectTransform scrollRect = CreateSourceRect("Move List Scroll", 630f, 1105f, 590f, 190f);
-        moveListScroll = scrollRect.gameObject.AddComponent<ScrollRect>();
-        moveListScroll.horizontal = false;
-        moveListScroll.vertical = true;
-        moveListScroll.movementType = ScrollRect.MovementType.Clamped;
-        moveListScroll.scrollSensitivity = 28f;
-
-        RectTransform viewport = CreateRect(scrollRect, "Viewport", Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), new Vector2(-18f, 0f), new Vector2(-9f, 0f));
-        Image viewportGraphic = viewport.gameObject.AddComponent<Image>();
-        viewportGraphic.color = new Color(1f, 1f, 1f, 0.001f);
-        viewport.gameObject.AddComponent<RectMask2D>();
-        moveListScroll.viewport = viewport;
-
-        RectTransform content = CreateRect(viewport, "Content", new Vector2(0f, 1f), Vector2.one, new Vector2(0.5f, 1f), new Vector2(0f, 1f), Vector2.zero);
-        ContentSizeFitter fitter = content.gameObject.AddComponent<ContentSizeFitter>();
-        fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-
-        moveListText = content.gameObject.AddComponent<Text>();
-        moveListText.font = GetRuntimeFont();
-        moveListText.fontSize = 24;
-        moveListText.resizeTextForBestFit = false;
-        moveListText.alignment = TextAnchor.UpperLeft;
-        moveListText.color = new Color(0.055f, 0.055f, 0.065f, 1f);
-        moveListText.horizontalOverflow = HorizontalWrapMode.Wrap;
-        moveListText.verticalOverflow = VerticalWrapMode.Overflow;
-        moveListText.lineSpacing = 1.06f;
-        moveListText.raycastTarget = false;
-        moveListScroll.content = content;
-
-        RectTransform scrollbarRect = CreateRect(scrollRect, "Scrollbar", new Vector2(1f, 0f), Vector2.one, new Vector2(1f, 0.5f), new Vector2(13f, 0f), Vector2.zero);
-        Image scrollbarBackground = scrollbarRect.gameObject.AddComponent<Image>();
-        scrollbarBackground.color = new Color(0.08f, 0.08f, 0.09f, 0.14f);
-        Scrollbar scrollbar = scrollbarRect.gameObject.AddComponent<Scrollbar>();
-        scrollbar.direction = Scrollbar.Direction.BottomToTop;
-
-        RectTransform slidingArea = CreateRect(scrollbarRect, "Sliding Area", Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), new Vector2(-4f, -4f), Vector2.zero);
-        RectTransform handle = CreateRect(slidingArea, "Handle", Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
-        Image handleImage = handle.gameObject.AddComponent<Image>();
-        handleImage.color = new Color(0.10f, 0.48f, 1f, 0.72f);
-        scrollbar.handleRect = handle;
-        scrollbar.targetGraphic = handleImage;
-        moveListScroll.verticalScrollbar = scrollbar;
-        moveListScroll.verticalScrollbarVisibility = ScrollRect.ScrollbarVisibility.AutoHide;
-        moveListScroll.verticalScrollbarSpacing = 3f;
+        var pieces=game.GetCapturedPieces(team);if(pieces.Count==0)return "—";var text=new StringBuilder();
+        foreach(PieceType type in new[]{PieceType.Pawn,PieceType.Knight,PieceType.Bishop,PieceType.Rook,PieceType.Queen})
+        {int count=0;foreach(var p in pieces)if(p==type)count++;if(count==0)continue;if(text.Length>0)text.Append("  ");text.Append(type==PieceType.Knight?"N":type.ToString().Substring(0,1)).Append(" ×").Append(count);}
+        return text.ToString();
     }
-
-    private void ToggleExpanded()
-    {
-        panelPreferenceSet = true;
-        isExpanded = !isExpanded;
-        ApplyExpansionState();
-    }
-
-    private static bool IsWideEnoughForSidePanel()
-    {
-        return Screen.height <= 0 || Screen.width / (float)Screen.height >= 1.25f;
-    }
-
-    private void ApplyExpansionState()
-    {
-        if (!canvasObject || !panel)
-            return;
-
-        panel.gameObject.SetActive(isExpanded);
-        RectTransform toggleRect = canvasObject.transform.Find("Analysis Board Toggle") as RectTransform;
-        if (toggleRect)
-            toggleRect.anchoredPosition = new Vector2(isExpanded ? -PanelWidth - 10f : -8f, 0f);
-        if (toggleLabel)
-            toggleLabel.text = isExpanded ? "›" : "‹";
-
-        if (!gameplayCamera)
-            gameplayCamera = Camera.main;
-        if (!gameplayCamera)
-            return;
-        if (!cameraRectCaptured)
-        {
-            originalCameraRect = gameplayCamera.rect;
-            originalLensShift = gameplayCamera.lensShift;
-            originalFieldOfView = gameplayCamera.fieldOfView;
-            cameraRectCaptured = true;
-        }
-
-        if (isVisible && isExpanded)
-        {
-            EnsureBackgroundCamera();
-            backgroundCamera.gameObject.SetActive(true);
-            Canvas.ForceUpdateCanvases();
-            gameplayCamera.rect = new Rect(0f, 0f, GetGameplayViewportWidth(), 1f);
-            gameplayCamera.lensShift = originalLensShift;
-            // Changing the viewport width must not change the perceived board
-            // distance. Keep the gameplay camera's original vertical FOV.
-            gameplayCamera.fieldOfView = originalFieldOfView;
-        }
-        else
-        {
-            RestoreCameraPresentation();
-        }
-    }
-
-    private float GetGameplayViewportWidth()
-    {
-        if (!canvas || Screen.width <= 0)
-            return 0.70f;
-
-        float reservedScreenWidth = panel.rect.width * canvas.scaleFactor;
-        float reservedFraction = Mathf.Clamp(reservedScreenWidth / Screen.width, 0.18f, 0.38f);
-        return 1f - reservedFraction;
-    }
-
-    private void RestoreCameraPresentation()
-    {
-        gameplayCamera.rect = originalCameraRect;
-        gameplayCamera.lensShift = originalLensShift;
-        gameplayCamera.fieldOfView = originalFieldOfView;
-        if (backgroundCamera)
-            backgroundCamera.gameObject.SetActive(false);
-    }
-
-    private void EnsureBackgroundCamera()
-    {
-        if (backgroundCamera)
-            return;
-
-        GameObject cameraObject = new GameObject("Analysis Board Sky Background Camera", typeof(Camera));
-        cameraObject.transform.SetParent(gameplayCamera.transform, false);
-        backgroundCamera = cameraObject.GetComponent<Camera>();
-        backgroundCamera.clearFlags = gameplayCamera.clearFlags;
-        backgroundCamera.backgroundColor = gameplayCamera.backgroundColor;
-        backgroundCamera.cullingMask = 0;
-        backgroundCamera.depth = gameplayCamera.depth - 1f;
-        backgroundCamera.rect = originalCameraRect;
-        backgroundCamera.fieldOfView = originalFieldOfView;
-        backgroundCamera.nearClipPlane = gameplayCamera.nearClipPlane;
-        backgroundCamera.farClipPlane = gameplayCamera.farClipPlane;
-        backgroundCamera.allowHDR = gameplayCamera.allowHDR;
-        backgroundCamera.allowMSAA = gameplayCamera.allowMSAA;
-    }
-
-    private RectTransform CreateCapturedContainer(string name, float sourceX, float sourceY, float sourceWidth, float sourceHeight)
-    {
-        RectTransform container = CreateSourceRect(name, sourceX, sourceY, sourceWidth, sourceHeight);
-        HorizontalLayoutGroup layout = container.gameObject.AddComponent<HorizontalLayoutGroup>();
-        layout.childAlignment = TextAnchor.MiddleCenter;
-        layout.spacing = 3f;
-        layout.childControlWidth = true;
-        layout.childControlHeight = true;
-        layout.childForceExpandWidth = true;
-        layout.childForceExpandHeight = true;
-        return container;
-    }
-
-    private Text CreateText(string name, float sourceX, float sourceY, float sourceWidth, float sourceHeight, int fontSize, TextAnchor alignment)
-    {
-        RectTransform rect = CreateSourceRect(name, sourceX, sourceY, sourceWidth, sourceHeight);
-        Text text = rect.gameObject.AddComponent<Text>();
-        text.font = GetRuntimeFont();
-        text.fontSize = fontSize;
-        text.resizeTextForBestFit = true;
-        text.resizeTextMinSize = 12;
-        text.resizeTextMaxSize = fontSize;
-        text.alignment = alignment;
-        text.color = new Color(0.055f, 0.055f, 0.065f, 1f);
-        text.raycastTarget = false;
-        return text;
-    }
-
-    private RawImage CreateRawImage(string name, Texture texture, float sourceX, float sourceY, float sourceWidth, float sourceHeight, bool raycastTarget)
-    {
-        RectTransform rect = CreateSourceRect(name, sourceX, sourceY, sourceWidth, sourceHeight);
-        RawImage image = rect.gameObject.AddComponent<RawImage>();
-        image.texture = texture;
-        image.raycastTarget = raycastTarget;
-        return image;
-    }
-
-    private void CreateLockedButton(string name, Texture texture, float sourceX, float sourceY, float sourceWidth, float sourceHeight)
-    {
-        RawImage image = CreateRawImage(name, texture, sourceX, sourceY, sourceWidth, sourceHeight, true);
-        image.uvRect = new Rect(0.10f, 0.10f, 0.80f, 0.80f);
-        if (transparentWhiteMaterial)
-            image.material = transparentWhiteMaterial;
-
-        GameObject tooltip = CreateTooltip(image.rectTransform, "Coming soon");
-        AnalysisBoardLockedButton hover = image.gameObject.AddComponent<AnalysisBoardLockedButton>();
-        hover.Initialize(tooltip);
-    }
-
-    private GameObject CreateTooltip(RectTransform parent, string label)
-    {
-        RectTransform tooltip = CreateRect(parent, "Locked Tooltip", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 0f), new Vector2(130f, 32f), new Vector2(0f, 8f));
-        Image background = tooltip.gameObject.AddComponent<Image>();
-        background.color = new Color(0.08f, 0.08f, 0.09f, 0.92f);
-        background.raycastTarget = false;
-
-        RectTransform textRect = CreateRect(tooltip, "Label", Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
-        Text text = textRect.gameObject.AddComponent<Text>();
-        text.font = GetRuntimeFont();
-        text.text = label;
-        text.fontSize = 17;
-        text.alignment = TextAnchor.MiddleCenter;
-        text.color = Color.white;
-        text.raycastTarget = false;
-        tooltip.gameObject.SetActive(false);
-        return tooltip.gameObject;
-    }
-
-    private RectTransform CreateSourceRect(string name, float x, float y, float width, float height)
-    {
-        float left = Mathf.Clamp01((x - width * 0.5f) / SourceWidth);
-        float right = Mathf.Clamp01((x + width * 0.5f) / SourceWidth);
-        float bottom = Mathf.Clamp01(1f - (y + height * 0.5f) / SourceHeight);
-        float top = Mathf.Clamp01(1f - (y - height * 0.5f) / SourceHeight);
-        return CreateRect(panel, name, new Vector2(left, bottom), new Vector2(right, top), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
-    }
-
-    private static RectTransform CreateRect(Transform parent, string name, Vector2 anchorMin, Vector2 anchorMax, Vector2 pivot, Vector2 size, Vector2 position)
-    {
-        GameObject child = new GameObject(name, typeof(RectTransform));
-        RectTransform rect = child.GetComponent<RectTransform>();
-        rect.SetParent(parent, false);
-        rect.anchorMin = anchorMin;
-        rect.anchorMax = anchorMax;
-        rect.pivot = pivot;
-        rect.sizeDelta = size;
-        rect.anchoredPosition = position;
-        return rect;
-    }
-
-    private static Font GetRuntimeFont()
-    {
-        if (!runtimeFont)
-            runtimeFont = ChessFontCatalog.RuntimeFont;
-        return runtimeFont;
-    }
-
-    private static void RefreshCapturedContainer(RectTransform container, IReadOnlyList<PieceType> pieces, PieceTeam capturedTeam)
-    {
-        for (int i = container.childCount - 1; i >= 0; i--)
-        {
-            GameObject oldGroup = container.GetChild(i).gameObject;
-            oldGroup.SetActive(false);
-            Destroy(oldGroup);
-        }
-
-        PieceType[] displayOrder =
-        {
-            PieceType.Pawn,
-            PieceType.Knight,
-            PieceType.Bishop,
-            PieceType.Rook,
-            PieceType.Queen
-        };
-
-        int visibleGroups = 0;
-        for (int typeIndex = 0; typeIndex < displayOrder.Length; typeIndex++)
-        {
-            PieceType type = displayOrder[typeIndex];
-            int count = 0;
-            for (int i = 0; i < pieces.Count; i++)
-                if (pieces[i] == type)
-                    count++;
-
-            if (count == 0)
-                continue;
-            visibleGroups++;
-            CreateCapturedGroup(container, GetPieceGlyph(type, capturedTeam), count);
-        }
-
-        if (visibleGroups == 0)
-            CreateCapturedGroup(container, '—', 1);
-    }
-
-    private static void CreateCapturedGroup(RectTransform parent, char glyph, int count)
-    {
-        RectTransform group = CreateRect(parent, $"Captured {glyph}", Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
-        VerticalLayoutGroup layout = group.gameObject.AddComponent<VerticalLayoutGroup>();
-        layout.childAlignment = TextAnchor.MiddleCenter;
-        layout.spacing = -3f;
-        layout.childControlWidth = true;
-        layout.childControlHeight = true;
-        layout.childForceExpandWidth = true;
-        layout.childForceExpandHeight = false;
-
-        Text icon = CreateLayoutText(group, glyph.ToString(), 26, 31f);
-        Text multiplier = CreateLayoutText(group, count > 1 ? $"x{count}" : " ", 15, 19f);
-        icon.fontStyle = FontStyle.Normal;
-        multiplier.fontStyle = FontStyle.Bold;
-    }
-
-    private static Text CreateLayoutText(RectTransform parent, string value, int fontSize, float preferredHeight)
-    {
-        RectTransform rect = CreateRect(parent, "Text", Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
-        LayoutElement element = rect.gameObject.AddComponent<LayoutElement>();
-        element.preferredHeight = preferredHeight;
-        Text text = rect.gameObject.AddComponent<Text>();
-        text.font = GetRuntimeFont();
-        text.text = value;
-        text.fontSize = fontSize;
-        text.resizeTextForBestFit = false;
-        text.alignment = TextAnchor.MiddleCenter;
-        text.color = new Color(0.055f, 0.055f, 0.065f, 1f);
-        text.raycastTarget = false;
-        return text;
-    }
-
-    private static char GetPieceGlyph(PieceType type, PieceTeam team)
-    {
-        const string white = "♔♕♖♗♘♙";
-        const string black = "♚♛♜♝♞♟";
-        int index = type == PieceType.King ? 0 : type == PieceType.Queen ? 1 : type == PieceType.Rook ? 2 : type == PieceType.Bishop ? 3 : type == PieceType.Knight ? 4 : 5;
-        return (team == PieceTeam.White ? white : black)[index];
-    }
-
-    private static string FormatSigned(int value)
-    {
-        return value > 0 ? $"+{value}" : value.ToString();
-    }
-
-    private static string FormatTime(float totalSeconds)
-    {
-        int seconds = Mathf.Max(0, Mathf.FloorToInt(totalSeconds));
-        int hours = seconds / 3600;
-        int minutes = (seconds % 3600) / 60;
-        return hours > 0 ? $"{hours:00}:{minutes:00}:{seconds % 60:00}" : $"{minutes:00}:{seconds % 60:00}";
-    }
-
-    private static string BuildMoveRows(IReadOnlyList<string> moves, PieceTeam firstTurn)
-    {
-        if (moves.Count == 0)
-            return "No moves yet";
-
-        bool blackStarted = firstTurn == PieceTeam.Black;
-        int totalRows = blackStarted ? (moves.Count + 2) / 2 : (moves.Count + 1) / 2;
-        StringBuilder builder = new StringBuilder(180);
-        for (int row = 0; row < totalRows; row++)
-        {
-            int whiteIndex = blackStarted ? row * 2 - 1 : row * 2;
-            int blackIndex = blackStarted ? row * 2 : row * 2 + 1;
-            string whiteMove = whiteIndex >= 0 && whiteIndex < moves.Count ? TrimMove(moves[whiteIndex]) : string.Empty;
-            string blackMove = blackIndex >= 0 && blackIndex < moves.Count ? TrimMove(moves[blackIndex]) : string.Empty;
-            builder.Append(row + 1).Append(".  ").Append(whiteMove.PadRight(14)).Append(blackMove);
-            if (row < totalRows - 1)
-                builder.AppendLine();
-        }
-        return builder.ToString();
-    }
-
-    private void RemoveOrphanedCanvases()
-    {
-        Canvas[] canvases = FindObjectsByType<Canvas>(FindObjectsInactive.Include);
-        for (int i = 0; i < canvases.Length; i++)
-        {
-            Canvas candidate = canvases[i];
-            if (!candidate || candidate.gameObject.name != "Analysis Board Canvas")
-                continue;
-            candidate.gameObject.SetActive(false);
-            Destroy(candidate.gameObject);
-        }
-    }
-
-    private static string TrimMove(string move)
-    {
-        if (string.IsNullOrWhiteSpace(move))
-            return string.Empty;
-        string trimmed = move.Trim();
-        return trimmed.Length <= 13 ? trimmed : trimmed.Substring(0, 12) + "…";
-    }
-
-    private static void EnsureEventSystem()
-    {
-        EventSystem eventSystem = EventSystem.current;
-        if (!eventSystem)
-            eventSystem = new GameObject("EventSystem", typeof(EventSystem)).GetComponent<EventSystem>();
-
-        StandaloneInputModule legacyInput = eventSystem.GetComponent<StandaloneInputModule>();
-        if (legacyInput)
-            legacyInput.enabled = false;
-        if (!eventSystem.GetComponent<InputSystemUIInputModule>())
-            eventSystem.gameObject.AddComponent<InputSystemUIInputModule>();
-    }
+    private static string TimeLabel(float seconds){var t=TimeSpan.FromSeconds(Mathf.Max(0,seconds));return t.TotalHours>=1?t.ToString(@"hh\:mm\:ss"):t.ToString(@"mm\:ss");}
 }

@@ -19,6 +19,7 @@ public sealed class AramBuffPieceMarker : MonoBehaviour
 
     public void Configure(Color color, string markerLabel, float markerRadius = 0.48f, float markerHeight = 1.25f)
     {
+        enabled=true;
         accent = color;
         radius = Mathf.Max(0.18f, markerRadius);
         height = Mathf.Max(0.45f, markerHeight);
@@ -56,6 +57,8 @@ public sealed class AramBuffPieceMarker : MonoBehaviour
             ring.SetPosition(i, new Vector3(Mathf.Cos(angle) * radius, 0.04f, Mathf.Sin(angle) * radius));
         }
 
+        // Committed buffs use only a small ground ring. Selection may show PICK.
+        if(string.IsNullOrEmpty(markerLabel))return;
         GameObject orbObject = GameObject.CreatePrimitive(PrimitiveType.Sphere);
         orbObject.name = "Orb";
         orbObject.transform.SetParent(markerRoot, false);
@@ -142,7 +145,7 @@ public sealed class AramBuffPieceMarker : MonoBehaviour
             shader = Shader.Find("Universal Render Pipeline/Unlit");
         if (!shader)
             shader = Shader.Find("Standard");
-        return new Material(shader);
+        return shader?new Material(shader):null;
     }
 
     private static void SetLayerRecursively(GameObject target, int layer)
@@ -159,7 +162,10 @@ public sealed class AramBuffPieceMarker : MonoBehaviour
     private void ClearVisuals()
     {
         if (markerRoot)
+        {
+            markerRoot.gameObject.SetActive(false);
             Destroy(markerRoot.gameObject);
+        }
         if (ringMaterial)
             Destroy(ringMaterial);
         if (orbMaterial)
@@ -186,4 +192,5 @@ public sealed class AramBuffPieceMarker : MonoBehaviour
     {
         ClearVisuals();
     }
+    private void OnDisable()=>ClearVisuals();
 }

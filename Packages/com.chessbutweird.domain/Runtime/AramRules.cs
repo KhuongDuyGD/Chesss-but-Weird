@@ -3,7 +3,7 @@ using System;
 namespace ChessButWeird.Domain
 {
     [Flags]
-    public enum AramBuffs
+    public enum AramBuffs : ulong
     {
         None = 0, CommandantPawn = 1, StrongFortress = 2, FreestyleLeap = 4,
         Doppelganger = 8, SuicideBomber = 16, FlyingThunderGod = 32,
@@ -13,7 +13,10 @@ namespace ChessButWeird.Domain
         SubstituteNinjutsu = 1 << 15, HighTechEra = 1 << 16, QueensBetrayal = 1 << 17,
         DefinitionOfAram = 1 << 18, RngFiesta = 1 << 19, IFrameRoll = 1 << 20,
         GhostArmy = 1 << 21, PlagueTown = 1 << 22, CustomizeArmy = 1 << 23,
-        PawnsRevolution = 1 << 24, OneManArmy = 1 << 25
+        PawnsRevolution = 1 << 24, OneManArmy = 1 << 25,
+        EveryManForHimself = 1UL << 26, SacUrQueen = 1UL << 27, AutoCastling = 1UL << 28,
+        UltimateQuest = 1UL << 29, MonsterTruck = 1UL << 30, CreditCard = 1UL << 31,
+        KingIsPoorPiece = 1UL << 32, DoubleEdgedTrap = 1UL << 33, Paratrooper = 1UL << 34
     }
 
     /// <summary>Per-piece projection of match-owned buff state. No scene object references.</summary>
@@ -21,13 +24,15 @@ namespace ChessButWeird.Domain
     {
         public readonly AramBuffs Buffs;
         public readonly bool IsCommandantPawn, IsSwappedKnight, IsSwappedBishop, IsOriginalQueen, CanTeleport;
-        public readonly bool Bloodthirsty, CannonReady, IsDecoy;
+        public readonly bool Bloodthirsty, CannonReady, IsDecoy, SelectedFreestyle, QueenMastery, TrapPawn, BomberArmed;
         public AramPieceContext(AramBuffs buffs, bool commandant = false, bool swappedKnight = false,
             bool swappedBishop = false, bool originalQueen = false, bool canTeleport = false,
-            bool bloodthirsty = false, bool cannonReady = false, bool decoy = false)
+            bool bloodthirsty = false, bool cannonReady = false, bool decoy = false,
+            bool selectedFreestyle = false, bool queenMastery = false, bool trapPawn = false, bool bomberArmed = false)
         { Buffs = buffs; IsCommandantPawn = commandant; IsSwappedKnight = swappedKnight;
           IsSwappedBishop = swappedBishop; IsOriginalQueen = originalQueen; CanTeleport = canTeleport;
-          Bloodthirsty = bloodthirsty; CannonReady = cannonReady; IsDecoy = decoy; }
+          Bloodthirsty = bloodthirsty; CannonReady = cannonReady; IsDecoy = decoy;
+          SelectedFreestyle=selectedFreestyle; QueenMastery=queenMastery; TrapPawn=trapPawn; BomberArmed=bomberArmed; }
         public bool Has(AramBuffs buff) => (Buffs & buff) != 0;
     }
 
@@ -48,7 +53,7 @@ namespace ChessButWeird.Domain
     public sealed class FreestyleLeapBuff : IAramMovementBuff
     {
         public bool Allows<TBoard>(TBoard board, PieceState piece, Square from, Square to, AramPieceContext c, bool attack)
-            where TBoard : IReadOnlyBoard => c.Has(AramBuffs.FreestyleLeap) && piece.Kind == PieceKind.Knight &&
+            where TBoard : IReadOnlyBoard => c.Has(AramBuffs.FreestyleLeap) && c.SelectedFreestyle && piece.Kind == PieceKind.Knight &&
                 Math.Abs(to.File - from.File) <= 2 && Math.Abs(to.Rank - from.Rank) <= 2 &&
                 !(Math.Abs(to.File - from.File) == 2 && Math.Abs(to.Rank - from.Rank) == 2);
     }
@@ -94,12 +99,12 @@ namespace ChessButWeird.Domain
             if (piece.IsEmpty || !from.IsValid || !to.IsValid || from == to) return false;
             PieceState target = board.GetPiece(to);
             if (!attack && !target.IsEmpty && target.Team == piece.Team &&
-                !(context.Has(AramBuffs.NobleSacrifice) && piece.Kind == PieceKind.Pawn && target.Kind == PieceKind.Pawn)) return false;
+                !(context.Has(AramBuffs.NobleSacrifice) && !context.Bloodthirsty && !context.TrapPawn && piece.Kind == PieceKind.Pawn && target.Kind == PieceKind.Pawn)) return false;
             foreach (var buff in movement) if (buff.Allows(board, piece, from, to, context, attack)) return true;
             return false;
         }
         public static bool SuppressesStandardMovement(AramPieceContext context) =>
-            context.IsDecoy || (context.Has(AramBuffs.Doppelganger) && (context.IsSwappedKnight || context.IsSwappedBishop));
+            context.IsDecoy || context.TrapPawn || (context.Has(AramBuffs.Doppelganger) && (context.IsSwappedKnight || context.IsSwappedBishop));
     }
 
     public static class StrongFortressBuff
@@ -128,12 +133,14 @@ namespace ChessButWeird.Domain
         {
             int dx = to.File-from.File, dy = to.Rank-from.Rank;
             var target = board.GetPiece(to);
+            if(c.QueenMastery && (dx==0 || dy==0 || Math.Abs(dx)==Math.Abs(dy)) && MovementRules.IsPathClear(board,from,to))return true;
+            if(c.TrapPawn)return Math.Abs(dx)+Math.Abs(dy)==1;
             if(c.IsDecoy)return Math.Abs(dx)<=1 && Math.Abs(dy)<=1;
             if (piece.Kind == PieceKind.Pawn)
             {
                 if (c.Bloodthirsty && dy == piece.Forward && Math.Abs(dx)<=1) return true;
-                if (!attack && (c.Bloodthirsty || c.Has(AramBuffs.RiseOfPawn)) && dx==0 && dy==-piece.Forward && target.IsEmpty) return true;
-                if (!attack && c.Has(AramBuffs.NobleSacrifice) && target.Kind==PieceKind.Pawn && !target.IsEmpty &&
+                if (!attack && c.Has(AramBuffs.RiseOfPawn) && dx==0 && dy==-piece.Forward && target.IsEmpty) return true;
+                if (!attack && !c.Bloodthirsty && c.Has(AramBuffs.NobleSacrifice) && target.Kind==PieceKind.Pawn && !target.IsEmpty &&
                     target.Team==piece.Team && Math.Abs(dx)==1 && dy==piece.Forward) return true;
             }
             if (c.Has(AramBuffs.OneManArmy) && piece.Kind==PieceKind.King &&
@@ -149,7 +156,7 @@ namespace ChessButWeird.Domain
                 if (blockers==1) return true;
             }
             // Phasing is a movement/capture extension, never a check through a blocker.
-            if (!attack && c.Has(AramBuffs.GhostArmy) &&
+            if (!attack && (c.Has(AramBuffs.GhostArmy) || (c.Has(AramBuffs.MonsterTruck) && piece.Kind==PieceKind.Rook && target.IsEmpty)) &&
                 ((piece.Kind==PieceKind.Rook && straight)||(piece.Kind==PieceKind.Bishop && diagonal)||
                  (piece.Kind==PieceKind.Queen && (straight||diagonal)) ||
                  (piece.Kind==PieceKind.Pawn && dx==0 && dy==piece.Forward*2 && !piece.HasMoved && target.IsEmpty)))

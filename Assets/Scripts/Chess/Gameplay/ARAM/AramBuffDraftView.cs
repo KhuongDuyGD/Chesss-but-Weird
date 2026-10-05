@@ -7,21 +7,20 @@ using UnityEngine.UI;
 [DisallowMultipleComponent]
 public sealed class AramBuffDraftView : MonoBehaviour
 {
-    private const float ReferenceWidth = 1920f;
-    private const float ReferenceHeight = 1080f;
+    private const float ReferenceWidth = 1280f;
+    private const float ReferenceHeight = 720f;
 
     private RectTransform canvasRoot;
     private CanvasGroup draftGroup;
     private RectTransform draftPanel;
     private RectTransform cardRoot;
-    private RectTransform hudPanel;
+    private ScrollRect cardScroll;
+    private RectTransform toastPanel;
     private RectTransform targetPromptPanel;
     private Button continueButton;
     private TextMeshProUGUI continueButtonLabel;
     private TextMeshProUGUI titleLabel;
     private TextMeshProUGUI subtitleLabel;
-    private TextMeshProUGUI hudWhiteLabel;
-    private TextMeshProUGUI hudBlackLabel;
     private TextMeshProUGUI targetPromptLabel;
     private TextMeshProUGUI toastLabel;
     private readonly List<BuffCardView> cards = new List<BuffCardView>();
@@ -33,6 +32,10 @@ public sealed class AramBuffDraftView : MonoBehaviour
     private PieceTeam choosingTeam = PieceTeam.White;
     private bool privateNetworkDraft;
     private float toastUntil;
+    private AramBuffRuntime runtime;
+    public float GameplayHudTop
+    {get {return 0;}}
+    private RectTransform gameplayFrame;
 
     public void ShowDraft(List<AramBuffDefinition> pool, Action<List<AramBuffDefinition>, List<AramBuffDefinition>> onCompleted)
     {
@@ -54,7 +57,6 @@ public sealed class AramBuffDraftView : MonoBehaviour
         draftGroup.blocksRaycasts = true;
         draftGroup.interactable = true;
         draftPanel.gameObject.SetActive(true);
-        hudPanel.gameObject.SetActive(false);
         SetContinueButtonVisible(false);
         RebuildCards(pool);
         RefreshDraftCopy();
@@ -79,7 +81,6 @@ public sealed class AramBuffDraftView : MonoBehaviour
         draftGroup.blocksRaycasts = true;
         draftGroup.interactable = true;
         draftPanel.gameObject.SetActive(true);
-        hudPanel.gameObject.SetActive(false);
         SetContinueButtonVisible(false);
         RebuildCards(whiteOptions);
         RefreshDraftCopy();
@@ -108,7 +109,6 @@ public sealed class AramBuffDraftView : MonoBehaviour
         draftGroup.blocksRaycasts = true;
         draftGroup.interactable = true;
         draftPanel.gameObject.SetActive(true);
-        hudPanel.gameObject.SetActive(false);
         SetContinueButtonVisible(false);
         RebuildCards(localTeam == PieceTeam.White ? whiteOptions : blackOptions);
         RefreshDraftCopy();
@@ -122,8 +122,6 @@ public sealed class AramBuffDraftView : MonoBehaviour
         draftGroup.blocksRaycasts = false;
         draftGroup.interactable = false;
         draftGroup.alpha = 1f;
-        hudPanel.gameObject.SetActive(true);
-        RefreshHud(whiteBuffs, blackBuffs);
     }
 
     public void ShowPrivateHud(PieceTeam localTeam, IReadOnlyList<AramBuffDefinition> localBuffs)
@@ -134,43 +132,28 @@ public sealed class AramBuffDraftView : MonoBehaviour
         draftGroup.blocksRaycasts = false;
         draftGroup.interactable = false;
         draftGroup.alpha = 1f;
-        hudPanel.gameObject.SetActive(true);
-        hudWhiteLabel.text = localTeam == PieceTeam.White ? $"Your buffs: {FormatBuffList(localBuffs)}" : "White buffs: Hidden";
-        hudBlackLabel.text = localTeam == PieceTeam.Black ? $"Your buffs: {FormatBuffList(localBuffs)}" : "Black buffs: Hidden";
     }
 
     public void ShowTargetPrompt(PieceTeam team, string message, AramBuffDefinition source)
     {
         EnsureBuilt();
         draftPanel.gameObject.SetActive(false);
-        hudPanel.gameObject.SetActive(false);
         targetPromptPanel.gameObject.SetActive(true);
         draftGroup.blocksRaycasts = false;
         draftGroup.interactable = false;
         draftGroup.alpha = 1f;
 
-        Color color = source ? source.AccentColor : new Color(1f, 0.88f, 0.34f, 1f);
-        targetPromptLabel.color = new Color(color.r, color.g, color.b, 1f);
+        targetPromptLabel.color = MatchHudStyle.Ink;
         targetPromptLabel.text = message;
-    }
-
-    public void RefreshHud(IReadOnlyList<AramBuffDefinition> whiteBuffs, IReadOnlyList<AramBuffDefinition> blackBuffs)
-    {
-        if (!hudPanel)
-            return;
-
-        hudWhiteLabel.text = $"White: {FormatBuffList(whiteBuffs)}";
-        hudBlackLabel.text = $"Black: {FormatBuffList(blackBuffs)}";
     }
 
     public void ShowBuffToast(PieceTeam team, string message, AramBuffDefinition source)
     {
         EnsureBuilt();
-        Color color = source ? source.AccentColor : new Color(1f, 0.88f, 0.34f, 1f);
-        toastLabel.color = new Color(color.r, color.g, color.b, 1f);
+        toastLabel.color = MatchHudStyle.Ink;
         toastLabel.text = $"{team}: {message}";
         toastUntil = Time.unscaledTime + 2.4f;
-        toastLabel.gameObject.SetActive(true);
+        toastPanel.gameObject.SetActive(true);
     }
 
     public void HideAll()
@@ -179,24 +162,29 @@ public sealed class AramBuffDraftView : MonoBehaviour
             return;
 
         draftPanel.gameObject.SetActive(false);
-        hudPanel.gameObject.SetActive(false);
         targetPromptPanel.gameObject.SetActive(false);
-        toastLabel.gameObject.SetActive(false);
+        toastPanel.gameObject.SetActive(false);
         draftGroup.blocksRaycasts = false;
         draftGroup.interactable = false;
     }
 
     private void Update()
     {
-        if (cards.Count > 0)
-        {
-            float time = Time.unscaledTime;
-            for (int i = 0; i < cards.Count; i++)
-                cards[i].Tick(time);
-        }
+        if (toastPanel && toastPanel.gameObject.activeSelf && Time.unscaledTime >= toastUntil)
+            toastPanel.gameObject.SetActive(false);
+        LayoutGameplayHud();
+    }
 
-        if (toastLabel && toastLabel.gameObject.activeSelf && Time.unscaledTime >= toastUntil)
-            toastLabel.gameObject.SetActive(false);
+    private void LayoutGameplayHud()
+    {
+        if(gameplayFrame)
+        {
+            float width=Mathf.Min(360,gameplayFrame.rect.width-40);
+            MatchHudStyle.Place(toastPanel,Vector2.zero,new Vector2(width,68),new Vector2(20+width/2,50));
+            toastLabel.rectTransform.sizeDelta=new Vector2(width-24,62);
+            MatchHudStyle.Place(targetPromptPanel,new Vector2(0,1),new Vector2(width,140),new Vector2(20+width/2,-190));
+            targetPromptLabel.rectTransform.sizeDelta=new Vector2(width-24,132);
+        }
     }
 
     private void RebuildCards(List<AramBuffDefinition> pool)
@@ -205,11 +193,12 @@ public sealed class AramBuffDraftView : MonoBehaviour
 
         int count = pool == null ? 0 : pool.Count;
         int columns = 3;
-        Vector2 cardSize = new Vector2(430f, 390f);
-        Vector2 gap = new Vector2(38f, 34f);
+        Vector2 cardSize = new Vector2(356f, 410f);
+        Vector2 gap = new Vector2(24f, 24f);
         float totalWidth = columns * cardSize.x + (columns - 1) * gap.x;
         int rows = Mathf.CeilToInt(Mathf.Max(1, count) / (float)columns);
         float totalHeight = rows * cardSize.y + (rows - 1) * gap.y;
+        cardRoot.sizeDelta = new Vector2(1116f, totalHeight);
 
         for (int i = 0; i < count; i++)
         {
@@ -218,39 +207,46 @@ public sealed class AramBuffDraftView : MonoBehaviour
             int row = i / columns;
             Vector2 position = new Vector2(
                 -totalWidth * 0.5f + cardSize.x * 0.5f + col * (cardSize.x + gap.x),
-                totalHeight * 0.5f - cardSize.y * 0.5f - row * (cardSize.y + gap.y));
+                -cardSize.y * 0.5f - row * (cardSize.y + gap.y));
             cards.Add(CreateCard(definition, position, cardSize, i));
         }
+        cardScroll.vertical = rows > 1;
+        cardScroll.verticalNormalizedPosition = 1f;
     }
 
     private BuffCardView CreateCard(AramBuffDefinition definition, Vector2 position, Vector2 size, int index, bool selectable = true, string headingOverride = null)
     {
         RectTransform card = CreateRect(cardRoot, definition ? definition.ShortName : $"Buff {index + 1}", position, size);
-        Image background = card.gameObject.AddComponent<Image>();
+        card.anchorMin=card.anchorMax=new Vector2(.5f,1);
+        var background = MatchHudStyle.Surface(card);
         Color accent = definition ? definition.AccentColor : new Color(1f, 0.9f, 0.4f, 1f);
-        background.color = new Color(0.06f, 0.055f, 0.075f, 0.93f);
-        Outline outline = card.gameObject.AddComponent<Outline>();
-        outline.effectColor = accent;
-        outline.effectDistance = new Vector2(3f, -3f);
+        background.Configure(Color.Lerp(MatchHudStyle.Paper,accent,.12f),MatchHudStyle.Ink,12,1.8f,.3f,0);
 
         if (selectable)
         {
-            Button button = card.gameObject.AddComponent<Button>();
-            button.transition = Selectable.Transition.None;
-            button.targetGraphic = background;
-            button.onClick.AddListener(() => SelectBuff(definition));
+            Button button = MatchHudStyle.Button(card,"Choose buff","Choose this buff",() => SelectBuff(definition));
+            MatchHudStyle.Place((RectTransform)button.transform,Vector2.one*.5f,new Vector2(312,40),new Vector2(0,-175));
+            button.GetComponentInChildren<TMP_Text>().rectTransform.sizeDelta=new Vector2(-16,-4);
         }
 
-        TextMeshProUGUI tier = AddText(card, "Tier", new Vector2(0f, 150f), new Vector2(366f, 30f), 21f, TextAlignmentOptions.Left, accent);
+        TextMeshProUGUI tier = AddText(card, "Tier", new Vector2(0f, 174f), new Vector2(312f, 32f), 20f, TextAlignmentOptions.Left, MatchHudStyle.Accent);
         tier.text = definition
             ? $"{(string.IsNullOrEmpty(headingOverride) ? string.Empty : headingOverride + " - ")}{definition.Tier.ToString().ToUpperInvariant()}"
             : (string.IsNullOrEmpty(headingOverride) ? "BUFF" : headingOverride);
-        TextMeshProUGUI name = AddText(card, "Name", new Vector2(0f, 92f), new Vector2(366f, 78f), 32f, TextAlignmentOptions.Left, Color.white);
+        TextMeshProUGUI name = AddText(card, "Name", new Vector2(0f, 112f), new Vector2(312f, 84f), 28f, TextAlignmentOptions.Left, MatchHudStyle.Ink);
         name.text = definition ? definition.DisplayName : "ARAM Buff";
-        TextMeshProUGUI desc = AddText(card, "Description", new Vector2(0f, -56f), new Vector2(366f, 196f), 24f, TextAlignmentOptions.TopLeft, new Color(0.93f, 0.92f, 0.86f, 1f));
+        var viewport=CreateRect(card,"Description viewport",new Vector2(0,-38),new Vector2(312,208));
+        viewport.gameObject.AddComponent<RectMask2D>();
+        var hit=viewport.gameObject.AddComponent<Image>();hit.color=Color.clear;
+        TextMeshProUGUI desc = AddText(viewport, "Description", Vector2.zero, new Vector2(312f, 208f), 20f, TextAlignmentOptions.TopLeft, MatchHudStyle.Ink);
         desc.text = definition ? definition.Description : string.Empty;
         desc.textWrappingMode = TextWrappingModes.Normal;
-        return new BuffCardView(card, background, accent, index);
+        desc.rectTransform.anchorMin=desc.rectTransform.anchorMax=desc.rectTransform.pivot=new Vector2(.5f,1);
+        desc.rectTransform.sizeDelta=new Vector2(312,Mathf.Max(208,desc.GetPreferredValues(desc.text,312,0).y+8));
+        var scroll=viewport.gameObject.AddComponent<ScrollRect>();scroll.viewport=viewport;scroll.content=desc.rectTransform;
+        scroll.horizontal=false;scroll.vertical=desc.rectTransform.sizeDelta.y>208;scroll.movementType=ScrollRect.MovementType.Clamped;
+        scroll.scrollSensitivity=28;scroll.verticalNormalizedPosition=1;
+        return new BuffCardView();
     }
 
     private void ClearCards()
@@ -363,54 +359,40 @@ public sealed class AramBuffDraftView : MonoBehaviour
         RectTransform layout = MenuDesignFrame.Create(canvasRoot, "ARAM", new Vector2(ReferenceWidth, ReferenceHeight));
         draftPanel = CreateRect(layout, "Draft Panel", Vector2.zero, new Vector2(ReferenceWidth, ReferenceHeight));
         Image dim = draftPanel.gameObject.AddComponent<Image>();
-        dim.color = new Color(0.015f, 0.012f, 0.022f, 0.88f);
+        dim.color = new Color(.16f,.14f,.20f,.94f);
 
-        titleLabel = AddText(draftPanel, "Draft Title", new Vector2(0f, 390f), new Vector2(900f, 72f), 54f, TextAlignmentOptions.Center, new Color(1f, 0.88f, 0.36f, 1f));
-        subtitleLabel = AddText(draftPanel, "Draft Subtitle", new Vector2(0f, 330f), new Vector2(1180f, 44f), 26f, TextAlignmentOptions.Center, new Color(0.88f, 0.92f, 1f, 0.92f));
-        cardRoot = CreateRect(draftPanel, "Draft Cards", new Vector2(0f, -40f), new Vector2(1440f, 520f));
+        titleLabel = AddText(draftPanel, "Draft Title", new Vector2(0f, 284f), new Vector2(1120f, 60f), 40f, TextAlignmentOptions.Center, MatchHudStyle.Paper);
+        subtitleLabel = AddText(draftPanel, "Draft Subtitle", new Vector2(0f, 224f), new Vector2(1120f, 62f), 22f, TextAlignmentOptions.Center, MatchHudStyle.Paper);
+        var viewport=CreateRect(draftPanel,"Draft viewport",new Vector2(0,-32),new Vector2(1120,412));
+        viewport.gameObject.AddComponent<RectMask2D>();
+        var scrollHit=viewport.gameObject.AddComponent<Image>();scrollHit.color=Color.clear;
+        cardRoot = CreateRect(viewport, "Draft Cards", Vector2.zero, new Vector2(1116f, 410f));
+        cardRoot.anchorMin=cardRoot.anchorMax=cardRoot.pivot=new Vector2(.5f,1);
+        cardScroll=viewport.gameObject.AddComponent<ScrollRect>();cardScroll.viewport=viewport;cardScroll.content=cardRoot;
+        cardScroll.horizontal=false;cardScroll.movementType=ScrollRect.MovementType.Clamped;cardScroll.scrollSensitivity=40;
         CreateContinueButton(draftPanel);
 
-        hudPanel = CreateRect(layout, "ARAM HUD", new Vector2(-685f, 410f), new Vector2(500f, 126f));
-        Image hud = hudPanel.gameObject.AddComponent<Image>();
-        hud.color = new Color(0.025f, 0.023f, 0.035f, 0.76f);
-        Outline hudOutline = hudPanel.gameObject.AddComponent<Outline>();
-        hudOutline.effectColor = new Color(1f, 0.82f, 0.26f, 0.55f);
-        hudOutline.effectDistance = new Vector2(2f, -2f);
-        AddText(hudPanel, "HUD Title", new Vector2(0f, 38f), new Vector2(460f, 30f), 24f, TextAlignmentOptions.Center, new Color(1f, 0.88f, 0.34f, 1f)).text = "ARAM BUFFS";
-        hudWhiteLabel = AddText(hudPanel, "HUD White", new Vector2(0f, 4f), new Vector2(452f, 28f), 20f, TextAlignmentOptions.Left, Color.white);
-        hudBlackLabel = AddText(hudPanel, "HUD Black", new Vector2(0f, -28f), new Vector2(452f, 28f), 20f, TextAlignmentOptions.Left, new Color(0.86f, 0.92f, 1f, 1f));
-        hudPanel.gameObject.SetActive(false);
-
-        targetPromptPanel = CreateRect(layout, "ARAM Target Prompt", new Vector2(0f, 410f), new Vector2(1120f, 76f));
-        Image targetPromptBackground = targetPromptPanel.gameObject.AddComponent<Image>();
-        targetPromptBackground.color = new Color(0.025f, 0.023f, 0.035f, 0.82f);
-        targetPromptBackground.raycastTarget = false;
-        Outline targetPromptOutline = targetPromptPanel.gameObject.AddComponent<Outline>();
-        targetPromptOutline.effectColor = new Color(1f, 0.82f, 0.26f, 0.55f);
-        targetPromptOutline.effectDistance = new Vector2(2f, -2f);
-        targetPromptLabel = AddText(targetPromptPanel, "Target Prompt Label", Vector2.zero, new Vector2(1060f, 54f), 28f, TextAlignmentOptions.Center, new Color(1f, 0.88f, 0.34f, 1f));
+        gameplayFrame=MatchHudStyle.Rect(canvasRoot,"ARAM Gameplay Safe Area",Vector2.zero,Vector2.one,Vector2.zero,Vector2.zero);
+        gameplayFrame.gameObject.AddComponent<ResponsiveSafeArea>();
+        targetPromptPanel = CreateRect(gameplayFrame, "ARAM Target Prompt", new Vector2(-140f, 197f), new Vector2(840f, 64f));
+        MatchHudStyle.Surface(targetPromptPanel,false);
+        targetPromptLabel = AddText(targetPromptPanel, "Target Prompt Label", Vector2.zero, new Vector2(800f, 58f), 20f, TextAlignmentOptions.Center, MatchHudStyle.Ink);
         targetPromptPanel.gameObject.SetActive(false);
 
-        toastLabel = AddText(layout, "ARAM Toast", new Vector2(0f, 356f), new Vector2(920f, 54f), 30f, TextAlignmentOptions.Center, new Color(1f, 0.88f, 0.3f, 1f));
-        toastLabel.gameObject.SetActive(false);
+        toastPanel=CreateRect(gameplayFrame,"ARAM Toast Panel",new Vector2(-140,120),new Vector2(840,64));
+        MatchHudStyle.Surface(toastPanel,false);
+        toastLabel = AddText(toastPanel, "ARAM Toast", Vector2.zero, new Vector2(800f, 58f), 20f, TextAlignmentOptions.Center, MatchHudStyle.Ink);
+        toastPanel.gameObject.SetActive(false);
         SetContinueButtonVisible(false);
+        LayoutGameplayHud();
     }
 
     private void CreateContinueButton(Transform parent)
     {
-        RectTransform buttonRect = CreateRect(parent, "Practice Continue", new Vector2(0f, -365f), new Vector2(330f, 76f));
-        Image image = buttonRect.gameObject.AddComponent<Image>();
-        image.color = new Color(1f, 0.78f, 0.24f, 0.96f);
-        Outline outline = buttonRect.gameObject.AddComponent<Outline>();
-        outline.effectColor = new Color(0.08f, 0.06f, 0.05f, 0.95f);
-        outline.effectDistance = new Vector2(3f, -3f);
-
-        continueButton = buttonRect.gameObject.AddComponent<Button>();
-        continueButton.transition = Selectable.Transition.None;
-        continueButton.targetGraphic = image;
-        continueButton.onClick.AddListener(CompleteSelection);
-        continueButtonLabel = AddText(buttonRect, "Label", Vector2.zero, new Vector2(300f, 54f), 30f, TextAlignmentOptions.Center, new Color(0.11f, 0.08f, 0.04f, 1f));
-        continueButtonLabel.text = "Start Practice";
+        continueButton=MatchHudStyle.Button(parent,"Practice Continue","Start Practice",CompleteSelection);
+        MatchHudStyle.Place((RectTransform)continueButton.transform,Vector2.one*.5f,new Vector2(300,42),new Vector2(0,-280));
+        continueButtonLabel=continueButton.GetComponentInChildren<TextMeshProUGUI>();
+        continueButtonLabel.rectTransform.sizeDelta=new Vector2(-16,-4);
     }
 
     private void SetContinueButtonVisible(bool visible)
@@ -425,9 +407,9 @@ public sealed class AramBuffDraftView : MonoBehaviour
         TextMeshProUGUI text = rect.gameObject.AddComponent<TextMeshProUGUI>();
         text.alignment = alignment;
         text.fontSize = fontSize;
-        text.enableAutoSizing = true;
-        text.fontSizeMin = Mathf.Max(12f, fontSize * 0.62f);
-        text.fontSizeMax = fontSize;
+        text.font=ChessFontCatalog.TmpFont;
+        text.enableAutoSizing = false;
+        text.richText=false;
         text.color = color;
         text.raycastTarget = false;
         return text;
@@ -454,29 +436,5 @@ public sealed class AramBuffDraftView : MonoBehaviour
         rect.offsetMax = Vector2.zero;
     }
 
-    private readonly struct BuffCardView
-    {
-        private readonly RectTransform rect;
-        private readonly Image image;
-        private readonly Color accent;
-        private readonly float offset;
-
-        public BuffCardView(RectTransform rect, Image image, Color accent, int index)
-        {
-            this.rect = rect;
-            this.image = image;
-            this.accent = accent;
-            offset = index * 0.42f;
-        }
-
-        public void Tick(float time)
-        {
-            if (!rect || !image)
-                return;
-
-            float pulse = 0.5f + Mathf.Sin(time * 2.8f + offset) * 0.5f;
-            rect.localScale = Vector3.one * (1f + pulse * 0.012f);
-            image.color = Color.Lerp(new Color(0.055f, 0.052f, 0.072f, 0.93f), new Color(accent.r * 0.18f, accent.g * 0.18f, accent.b * 0.18f, 0.95f), pulse * 0.32f);
-        }
-    }
+    private readonly struct BuffCardView { }
 }

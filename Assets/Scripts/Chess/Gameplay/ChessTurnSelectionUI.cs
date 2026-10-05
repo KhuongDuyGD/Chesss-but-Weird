@@ -455,6 +455,9 @@ public class ChessTurnSelectionUI : MonoBehaviour
         blackPlayerName = string.IsNullOrWhiteSpace(blackName) ? "Black" : blackName.Trim();
     }
 
+    public string GetMatchPlayerName(PieceTeam team) => team == PieceTeam.White ? whitePlayerName : blackPlayerName;
+    public string MatchConnectionState => lanController ? lanController.MatchConnectionState : "Disconnected";
+
     public void ClearMatchPlayers()
     {
         whitePlayerName = null;

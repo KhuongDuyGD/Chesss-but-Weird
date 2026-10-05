@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using ChessButWeird.Application;
 using Newtonsoft.Json.Linq;
 using TMPro;
@@ -102,6 +103,7 @@ public class ChessLanController : MonoBehaviour
     }
 
     public bool IsNetworkGameActive => lanGameActive;
+    public string MatchConnectionState => GetConnectionSummary();
     public event Action<bool, string> OpponentPauseChanged;
 
     public void Initialize(ChessGame newChessGame, ChessTurnSelectionUI newTurnSelectionUI)
@@ -781,6 +783,7 @@ public class ChessLanController : MonoBehaviour
                     ? PieceTeam.White
                     : PieceTeam.Black;
                 BeginServerMatch(localTeam, match.currentFen, currentAramSeed, lastAramState);
+                chessGame.RestoreStatistics(match);
                 chessGame.SetActiveMatchIdentity(currentMatchId);
                 lanGameActive = string.Equals(match.status, "ACTIVE", StringComparison.OrdinalIgnoreCase);
                 if (lanGameActive)
@@ -857,11 +860,17 @@ public class ChessLanController : MonoBehaviour
     private void HandleMoveCommitted(ChessLanMove move)
     {
         if (!lanGameActive || webSocketClient == null || !webSocketClient.IsConnected)
+        {
+            RollbackStatisticsPrediction();
             return;
+        }
 
         string requestId = CreateRequestId("move");
         if (!networkMatchSession.TryQueueCommand(requestId, currentMatchId))
+        {
+            RollbackStatisticsPrediction();
             return;
+        }
 
         pendingLocalMoveRequestIds.Add(requestId);
         _ = webSocketClient.SendAsync("MOVE", requestId, new BackendMovePayload
@@ -906,6 +915,7 @@ public class ChessLanController : MonoBehaviour
             return;
 
         statusMessage = message;
+        RollbackStatisticsPrediction();
         serverHealthStatus = "Offline";
         reconnectPending = true;
         reconnectAt = Time.unscaledTime + ReconnectDelaySeconds;
@@ -916,6 +926,17 @@ public class ChessLanController : MonoBehaviour
         startRequestInFlight = false;
         serverHealthStatus = GetServerHealthFromError(message);
         statusMessage = message;
+        RollbackStatisticsPrediction();
+    }
+
+    private void RollbackStatisticsPrediction()
+    {
+        if(!chessGame || !chessGame.IsNetworkGame || !chessGame.Statistics.Entries.Any(entry=>entry.Pending))return;
+        foreach(var requestId in pendingLocalMoveRequestIds)networkMatchSession.RejectCommand(requestId,currentMatchId);
+        pendingLocalMoveRequestIds.Clear();
+        if(!string.IsNullOrWhiteSpace(lastConfirmedFen))chessGame.ApplyFenState(lastConfirmedFen);
+        chessGame.RejectStatisticsPrediction();
+        if(IsAramGameMode(requestedGameMode))chessGame.ApplyAramNetworkState(lastAramState);
     }
 
     private void HandleWebSocketMessage(BackendSocketEnvelope envelope)
@@ -1031,6 +1052,7 @@ public class ChessLanController : MonoBehaviour
             ? PieceTeam.White
             : PieceTeam.Black;
         BeginServerMatch(localTeam, payload.fen, currentAramSeed, lastAramState);
+        chessGame.ApplyStatisticsSnapshot(payload.statistics);
         chessGame.SetActiveMatchIdentity(currentMatchId);
         ApplyActiveMatchCameraState(localTeam, immediate: true);
         lanGameActive = true;
@@ -1087,6 +1109,7 @@ public class ChessLanController : MonoBehaviour
                 networkMatchSession.RejectCommand(requestId, currentMatchId);
             }
             statusMessage = "Ignored non-authoritative ARAM move result; requesting a full server sync.";
+            RollbackStatisticsPrediction();
             chessGame.SetAramInputLocked(true);
             _ = webSocketClient.SendAsync("SYNC_REQUEST", CreateRequestId("sync"), CreateVariantPayload());
             return;
@@ -1104,6 +1127,7 @@ public class ChessLanController : MonoBehaviour
         }
 
         bool isLocalMove = !string.IsNullOrWhiteSpace(requestId) && pendingLocalMoveRequestIds.Remove(requestId);
+        string statisticsPreviousFen = lastConfirmedFen;
         lastConfirmedFen = payload.fen ?? lastConfirmedFen;
         BackendAramStatePayload localPrediction = IsAramGameMode(requestedGameMode)
             ? chessGame.CaptureAramNetworkState()
@@ -1119,9 +1143,7 @@ public class ChessLanController : MonoBehaviour
             chessGame.ApplyAramNetworkState(lastAramState);
             chessGame.SetAramInputLocked(false);
         }
-        turnSelectionUI.SetLatestMoveText(
-            string.IsNullOrWhiteSpace(payload.notation) ? $"{payload.from}-{payload.to}" : payload.notation,
-            isLocalMove);
+        chessGame.ConfirmStatisticsMove(payload, statisticsPreviousFen);
         statusMessage = string.IsNullOrWhiteSpace(payload.notation)
             ? $"Move {payload.moveNumber} accepted."
             : $"{(isLocalMove ? "Your" : "Opponent")} move {payload.moveNumber}: {payload.notation}";
@@ -1205,7 +1227,8 @@ public class ChessLanController : MonoBehaviour
         PieceTeam localTeam = string.Equals(payload.whitePlayerId, PlayerAuthService.UserId, StringComparison.OrdinalIgnoreCase)
             ? PieceTeam.White
             : PieceTeam.Black;
-        if (!chessGame.GameStarted)
+        bool recoveringStatistics=!chessGame.GameStarted;
+        if (recoveringStatistics)
         {
             lobbySession.BeginMatch(currentMatchId, requestedGameMode);
             BeginServerMatch(localTeam, payload.fen, currentAramSeed, lastAramState);
@@ -1224,6 +1247,11 @@ public class ChessLanController : MonoBehaviour
             }
         }
         lanGameActive = snapshotActive;
+        if (!chessGame.ApplyStatisticsSnapshot(payload.statistics))
+        {
+            if(recoveringStatistics)chessGame.MarkStatisticsRecoveryIncomplete(payload.moveCount);
+            else chessGame.ObserveStatisticsSnapshot(payload.moveCount);
+        }
         if (string.Equals(payload.status, "ACTIVE", StringComparison.OrdinalIgnoreCase))
             ApplyActiveMatchCameraState(localTeam, immediate: false);
 
@@ -1246,6 +1274,7 @@ public class ChessLanController : MonoBehaviour
 
         lanGameActive = false;
         networkMatchSession.Complete();
+        chessGame.ApplyStatisticsSnapshot(payload.statistics);
         lobbySession.CompleteMatch();
         opponentDrawOfferPending = false;
         OpponentPauseChanged?.Invoke(false, string.Empty);
@@ -1284,6 +1313,7 @@ public class ChessLanController : MonoBehaviour
         {
             networkMatchSession.RejectCommand(requestId, currentMatchId);
             chessGame.ApplyFenState(lastConfirmedFen);
+            chessGame.RejectStatisticsPrediction();
             if (IsAramGameMode(requestedGameMode))
                 chessGame.ApplyAramNetworkState(lastAramState);
         }
