@@ -173,7 +173,7 @@ namespace ChessButWeird.Online
         private void Drain()
         {
             if (disposed || subscribing || State == null) return;
-            while (buffer.TryGetValue(State.eventSequence + 1, out var e))
+            while (State != null && buffer.TryGetValue(State.eventSequence + 1, out var e))
             {
                 buffer.Remove(e.sequence);
                 var state = e.payload?["state"]?.ToObject<MatchState>();
@@ -185,7 +185,7 @@ namespace ChessButWeird.Online
                     StartResync(); return;
                 }
             }
-            if (buffer.Count > 0) StartResync();
+            if (State != null && buffer.Count > 0) StartResync();
         }
         private void StartResync()
         { if (resync == null || resync.IsCompleted) resync = ResyncAsync(); }

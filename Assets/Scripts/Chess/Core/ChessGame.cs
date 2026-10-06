@@ -138,8 +138,6 @@ public partial class ChessGame : MonoBehaviour
     public event Action<ChessMove> MoveCommitted;
     public event Action ReturnedToMainMenu;
     public event Action LocalGameRestarted;
-    public event Action<Transform, float> CameraLockRequested;
-    public event Action CameraLockReleased;
 
     private void Awake()
     {
@@ -579,12 +577,10 @@ public partial class ChessGame : MonoBehaviour
             return false;
         }
 
-        DeselectCurrentPiece(true, false);
+        DeselectCurrentPiece(true);
         selectedPiece = piece;
         chessboard?.SetLegalMoveHighlights(GetSafeLegalMoves(selectedPiece));
         AnimatePieceToTile(selectedPiece, selectedPiece.BoardPosition, selectedPieceLiftHeight, selectAnimationDuration, 0f);
-        // Khi đổi hoặc chọn quân mới, camera sẽ chuyển pivot sang quân hợp lệ hiện tại.
-        CameraLockRequested?.Invoke(selectedPiece.transform, GetCameraLockHeightOffset(selectedPiece));
         PlaySound(pickSound);
         return true;
     }
@@ -1086,9 +1082,9 @@ public partial class ChessGame : MonoBehaviour
         if (orbitCamera == null)
             return;
 
-        // Dua camera ve dung phia nguoi choi da chon trong local hoac online.
-        orbitCamera.SetAllowPieceLock(true);
-        orbitCamera.ConfigureForPlayerSide(playerSide, immediate);
+        // Online seats use canonical board coordinates, so orient the camera to
+        // the assigned side. Local games keep their existing board overview.
+        orbitCamera.ConfigureForPlayerSide(serverAuthoritativeMode ? playerSide : PieceTeam.White, immediate);
     }
 
     private void HandleBoardClick()
@@ -1704,7 +1700,6 @@ public partial class ChessGame : MonoBehaviour
         RefreshLocalInteractionState();
         AnimatePieceToTile(pawn, destination, 0f, moveAnimationDuration, moveArcHeight);
         yield return new WaitForSeconds(moveAnimationDuration);
-        CameraLockReleased?.Invoke();
 
         pendingPromotionPawn = pawn;
         pendingPromotionOpponentTeam = opponentTeam;
@@ -2106,7 +2101,7 @@ public partial class ChessGame : MonoBehaviour
         return piece.transform.position.y - bounds.min.y;
     }
 
-    private void DeselectCurrentPiece(bool animateToBoard, bool releaseCameraLock = true)
+    private void DeselectCurrentPiece(bool animateToBoard)
     {
         if (!selectedPiece)
             return;
@@ -2114,8 +2109,6 @@ public partial class ChessGame : MonoBehaviour
         ChessPiece pieceToDeselect = selectedPiece;
         selectedPiece = null;
         chessboard?.ClearLegalMoveHighlights();
-        if (releaseCameraLock)
-            CameraLockReleased?.Invoke();
 
         if (animateToBoard)
             AnimatePieceToTile(pieceToDeselect, pieceToDeselect.BoardPosition, 0f, selectAnimationDuration, 0f);
@@ -2136,7 +2129,6 @@ public partial class ChessGame : MonoBehaviour
         RefreshLocalInteractionState();
         AnimatePieceToTile(movingPiece, destination, 0f, moveAnimationDuration, moveArcHeight);
         yield return new WaitForSeconds(moveAnimationDuration);
-        CameraLockReleased?.Invoke();
         inputLocked = false;
         RefreshLocalInteractionState();
     }
@@ -2146,7 +2138,6 @@ public partial class ChessGame : MonoBehaviour
         inputLocked = true;
         AnimatePieceToTile(movingPiece, destination, 0f, moveAnimationDuration, moveArcHeight);
         yield return new WaitForSeconds(moveAnimationDuration);
-        CameraLockReleased?.Invoke();
         FinishGame(winner);
     }
 
@@ -2155,7 +2146,6 @@ public partial class ChessGame : MonoBehaviour
         inputLocked = true;
         AnimatePieceToTile(movingPiece, destination, 0f, moveAnimationDuration, moveArcHeight);
         yield return new WaitForSeconds(moveAnimationDuration);
-        CameraLockReleased?.Invoke();
         FinishDraw(reason);
     }
 
@@ -2545,22 +2535,6 @@ public partial class ChessGame : MonoBehaviour
             MoveCommitted?.Invoke(move);
 
         ClearPendingCommittedMove();
-    }
-
-    private float GetCameraLockHeightOffset(ChessPiece piece)
-    {
-        if (!piece)
-            return 0.75f;
-
-        Renderer[] renderers = piece.GetComponentsInChildren<Renderer>(true);
-        if (renderers.Length == 0)
-            return 0.75f;
-
-        Bounds bounds = renderers[0].bounds;
-        for (int i = 1; i < renderers.Length; i++)
-            bounds.Encapsulate(renderers[i].bounds);
-
-        return Mathf.Max(0.55f, bounds.size.y * 0.6f);
     }
 
     private void ClearPendingCommittedMove()

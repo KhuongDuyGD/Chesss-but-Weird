@@ -24,10 +24,15 @@ namespace ChessButWeird.Online
     }
     [Serializable, Preserve] public sealed class Loadout
     { public string itemId, code, unityAssetKey, type; }
+    [Serializable, Preserve] public sealed class RoomListing
+    {
+        public string roomId, code; public GameSettings settings;
+        public int memberCount, capacity; public DateTime expiresAt;
+    }
     [Serializable, Preserve] public sealed class Player
     {
         public string userId, username, displayName, color;
-        public int rating; public bool ready, connected; public DateTime? reconnectDeadline;
+        public int rating; public bool ready, connected, accepted; public DateTime? reconnectDeadline;
         public List<Loadout> loadout = new List<Loadout>();
     }
     [Serializable, Preserve] public sealed class Piece
@@ -46,6 +51,7 @@ namespace ChessButWeird.Online
         public long stateVersion, eventSequence;
         public int halfMoveClock, fullMoveNumber;
         public DateTime serverTime, readyDeadline;
+        public DateTime? acceptDeadline;
         public GameSettings settings;
         public List<Piece> board = new List<Piece>();
         public List<Player> players = new List<Player>();

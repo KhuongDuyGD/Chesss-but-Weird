@@ -1,329 +1,128 @@
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 
+// Retain the component name and script GUID used by existing scenes.
 [DisallowMultipleComponent]
+[RequireComponent(typeof(Camera))]
 public sealed class ChessOrbitCamera : MonoBehaviour
 {
-    [Header("Orbit")]
-    [SerializeField] private float rotationSpeed = 0.22f;
-    [SerializeField] private float zoomSpeed = 9f;
-    [SerializeField] private float minDistance = 2.35f;
-    [SerializeField] private float maxDistance = 28f;
-    [SerializeField] private float minPitch = 15f;
-    [SerializeField] private float maxPitch = 78f;
+    [Header("Fixed Board View")]
+    [SerializeField, Range(45f, 85f)] private float boardViewPitch = 65f;
+    [SerializeField, Min(1f)] private float framePadding = 1.12f;
+    [SerializeField, Min(0f)] private float pieceHeadroomInTiles = 1.5f;
 
-    [Header("Smoothing")]
-    [SerializeField] private float pivotSmoothTime = 0.12f;
-    [SerializeField] private float rotationSmoothTime = 0.08f;
-    [SerializeField] private float distanceSmoothTime = 0.10f;
-    [SerializeField] private float pivotSafeHeight = 0.9f;
-    [SerializeField] private bool allowPieceLock = true;
-    [SerializeField] private float gameplayDistance = 6.25f;
-    [SerializeField] private float gameplayPitch = 45f;
-    [SerializeField] private float gameplayYaw = 0f;
+    [Header("Mouse Wheel Zoom")]
+    [SerializeField, Range(.25f, 1f)] private float minimumZoom = .55f;
+    [SerializeField, Min(1f)] private float maximumZoom = 1.65f;
+    [SerializeField, Min(.01f)] private float zoomStep = .14f;
+    [SerializeField, Min(.01f)] private float zoomSmoothTime = .08f;
 
-    [Header("Pan")]
-    [SerializeField] private float panSensitivity = 0.0025f;
-
-    private ChessGame chessGame;
+    private Camera viewCamera;
     private Chessboard chessboard;
-    private Transform lockedTarget;
-    private ChessPiece lockedPiece;
+    private ChessGame chessGame;
     private Vector3 boardCenter;
     private Vector3 currentPivot;
-    private Vector3 pivotVelocity;
-    private float yaw;
-    private float targetYaw;
-    private float yawVelocity;
-    private float pitch;
-    private float targetPitch;
-    private float pitchVelocity;
-    private float currentDistance;
-    private float targetDistance;
-    private float distanceVelocity;
-    private float lockedHeightOffset;
-    private float baseYaw;
-    private float basePitch;
-    private float baseDistance;
-    private Vector3 freePivot;
-    private bool hasFreePivot;
-    private bool initialized;
+    private PieceTeam boardViewTeam = PieceTeam.White;
+    private float currentZoom = 1f, targetZoom = 1f, zoomVelocity;
 
     public Vector3 CurrentPivot => currentPivot;
     public Vector3 BoardCenter => boardCenter;
-    public Transform LockedTarget => lockedTarget;
 
-    private void Awake()
-    {
-        CacheReferences();
-        InitializeFromCurrentTransform();
-    }
-
-    private void OnEnable()
-    {
-        TrySubscribeToGame();
-    }
-
-    private void OnDisable()
-    {
-        UnsubscribeFromPiece();
-        UnsubscribeFromGame();
-    }
-
+    private void OnEnable() => FrameBoard();
     private void LateUpdate()
     {
-        CacheReferences();
-        if (!initialized)
-            InitializeFromCurrentTransform();
-
-        // Neu quan dang duoc khoa bi destroy, tra pivot ve tam ban de tranh loi null.
-        if (lockedTarget == null && (lockedPiece != null || lockedHeightOffset > 0f))
-            ReleaseLock();
-
-        HandleOrbitInput();
-        HandlePanInput();
         HandleZoomInput();
-
-        boardCenter = ResolveBoardCenter();
-        Vector3 targetPivot = ResolveTargetPivot();
-
-        // Smooth pivot giup thao tac chon quan lien tiep nhanh khong lam goc nhin bi giat.
-        currentPivot = Vector3.SmoothDamp(currentPivot, targetPivot, ref pivotVelocity, Mathf.Max(0.01f, pivotSmoothTime));
-        yaw = Mathf.SmoothDampAngle(yaw, targetYaw, ref yawVelocity, Mathf.Max(0.01f, rotationSmoothTime));
-        pitch = Mathf.SmoothDamp(pitch, targetPitch, ref pitchVelocity, Mathf.Max(0.01f, rotationSmoothTime));
-        currentDistance = Mathf.SmoothDamp(currentDistance, targetDistance, ref distanceVelocity, Mathf.Max(0.01f, distanceSmoothTime));
-
-        Quaternion rotation = Quaternion.Euler(pitch, yaw, 0f);
-        Vector3 desiredPosition = currentPivot - rotation * Vector3.forward * currentDistance;
-
-        float boardSurfaceY = chessboard ? chessboard.GetBoardSurfaceY() : boardCenter.y;
-        float minCameraY = boardSurfaceY + pivotSafeHeight;
-        if (desiredPosition.y < minCameraY)
-            desiredPosition.y = minCameraY;
-
-        transform.SetPositionAndRotation(desiredPosition, rotation);
-    }
-
-    public void LockOnPiece(Transform piece, float heightOffset = 0.9f)
-    {
-        if (!allowPieceLock || piece == null)
-            return;
-
-        if (lockedTarget == piece && Mathf.Approximately(lockedHeightOffset, heightOffset))
-            return;
-
-        UnsubscribeFromPiece();
-        lockedTarget = piece;
-        lockedHeightOffset = heightOffset;
-        lockedPiece = piece.GetComponent<ChessPiece>();
-        if (lockedPiece != null)
-            lockedPiece.Destroyed += HandleLockedPieceDestroyed;
-    }
-
-    public void ReleaseLock()
-    {
-        ReleaseLock(true);
-    }
-
-    private void ReleaseLock(bool preserveCurrentPivot)
-    {
-        UnsubscribeFromPiece();
-        lockedTarget = null;
-        lockedHeightOffset = 0f;
-
-        if (preserveCurrentPivot && initialized)
-        {
-            freePivot = currentPivot;
-            hasFreePivot = true;
-        }
-    }
-
-    public void SetAllowPieceLock(bool allowed)
-    {
-        allowPieceLock = allowed;
-        if (!allowPieceLock)
-            ReleaseLock(false);
+        currentZoom = Mathf.SmoothDamp(currentZoom, targetZoom, ref zoomVelocity,
+            Mathf.Max(.01f, zoomSmoothTime), Mathf.Infinity, Time.unscaledDeltaTime);
+        FrameBoard();
     }
 
     public void ResetToBoardView(bool immediate = false)
     {
-        ReleaseLock(false);
-        hasFreePivot = false;
-        targetYaw = baseYaw;
-        targetPitch = basePitch;
-        targetDistance = baseDistance;
-
-        if (immediate)
-            SnapRotationAndDistance();
+        boardViewTeam = PieceTeam.White;
+        ResetZoom(immediate);
     }
 
+    private void ResetZoom(bool immediate)
+    {
+        targetZoom = 1f;
+        if (immediate) { currentZoom = 1f; zoomVelocity = 0f; }
+        FrameBoard();
+    }
+
+    // Keep the assigned player's side at the bottom for the whole match.
+    // Turns and piece selection never change orientation; the wheel only zooms.
     public void ConfigureForPlayerSide(PieceTeam playerTeam, bool immediate = false)
     {
-        ReleaseLock(false);
-        hasFreePivot = false;
-        targetYaw = gameplayYaw;
-        targetPitch = Mathf.Clamp(gameplayPitch, minPitch, maxPitch);
-        targetDistance = Mathf.Clamp(gameplayDistance, minDistance, maxDistance);
-
-        if (immediate)
-            SnapRotationAndDistance();
-    }
-
-    private void CacheReferences()
-    {
-        if (!chessGame)
-            chessGame = FindAnyObjectByType<ChessGame>();
-        if (!chessboard)
-            chessboard = FindAnyObjectByType<Chessboard>();
-        if (chessGame)
-            TrySubscribeToGame();
-    }
-
-    private void InitializeFromCurrentTransform()
-    {
-        boardCenter = ResolveBoardCenter();
-        currentPivot = boardCenter;
-
-        Vector3 pivotToCamera = transform.position - currentPivot;
-        currentDistance = Mathf.Clamp(pivotToCamera.magnitude, minDistance, maxDistance);
-        targetDistance = currentDistance;
-
-        Vector3 planarDirection = Vector3.ProjectOnPlane(-pivotToCamera.normalized, Vector3.up);
-        if (planarDirection.sqrMagnitude < 0.0001f)
-            planarDirection = Vector3.forward;
-
-        yaw = Mathf.Atan2(planarDirection.x, planarDirection.z) * Mathf.Rad2Deg;
-        pitch = Mathf.Clamp(NormalizePitch(transform.eulerAngles.x), minPitch, maxPitch);
-        targetYaw = yaw;
-        targetPitch = pitch;
-        baseYaw = yaw;
-        basePitch = pitch;
-        baseDistance = currentDistance;
-        initialized = true;
-    }
-
-    private void TrySubscribeToGame()
-    {
-        if (!chessGame)
-            return;
-
-        chessGame.CameraLockRequested -= HandleCameraLockRequested;
-        chessGame.CameraLockReleased -= HandleCameraLockReleased;
-        chessGame.CameraLockRequested += HandleCameraLockRequested;
-        chessGame.CameraLockReleased += HandleCameraLockReleased;
-    }
-
-    private void UnsubscribeFromGame()
-    {
-        if (!chessGame)
-            return;
-
-        chessGame.CameraLockRequested -= HandleCameraLockRequested;
-        chessGame.CameraLockReleased -= HandleCameraLockReleased;
-    }
-
-    private void UnsubscribeFromPiece()
-    {
-        if (lockedPiece != null)
-            lockedPiece.Destroyed -= HandleLockedPieceDestroyed;
-
-        lockedPiece = null;
-    }
-
-    private void HandleOrbitInput()
-    {
-        Mouse mouse = Mouse.current;
-        if (mouse == null || !mouse.rightButton.isPressed)
-            return;
-
-        Vector2 delta = mouse.delta.ReadValue();
-        targetYaw += delta.x * rotationSpeed;
-        targetPitch = Mathf.Clamp(targetPitch - delta.y * rotationSpeed, minPitch, maxPitch);
-    }
-
-    private void HandlePanInput()
-    {
-        Mouse mouse = Mouse.current;
-        if (mouse == null || !mouse.middleButton.isPressed)
-            return;
-
-        Vector2 delta = mouse.delta.ReadValue();
-        if (delta.sqrMagnitude < 0.0001f)
-            return;
-
-        // Pan theo mat phang ban co, giong thao tac nam-va-keo camera trong game chien thuat.
-        // Khoang cach camera duoc tinh vao sensitivity de toc do keo van tu nhien khi zoom.
-        if (lockedTarget != null)
-            ReleaseLock(false);
-
-        if (!hasFreePivot)
-        {
-            freePivot = currentPivot;
-            hasFreePivot = true;
-        }
-
-        Vector3 screenRight = Vector3.ProjectOnPlane(transform.right, Vector3.up).normalized;
-        Vector3 screenUp = Vector3.ProjectOnPlane(transform.up, Vector3.up).normalized;
-        float scaledSensitivity = panSensitivity * Mathf.Max(1f, currentDistance);
-        freePivot -= (screenRight * delta.x + screenUp * delta.y) * scaledSensitivity;
+        boardViewTeam = playerTeam;
+        ResetZoom(immediate);
     }
 
     private void HandleZoomInput()
     {
-        Mouse mouse = Mouse.current;
-        if (mouse == null)
-            return;
-
-        float scrollValue = mouse.scroll.ReadValue().y;
-        if (Mathf.Abs(scrollValue) < 0.001f)
-            return;
-
-        targetDistance = Mathf.Clamp(targetDistance - scrollValue * zoomSpeed * 0.01f, minDistance, maxDistance);
+        if (!viewCamera || !viewCamera.enabled || !chessGame || !chessGame.GameStarted ||
+            chessGame.PauseLocked || Mouse.current == null) return;
+        // Let scrollable menus and the match journal handle their own wheel input.
+        if (EventSystem.current && EventSystem.current.IsPointerOverGameObject()) return;
+        float scroll = Mouse.current.scroll.ReadValue().y;
+        if (Mathf.Abs(scroll) < .001f) return;
+        // Windows reports 120 units per wheel notch; normalized devices report 1.
+        float steps = Mathf.Abs(scroll) <= 1f ? scroll : scroll / 120f;
+        targetZoom = Mathf.Clamp(targetZoom * Mathf.Exp(-steps * Mathf.Max(.01f, zoomStep)),
+            Mathf.Clamp(minimumZoom, .25f, 1f), Mathf.Max(1f, maximumZoom));
     }
 
-    private Vector3 ResolveBoardCenter()
+    private void FrameBoard()
     {
-        return chessboard ? chessboard.GetBoardCenterWorld() : Vector3.zero;
-    }
+        if (!viewCamera) viewCamera = GetComponent<Camera>();
+        if (!chessboard) chessboard = FindAnyObjectByType<Chessboard>();
+        if (!chessGame) chessGame = FindAnyObjectByType<ChessGame>();
+        if (!viewCamera || !viewCamera.enabled || !chessboard) return;
 
-    private Vector3 ResolveTargetPivot()
-    {
-        if (allowPieceLock && lockedTarget != null)
-            return lockedTarget.position + Vector3.up * lockedHeightOffset;
+        boardCenter = chessboard.GetBoardCenterWorld();
+        Vector3 origin = chessboard.GetTileCenterWorld(Vector2Int.zero);
+        Vector3 tileRight = chessboard.GetTileCenterWorld(Vector2Int.right) - origin;
+        Vector3 tileForward = chessboard.GetTileCenterWorld(Vector2Int.up) - origin;
+        Vector3 boardUp = Vector3.Cross(tileForward, tileRight).normalized;
+        if (boardUp.sqrMagnitude < .001f) return;
 
-        if (hasFreePivot)
-            return freePivot;
+        float tileScale = Mathf.Max(tileRight.magnitude, tileForward.magnitude);
+        Vector3 halfRight = tileRight * 4f;
+        Vector3 halfForward = tileForward * 4f;
+        Vector3 halfHeight = boardUp * tileScale * Mathf.Max(0f, pieceHeadroomInTiles) * .5f;
+        currentPivot = boardCenter + halfHeight;
+        Vector3 viewForward = boardViewTeam == PieceTeam.Black ? -tileForward.normalized : tileForward.normalized;
+        Quaternion rotation = Quaternion.LookRotation(viewForward, boardUp) *
+            Quaternion.Euler(Mathf.Clamp(boardViewPitch, 45f, 85f), 0f, 0f);
+        Quaternion inverseRotation = Quaternion.Inverse(rotation);
+        float halfWidth = 0f, halfViewHeight = 0f, halfDepth = 0f;
+        for (int x = -1; x <= 1; x += 2)
+            for (int z = -1; z <= 1; z += 2)
+                for (int y = -1; y <= 1; y += 2)
+                {
+                    Vector3 projected = inverseRotation * (halfRight * x + halfForward * z + halfHeight * y);
+                    halfWidth = Mathf.Max(halfWidth, Mathf.Abs(projected.x));
+                    halfViewHeight = Mathf.Max(halfViewHeight, Mathf.Abs(projected.y));
+                    halfDepth = Mathf.Max(halfDepth, Mathf.Abs(projected.z));
+                }
 
-        return boardCenter;
-    }
-
-    private void HandleCameraLockRequested(Transform pieceTransform, float heightOffset)
-    {
-        LockOnPiece(pieceTransform, heightOffset);
-    }
-
-    private void HandleCameraLockReleased()
-    {
-        ReleaseLock();
-    }
-
-    private void HandleLockedPieceDestroyed(ChessPiece _)
-    {
-        ReleaseLock();
-    }
-
-    private void SnapRotationAndDistance()
-    {
-        yaw = targetYaw;
-        pitch = targetPitch;
-        currentDistance = targetDistance;
-        yawVelocity = 0f;
-        pitchVelocity = 0f;
-        distanceVelocity = 0f;
-    }
-
-    private static float NormalizePitch(float rawPitch)
-    {
-        return rawPitch > 180f ? rawPitch - 360f : rawPitch;
+        // Leave space for the existing match HUD without letting its FOV changes
+        // alter this orthographic view. Narrow screens fit the full board horizontally.
+        float hudFraction = chessGame && chessGame.GameStarted ? (chessGame.IsAramGame ? .76f : .88f) : .94f;
+        float safeWidth = 1f, safeHeight = 1f;
+        if (Screen.width > 0 && Screen.height > 0 && Screen.safeArea.width > 0 && Screen.safeArea.height > 0)
+        {
+            safeWidth = Mathf.Clamp(Screen.safeArea.width / Screen.width, .1f, 1f);
+            safeHeight = Mathf.Clamp(Screen.safeArea.height / Screen.height, .1f, 1f);
+        }
+        float aspect = Mathf.Max(.1f, viewCamera.aspect);
+        viewCamera.orthographic = true;
+        viewCamera.orthographicSize = Mathf.Max(.01f,
+            Mathf.Max(halfViewHeight / safeHeight, halfWidth / (aspect * safeWidth)) *
+            Mathf.Max(1f, framePadding) * currentZoom / hudFraction);
+        float distance = Mathf.Max(tileScale * 10f, halfDepth + viewCamera.nearClipPlane + tileScale * 2f);
+        viewCamera.farClipPlane = Mathf.Max(viewCamera.farClipPlane, distance + halfDepth + tileScale * 2f);
+        transform.SetPositionAndRotation(currentPivot - rotation * Vector3.forward * distance, rotation);
     }
 }

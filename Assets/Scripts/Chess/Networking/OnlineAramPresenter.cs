@@ -25,7 +25,8 @@ internal sealed class OnlineAramPresenter : IDisposable
     private ChessOrbitCamera orbit;
     private Vector3 savedPosition;
     private Quaternion savedRotation;
-    private bool aiming, savedOrbitEnabled;
+    private bool aiming, savedOrbitEnabled, savedOrthographic;
+    private float savedOrthographicSize, savedFieldOfView, savedNearClipPlane;
     private readonly Dictionary<Renderer, bool> hiddenShooter = new Dictionary<Renderer, bool>();
     private float yaw, pitch;
 
@@ -227,7 +228,10 @@ internal sealed class OnlineAramPresenter : IDisposable
             if (!camera) return;
             orbit = camera.GetComponent<ChessOrbitCamera>();
             savedPosition = camera.transform.position; savedRotation = camera.transform.rotation;
+            savedOrthographic = camera.orthographic; savedOrthographicSize = camera.orthographicSize;
+            savedFieldOfView = camera.fieldOfView; savedNearClipPlane = camera.nearClipPlane;
             savedOrbitEnabled = orbit && orbit.enabled; if (orbit) orbit.enabled = false;
+            camera.orthographic = false; camera.fieldOfView = 60f; camera.nearClipPlane = .03f;
             var shooter = state.board.FirstOrDefault(p => p.team == team && p.kind == "King");
             var view = shooter == null ? null : game.OnlinePieceView(shooter.id);
             if (view)
@@ -254,7 +258,12 @@ internal sealed class OnlineAramPresenter : IDisposable
     {
         foreach (var renderer in hiddenShooter) if (renderer.Key) renderer.Key.enabled = renderer.Value;
         hiddenShooter.Clear();
-        if (camera) { camera.transform.SetPositionAndRotation(savedPosition, savedRotation); }
+        if (camera)
+        {
+            camera.transform.SetPositionAndRotation(savedPosition, savedRotation);
+            camera.orthographic = savedOrthographic; camera.orthographicSize = savedOrthographicSize;
+            camera.fieldOfView = savedFieldOfView; camera.nearClipPlane = savedNearClipPlane;
+        }
         if (orbit) orbit.enabled = savedOrbitEnabled;
         aiming = false;
     }

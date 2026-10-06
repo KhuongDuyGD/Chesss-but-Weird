@@ -281,14 +281,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
 
     public void ShowMultiplayerModeSelection()
     {
-        if (!RequireAccountAccess("Multiplayer")) return;
-        GameMusicManager.PlayMainMenuHubMusic();
-
-        showCheckWarning = false;
-        lanController?.HideLanSetup();
-        state = ScreenState.TurnSelection;
-        analysisBoard?.SetVisible(false);
-        handDrawnMenu?.ShowMultiplayerModeSelection();
+        ShowOnlineSetup();
     }
 
     public void ShowLanSetup()
