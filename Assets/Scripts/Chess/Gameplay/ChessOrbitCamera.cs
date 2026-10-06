@@ -109,7 +109,7 @@ public sealed class ChessOrbitCamera : MonoBehaviour
 
         // Leave space for the existing match HUD without letting its FOV changes
         // alter this orthographic view. Narrow screens fit the full board horizontally.
-        float hudFraction = chessGame && chessGame.GameStarted ? (chessGame.IsAramGame ? .76f : .88f) : .94f;
+        float hudFraction = chessGame && chessGame.GameStarted ? (chessGame.IsAramGame || chessGame.UsesDotNetOnline ? .76f : .88f) : .94f;
         float safeWidth = 1f, safeHeight = 1f;
         if (Screen.width > 0 && Screen.height > 0 && Screen.safeArea.width > 0 && Screen.safeArea.height > 0)
         {

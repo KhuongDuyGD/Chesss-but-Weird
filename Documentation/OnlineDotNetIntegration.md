@@ -78,6 +78,10 @@ is a source compilation check; live integration and gameplay remain manual.
   It uses SketchbookUI and MenuDesignFrame for shared styling and safe-area fit.
 - `ChessLanController.Flow.cs`: navigation, paginated room data, inventory
   selection, elapsed search time, acceptance countdown and automatic readiness.
+- `ChessLanController.Hud.cs`: paper-style match toolbar for Offer Draw, Claim
+  Draw, Resign, draw replies, Ready, rematch and uncertain-command recovery.
+  Only the toolbar rectangle intercepts UI clicks; its full-screen canvas has
+  no blocking Graphic. The old default IMGUI match/debug box is removed.
 - `ChessGame.Online.cs`: canonical board coordinates, server piece IDs,
   snapshot presentation, advisory move highlights, promotion commands and
   canonical ARAM hitboxes. Online moves do not mutate the board optimistically.
@@ -92,6 +96,20 @@ The backend owns legality, RNG, clocks, outcomes, rewards and Elo. The client
 uses snapshots to create/remove/promote/change the side of pieces. It does not
 start the local ARAM runtime for online play. Move highlights are advisory;
 the server validates every move and ability.
+
+Online picking includes Default-layer cosmetic colliders when the project lacks
+the ChessPiece layer, filters out arena decorations, and resolves the closest
+current server piece or board tile. If a tile is hit, its occupying piece can be
+selected too. The ray distance also covers the gameplay camera's far clip plane.
+This preserves selection under the fixed camera and imported cosmetic sets.
+Turn/phase/connection checks still apply: only the assigned player's pieces can
+move on their own turn in an InProgress match. The toolbar explains those states.
+
+Server clocks appear inside the existing White/Black player cards. The journal
+and camera framing leave room for the bottom toolbar. Pending draw offers switch
+the toolbar to Accept Draw / Decline Draw; Claim Draw is Classic-only and on the
+local player's turn. AwaitingReady snapshots are refreshed periodically after
+the lobby closes, so a delayed start notification can recover.
 
 REST and SignalR share `ApiClient`'s refresh gate. The hub reconnects with the
 current JWT when disconnected or near expiry. Input remains locked during

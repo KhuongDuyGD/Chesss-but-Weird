@@ -12,7 +12,7 @@ public partial class ChessGame
     public bool IsNetworkGame => serverAuthoritativeMode;
     public string StatisticsConnectionState => turnSelectionUI ? turnSelectionUI.MatchConnectionState : "Disconnected";
     public bool StatisticsTimeKnown => statisticsTimeKnown;
-    public float StatisticsHudBottom => aramMode && aramCoordinator != null && aramCoordinator.Runtime && aramCoordinator.IsActive && !UsesDotNetOnline
+    public float StatisticsHudBottom => UsesDotNetOnline ? 110f : aramMode && aramCoordinator != null && aramCoordinator.Runtime && aramCoordinator.IsActive
         ? aramCoordinator.Runtime.StatisticsHudBottom : 0;
     public bool IsCurrentTeamChecked => checkedKing != null;
     public bool StatisticsBuffsVisible(PieceTeam team) => aramMode && aramCoordinator != null && aramCoordinator.Runtime &&

@@ -26,6 +26,7 @@ public sealed class AnalysisBoardView : MonoBehaviour
     private int lastRevision=-1;
     private float nextRefresh,lastBottom;
     private bool lastAram;
+    private bool lastOnline;
     private Vector2 lastSize;
     private string preferenceMode;
     private TextMeshProUGUI whiteMoves,blackMoves,whiteBuff,blackBuff;
@@ -66,7 +67,7 @@ public sealed class AnalysisBoardView : MonoBehaviour
     {
         if(!visible||!game||activeInstance!=this)return;
         bool modeChanged=LoadPreference();
-        if(modeChanged||root.rect.size!=lastSize||lastBottom!=game.StatisticsHudBottom||lastAram!=game.IsAramGame)Layout();
+        if(modeChanged||root.rect.size!=lastSize||lastBottom!=game.StatisticsHudBottom||lastAram!=game.IsAramGame||lastOnline!=game.UsesDotNetOnline)Layout();
         if(Time.unscaledTime<nextRefresh)return;nextRefresh=Time.unscaledTime+.1f;Refresh();
     }
     private void Build()
@@ -150,16 +151,19 @@ public sealed class AnalysisBoardView : MonoBehaviour
     private void Layout()
     {
         Canvas.ForceUpdateCanvases();lastSize=root.rect.size;float width=Mathf.Min(620,lastSize.x-410),card=(width-10)/2;
-        MatchHudStyle.Place(top,new Vector2(0,1),new Vector2(width,42),new Vector2(20+width/2,-30));
-        MatchHudStyle.Place(whiteCard,new Vector2(0,.5f),new Vector2(card,42),new Vector2(card/2,0));
-        MatchHudStyle.Place(blackCard,new Vector2(1,.5f),new Vector2(card,42),new Vector2(-card/2,0));
+        float cardHeight=game.UsesDotNetOnline?64:42;
+        MatchHudStyle.Place(top,new Vector2(0,1),new Vector2(width,cardHeight),new Vector2(20+width/2,-10-cardHeight/2));
+        MatchHudStyle.Place(whiteCard,new Vector2(0,.5f),new Vector2(card,cardHeight),new Vector2(card/2,0));
+        MatchHudStyle.Place(blackCard,new Vector2(1,.5f),new Vector2(card,cardHeight),new Vector2(-card/2,0));
         whiteName.rectTransform.sizeDelta=blackName.rectTransform.sizeDelta=new Vector2(card-24,32);
         whiteState.rectTransform.sizeDelta=blackState.rectTransform.sizeDelta=new Vector2(card-32,27);
+        whiteName.rectTransform.anchoredPosition=blackName.rectTransform.anchoredPosition=new Vector2(0,game.UsesDotNetOnline?12:0);
+        whiteState.gameObject.SetActive(game.UsesDotNetOnline);blackState.gameObject.SetActive(game.UsesDotNetOnline);
         statusRect.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal,Mathf.Min(660,lastSize.x-40));
         float jw=Mathf.Min(410,lastSize.x-40),bottom=Mathf.Max(20,game.StatisticsHudBottom+12);
         float start=game.IsAramGame?138:58,jh=Mathf.Max(190,Mathf.Min(650,lastSize.y-start-bottom));
         MatchHudStyle.Place(journal,Vector2.one,new Vector2(jw,jh),new Vector2(-20-jw/2,-start-jh/2));ApplyPanels();
-        lastBottom=game.StatisticsHudBottom;lastAram=game.IsAramGame;
+        lastBottom=game.StatisticsHudBottom;lastAram=game.IsAramGame;lastOnline=game.UsesDotNetOnline;
         if(!cameraOwner){cameraOwner=Camera.main;cameraCaptured=false;}
         if(cameraOwner)
         {
@@ -177,7 +181,7 @@ public sealed class AnalysisBoardView : MonoBehaviour
         top.gameObject.SetActive(!focus);journal.gameObject.SetActive(expanded);
         buffSummary.gameObject.SetActive(game.IsAramGame);
         float statusWidth=Mathf.Min(620,lastSize.x-410);
-        MatchHudStyle.Place(statusRect,new Vector2(0,1),new Vector2(statusWidth,36),new Vector2(20+statusWidth/2,focus?-30:-72));
+        MatchHudStyle.Place(statusRect,new Vector2(0,1),new Vector2(statusWidth,36),new Vector2(20+statusWidth/2,focus?-30:game.UsesDotNetOnline?-100:-72));
         MatchHudStyle.Place(controls,Vector2.one,new Vector2(330,38),new Vector2(-185,-30));
         ((RectTransform)journalButton.transform).SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical,38);
         ((RectTransform)focusButton.transform).SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical,38);
@@ -195,11 +199,13 @@ public sealed class AnalysisBoardView : MonoBehaviour
     {
         if(!game||!history)return;whiteName.text="WHITE · "+game.StatisticsPlayerName(PieceTeam.White);blackName.text="BLACK · "+game.StatisticsPlayerName(PieceTeam.Black);
         bool ended=game.GameOver;
-        whiteState.text=TurnLabel(PieceTeam.White,ended);blackState.text=TurnLabel(PieceTeam.Black,ended);
+        whiteState.text=game.UsesDotNetOnline?game.OnlineClockLabel(PieceTeam.White):TurnLabel(PieceTeam.White,ended);
+        blackState.text=game.UsesDotNetOnline?game.OnlineClockLabel(PieceTeam.Black):TurnLabel(PieceTeam.Black,ended);
         MatchHudStyle.Highlight(whiteCard,!ended&&game.CurrentTurn==PieceTeam.White);
         MatchHudStyle.Highlight(blackCard,!ended&&game.CurrentTurn==PieceTeam.Black);
         string state=ended?(game.Status==ChessGame.ChessGameStatus.Draw?"Draw · "+game.DrawReason:game.WinningTeam+" wins"):
             game.PauseLocked?"Paused":game.HasPendingPromotion?"Choose promotion":game.IsCurrentTeamChecked?"CHECK · "+game.CurrentTurn+" King":game.CurrentTurn+" to move";
+        if(!ended&&game.OnlineMatchPhase=="AwaitingReady")state="Waiting for players to finish loading/setup";
         status.text=game.StatisticsMode+" · "+state+(game.IsNetworkGame?" · "+game.StatisticsConnectionState:"");
         elapsed.text=game.StatisticsTimeKnown?"Elapsed · "+TimeLabel(game.MatchElapsedSeconds):"Time unavailable";
         if(game.IsAramGame)RefreshBuffSummary();

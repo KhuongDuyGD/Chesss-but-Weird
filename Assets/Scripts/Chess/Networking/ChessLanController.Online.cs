@@ -63,6 +63,7 @@ public partial class ChessLanController
     {
         UpdateOnlineFlow();
         lobbyUi?.Refresh();
+        matchHud?.Refresh();
         if (online == null || leaving) return;
         if (online.State?.IsActive == true && online.State.matchId != presentedMatchId && !LoadingManager.For(chessGame).IsBusy)
             HandleState(online.State);
@@ -72,7 +73,7 @@ public partial class ChessLanController
         bool expired = online.NeedsTokenRenewal || (DateTimeOffset.TryParse(AuthStorage.AccessTokenExpiresAt, out var expiry) && expiry <= DateTimeOffset.UtcNow.AddSeconds(5));
         if ((!online.Connected || expired) && !reconnecting && Time.unscaledTime >= nextReconnectAt && PlayerAuthService.CanUseOnlineFeatures)
             _ = ReconnectAsync(expired);
-        if (showLanPanel && online.Connected && !requestInFlight && !reconnecting && Time.unscaledTime >= nextPollAt)
+        if ((showLanPanel || online.State?.status == "AwaitingReady") && online.Connected && !requestInFlight && !reconnecting && Time.unscaledTime >= nextPollAt)
         { nextPollAt = Time.unscaledTime + 8; Run(async () => { await online.RefreshAsync(); if (menuPage == OnlineMenuPage.FindRoom && lobbyUi?.IsCodeFocused != true) await LoadRoomListAsync(); }); }
         chessGame?.SetOnlineInputAvailable(CanSendOnlineCommand);
     }
@@ -105,7 +106,7 @@ public partial class ChessLanController
             chessGame.OnlinePointerBlocked = null;
             chessGame.ReturnedToMainMenu -= HandleReturnedToMainMenu;
         }
-        online?.Dispose(); aramPresenter?.Dispose(); lobbyUi?.Destroy();
+        online?.Dispose(); aramPresenter?.Dispose(); lobbyUi?.Destroy(); matchHud?.Destroy();
     }
     public void ShowLanSetup() => ShowLobby(NetworkLobbyUiMode.Lan, "Classic");
     public void ShowMultiplayerSetup() => ShowLobby(NetworkLobbyUiMode.Multiplayer, "Classic");
@@ -131,6 +132,7 @@ public partial class ChessLanController
         requestInFlight = reconnecting = leaving = commandBusy = false;
         OpponentPauseChanged?.Invoke(false, string.Empty);
         recentMatches.Clear(); roomCodeInput = ""; HideLanSetup();
+        matchHud?.Hide();
         statusMessage = authenticated ? "Online play is ready." : "Sign in to play online.";
     }
     private GameSettings Settings() => new GameSettings { mode = requestedGameMode, region = onlineRegion,
@@ -233,6 +235,7 @@ public partial class ChessLanController
     });
     private void HandleReturnedToMainMenu()
     {
+        matchHud?.Hide();
         aramPresenter?.Dispose(); aramPresenter = null; presentedMatchId = null;
         if (!leaving && online?.State?.IsActive == true) Run(async () => await online.LeaveAsync());
         online?.ForgetFinishedMatch();
@@ -258,7 +261,7 @@ public partial class ChessLanController
     internal bool BlocksOnlineBoardPointer(Vector2 screen)
     {
         var point = new Vector2(screen.x, Screen.height - screen.y) / GetGuiScale();
-        return new Rect(20, 12, 560, 230).Contains(point) || aramPresenter?.ContainsPointer(point) == true;
+        return aramPresenter?.ContainsPointer(point) == true;
     }
     internal void SendAbility(AbilityCommand command) => Run(async () => { await online.AbilityAsync(command); });
     private void HandleState(MatchState state)
@@ -292,6 +295,8 @@ public partial class ChessLanController
         }
         else chessGame.ApplyDotNetState(state);
         HideLanSetup();
+        if (matchHud == null) matchHud = new OnlineMatchHud(this);
+        matchHud.Refresh();
         if (state.aram != null)
         {
             if (aramPresenter == null) aramPresenter = new OnlineAramPresenter(this, chessGame);
@@ -413,56 +418,15 @@ public partial class ChessLanController
     private static bool IsAramGameMode(string mode) => string.Equals(mode, "Aram", StringComparison.OrdinalIgnoreCase);
     private static string NormalizeRoomCode(string value) => new string((value ?? "").Trim().ToUpperInvariant().Where(char.IsLetterOrDigit).Take(8).ToArray());
     private static string ToSquare(Vector2Int square) => ((char)('a' + square.x)).ToString() + (square.y + 1);
+    // ARAM targeting remains in its presenter; match actions use the paper UGUI HUD.
     private void OnGUI()
     {
-        if (online?.State == null || presentedMatchId != online.State.matchId) return;
+        if (aramPresenter == null || online?.State?.aram == null || presentedMatchId != online.State.matchId || chessGame.PauseLocked) return;
         var before = GUI.matrix; GUI.matrix = Matrix4x4.Scale(Vector3.one * GetGuiScale());
-        try
-        {
-            var state = online.State;
-            GUILayout.BeginArea(new Rect(20, 12, 560, 230), GUI.skin.box);
-            GUILayout.Label($"{state.settings.mode} | {MatchConnectionState} | {statusMessage}");
-            double elapsed = Math.Max(0, (DateTime.UtcNow - lastStateReceivedAt).TotalMilliseconds);
-            double white = state.clocks.whiteMilliseconds - (state.clocks.runningColor == "White" ? elapsed : 0);
-            double black = state.clocks.blackMilliseconds - (state.clocks.runningColor == "Black" ? elapsed : 0);
-            GUILayout.Label($"White {Clock(white)}    Black {Clock(black)}");
-            var opponent = state.players.FirstOrDefault(p => p.userId != PlayerAuthService.UserId);
-            if (opponent != null && !opponent.connected) GUILayout.Label("Opponent disconnected. Server clock and reconnect grace continue.");
-            GUI.enabled = CanSendOnlineCommand;
-            if (state.status == "AwaitingReady" && GUILayout.Button("Ready - confirm loading")) RequestReady();
-            if (state.status == "InProgress")
-            {
-                GUILayout.BeginHorizontal();
-                if (GUILayout.Button("Offer draw")) Run(async () => await online.OfferDrawAsync());
-                if (state.aram == null && GUILayout.Button("Claim draw")) Run(async () => await online.ClaimDrawAsync());
-                if (GUILayout.Button("Resign")) Run(async () => await online.ResignAsync());
-                GUILayout.EndHorizontal();
-                if (state.drawOffer != null && state.drawOffer.userId != PlayerAuthService.UserId)
-                {
-                    GUILayout.Label("Opponent offers a draw."); GUILayout.BeginHorizontal();
-                    if (GUILayout.Button("Accept")) Run(async () => await online.RespondDrawAsync(true));
-                    if (GUILayout.Button("Decline")) Run(async () => await online.RespondDrawAsync(false));
-                    GUILayout.EndHorizontal();
-                }
-            }
-            if (state.status == "Finished")
-            {
-                var reward = state.result?.players.FirstOrDefault(p => p.userId == PlayerAuthService.UserId);
-                if (reward != null) GUILayout.Label($"Server reward: {reward.golds} Gold, {reward.diamonds} Diamonds, {reward.tickets} Tickets | Elo {reward.ratingChange:+0;-0;0}");
-                GUILayout.BeginHorizontal();
-                if (GUILayout.Button("Request rematch")) RequestRematch();
-                if (GUILayout.Button("Accept rematch")) Run(async () => await online.RematchAsync(true));
-                if (GUILayout.Button("Decline rematch")) Run(async () => await online.RematchAsync(false));
-                GUILayout.EndHorizontal();
-            }
-            GUI.enabled = online.Connected && !requestInFlight && !commandBusy;
-            if (online.HasPendingCommand && GUILayout.Button("Recover previous command")) Run(async () => await online.RetryPendingAsync());
-            GUI.enabled = true; GUILayout.EndArea();
-            aramPresenter?.Draw();
-        }
+        try { aramPresenter.Draw(); }
         finally { GUI.enabled = true; GUI.matrix = before; }
     }
     private DateTime lastStateReceivedAt;
     internal static float OnlineGuiScale => GetGuiScale();
-    private static string Clock(double milliseconds) => TimeSpan.FromMilliseconds(Math.Max(0, milliseconds)).ToString(@"mm\:ss");
+
 }

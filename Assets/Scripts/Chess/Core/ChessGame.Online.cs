@@ -15,6 +15,19 @@ public partial class ChessGame
     public Func<Vector2, bool> OnlinePointerBlocked;
     public bool UsesDotNetOnline => dotNetState != null;
     private bool onlinePromotionPending;
+    private float dotNetSnapshotReceivedAt;
+    public string OnlineMatchPhase => dotNetState?.status;
+
+    public string OnlineClockLabel(PieceTeam team)
+    {
+        var clocks = dotNetState?.clocks;
+        if (clocks == null) return "--:--";
+        double milliseconds = team == PieceTeam.White ? clocks.whiteMilliseconds : clocks.blackMilliseconds;
+        if (dotNetState.status == "InProgress" && clocks.runningColor == team.ToString())
+            milliseconds -= Math.Max(0, Time.realtimeSinceStartup - dotNetSnapshotReceivedAt) * 1000;
+        int seconds = (int)Math.Ceiling(Math.Max(0, milliseconds) / 1000);
+        return $"{seconds / 60:00}:{seconds % 60:00}";
+    }
 
     private void ResetDotNetPresentation()
     { dotNetState = null; dotNetPieces.Clear(); onlinePromotionPending = false; }
@@ -39,6 +52,7 @@ public partial class ChessGame
         bool changed = dotNetState == null || !SameBoard(dotNetState, state);
         bool turnChanged = dotNetState == null || dotNetState.turn != state.turn || dotNetState.status != state.status;
         dotNetState = state;
+        dotNetSnapshotReceivedAt = Time.realtimeSinceStartup;
         if (changed)
         {
             StopCheckWarning(); ClearSelection(); pieceAnimator?.CancelAll(); ClearPieceMap();
@@ -121,11 +135,8 @@ public partial class ChessGame
         if (OnlinePointerBlocked?.Invoke(Mouse.current.position.ReadValue()) == true) return;
         var camera = GetGameplayCamera(); if (!camera) return;
         var ray = camera.ScreenPointToRay(Mouse.current.position.ReadValue());
-        if (!Physics.Raycast(ray, out var hit, BoardClickRaycastDistance, boardClickRaycastMask)) { ClearSelection(); return; }
-        var clicked = hit.collider.GetComponentInParent<ChessPiece>();
-        Vector2Int square;
-        if (clicked) square = clicked.BoardPosition;
-        else if (!chessboard.TryGetTileFromObject(hit.collider.gameObject, out square)) return;
+        if (!TryPickOnlineBoard(ray, Mathf.Max(BoardClickRaycastDistance, camera.farClipPlane), out var square, out var clicked))
+        { ClearSelection(); return; }
         if (OnlineBoardClicked?.Invoke(square, clicked ? OnlinePieceId(clicked) : null) == true) return;
         if (inputLocked || currentTurn != localControlledTeam) return;
         if (selectedPiece && clicked != selectedPiece)
@@ -136,6 +147,30 @@ public partial class ChessGame
         }
         if (clicked && clicked.Team == currentTurn) TrySelectPiece(clicked);
         else if (selectedPiece) TryMoveSelectedPiece(square);
+    }
+    private bool TryPickOnlineBoard(Ray ray, float distance, out Vector2Int square, out ChessPiece clicked)
+    {
+        square = default; clicked = null; bool found = false; float nearest = float.PositiveInfinity;
+        // A missing ChessPiece layer leaves imported cosmetic colliders on Default.
+        // Filter hits by actual server views/tiles so arena decorations cannot steal a click.
+        int mask = boardClickRaycastMask | LayerMask.GetMask("Default");
+        foreach (var hit in Physics.RaycastAll(ray, distance, mask, QueryTriggerInteraction.Ignore))
+        {
+            if (hit.distance >= nearest) continue;
+            var piece = hit.collider.GetComponentInParent<ChessPiece>();
+            Vector2Int tile;
+            if (piece)
+            {
+                if (!dotNetPieces.Values.Contains(piece)) continue;
+                tile = piece.BoardPosition;
+            }
+            else if (!chessboard.TryGetTileFromObject(hit.collider.gameObject, out tile)) continue;
+            nearest = hit.distance; square = tile; clicked = piece; found = true;
+        }
+        // Clicking a visible tile still selects its occupying piece if a cosmetic
+        // collider is absent or excluded by a custom layer.
+        if (found && !clicked) clicked = pieces[square.x, square.y];
+        return found;
     }
     private bool RequestDotNetMove(ChessPiece piece, Vector2Int destination)
     {
