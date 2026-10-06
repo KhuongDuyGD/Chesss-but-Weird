@@ -20,21 +20,17 @@ public sealed partial class AramBuffRuntime : MonoBehaviour
     private readonly List<AramBuffDefinition>[] displayBuffs = { new List<AramBuffDefinition>(), new List<AramBuffDefinition>() };
     private readonly System.Random presentationRandom = new System.Random();
     // Keep one registry for movement, attack queries, and hypothetical king-safety moves.
-    // Local games use the document rules; network games retain the server's V1 contract.
+    // Local games use the document rules. Online games use server snapshots.
     private readonly AramRules domainRules = AramRules.BuiltIn;
     private ChessGame game;
     private AramBuffDraftView draftView;
     private AramTargetTask currentTargetTask;
     private AramTargetKind currentTargetKind;
     private bool active;
-    private bool networkMatch;
-    private PieceTeam visibleTeam = PieceTeam.White;
-    private BackendAramStatePayload lastNetworkState;
 
     public bool IsActive => active;
-    public bool IsNetworkMatch => active && networkMatch;
     public bool IsSelectingSetupTargets => active && currentTargetKind != AramTargetKind.None;
-    internal AramRules DomainRules => networkMatch ? AramRules.LegacyV1 : domainRules;
+    internal AramRules DomainRules => domainRules;
 
     public IReadOnlyList<AramBuffDefinition> GetBuffs(PieceTeam team)
     {
@@ -42,11 +38,10 @@ public sealed partial class AramBuffRuntime : MonoBehaviour
     }
 
     public bool DisguisesBuff(PieceTeam team, PieceTeam viewer) =>
-        active && !networkMatch && team != viewer && HasBuff(team, AramBuffId.Doppelganger);
+        active && team != viewer && HasBuff(team, AramBuffId.Doppelganger);
 
     public IReadOnlyList<AramBuffDefinition> GetDisplayBuffs(PieceTeam team, PieceTeam viewer)
     {
-        if (networkMatch && team != visibleTeam) return Array.Empty<AramBuffDefinition>();
         var actual = GetBuffs(team);
         if (!DisguisesBuff(team, viewer)) return actual;
         int side = Side(team);
@@ -67,8 +62,6 @@ public sealed partial class AramBuffRuntime : MonoBehaviour
     {
         game = owner;
         active = true;
-        networkMatch = false;
-        lastNetworkState = null;
         ResetExtendedState();
         whiteState.Reset();
         blackState.Reset();
@@ -81,47 +74,10 @@ public sealed partial class AramBuffRuntime : MonoBehaviour
         draftView.ShowPracticeRoll(whiteOptions, blackOptions, HandleDraftCompleted);
     }
 
-    public void BeginNetworkMatch(ChessGame owner, PieceTeam localTeam, string seed, BackendAramStatePayload serverState)
-    {
-        game = owner;
-        active = true;
-        networkMatch = true;
-        ResetExtendedState();
-        visibleTeam = localTeam;
-        lastNetworkState = serverState;
-        whiteState.Reset();
-        blackState.Reset();
-        draftPool.Clear();
-        draftPool.AddRange(AramBuffLibrary.CreateBuiltInDefinitions());
-        for (int i = draftPool.Count - 1; i >= 0; i--)
-            if ((int)draftPool[i].Id > 5) { Destroy(draftPool[i]); draftPool.RemoveAt(i); }
-        foreach(var definition in draftPool)
-        {
-            string description = definition.Description;
-            if(definition.Id==AramBuffId.FreestyleLeap) description="Online rules: Knights gain additional two-by-two diagonal jumps.";
-            if(definition.Id==AramBuffId.StrongFortress) description="Online rules: Castle out of or through check. Both pieces must be unmoved and the destination safe.";
-            if(definition.Id==AramBuffId.Doppelganger) description="Online rules: One selected Knight and Bishop permanently exchange movement.";
-            if(definition.Id==AramBuffId.SuicideBomber) description="Online rules: The original Queen explodes once when captured. Kings and the capturer are immune.";
-            definition.Configure(definition.Id,definition.Tier,definition.DisplayName,definition.ShortName,description,definition.AccentColor);
-        }
-        EnsureDraftView();
-
-        if (serverState != null)
-            ApplyNetworkState(serverState);
-        else
-            BuildDeterministicNetworkState(seed);
-
-        game?.SetAramInputLocked(false);
-        ShowCurrentHud();
-        EnsureActionView();
-    }
-
     public void EndMatch()
     {
         ResetExtendedState();
         active = false;
-        networkMatch = false;
-        lastNetworkState = null;
         currentTargetKind = AramTargetKind.None;
         targetTasks.Clear();
         pendingTargetPieces.Clear();
@@ -138,8 +94,7 @@ public sealed partial class AramBuffRuntime : MonoBehaviour
             return;
 
         GetState(team).TickTurnCooldowns();
-        if (!networkMatch) BeginExtendedTurn(team);
-        ShowCurrentHud();
+        BeginExtendedTurn(team);
     }
 
     public bool HasBuff(PieceTeam team, AramBuffId id)
@@ -215,7 +170,7 @@ public sealed partial class AramBuffRuntime : MonoBehaviour
             return;
 
         AramTeamState state = GetState(piece.Team);
-        if(!networkMatch&&piece.Type==PieceType.King&&from.y==destination.y&&Mathf.Abs(destination.x-from.x)>=2&&
+        if(piece.Type==PieceType.King&&from.y==destination.y&&Mathf.Abs(destination.x-from.x)>=2&&
             (destination.x==2||destination.x==6)&&HasBuff(piece.Team,AramBuffId.StrongFortress))castledWings[Side(piece.Team)]|=destination.x==6?1:2;
         if (!state.HasBuff(AramBuffId.FlyingThunderGod) || piece != state.OriginalQueen)
             return;
@@ -242,20 +197,19 @@ public sealed partial class AramBuffRuntime : MonoBehaviour
             for (int y = center.y - 1; y <= center.y + 1; y++)
             {
                 Vector2Int position = new Vector2Int(x, y);
-                if (!ChessMoveRules.IsInsideBoard(position) || (networkMatch && position == center))
+                if (!ChessMoveRules.IsInsideBoard(position))
                     continue;
 
                 ChessPiece victim = board[x, y];
                 if (!SuicideBomberBuff.IsVictim(UnityBoardAdapter.ToState(victim),
                     UnityBoardAdapter.ToState(movingPiece).Id, UnityBoardAdapter.ToSquare(center),
-                    UnityBoardAdapter.ToSquare(position), networkMatch) || victims.Contains(victim))
+                    UnityBoardAdapter.ToSquare(position)) || victims.Contains(victim))
                     continue;
 
                 victims.Add(victim);
             }
 
-        if (!networkMatch || capturedPiece.Team == visibleTeam)
-            draftView?.ShowBuffToast(capturedPiece.Team, "Suicide Bomber detonated", state.GetBuff(AramBuffId.SuicideBomber));
+        draftView?.ShowBuffToast(capturedPiece.Team, "Suicide Bomber detonated", state.GetBuff(AramBuffId.SuicideBomber));
         return true;
     }
 
@@ -299,187 +253,13 @@ public sealed partial class AramBuffRuntime : MonoBehaviour
         }
     }
 
-    public void ApplyNetworkState(BackendAramStatePayload serverState)
-    {
-        if (!active || !networkMatch || serverState == null)
-            return;
-
-        lastNetworkState = serverState;
-        ApplyNetworkTeamState(whiteState, serverState.white);
-        ApplyNetworkTeamState(blackState, serverState.black);
-        ApplyAllMarkers();
-        ShowCurrentHud();
-    }
-
-    public BackendAramStatePayload CaptureNetworkState()
-    {
-        if (!active || !networkMatch)
-            return null;
-
-        return new BackendAramStatePayload
-        {
-            version = lastNetworkState != null ? lastNetworkState.version : 1,
-            seed = lastNetworkState != null ? lastNetworkState.seed : string.Empty,
-            white = CaptureTeamState(whiteState),
-            black = CaptureTeamState(blackState)
-        };
-    }
-
-    private static BackendAramTeamStatePayload CaptureTeamState(AramTeamState state)
-    {
-        BackendAramTeamStatePayload payload = new BackendAramTeamStatePayload
-        {
-            team = state.Team.ToString().ToUpperInvariant(),
-            buff = state.Buffs.Count > 0 && state.Buffs[0] ? state.Buffs[0].Id.ToString() : string.Empty,
-            commandantPawns = new List<string>(),
-            swappedKnight = ToSquare(state.SwappedKnight),
-            swappedBishop = ToSquare(state.SwappedBishop),
-            originalQueen = ToSquare(state.OriginalQueen),
-            suicideBomberUsed = state.SuicideBomberUsed,
-            queenTeleportUses = state.GetQueenTeleportUsesForSync(),
-            queenTeleportCooldown = state.GetQueenTeleportCooldownForSync()
-        };
-        foreach (ChessPiece pawn in state.CommandantPawns)
-            if (pawn)
-                payload.commandantPawns.Add(ToSquare(pawn));
-        return payload;
-    }
-
-    private static string ToSquare(ChessPiece piece)
-    {
-        if (!piece || !ChessMoveRules.IsInsideBoard(piece.BoardPosition))
-            return string.Empty;
-        return $"{(char)('a' + piece.BoardPosition.x)}{(char)('1' + piece.BoardPosition.y)}";
-    }
-
-    private void ApplyNetworkTeamState(AramTeamState state, BackendAramTeamStatePayload payload)
-    {
-        state.Reset();
-        if (payload == null)
-            return;
-
-        List<AramBuffDefinition> buffs = new List<AramBuffDefinition>();
-        if (AramBuffLibrary.TryParseId(payload.buff, out AramBuffId buffId))
-        {
-            AramBuffDefinition definition = AramBuffLibrary.FindById(draftPool, buffId);
-            if (definition)
-                buffs.Add(definition);
-        }
-        state.SetBuffs(buffs);
-
-        if (payload.commandantPawns != null)
-            for (int i = 0; i < payload.commandantPawns.Count; i++)
-            {
-                ChessPiece pawn = FindPiece(state.Team, PieceType.Pawn, payload.commandantPawns[i]);
-                if (pawn)
-                    state.CommandantPawns.Add(pawn);
-            }
-
-        state.SwappedKnight = FindPiece(state.Team, PieceType.Knight, payload.swappedKnight);
-        state.SwappedBishop = FindPiece(state.Team, PieceType.Bishop, payload.swappedBishop);
-        state.OriginalQueen = string.IsNullOrWhiteSpace(payload.originalQueen)
-            ? GetFirstPiece(game != null ? game.GetActivePiecesForAram(state.Team) : null, PieceType.Queen)
-            : FindPiece(state.Team, PieceType.Queen, payload.originalQueen);
-        state.SuicideBomberUsed = payload.suicideBomberUsed;
-        state.SetQueenTeleportState(state.OriginalQueen, payload.queenTeleportUses, payload.queenTeleportCooldown);
-    }
-
-    private void BuildDeterministicNetworkState(string seed)
-    {
-        ConfigureDeterministicTeam(whiteState, seed, "WHITE");
-        ConfigureDeterministicTeam(blackState, seed, "BLACK");
-        ApplyAllMarkers();
-    }
-
-    private void ConfigureDeterministicTeam(AramTeamState state, string seed, string teamSalt)
-    {
-        state.Reset();
-        if (draftPool.Count == 0)
-            return;
-
-        uint hash = StableHash($"{seed ?? string.Empty}|{teamSalt}|ARAM-V1");
-        AramBuffDefinition selected = draftPool[(int)(hash % (uint)draftPool.Count)];
-        state.SetBuffs(new List<AramBuffDefinition> { selected });
-        CaptureInitialTeamState(state);
-
-        List<ChessPiece> teamPieces = game != null ? game.GetActivePiecesForAram(state.Team) : null;
-        if (teamPieces == null)
-            return;
-
-        if (selected.Id == AramBuffId.CommandantPawn)
-        {
-            ChessPiece[] pawns = GetSortedPieces(teamPieces, PieceType.Pawn);
-            for (int i = 0; i < Mathf.Min(CommandantPawnTargetCount, pawns.Length); i++)
-                state.CommandantPawns.Add(pawns[i]);
-        }
-        else if (selected.Id == AramBuffId.Doppelganger)
-        {
-            ChessPiece[] knights = GetSortedPieces(teamPieces, PieceType.Knight);
-            ChessPiece[] bishops = GetSortedPieces(teamPieces, PieceType.Bishop);
-            state.SwappedKnight = knights.Length > 0 ? knights[(int)(hash % (uint)knights.Length)] : null;
-            state.SwappedBishop = bishops.Length > 0 ? bishops[(int)((hash >> 8) % (uint)bishops.Length)] : null;
-        }
-    }
-
-    private ChessPiece FindPiece(PieceTeam team, PieceType type, string square)
-    {
-        if (!TryParseSquare(square, out Vector2Int position) || game == null)
-            return null;
-
-        List<ChessPiece> pieces = game.GetActivePiecesForAram(team);
-        for (int i = 0; i < pieces.Count; i++)
-        {
-            ChessPiece piece = pieces[i];
-            if (piece && piece.Type == type && piece.BoardPosition == position)
-                return piece;
-        }
-        return null;
-    }
-
-    private void ShowCurrentHud()
-    {
-        if (!draftView)
-            return;
-
-        if (networkMatch)
-            draftView.ShowPrivateHud(visibleTeam, GetState(visibleTeam).Buffs);
-    }
-
-    private static uint StableHash(string value)
-    {
-        unchecked
-        {
-            uint hash = 2166136261u;
-            string text = value ?? string.Empty;
-            for (int i = 0; i < text.Length; i++)
-            {
-                hash ^= text[i];
-                hash *= 16777619u;
-            }
-            return hash;
-        }
-    }
-
-    private static bool TryParseSquare(string square, out Vector2Int position)
-    {
-        position = -Vector2Int.one;
-        if (string.IsNullOrWhiteSpace(square) || square.Length != 2)
-            return false;
-        char file = char.ToLowerInvariant(square[0]);
-        char rank = square[1];
-        if (file < 'a' || file > 'h' || rank < '1' || rank > '8')
-            return false;
-        position = new Vector2Int(file - 'a', rank - '1');
-        return true;
-    }
-
     private void HandleDraftCompleted(List<AramBuffDefinition> whiteBuffs, List<AramBuffDefinition> blackBuffs)
     {
         whiteState.SetBuffs(whiteBuffs);
         blackState.SetBuffs(blackBuffs);
         CaptureInitialTeamState(whiteState);
         CaptureInitialTeamState(blackState);
-        if (!networkMatch) ApplyInitialEffects();
+        ApplyInitialEffects();
         ClearMarkers();
         BuildTargetTaskQueue();
         TryStartNextTargetTask();
@@ -555,7 +335,7 @@ public sealed partial class AramBuffRuntime : MonoBehaviour
     private void EnqueueTargetTasks(AramTeamState state)
     {
         var freestyle=state.GetBuff(AramBuffId.FreestyleLeap);
-        if(freestyle&&!networkMatch)targetTasks.Enqueue(new AramTargetTask(state.Team,freestyle,AramTargetKind.FreestyleKnight));
+        if(freestyle)targetTasks.Enqueue(new AramTargetTask(state.Team,freestyle,AramTargetKind.FreestyleKnight));
         AramBuffDefinition commandant = state.GetBuff(AramBuffId.CommandantPawn);
         if (commandant)
             targetTasks.Enqueue(new AramTargetTask(state.Team, commandant, AramTargetKind.CommandantPawn));
@@ -592,12 +372,10 @@ public sealed partial class AramBuffRuntime : MonoBehaviour
         currentTargetKind = AramTargetKind.None;
         pendingTargetPieces.Clear();
         ApplyAllMarkers();
-        if (networkMatch)
-            draftView.ShowPrivateHud(visibleTeam, GetState(visibleTeam).Buffs);
-        else
-            draftView.ShowHud(whiteState.Buffs, blackState.Buffs);
+        draftView.ShowHud(whiteState.Buffs, blackState.Buffs);
         game?.SetAramInputLocked(false);
-        if (!networkMatch){game?.AramInitializeDrawTracking();EnsureActionView();}
+        game?.AramInitializeDrawTracking();
+        EnsureActionView();
     }
 
     private bool HasValidTargets(AramTargetTask task)
@@ -795,13 +573,8 @@ public sealed partial class AramBuffRuntime : MonoBehaviour
     private void ApplyAllMarkers()
     {
         ClearMarkers();
-        if (networkMatch)
-            ApplyPieceMarkers(GetState(visibleTeam));
-        else
-        {
-            ApplyPieceMarkers(whiteState);
-            ApplyPieceMarkers(blackState);
-        }
+        ApplyPieceMarkers(whiteState);
+        ApplyPieceMarkers(blackState);
     }
 
     private void ApplyPieceMarkers(AramTeamState state)
@@ -823,8 +596,7 @@ public sealed partial class AramBuffRuntime : MonoBehaviour
         if (state.HasBuff(AramBuffId.FreestyleLeap))
         {
             AramBuffDefinition buff = state.GetBuff(AramBuffId.FreestyleLeap);
-            if(networkMatch){for(int i=0;i<pieces.Count;i++)if(pieces[i]&&pieces[i].Type==PieceType.Knight)AddMarker(pieces[i],buff,"");}
-            else AddMarker(state.FreestyleKnight,buff,"");
+            AddMarker(state.FreestyleKnight,buff,"");
         }
 
         if (state.HasBuff(AramBuffId.Doppelganger))
@@ -860,25 +632,6 @@ public sealed partial class AramBuffRuntime : MonoBehaviour
             if (activeMarkers[i])
                 activeMarkers[i].enabled=false;
         activeMarkers.Clear();
-    }
-
-    private static ChessPiece[] GetSortedPieces(List<ChessPiece> pieces, PieceType type)
-    {
-        List<ChessPiece> matches = new List<ChessPiece>();
-        if (pieces == null)
-            return matches.ToArray();
-        for (int i = 0; i < pieces.Count; i++)
-            if (pieces[i] && pieces[i].Type == type)
-                matches.Add(pieces[i]);
-
-        matches.Sort((left, right) =>
-        {
-            float leftCenter = Mathf.Abs(left.BoardPosition.x - 3.5f);
-            float rightCenter = Mathf.Abs(right.BoardPosition.x - 3.5f);
-            int centerCompare = leftCenter.CompareTo(rightCenter);
-            return centerCompare != 0 ? centerCompare : left.BoardPosition.x.CompareTo(right.BoardPosition.x);
-        });
-        return matches.ToArray();
     }
 
     private static ChessPiece GetFirstPiece(List<ChessPiece> pieces, PieceType type)
@@ -1023,12 +776,6 @@ public sealed partial class AramBuffRuntime : MonoBehaviour
             if (trackedQueen) queenTeleport = queenTeleport.Tick();
         }
 
-        public void SetQueenTeleportState(ChessPiece queen, int uses, int cooldown)
-        {
-            trackedQueen = queen;
-            queenTeleport = new LimitedUseState(FlyingThunderGodBuff.MaximumUses, queen ? uses : 0, queen ? cooldown : 0);
-        }
-
         private int GetQueenTeleportCooldown(ChessPiece queen)
         {
             return queen && queen == trackedQueen ? queenTeleport.Cooldown : 0;
@@ -1039,12 +786,12 @@ public sealed partial class AramBuffRuntime : MonoBehaviour
             return queen && queen == trackedQueen ? queenTeleport.Uses : 0;
         }
 
-        public int GetQueenTeleportUsesForSync()
+        public int GetQueenTeleportUses()
         {
             return GetQueenTeleportUses(OriginalQueen);
         }
 
-        public int GetQueenTeleportCooldownForSync()
+        public int GetQueenTeleportCooldown()
         {
             return GetQueenTeleportCooldown(OriginalQueen);
         }

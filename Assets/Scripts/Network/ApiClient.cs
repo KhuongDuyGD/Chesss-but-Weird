@@ -15,6 +15,25 @@ public sealed class ApiClient
     public Task<T> PostAsync<T>(string path, object body, bool authorized = false) => SendAsync<T>("POST", path, body, authorized);
     public Task<T> PutAsync<T>(string path, object body, bool authorized = false) => SendAsync<T>("PUT", path, body, authorized);
     public Task<T> PatchAsync<T>(string path, object body, bool authorized = false) => SendAsync<T>("PATCH", path, body, authorized);
+    public Task<T> DeleteAsync<T>(string path, bool authorized = false) => SendAsync<T>("DELETE", path, null, authorized);
+
+    // REST and SignalR share the same refresh gate; rotating refresh tokens must
+    // never be redeemed concurrently by independent transports.
+    public async Task<string> GetAccessTokenAsync()
+    {
+        if (!AuthStorage.HasSession()) throw new ApiException("Please sign in to play online.", 401);
+        string observed = AuthStorage.GetAccessToken();
+        bool expiring = string.IsNullOrWhiteSpace(observed) ||
+            DateTimeOffset.TryParse(AuthStorage.AccessTokenExpiresAt, out var expiry) &&
+            expiry <= DateTimeOffset.UtcNow.AddSeconds(30);
+        if (expiring)
+        {
+            await refreshGate.WaitAsync();
+            try { if (observed == AuthStorage.GetAccessToken()) await RefreshForRetryAsync(); }
+            finally { refreshGate.Release(); }
+        }
+        return AuthStorage.GetAccessToken();
+    }
 
     public async Task<string> CheckHealthAsync()
     {
@@ -70,6 +89,8 @@ public sealed class ApiClient
 
         var response = await SendOnceAsync("POST", "/api/auth/refresh",
             JsonConvert.SerializeObject(new RefreshRequest { refreshToken = refreshToken }), null);
+        if (refreshToken != AuthStorage.GetRefreshToken())
+            throw new OperationCanceledException("The account session changed while refreshing.");
         if (response.StatusCode == 400 || response.StatusCode == 401 || response.StatusCode == 403)
         {
             AuthStorage.Clear();

@@ -24,18 +24,21 @@ public sealed partial class ChessGame : MonoBehaviour
     public PieceTeam CurrentTurn { get=>currentTurn;set=>currentTurn=value; }
     public PieceTeam PlayerTeam { get=>playerTeam;set=>playerTeam=value; }
     public float AramHudBottom { get=>aramCoordinator.Runtime?aramCoordinator.Runtime.StatisticsHudBottom:0;set { aramCoordinator.Runtime=GetComponent<AramBuffRuntime>();aramCoordinator.Runtime.StatisticsHudBottom=value; } }
+    public bool UsesDotNetOnline;
+    public bool TryGetOnlineBuffSummary(PieceTeam team, out string summary, out string details)
+    { summary = details = string.Empty; return false; }
     public bool GameOver,HasPendingPromotion;
     public PieceTeam WinningTeam;
     public ChessGameStatus Status;
     public string DrawReason="Stalemate";
-    public float MatchElapsedSeconds => authoritativeStatisticsClock ? (gameStarted ? StatisticsElapsed : frozenMatchDurationSeconds) : gameStarted
+    public float MatchElapsedSeconds => gameStarted
         ? Mathf.Max(0f,Time.unscaledTime-matchStartedAt-accumulatedPausedSeconds-CurrentPauseDuration) : frozenMatchDurationSeconds;
     private float CurrentPauseDuration=>matchPausedAt>=0?Time.unscaledTime-matchPausedAt:0;
     private List<PieceType> GetCapturedPieceList(PieceTeam team)=>team==PieceTeam.White?whiteCapturedPieces:blackCapturedPieces;
     public IReadOnlyList<PieceType> GetCapturedPieces(PieceTeam team)=>GetCapturedPieceList(team);
     public int GetCapturedMaterialScore(PieceTeam team) {int value=0;foreach(var piece in GetCapturedPieces(team))value+=piece==PieceType.Queen?9:piece==PieceType.Rook?5:piece==PieceType.Knight||piece==PieceType.Bishop?3:piece==PieceType.Pawn?1:0;return value;}
 }
-public sealed class HudCoordinator { public AramBuffRuntime Runtime; }
+public sealed class HudCoordinator { public AramBuffRuntime Runtime; public bool IsActive => Runtime && Runtime.IsActive; }
 public sealed class ChessPiece : MonoBehaviour { public PieceTeam Team; public PieceType Type; }
 public sealed class ChessTurnSelectionUI : MonoBehaviour
 {
@@ -44,7 +47,8 @@ public sealed class ChessTurnSelectionUI : MonoBehaviour
 }
 public sealed class AramBuffRuntime : MonoBehaviour
 {
-    public bool IsNetworkMatch,AbilityInstructionRequired;
+    public bool IsActive = true;
+    public bool AbilityInstructionRequired;
     public readonly List<AramBuffDefinition> WhiteBuffs=new List<AramBuffDefinition>(),BlackBuffs=new List<AramBuffDefinition>();
     public IReadOnlyList<AramBuffDefinition> GetBuffs(PieceTeam team)=>team==PieceTeam.White?WhiteBuffs:BlackBuffs;
     public bool Disguised;
@@ -61,22 +65,4 @@ public sealed class AramBuffRuntime : MonoBehaviour
     public float AbilityPanelHeight,StatisticsHudBottom;
     public readonly List<AramAbilityView.AbilityAction> Actions=new List<AramAbilityView.AbilityAction>();
     public void GetAbilityActions(List<AramAbilityView.AbilityAction> destination) {destination.Clear();destination.AddRange(Actions);}
-}
-[Serializable] public sealed class BackendMoveResultPayload
-{
-    public BackendMatchStatistics statistics;
-    public int moveNumber;
-    public string from,to,notation;
-}
-[Serializable] public sealed class BackendMatchMoveDto
-{
-    public string id,playerId,from,to,notation,fenAfter;
-    public int moveNumber;
-}
-[Serializable] public sealed class BackendMatchDto
-{
-    public BackendMatchStatistics statistics;
-    public List<BackendMatchMoveDto> moves;
-    public int moveCount;
-    public string blackPlayerId,startedAt,finishedAt,status;
 }

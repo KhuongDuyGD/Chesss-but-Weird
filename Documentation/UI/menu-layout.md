@@ -30,6 +30,6 @@ Main-menu preview paths are relative to this documentation folder; other artwork
 - Unity script compilation succeeded; four pre-existing obsolete-API warnings remain in `CosmeticsRuntimeVerification.cs`.
 - 45 rendered layouts and control-containment checks passed: 9 screens at 1920 × 1080, 1024 × 768, 2560 × 1080, 2340 × 1080 and 1080 × 1920. The phone landscape case includes an asymmetric left/right inset and bottom gesture inset. See `layout-checks.txt`.
 - Run **Chess > UI Audit > Capture Menus** in Play mode. The editor utility renders actual runtime canvases to textures at the listed sizes and checks active selectable bounds. Output goes to `Temp/MenuLayoutAudit`. Its lobby fixture does not create/join rooms or spend currency.
-- Run `python tools/generate_menu_artwork_bounds.py --check` (Pillow required) to verify the baked geometry against all 64 source PNGs. Run without `--check` after replacing component artwork.
+- The temporary Python bounds generator was removed during project cleanup. `MenuArtworkBounds.cs` retains the baked geometry for all 64 source PNGs. After replacing component artwork, update the affected normalized alpha bounds and use the menu audit above to check layout and control containment.
 
 The validation covers Unity Editor rendering and simulated safe areas, not native device builds or OS-level input. Portrait keeps the full landscape composition visible, so controls are smaller; the preferred game presentation remains landscape. Screenshot capture does not constitute a multiplayer transport or gacha transaction test.

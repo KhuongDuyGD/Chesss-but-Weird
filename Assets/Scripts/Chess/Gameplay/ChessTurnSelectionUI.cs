@@ -435,6 +435,12 @@ public class ChessTurnSelectionUI : MonoBehaviour
 
     public void StartNewGameFromResult()
     {
+        if (chessGame.UsesDotNetOnline)
+        {
+            SpectateFinishedGame();
+            lanController?.RequestRematch();
+            return;
+        }
         GameMusicManager.PlayInGameMusic(chessGame && chessGame.IsBotGame, selectedBotDifficulty);
         resultMenu?.Hide();
         pauseMenu?.SetResultSpectating(false);

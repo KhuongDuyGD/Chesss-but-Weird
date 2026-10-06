@@ -238,6 +238,12 @@ public sealed class AnalysisBoardView : MonoBehaviour
     }
     private void RefreshBuffLabel(PieceTeam side,TextMeshProUGUI label)
     {
+        if(game.TryGetOnlineBuffSummary(side,out string onlineName,out string onlineDetails))
+        {
+            label.text=onlineName;
+            label.GetComponent<MatchHudTooltipTarget>().Configure(tooltip,side+" online buff",onlineDetails);
+            return;
+        }
         var names=new StringBuilder();var details=new StringBuilder();
         if(!game.StatisticsBuffsVisible(side)){label.text="Buff hidden";label.GetComponent<MatchHudTooltipTarget>().Configure(tooltip,"Hidden buff","Your opponent's buff is private.");return;}
         foreach(var buff in game.StatisticsBuffs(side))if(buff)

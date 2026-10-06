@@ -6,6 +6,6 @@ The second script creates a new Unity project under `Logs/hud-headless/<timestam
 
 Fixture data sources are deliberately separate from gameplay. Actual Unity RectTransform, Canvas, TMP font metrics and buttons exercise initialization, text clipping, bounds at five aspect ratios, ARAM panels with 0–10 actions, scroll reading offsets, camera restoration/toggle invariance/replacement, and stale action identity/context handling. WorldSpace canvases model the dimensions produced by the production Expand scaler, without using a graphics device.
 
-The copied production `ChessGame.Statistics.cs` adapter and statistics DTO also exercise full snapshot validation, heartbeat deduplication, capture synchronization, incomplete recovery and legacy date timezone handling. Its narrow gameplay/transport dependencies are fixtures, so these assertions do not imply transport or gameplay integration.
+The copied production `ChessGame.Statistics.cs` adapter exercises incomplete recovery. Its narrow gameplay dependencies are fixtures; online .NET snapshots are outside this isolated HUD check.
 
 These checks cannot confirm raster appearance, 3D board composition, real server integration or ARAM gameplay. A manual cold playthrough still needs verification. Do not put the fixture runner under the real game's `Assets` directory.

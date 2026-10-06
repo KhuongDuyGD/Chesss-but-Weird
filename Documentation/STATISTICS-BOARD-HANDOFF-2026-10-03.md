@@ -1,3 +1,5 @@
+> Historical note (updated 2026-10-06): this document describes work before the .NET online migration. Spring/Node endpoints, classes and validation results below refer to the retired backend. Use [OnlineDotNetIntegration.md](OnlineDotNetIntegration.md) for the current implementation.
+
 # Handoff — Statistics Board, 2026-10-03
 
 > Đây là handoff lịch sử của lượt trước. Yêu cầu mới là tự làm khi người dùng offline, không hỏi trong quá trình code. Kết quả hiện tại về HUD, 35 buff local, kiểm chứng và giới hạn online nằm trong [aram-update-2026-10-03.md](aram-update-2026-10-03.md); các số liệu/trạng thái bên dưới chỉ phản ánh thời điểm handoff.

@@ -14,7 +14,7 @@ public sealed partial class AramBuffRuntime
     private readonly Dictionary<ChessPiece,int> passengerReady=new Dictionary<ChessPiece,int>(), betrayalChecks=new Dictionary<ChessPiece,int>();
     private readonly Dictionary<ChessPiece,PassengerTraits> passengerTraits=new Dictionary<ChessPiece,PassengerTraits>();
     internal int ForwardFor(PieceTeam team) => Home(team)==0?1:-1;
-    internal bool IsKingless(PieceTeam team) => active&&!networkMatch&&HasBuff(team,AramBuffId.KingIsPoorPiece);
+    internal bool IsKingless(PieceTeam team) => active&&HasBuff(team,AramBuffId.KingIsPoorPiece);
     internal bool FortressWingAvailable(PieceTeam team,int wing) => (castledWings[Side(team)]&(wing==6?1:2))==0;
     private void ResetDocumentState()
     {
@@ -101,7 +101,7 @@ public sealed partial class AramBuffRuntime
     }
     internal void ObserveCheckConditions()
     {
-        if(!active||networkMatch||combinedPlies>=AramBalanceRules.PeaceGoal)return;
+        if(!active||combinedPlies>=AramBalanceRules.PeaceGoal)return;
         foreach(var side in new[]{PieceTeam.White,PieceTeam.Black})if(game.AramInCheck(side))peaceFailed[Side(side)]=true;
     }
     private void DropCrate(PieceTeam team,int milestone)
@@ -140,16 +140,16 @@ public sealed partial class AramBuffRuntime
             {game.AramWin(team==PieceTeam.White?PieceTeam.Black:PieceTeam.White);return true;}
         return false;
     }
-    internal bool DrawIsLoss(PieceTeam team) => !networkMatch&&(HasBuff(team,AramBuffId.EveryManForHimself)||IsKingless(team));
-    internal bool BlocksPromotion(ChessPiece pawn) => !networkMatch&&pawn&&pawn.Type==PieceType.Pawn&&
+    internal bool DrawIsLoss(PieceTeam team) => (HasBuff(team,AramBuffId.EveryManForHimself)||IsKingless(team));
+    internal bool BlocksPromotion(ChessPiece pawn) => pawn&&pawn.Type==PieceType.Pawn&&
         HasBuff(pawn.Team==PieceTeam.White?PieceTeam.Black:PieceTeam.White,AramBuffId.DoubleEdgedTrap);
     internal void RegisterSpawn(ChessPiece piece)
     {if(BlocksPromotion(piece)&&piece.BoardPosition.y==(Home(piece.Team)==0?7:0))trapPawns.Add(piece);}
     internal void OtherQueenRemoved(ChessPiece piece,Vector2Int square)
-    {if(!networkMatch&&WouldQueenExplode(piece))DetonateRemovedQueen(piece,square,null);}
+    {if(WouldQueenExplode(piece))DetonateRemovedQueen(piece,square,null);}
     internal void PawnPromoted(ChessPiece oldPawn,ChessPiece promoted)
     {
-        if(networkMatch||!promoted)return;
+        if(!promoted)return;
         questPromoted[Side(promoted.Team)]=true;if(promoted.Type==PieceType.Queen)promotedQueens.Add(promoted);
         if(queenMastery.Remove(oldPawn))queenMastery.Add(promoted);
         TransferInfection(oldPawn,promoted);

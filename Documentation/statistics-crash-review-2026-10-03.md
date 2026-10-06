@@ -1,3 +1,5 @@
+> Historical note (updated 2026-10-06): this document describes work before the .NET online migration. Spring/Node endpoints, classes and validation results below refer to the retired backend. Use [OnlineDotNetIntegration.md](OnlineDotNetIntegration.md) for the current implementation.
+
 # Statistics HUD: rà soát crash ngày 03/10/2026
 
 ## Kết luận có bằng chứng

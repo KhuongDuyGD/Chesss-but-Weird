@@ -201,9 +201,7 @@ public static class HudAuditRunner
         Check(Field<TextMeshProUGUI>(tooltip,"body").text.Contains("Tickets: 13"),"Hovered buff information did not update live progress");
         Within(Field<RectTransform>(tooltip,"panel"),Field<RectTransform>(view,"root"),"Buff tooltip");
         buffLabel.GetComponent<MatchHudTooltipTarget>().OnPointerExit(null);Check(!Field<RectTransform>(tooltip,"panel").gameObject.activeSelf,"Tooltip persisted after pointer exit");
-        runtime.IsNetworkMatch=true;Call(view,"Refresh");Check(Field<TextMeshProUGUI>(view,"blackBuff").text=="Buff hidden","Private opponent name leaked");
-        Field<TextMeshProUGUI>(view,"blackBuff").GetComponent<MatchHudTooltipTarget>().OnPointerEnter(null);
-        Check(!Field<TextMeshProUGUI>(tooltip,"body").text.Contains("Gacha")&&!Field<TextMeshProUGUI>(tooltip,"body").text.Contains("Tickets"),"Private opponent tooltip leaked buff or progress");tooltip.Hide();runtime.IsNetworkMatch=false;
+
         runtime.Disguised=true;game.IsBotGame=true;game.PlayerTeam=PieceTeam.White;game.CurrentTurn=PieceTeam.Black;
         Call(view,"Refresh");Check(runtime.LastViewer==PieceTeam.White,"Solo disguise viewer followed the bot's turn");
         Field<TextMeshProUGUI>(view,"blackBuff").GetComponent<MatchHudTooltipTarget>().OnPointerEnter(null);
@@ -215,7 +213,6 @@ public static class HudAuditRunner
         Field<Button>(view,"capturesTab").onClick.Invoke();Check(Field<TextMeshProUGUI>(view,"history").text.StartsWith("White captured:"),"Captures tab is not showing captures");
         TextFits(Field<TextMeshProUGUI>(view,"hint"),"Capture semantics hint");
         Field<Button>(view,"historyTab").onClick.Invoke();Check(Field<TextMeshProUGUI>(view,"history").text.Contains("a2-a4"),"History tab lost journal rows");
-        buffs.ShowPrivateHud(PieceTeam.Black,new[]{definition});Check(!Field<RectTransform>(buffs,"draftPanel").gameObject.activeSelf&&!Field<RectTransform>(buffs,"targetPromptPanel").gameObject.activeSelf,"Private HUD left a setup overlay visible");
         view.SetVisible(false);Check(Mathf.Approximately(camera.fieldOfView,60)&&camera.rect==new Rect(0,0,1,1),"Camera not restored after hide");
         view.SetVisible(true);UnityEngine.Object.DestroyImmediate(camera.gameObject);
         var replacement=new GameObject("Replacement fixture camera",typeof(Camera)).GetComponent<Camera>();replacement.tag="MainCamera";replacement.fieldOfView=48;replacement.rect=new Rect(.1f,.1f,.8f,.8f);
@@ -256,26 +253,9 @@ public static class HudAuditRunner
     private static void AuditSnapshots(ChessGame game)
     {
         Call(game,"ResetStatistics");
-        var snapshot=new BackendMatchStatistics {version=1,moveCount=2,elapsedSeconds=12,historyComplete=true,capturesComplete=true,
-            entries=new List<BackendStatisticsEntry> {new BackendStatisticsEntry{id="1",moveNumber=1,actor="WHITE",text="e4",isMove=true},new BackendStatisticsEntry{id="2",moveNumber=2,actor="BLACK",text="Qxa1",isMove=true,captured="Rook"}}};
-        Check(game.ApplyStatisticsSnapshot(snapshot),"Valid backend snapshot rejected");
-        Check(game.GetCapturedPieces(PieceTeam.Black).Count==1&&game.GetCapturedPieces(PieceTeam.Black)[0]==PieceType.Rook,"Backend capture not applied to legacy/game HUD lists");
-        int revision=game.Statistics.Revision;Check(game.ApplyStatisticsSnapshot(snapshot)&&revision==game.Statistics.Revision,"Heartbeat rebuilt journal");
-        snapshot.entries[1].id="1";Check(!game.ApplyStatisticsSnapshot(snapshot),"Duplicate snapshot ID accepted");snapshot.entries[1].id="2";
-        snapshot.entries[1].actor="Spectator";Check(!game.ApplyStatisticsSnapshot(snapshot),"Invalid snapshot actor accepted");snapshot.entries[1].actor="BLACK";
-        snapshot.entries[1].captured="Dragon";Check(!game.ApplyStatisticsSnapshot(snapshot),"Invalid captured kind accepted");snapshot.entries[1].captured="Rook";
-        snapshot.elapsedSeconds=-1;Check(!game.ApplyStatisticsSnapshot(snapshot),"Negative elapsed accepted");snapshot.elapsedSeconds=12;
-        snapshot.version=99;Check(!game.ApplyStatisticsSnapshot(snapshot),"Unknown version accepted");snapshot.version=1;
-        snapshot.moveCount=1;Check(!game.ApplyStatisticsSnapshot(snapshot),"Stale count accepted");snapshot.moveCount=2;
-        snapshot.entries[0].moveNumber=2;Check(!game.ApplyStatisticsSnapshot(snapshot),"Noncontiguous complete history accepted");snapshot.entries[0].moveNumber=1;
-        snapshot.historyComplete=false;Check(!game.ApplyStatisticsSnapshot(snapshot),"Complete captures with incomplete history accepted");snapshot.historyComplete=true;
-        Check(game.Statistics.Revision==revision,"Malformed snapshot mutated the accepted ledger");
-        game.MarkStatisticsRecoveryIncomplete(4);Check(!game.StatisticsTimeKnown&&!game.Statistics.HistoryComplete&&!game.Statistics.CapturesComplete,"Recovery fabricated complete history/time");
-        Call(game,"ResetStatistics");game.IsAramGame=false;
-        game.RestoreStatistics(new BackendMatchDto{moveCount=0,status="ACTIVE",startedAt="2026-10-03T13:00:00"});
-        Check(!game.StatisticsTimeKnown,"Timezone-free legacy date fabricated a known elapsed time");
-        game.RestoreStatistics(new BackendMatchDto{moveCount=0,status="ACTIVE",startedAt=DateTimeOffset.UtcNow.AddSeconds(-10).ToString("O")});
-        Check(game.StatisticsTimeKnown&&game.MatchElapsedSeconds>=9&&game.MatchElapsedSeconds<12,"Zoned legacy time fallback failed");
-        report.Add("PASS production statistics adapter: snapshot validation/deduplication, capture sync, recovery and legacy timezone handling");
+        game.MarkStatisticsRecoveryIncomplete(4);
+        Check(!game.StatisticsTimeKnown&&!game.Statistics.HistoryComplete&&!game.Statistics.CapturesComplete,
+            "Recovery fabricated complete history/time");
+        report.Add("PASS production statistics adapter: incomplete recovery");
     }
 }

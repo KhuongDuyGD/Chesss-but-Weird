@@ -42,9 +42,9 @@ public sealed class LoadingManager : MonoBehaviour
         PieceSkinCatalog.UseCatalog(Catalog);
     }
 
-    public void StartMatch(CosmeticSelection selection, Action startGameplay)
+    public void StartMatch(CosmeticSelection selection, Action startGameplay, bool replaceCurrentMatch = false)
     {
-        if (IsBusy || game.GameStarted) return;
+        if (IsBusy || game.GameStarted && !replaceCurrentMatch) return;
         if (selection == null || startGameplay == null) throw new ArgumentNullException("Match selection and start callback are required.");
         selection = selection.Copy();
         lastSelection = selection;

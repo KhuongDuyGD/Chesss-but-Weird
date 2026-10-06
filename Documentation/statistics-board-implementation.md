@@ -1,3 +1,5 @@
+> Historical note (updated 2026-10-06): this document describes work before the .NET online migration. Spring/Node endpoints, classes and validation results below refer to the retired backend. Use [OnlineDotNetIntegration.md](OnlineDotNetIntegration.md) for the current implementation.
+
 # Statistics Board: implementation và kiểm chứng
 
 > Cập nhật sau yêu cầu mới ngày 03/10: xem [báo cáo HUD và ARAM](aram-update-2026-10-03.md). Summary ARAM đã chuyển dưới controls, dải buff cũ được gỡ, UI dùng Schoolbell, catalog local có 35 buff. Phần kiểm chứng/trạng thái bên dưới là lịch sử lượt trước; lỗi Freestyle baseline đã được thay bằng luật tài liệu và test V1 riêng. Contract statistics backend vẫn áp dụng.

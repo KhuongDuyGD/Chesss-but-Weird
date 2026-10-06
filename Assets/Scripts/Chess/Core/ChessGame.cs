@@ -128,14 +128,14 @@ public partial class ChessGame : MonoBehaviour
     public bool HasSelectedPiece => selectedPiece != null;
     public string DrawReason => drawReason;
     public int HalfMoveClock => halfMoveClock;
-    public float MatchElapsedSeconds => authoritativeStatisticsClock ? (gameStarted ? StatisticsElapsed : frozenMatchDurationSeconds) : gameStarted
+    public float MatchElapsedSeconds => gameStarted
         ? Mathf.Max(0f, Time.unscaledTime - matchStartedAt - accumulatedPausedSeconds - CurrentPauseDuration)
         : frozenMatchDurationSeconds;
     private float CurrentPauseDuration => matchPausedAt >= 0f ? Time.unscaledTime - matchPausedAt : 0f;
     public string LastMoveSummary => string.IsNullOrWhiteSpace(lastMoveSummary) ? "No moves yet." : lastMoveSummary;
     public IReadOnlyList<string> MoveHistory => moveHistory;
     public PieceTeam MoveHistoryFirstTurn => moveHistoryFirstTurn;
-    public event Action<ChessLanMove> MoveCommitted;
+    public event Action<ChessMove> MoveCommitted;
     public event Action ReturnedToMainMenu;
     public event Action LocalGameRestarted;
     public event Action<Transform, float> CameraLockRequested;
@@ -283,6 +283,7 @@ public partial class ChessGame : MonoBehaviour
 
     internal void ClearCosmeticPieces()
     {
+        ResetDotNetPresentation();
         ClearLocalClassicSession();
         aramCoordinator?.EndMatch();
         pieceAnimator?.CancelAll();
@@ -310,6 +311,7 @@ public partial class ChessGame : MonoBehaviour
     private void Update()
     {
         if (contentLoading) return;
+        if (dotNetState != null) { HandleDotNetInput(); return; }
         if (aramMode && aramCoordinator != null && aramCoordinator.Runtime.HandleAbilityInput()) return;
         if (gameStarted && aramMode && aramCoordinator != null && aramCoordinator.IsSelectingSetupTargets)
         {
@@ -374,6 +376,7 @@ public partial class ChessGame : MonoBehaviour
 
     public void BeginGame(PieceTeam firstTurn)
     {
+        ResetDotNetPresentation();
         serverAuthoritativeMode = false;
         botMode = false;
         aramMode = false;
@@ -384,6 +387,7 @@ public partial class ChessGame : MonoBehaviour
 
     public void BeginAramGame()
     {
+        ResetDotNetPresentation();
         serverAuthoritativeMode = false;
         botMode = false;
         aramMode = true;
@@ -394,28 +398,6 @@ public partial class ChessGame : MonoBehaviour
         aramCoordinator.BeginMatch(this);
     }
 
-    public void BeginLanGame(PieceTeam firstTurn, PieceTeam localPlayerTeam)
-    {
-        serverAuthoritativeMode = true;
-        botMode = false;
-        aramMode = false;
-        botDifficulty = StockfishDifficulty.Medium;
-        GameMusicManager.PlayInGameMusic(false, StockfishDifficulty.Medium);
-        BeginGameInternal(firstTurn, localPlayerTeam, true, PieceTeam.White);
-    }
-
-    public void BeginAramNetworkGame(PieceTeam firstTurn, PieceTeam localPlayerTeam, string matchSeed, BackendAramStatePayload serverState)
-    {
-        serverAuthoritativeMode = true;
-        botMode = false;
-        aramMode = true;
-        botDifficulty = StockfishDifficulty.Medium;
-        EnsureAramRuntime();
-        GameMusicManager.PlayInGameMusic(false, StockfishDifficulty.Medium);
-        BeginGameInternal(firstTurn, localPlayerTeam, true, PieceTeam.White);
-        aramCoordinator.BeginNetworkMatch(this, localPlayerTeam, matchSeed, serverState);
-    }
-
     public void BeginBotGame(PieceTeam localPlayerTeam)
     {
         BeginBotGame(localPlayerTeam, StockfishDifficulty.Medium);
@@ -423,6 +405,7 @@ public partial class ChessGame : MonoBehaviour
 
     public void BeginBotGame(PieceTeam localPlayerTeam, StockfishDifficulty selectedDifficulty)
     {
+        ResetDotNetPresentation();
         serverAuthoritativeMode = false;
         botMode = true;
         aramMode = false;
@@ -586,7 +569,7 @@ public partial class ChessGame : MonoBehaviour
         if (!gameStarted || inputLocked || pauseLocked || !piece || piece.Team != currentTurn || !CanControlPieceTeam(piece.Team))
             return false;
 
-        if (aramMode && selectedPiece && selectedPiece != piece && selectedPiece.Type == PieceType.Pawn &&
+        if (aramMode && !serverAuthoritativeMode && selectedPiece && selectedPiece != piece && selectedPiece.Type == PieceType.Pawn &&
             piece.Type == PieceType.Pawn && aramCoordinator.Runtime.HasBuff(currentTurn, AramBuffId.NobleSacrifice) &&
             TryMoveSelectedPiece(piece.BoardPosition)) return true;
 
@@ -617,6 +600,7 @@ public partial class ChessGame : MonoBehaviour
         }
 
         Vector2Int from = selectedPiece.BoardPosition;
+        if (dotNetState != null) return RequestDotNetMove(selectedPiece, destination);
         if(aramMode&&!serverAuthoritativeMode&&aramCoordinator.Runtime.IsSniperAttack(selectedPiece,destination))
         {
             var bishop=selectedPiece;
@@ -799,7 +783,7 @@ public partial class ChessGame : MonoBehaviour
             ? (PieceTeam)localClassicCoordinator.Turn
             : nextAramTurn;
         aramCoordinator?.OnTurnStarted(currentTurn);
-        NotifyMoveCommitted(new ChessLanMove(from, destination));
+        NotifyMoveCommitted(new ChessMove(from, destination));
         turnSelectionUI?.SetTurn(currentTurn);
         RefreshLocalInteractionState();
 
@@ -958,6 +942,7 @@ public partial class ChessGame : MonoBehaviour
 
     private void PrepareGame()
     {
+        ResetDotNetPresentation();
         StopCheckWarning();
         StopAllCoroutines();
         pieceAnimator?.CancelAll();
@@ -1152,6 +1137,8 @@ public partial class ChessGame : MonoBehaviour
         if (!piece)
             return safeMoveBuffer;
 
+        if (dotNetState != null) return GetDotNetMoveHints(piece);
+
         if (UsesClassicDomainSession)
         {
             List<ChessButWeird.Domain.Move> sessionMoves = localClassicCoordinator.LegalMovesFrom(
@@ -1282,14 +1269,14 @@ public partial class ChessGame : MonoBehaviour
         if(explosion&&!serverAuthoritativeMode)
         {
             var projection=new ChessButWeird.Domain.MoveBoardView<UnityBoardAdapter>(new UnityBoardAdapter(pieces),
-                UnityBoardAdapter.ToSquare(from),UnityBoardAdapter.ToSquare(destination),capture,rookFrom,rookTo,false,false,
+                UnityBoardAdapter.ToSquare(from),UnityBoardAdapter.ToSquare(destination),capture,rookFrom,rookTo,false,
                 aramCoordinator.Runtime.MovingPieceWillDie(piece,from,destination));
             var contexts=new UnityBuffContextAdapter(pieces,aramCoordinator.Runtime);
             var chained=new ChessButWeird.Domain.ExplosionChainBoardView<ChessButWeird.Domain.MoveBoardView<UnityBoardAdapter>>(projection,UnityBoardAdapter.ToSquare(destination),contexts);
             return !ChessButWeird.Domain.KingSafetyRules.IsInCheck(chained,(ChessButWeird.Domain.Team)team,contexts,aramCoordinator.DomainRules);
         }
         var simulation = new ChessButWeird.Domain.MoveBoardView<UnityBoardAdapter>(new UnityBoardAdapter(pieces),
-            UnityBoardAdapter.ToSquare(from), UnityBoardAdapter.ToSquare(destination), capture, rookFrom, rookTo, explosion, serverAuthoritativeMode,
+            UnityBoardAdapter.ToSquare(from), UnityBoardAdapter.ToSquare(destination), capture, rookFrom, rookTo, explosion,
             aramMode && !serverAuthoritativeMode && aramCoordinator.Runtime.MovingPieceWillDie(piece,from,destination));
         return !ChessButWeird.Domain.KingSafetyRules.IsInCheck(simulation, (ChessButWeird.Domain.Team)team,
             new UnityBuffContextAdapter(pieces, aramCoordinator != null ? aramCoordinator.Runtime : null),
@@ -1768,7 +1755,7 @@ public partial class ChessGame : MonoBehaviour
             ? (PieceTeam)localClassicCoordinator.Turn
             : pendingPromotionOpponentTeam;
         aramCoordinator?.OnTurnStarted(currentTurn);
-        NotifyMoveCommitted(new ChessLanMove(pendingCommittedMoveFrom, pendingCommittedMoveTo, promotionType));
+        NotifyMoveCommitted(new ChessMove(pendingCommittedMoveFrom, pendingCommittedMoveTo, promotionType));
         turnSelectionUI?.SetTurn(currentTurn);
         pendingRemotePromotionResolution = false;
         suppressMoveCommittedEvent = false;
@@ -2184,7 +2171,7 @@ public partial class ChessGame : MonoBehaviour
         bool won = winner == playerTeam;
         bool lost = winner != playerTeam;
         MatchReward reward = CalculateMatchReward(won, lost, false);
-        matchResultRecorder.TryRecord(() => PlayerAuthService.RecordGameResult(
+        if (dotNetState == null) matchResultRecorder.TryRecord(() => PlayerAuthService.RecordGameResult(
                 won,
                 lost,
                 false,
@@ -2221,7 +2208,7 @@ public partial class ChessGame : MonoBehaviour
         status = ChessGameStatus.Draw;
         frozenMatchDurationSeconds = MatchElapsedSeconds;
         MatchReward reward = CalculateMatchReward(false, false, true);
-        matchResultRecorder.TryRecord(() => PlayerAuthService.RecordGameResult(
+        if (dotNetState == null) matchResultRecorder.TryRecord(() => PlayerAuthService.RecordGameResult(
                 false,
                 false,
                 true,
@@ -2288,12 +2275,7 @@ public partial class ChessGame : MonoBehaviour
         return MatchRewardPolicy.CalculateLocalReward(won, lost, draw);
     }
 
-    public bool ApplyNetworkMove(ChessLanMove move)
-    {
-        return ApplyControlledOpponentMove(move);
-    }
-
-    public bool ApplyBotMove(ChessLanMove move)
+    public bool ApplyBotMove(ChessMove move)
     {
         if (!botMode || serverAuthoritativeMode)
             return false;
@@ -2319,17 +2301,17 @@ public partial class ChessGame : MonoBehaviour
         Vector2Int from = new Vector2Int(move.From.File, move.From.Rank);
         Vector2Int to = new Vector2Int(move.To.File, move.To.Rank);
         if (!move.Promotion.HasValue)
-            return ApplyControlledOpponentMove(new ChessLanMove(from, to));
+            return ApplyControlledOpponentMove(new ChessMove(from, to));
 
         PieceType promotion = (PieceType)move.Promotion.Value;
         if (promotion == PieceType.King || promotion == PieceType.Pawn ||
             !Enum.IsDefined(typeof(PieceType), promotion))
             return false;
 
-        return ApplyControlledOpponentMove(new ChessLanMove(from, to, promotion));
+        return ApplyControlledOpponentMove(new ChessMove(from, to, promotion));
     }
 
-    private bool ApplyControlledOpponentMove(ChessLanMove move)
+    private bool ApplyControlledOpponentMove(ChessMove move)
     {
         if (!gameStarted || gameOver)
             return false;
@@ -2477,32 +2459,6 @@ public partial class ChessGame : MonoBehaviour
         return true;
     }
 
-    public void ApplyAramNetworkState(BackendAramStatePayload serverState)
-    {
-        if (!aramMode || aramCoordinator == null || serverState == null)
-            return;
-        aramCoordinator.ApplyNetworkState(serverState);
-    }
-
-    public BackendAramStatePayload CaptureAramNetworkState()
-    {
-        return aramMode && aramCoordinator != null ? aramCoordinator.CaptureNetworkState() : null;
-    }
-
-    public void ApplyServerGameOver(string result, string reason)
-    {
-        if (string.Equals(result, "DRAW", StringComparison.OrdinalIgnoreCase))
-        {
-            FinishDraw(PlayerNotificationText.MatchEndReason(reason, true));
-            return;
-        }
-
-        PieceTeam winner = string.Equals(result, "BLACK_WON", StringComparison.OrdinalIgnoreCase)
-            ? PieceTeam.Black
-            : PieceTeam.White;
-        FinishGame(winner);
-    }
-
     private bool CanLocalPlayerInteract()
     {
         return !restrictInputToControlledTeam || currentTurn == localControlledTeam;
@@ -2583,7 +2539,7 @@ public partial class ChessGame : MonoBehaviour
         return pieces[position.x, position.y];
     }
 
-    private void NotifyMoveCommitted(ChessLanMove move)
+    private void NotifyMoveCommitted(ChessMove move)
     {
         if (!suppressMoveCommittedEvent)
             MoveCommitted?.Invoke(move);

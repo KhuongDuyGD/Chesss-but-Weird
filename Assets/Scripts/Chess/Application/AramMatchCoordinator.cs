@@ -7,8 +7,7 @@ namespace ChessButWeird.Application
 {
     /// <summary>
     /// Owns the Unity ARAM runtime boundary. ChessGame submits lifecycle and
-    /// move queries here while AramBuffRuntime remains the compatibility
-    /// implementation for draft, markers, HUD and wire payloads.
+    /// move queries here while AramBuffRuntime handles local draft, markers and HUD.
     /// </summary>
     public sealed class AramMatchCoordinator : IDisposable
     {
@@ -28,13 +27,6 @@ namespace ChessButWeird.Application
         public AramRules DomainRules => Runtime != null ? Runtime.DomainRules : AramRules.BuiltIn;
 
         public void BeginMatch(ChessGame owner) => Runtime?.BeginMatch(owner);
-
-        public void BeginNetworkMatch(
-            ChessGame owner,
-            PieceTeam localTeam,
-            string seed,
-            BackendAramStatePayload serverState) =>
-            Runtime?.BeginNetworkMatch(owner, localTeam, seed, serverState);
 
         public void EndMatch() => Runtime?.EndMatch();
 
@@ -71,12 +63,6 @@ namespace ChessButWeird.Application
 
         public bool WouldQueenExplode(ChessPiece piece) =>
             Runtime != null && Runtime.WouldQueenExplode(piece);
-
-        public void ApplyNetworkState(BackendAramStatePayload serverState) =>
-            Runtime?.ApplyNetworkState(serverState);
-
-        public BackendAramStatePayload CaptureNetworkState() =>
-            Runtime != null ? Runtime.CaptureNetworkState() : null;
 
         public void Dispose()
         {

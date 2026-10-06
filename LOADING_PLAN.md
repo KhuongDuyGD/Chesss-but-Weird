@@ -1,3 +1,5 @@
+> Historical note (updated 2026-10-06): this document describes work before the .NET online migration. Spring/Node endpoints, classes and validation results below refer to the retired backend. Use [OnlineDotNetIntegration.md](Documentation/OnlineDotNetIntegration.md) for the current implementation.
+
 # Loading và tải asset nền
 
 > Kế hoạch cũ, đã được thay thế bằng yêu cầu Addressables mới của người dùng: chỉ tải cosmetic được chọn trước trận. Không dùng tài liệu này làm trạng thái triển khai hiện tại.

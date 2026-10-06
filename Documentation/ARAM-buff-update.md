@@ -1,3 +1,5 @@
+> Historical note (updated 2026-10-06): this document describes work before the .NET online migration. Spring/Node endpoints, classes and validation results below refer to the retired backend. Use [OnlineDotNetIntegration.md](OnlineDotNetIntegration.md) for the current implementation.
+
 # ARAM buff update audit
 
 Source: `D:/Duy Documents/7th Semester/GDC301/Buff Cờ Vua ARAM.docx`, read on 2026-09-17. The document contains 26 buffs. This is a work-in-progress implementation checklist, not a completion report.

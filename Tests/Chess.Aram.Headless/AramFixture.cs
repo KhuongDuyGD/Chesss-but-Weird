@@ -96,5 +96,3 @@ public sealed class FixtureBoard
 }
 public sealed class FixtureAnimator{public void Cancel(ChessPiece p){}}
 public sealed class FixtureTurnUI{public void SetTurn(PieceTeam team){}}
-public sealed class BackendAramStatePayload{public int version;public string seed;public BackendAramTeamStatePayload white,black;}
-public sealed class BackendAramTeamStatePayload{public string team,buff,swappedKnight,swappedBishop,originalQueen;public List<string> commandantPawns;public bool suicideBomberUsed;public int queenTeleportUses,queenTeleportCooldown;}

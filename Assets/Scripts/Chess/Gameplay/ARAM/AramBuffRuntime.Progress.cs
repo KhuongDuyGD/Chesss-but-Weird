@@ -10,10 +10,9 @@ public sealed partial class AramBuffRuntime
         if(!HasBuff(team,id)||!game)return "";
         var state=GetState(team);int side=Side(team);
         if(id==AramBuffId.FlyingThunderGod)
-            return !Live(state.OriginalQueen)?"Original Queen lost.":$"Teleports: {state.GetQueenTeleportUsesForSync()}/5 used · Recharge: {state.GetQueenTeleportCooldownForSync()} owner turns";
+            return !Live(state.OriginalQueen)?"Original Queen lost.":$"Teleports: {state.GetQueenTeleportUses()}/5 used · Recharge: {state.GetQueenTeleportCooldown()} owner turns";
         // V1 sends only its authoritative six-buff state. Never display local
         // extended counters as if the server had implemented the new rules.
-        if(networkMatch)return "";
         switch(id)
         {
             case AramBuffId.CommandantPawn:return $"Selected Pawns alive: {CountLive(state.CommandantPawns,team)}/3";

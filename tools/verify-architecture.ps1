@@ -8,8 +8,6 @@ Push-Location $projectRoot
 try {
     & dotnet run --project Tests/Chess.Domain.Tests/Chess.Domain.Tests.csproj --configuration Release
     if ($LASTEXITCODE -ne 0) { throw 'Domain verification failed.' }
-    & node OnlineServer/aram-rules.test.js
-    if ($LASTEXITCODE -ne 0) { throw 'Existing server reference verification failed.' }
     if ($Unity) {
         if (-not (Test-Path -LiteralPath $UnityPath)) { throw "Unity executable missing: $UnityPath" }
         New-Item -ItemType Directory -Force -Path Logs | Out-Null

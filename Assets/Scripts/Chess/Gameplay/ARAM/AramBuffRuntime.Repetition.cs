@@ -27,7 +27,7 @@ public sealed partial class AramBuffRuntime
                             value=castledWings[side].ToString();foreach(var p in game.GetActivePiecesForAram(team))if(p.Type==PieceType.Rook)value+="/"+PieceKey(p)+":"+p.HasMoved;break;
                         case AramBuffId.Doppelganger:value=$"{PieceKey(state.SwappedKnight)}/{PieceKey(state.SwappedBishop)}/{swapActive[side]}/{doppelDisabled[side]}/{Remaining(swapReady[side],combinedPlies)}";break;
                         case AramBuffId.SuicideBomber:value=PieceKey(state.OriginalQueen)+":"+state.SuicideBomberUsed;break;
-                        case AramBuffId.FlyingThunderGod:value=$"{PieceKey(state.OriginalQueen)}/{state.GetQueenTeleportUsesForSync()}/{state.GetQueenTeleportCooldownForSync()}";break;
+                        case AramBuffId.FlyingThunderGod:value=$"{PieceKey(state.OriginalQueen)}/{state.GetQueenTeleportUses()}/{state.GetQueenTeleportCooldown()}";break;
                         case AramBuffId.GamblingLeadsToMisery:value=extraUses[side].ToString();break;
                         case AramBuffId.LootBox:value=Remaining(50,combinedPlies).ToString();break;
                         case AramBuffId.PeaceTShirt:value=$"{peaceFailed[side]}/{peaceUsed[side]}/{Remaining(14,combinedPlies)}";break;

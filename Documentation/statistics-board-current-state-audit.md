@@ -1,3 +1,5 @@
+> Historical note (updated 2026-10-06): this document describes work before the .NET online migration. Spring/Node endpoints, classes and validation results below refer to the retired backend. Use [OnlineDotNetIntegration.md](OnlineDotNetIntegration.md) for the current implementation.
+
 # Statistics Board — audit hiện trạng
 
 Ngày: 21/09/2026. Chỉ khảo sát tính năng Statistics Board và đường dữ liệu liên quan; không sửa code, asset hoặc scene. Kết luận dựa trên mã nguồn đang có. Không đánh đồng với kiểm thử tích hợp đã chạy.

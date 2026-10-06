@@ -1,3 +1,5 @@
+> Historical note (updated 2026-10-06): this document describes work before the .NET online migration. Spring/Node endpoints, classes and validation results below refer to the retired backend. Use [OnlineDotNetIntegration.md](Documentation/OnlineDotNetIntegration.md) for the current implementation.
+
 # Kế hoạch kiến trúc Chess but Weird
 
 Ngày khởi tạo: 2026-09-08. Cập nhật: 2026-09-10. Trạng thái: đang triển khai theo từng mốc; các mục dưới đây ghi rõ phần đã kiểm chứng và phần còn ghép với runtime cũ.

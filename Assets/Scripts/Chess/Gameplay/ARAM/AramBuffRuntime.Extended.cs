@@ -44,7 +44,7 @@ public sealed partial class AramBuffRuntime
     private bool rifleMouseLocked, rifleCursorSuspended;
 
     public bool HasPendingDecision => targetAction != null || decisions.Count > 0 || customizing;
-    private bool IsSwapActive(PieceTeam team) => networkMatch || swapActive[(int)team];
+    private bool IsSwapActive(PieceTeam team) => swapActive[(int)team];
     private bool Live(ChessPiece p) => game && game.AramIsAlive(p);
     private ChessPiece At(Vector2Int p) => ChessMoveRules.IsInsideBoard(p) ? game.AramBoard[p.x,p.y] : null;
     private int Side(PieceTeam team) => (int)team;
@@ -80,7 +80,7 @@ public sealed partial class AramBuffRuntime
     // Buff controls occupy the left edge; the right journal keeps its full height.
     public float StatisticsHudBottom => 0;
     public string RifleMouseHint => "ALT: " + (Cursor.lockState==CursorLockMode.Locked?"unlock mouse":"lock mouse");
-    private PieceTeam AbilityViewer => networkMatch ? visibleTeam : game.IsBotGame ? game.PlayerTeam : game.CurrentTurn;
+    private PieceTeam AbilityViewer => game.IsBotGame ? game.PlayerTeam : game.CurrentTurn;
     public string AbilityBuffSummary
     {
         get
@@ -171,7 +171,6 @@ public sealed partial class AramBuffRuntime
 
     public bool CanMove(ChessPiece piece, Vector2Int destination)
     {
-        if(networkMatch) return true;
         return Live(piece) && SquareAvailable(destination) && (!Live(forcedPawn)||piece==forcedPawn);
     }
 
@@ -184,7 +183,7 @@ public sealed partial class AramBuffRuntime
 
     public void BeforeNormalMove(ChessPiece moving, ChessPiece captured, Vector2Int from, Vector2Int to)
     {
-        if(!active||networkMatch)return;
+        if(!active)return;
         ObserveCheckConditions();
         grantExtraTurn=false;
         int side=Side(moving.Team);
@@ -210,7 +209,7 @@ public sealed partial class AramBuffRuntime
     public PieceTeam AfterNormalMove(ChessPiece moving, ChessPiece captured, Vector2Int from, Vector2Int to)
     {
         PieceTeam team=moving.Team;
-        if(!active||networkMatch)return team==PieceTeam.White?PieceTeam.Black:PieceTeam.White;
+        if(!active)return team==PieceTeam.White?PieceTeam.Black:PieceTeam.White;
         if(decoys.Contains(moving) && captured && captured.Team!=team)
         { var original=moving;decoys.Remove(moving);moving=game.AramReplace(moving,captured.Type,team);TransferInfection(original,moving); }
         if(Live(moving) && moving.Type==PieceType.Pawn && HasBuff(team,AramBuffId.RiseOfPawn) && to.y==Home(team) && to.y-from.y==-moving.ForwardDirection)
@@ -252,7 +251,7 @@ public sealed partial class AramBuffRuntime
 
     public void OnPieceRemoved(ChessPiece piece)
     {
-        if(!piece||networkMatch)return;
+        if(!piece)return;
         if(passengers.TryGetValue(piece,out var team))
         {
             var traits=passengerTraits[piece];passengers.Remove(piece);passengerTraits.Remove(piece);passengerReady.Remove(piece);
@@ -312,7 +311,7 @@ public sealed partial class AramBuffRuntime
 
     public bool HandleAbilityInput()
     {
-        if(!active||networkMatch||!game||!game.GameStarted||game.GameOver)return false;
+        if(!active||!game||!game.GameStarted||game.GameOver)return false;
         if(game.PauseLocked)return rifleCamera||targetAction!=null||customizing;
         if(rifleCamera) { TickRifle(); return true; }
         if(IsSelectingSetupTargets)return false;
@@ -362,7 +361,7 @@ public sealed partial class AramBuffRuntime
     public void GetAbilityActions(List<AramAbilityView.AbilityAction> actions)
     {
         actions.Clear();
-        if(!active||networkMatch||!game||!game.GameStarted||game.GameOver)return;
+        if(!active||!game||!game.GameStarted||game.GameOver)return;
         if(rifleCamera){actions.Add(new AramAbilityView.AbilityAction("Exit rifle",()=>ExitRifle(false)));return;}
         if(customizing){actions.Add(new AramAbilityView.AbilityAction("Confirm formation",FinishFormation));return;}
         if(targetAction!=null){if(targetCancel!=null)actions.Add(new AramAbilityView.AbilityAction("Cancel",CancelTarget));return;}
@@ -458,7 +457,7 @@ public sealed partial class AramBuffRuntime
 
     internal bool IsSniperAttack(ChessPiece bishop,Vector2Int destination)
     {
-        if(!active||networkMatch||!Live(bishop)||bishop.Type!=PieceType.Bishop||
+        if(!active||!Live(bishop)||bishop.Type!=PieceType.Bishop||
             !HasBuff(bishop.Team,AramBuffId.AbsoluteSniper)||!sniperUntil.TryGetValue(bishop,out int expiry)||combinedPlies>=expiry||!SquareAvailable(destination))return false;
         var enemy=At(destination);var from=bishop.BoardPosition;var delta=destination-from;
         return enemy&&enemy.Team!=bishop.Team&&(enemy.Type!=PieceType.King||enemy.GetComponent<AramDecoyTag>())&&
@@ -485,7 +484,7 @@ public sealed partial class AramBuffRuntime
 
     public bool TryOfferEscape(PieceTeam team)
     {
-        if(networkMatch||!HasBuff(team,AramBuffId.IFrameRoll)||escapeUses[Side(team)]>=3)return false;
+        if(!HasBuff(team,AramBuffId.IFrameRoll)||escapeUses[Side(team)]>=3)return false;
         if(targetAction!=null)return true;
         var king=game.AramKing(team);if(!king)return false;
         var from=king.BoardPosition;var squares=EmptySquares();

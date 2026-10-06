@@ -71,7 +71,7 @@ namespace ChessButWeird.Domain
 
     public sealed class FlyingThunderGodBuff : IAramMovementBuff
     {
-        // ARAM-V1 wire contract. Keep these values aligned with the current Spring backend.
+        // Local practice teleport limits.
         public const int MaximumUses = 5;
         public const int CooldownTurns = 5;
         public bool Allows<TBoard>(TBoard board, PieceState piece, Square from, Square to, AramPieceContext c, bool attack)
@@ -84,8 +84,6 @@ namespace ChessButWeird.Domain
     {
         public static readonly AramRules BuiltIn = new AramRules(new CommandantPawnBuff(), new FreestyleLeapBuff(),
             new DoppelgangerBuff(), new FlyingThunderGodBuff(), new ExtendedAramMovement());
-        public static readonly AramRules LegacyV1 = new AramRules(new CommandantPawnBuff(), new LegacyFreestyleLeapBuff(),
-            new DoppelgangerBuff(), new FlyingThunderGodBuff());
         private readonly IAramMovementBuff[] movement;
         public AramRules(params IAramMovementBuff[] movement)
         {
@@ -114,16 +112,9 @@ namespace ChessButWeird.Domain
 
     public static class SuicideBomberBuff
     {
-        public static bool IsVictim(PieceState victim, int capturingPieceId, Square center, Square square, bool legacy = false) =>
-            !victim.IsEmpty && victim.Kind != PieceKind.King && (!legacy || (victim.Id != capturingPieceId && center != square)) &&
+        public static bool IsVictim(PieceState victim, int capturingPieceId, Square center, Square square) =>
+            !victim.IsEmpty && victim.Kind != PieceKind.King &&
             Math.Abs(center.File - square.File) <= 1 && Math.Abs(center.Rank - square.Rank) <= 1;
-    }
-
-    public sealed class LegacyFreestyleLeapBuff : IAramMovementBuff
-    {
-        public bool Allows<TBoard>(TBoard board, PieceState piece, Square from, Square to, AramPieceContext c, bool attack)
-            where TBoard : IReadOnlyBoard => c.Has(AramBuffs.FreestyleLeap) && piece.Kind == PieceKind.Knight &&
-                (MovementRules.IsKnightPattern(from, to) || (Math.Abs(to.File-from.File)==2 && Math.Abs(to.Rank-from.Rank)==2));
     }
 
     public sealed class ExtendedAramMovement : IAramMovementBuff

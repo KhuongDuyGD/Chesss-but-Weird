@@ -143,51 +143,6 @@ Check(StockfishMoveAdapter.TryParseUci("a7a8n", out var stockfishPromotion) &&
     StockfishMoveAdapter.TryParseUci(" a7a8n ", out _) &&
     !StockfishMoveAdapter.TryParseUci("a7a8k", out _),
     "Stockfish adapter maps and validates promotion commands");
-var networkSession = new NetworkMatchSession();
-networkSession.Begin("match-1", "CLASSIC", FenCodec.InitialPosition);
-Check(networkSession.TryQueueCommand("move-1", "match-1") &&
-    !networkSession.TryQueueCommand("move-1", "match-1"),
-    "Network session deduplicates pending request IDs");
-Check(networkSession.TryAcceptResult("move-1", "match-1", 1, "after-one") &&
-    !networkSession.TryAcceptResult("move-1", "match-1", 1, "after-one"),
-    "Network session accepts one authoritative result and rejects its duplicate");
-Check(!networkSession.TryAcceptResult("old", "match-1", 0, "stale") &&
-    networkSession.TryQueueCommand("move-2", "match-1") &&
-    networkSession.RejectCommand("move-2", "match-1"),
-    "Network session rejects stale result and tracks rejection");
-Check(networkSession.ApplySnapshot("match-1", "CLASSIC", "after-two", 2, true) &&
-    networkSession.ConfirmedMoveNumber == 2 && networkSession.PendingCommandCount == 0 &&
-    !networkSession.ApplySnapshot("match-1", "CLASSIC", "older", 1, true),
-    "Network session replaces state only with a current or newer snapshot");
-Check(networkSession.CanApplySnapshot("match-1", 2, true) &&
-    !networkSession.CanApplySnapshot("foreign-match", 3, true) &&
-    !networkSession.CanApplySnapshot("match-1", 1, true),
-    "Network session validates snapshot identity and sequence without mutation");
-var foreignSnapshotBefore = networkSession.GetSnapshot();
-Check(networkSession.TryQueueCommand("pending-preflight", "match-1") &&
-    !networkSession.CanAcceptResult("pending-preflight", "match-1", 1) &&
-    !networkSession.CanAcceptResult("pending-preflight", "foreign", 3) &&
-    networkSession.CanAcceptResult("pending-preflight", "match-1", 3) &&
-    networkSession.PendingCommandCount == 1 && networkSession.AuthoritativeFen == "after-two",
-    "Move preflight rejects stale and foreign results without touching pending commands");
-Check(!networkSession.ApplySnapshot("foreign-match", "CLASSIC", "foreign", 3, true) &&
-    networkSession.MatchId == foreignSnapshotBefore.MatchId &&
-    networkSession.AuthoritativeFen == foreignSnapshotBefore.Fen &&
-    networkSession.ConfirmedMoveNumber == foreignSnapshotBefore.MoveNumber,
-    "Network session ignores a foreign snapshot without mutating state");
-var inactiveSession = new NetworkMatchSession();
-Check(inactiveSession.ApplySnapshot("inactive-match", "CLASSIC", "terminal", 4, false) &&
-    inactiveSession.HasSnapshot && !inactiveSession.IsActive && inactiveSession.IsCompleted &&
-    inactiveSession.GetSnapshot().IsActive == false,
-    "Network session preserves initial inactive snapshot state");
-Check(!inactiveSession.ApplySnapshot("inactive-match", "CLASSIC", "reopened", 5, true) &&
-    !inactiveSession.IsActive && inactiveSession.AuthoritativeFen == "terminal",
-    "Network session does not reactivate a terminal snapshot");
-Check(networkSession.ApplySnapshot("match-1", "CLASSIC", "terminal-two", 3, false) &&
-    networkSession.IsCompleted && !networkSession.IsActive &&
-    !networkSession.ApplySnapshot("match-1", "CLASSIC", "reopened-two", 4, true) &&
-    networkSession.AuthoritativeFen == "terminal-two",
-    "Network session keeps terminal state after completion");
 var resultRecorder = new MatchResultRecorder();
 resultRecorder.Begin("match-result-1");
 int resultWrites = 0;
@@ -197,20 +152,6 @@ Check(resultRecorder.TryRecord(() => resultWrites++) &&
 resultRecorder.Begin("match-result-2");
 Check(resultRecorder.TryRecord(() => resultWrites++) && resultWrites == 2,
     "Match result recorder opens a new lifecycle for a new match");
-var lobbySession = new NetworkLobbySession();
-lobbySession.Configure("ARAM");
-lobbySession.SetRoomCode("ROOM-7");
-lobbySession.SetReady(true, 1);
-lobbySession.BeginMatch("match-7", "ARAM");
-Check(!lobbySession.IsPanelVisible && lobbySession.IsMatchActive &&
-    lobbySession.RoomCode == "ROOM-7" && lobbySession.MatchId == "match-7" &&
-    lobbySession.GameMode == "ARAM" && lobbySession.LocalReady,
-    "Lobby session carries room and match lifecycle state");
-lobbySession.CompleteMatch();
-lobbySession.Reset(true);
-Check(!lobbySession.IsMatchActive && lobbySession.RoomCode == string.Empty &&
-    lobbySession.GameMode == NetworkLobbySession.ClassicGameMode,
-    "Lobby session reset preserves a clean new-room boundary");
 var mate = FenCodec.Parse("7k/6Q1/5K2/8/8/8/8/8 b - - 0 1");
 Check(ClassicRules.IsInCheck(mate.Board, mate.Turn) && ClassicRules.LegalMoves(mate).Count == 0, "Checkmate");
 var stale = FenCodec.Parse("7k/5K2/6Q1/8/8/8/8/8 b - - 0 1");
@@ -226,7 +167,6 @@ var leap = new AramPieceContext(AramBuffs.FreestyleLeap,selectedFreestyle:true);
 Check(!AramRules.BuiltIn.Allows(buffBoard, knight, origin, new Square(5, 5), leap), "Selected Freestyle excludes 2x2 diagonal");
 Check(AramRules.BuiltIn.Allows(buffBoard, knight, origin, new Square(4, 4), leap), "Selected Freestyle includes an intermediate L route square");
 Check(!AramRules.BuiltIn.Allows(buffBoard,knight,origin,new Square(4,4),new AramPieceContext(AramBuffs.FreestyleLeap)),"Unselected Knight retains normal movement");
-Check(AramRules.LegacyV1.Allows(buffBoard,knight,origin,new Square(5,5),new AramPieceContext(AramBuffs.FreestyleLeap)),"Online V1 Freestyle contract preserved");
 var swap = new AramPieceContext(AramBuffs.Doppelganger, swappedKnight: true);
 Check(AramRules.SuppressesStandardMovement(swap) &&
     AramRules.BuiltIn.Allows(buffBoard, knight, origin, new Square(6, 6), swap), "Doppelganger replaces movement");
@@ -250,7 +190,6 @@ Check(!AramRules.BuiltIn.Allows(buffBoard, queen, origin, new Square(1, 6),
 Check(StrongFortressBuff.WaivesCastleAttackChecks(AramBuffs.StrongFortress), "Fortress attack waiver");
 Check(!SuicideBomberBuff.IsVictim(new PieceState(5, PieceKind.King, Team.White), 4, origin, new Square(4, 4)), "Explosion king immunity");
 Check(SuicideBomberBuff.IsVictim(queen, 4, origin, new Square(4, 4)), "Document explosion includes the capturer");
-Check(!SuicideBomberBuff.IsVictim(queen,4,origin,new Square(4,4),legacy:true),"Online V1 explosion capturer immunity preserved");
 Check(SuicideBomberBuff.IsVictim(pawn, 4, origin, new Square(4, 4)), "Explosion adjacent victim");
 var none = new Square(-1, -1);
 var explosionBoard = new BoardState();

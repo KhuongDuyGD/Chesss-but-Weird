@@ -9,7 +9,6 @@ public static class AuthSmokeTestRunner
     {
         try
         {
-            BackendSessionStore.Clear();
             PlayerAuthService.Logout();
 
             AssertFalse(PlayerAuthService.IsAuthenticated, "Expected logged-out state after clearing session.");
@@ -21,29 +20,18 @@ public static class AuthSmokeTestRunner
             PlayerAuthService.Logout();
             AssertFalse(PlayerAuthService.IsGuestSession, "Logout should clear the Guest flag.");
 
-            BackendAuthResponseDto auth = new BackendAuthResponseDto
+            AuthStorage.SaveTokens("smoke-access-token", "smoke-refresh-token",
+                DateTimeOffset.UtcNow.AddHours(1).ToString("O"), DateTimeOffset.UtcNow.AddDays(1).ToString("O"));
+            PlayerAuthService.ApplyApiUser(new UserMeResponse
             {
-                token = "smoke-token",
-                // Zero reproduces a server response that omitted the optional
-                // lifetime. The client should apply its safe default instead of
-                // expiring an otherwise valid login immediately.
-                expiresInSeconds = 0,
-                user = new BackendUserProfileDto
-                {
-                    id = "smoke-user-id",
-                    username = "smoke_player",
-                    elo = 1337,
-                    createdAt = DateTime.UtcNow.ToString("O")
-                }
-            };
-
-            PlayerAuthService.ApplyAuthResponse(auth);
-            AssertTrue(PlayerAuthService.IsAuthenticated, "ApplyAuthResponse should authenticate the player.");
-            AssertTrue(PlayerAuthService.CanUseOnlineFeatures, "Guest -> logout -> backend login should unlock multiplayer.");
-            AssertFalse(PlayerAuthService.IsGuestSession, "Backend login must replace stale Guest state.");
+                userId = "smoke-user-id", username = "smoke_player",
+                createdAt = DateTime.UtcNow.ToString("O")
+            });
+            AssertTrue(PlayerAuthService.IsAuthenticated, "ApplyApiUser should authenticate the player.");
+            AssertTrue(PlayerAuthService.CanUseOnlineFeatures, "Guest -> logout -> .NET login should unlock multiplayer.");
+            AssertFalse(PlayerAuthService.IsGuestSession, ".NET login must replace stale Guest state.");
             AssertEqual("smoke_player", PlayerAuthService.Username, "Username mismatch.");
             AssertEqual("smoke_player", PlayerAuthService.CurrentDisplayName, "Display name mismatch.");
-            AssertEqual(1337, PlayerAuthService.CurrentProfile.rating, "Rating mismatch.");
 
             PlayerAuthService.RecordGameResult(true, false, false);
             PlayerAuthService.RecordGameResult(false, true, false);
@@ -56,10 +44,9 @@ public static class AuthSmokeTestRunner
             PlayerAuthService.Logout();
             AssertFalse(PlayerAuthService.IsAuthenticated, "Logout should clear authentication.");
 
-            PlayerAuthService.TryRestoreSession();
             AssertFalse(PlayerAuthService.IsAuthenticated, "Session should not restore after logout.");
 
-            Debug.Log("[ChessAuthTest] Backend auth smoke tests passed.");
+            Debug.Log("[ChessAuthTest] Account and guest smoke tests passed.");
         }
         catch (Exception exception)
         {
@@ -67,7 +54,6 @@ public static class AuthSmokeTestRunner
         }
         finally
         {
-            BackendSessionStore.Clear();
             PlayerAuthService.Logout();
         }
     }
@@ -107,14 +93,7 @@ public static class AuthSmokeTestRunner
             }
             AssertEqual(1, root.GetComponentsInChildren<GuestAccessWarning>(true).Length, "Repeated attempts should reuse the modal.");
 
-            bool errorReported = false;
-            var request = BackendRestClient.Send<object>("GET", "/guest-access-smoke-test", null, true,
-                _ => throw new InvalidOperationException("Guest request must not succeed."),
-                (message, _) => errorReported = !string.IsNullOrWhiteSpace(message));
-            AssertFalse(request.MoveNext(), "Guest requests must stop before making a web request.");
-            AssertTrue(errorReported, "Blocked requests should notify their caller.");
-            AssertTrue(PlayerAuthService.IsGuestSession, "Blocked requests must preserve the guest session.");
-            AssertTrue(ReferenceEquals(profile, PlayerAuthService.CurrentProfile), "Blocked requests must preserve the profile.");
+
         }
         finally
         {

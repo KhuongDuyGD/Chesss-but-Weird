@@ -1,0 +1,6 @@
+<linker>
+  <!-- Newtonsoft materializes the online contract by reflection in IL2CPP. -->
+  <assembly fullname="Assembly-CSharp">
+    <type fullname="ChessButWeird.Online.*" preserve="all" />
+  </assembly>
+</linker>

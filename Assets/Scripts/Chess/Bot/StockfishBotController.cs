@@ -43,7 +43,7 @@ public sealed class StockfishBotController : MonoBehaviour
         QueueBotTurnIfNeeded();
     }
 
-    private void HandleMoveCommitted(ChessLanMove move)
+    private void HandleMoveCommitted(ChessMove move)
     {
         QueueBotTurnIfNeeded();
     }
