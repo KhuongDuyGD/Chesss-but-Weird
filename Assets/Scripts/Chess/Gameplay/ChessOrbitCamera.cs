@@ -8,7 +8,7 @@ using UnityEngine.InputSystem;
 public sealed class ChessOrbitCamera : MonoBehaviour
 {
     [Header("Fixed Board View")]
-    [SerializeField, Range(45f, 85f)] private float boardViewPitch = 65f;
+    [SerializeField, Range(45f, 85f)] private float boardViewPitch = 50f;
     [SerializeField, Min(1f)] private float framePadding = 1.12f;
     [SerializeField, Min(0f)] private float pieceHeadroomInTiles = 1.5f;
 
