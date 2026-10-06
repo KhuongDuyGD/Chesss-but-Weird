@@ -27,6 +27,8 @@ public sealed class AnalysisBoardView : MonoBehaviour
     private float nextRefresh,lastBottom;
     private bool lastAram;
     private bool lastOnline;
+    private bool lastBot;
+    private float lastCompanionBottom;
     private Vector2 lastSize;
     private string preferenceMode;
     private TextMeshProUGUI whiteMoves,blackMoves,whiteBuff,blackBuff;
@@ -67,7 +69,7 @@ public sealed class AnalysisBoardView : MonoBehaviour
     {
         if(!visible||!game||activeInstance!=this)return;
         bool modeChanged=LoadPreference();
-        if(modeChanged||root.rect.size!=lastSize||lastBottom!=game.StatisticsHudBottom||lastAram!=game.IsAramGame||lastOnline!=game.UsesDotNetOnline)Layout();
+        if(modeChanged||root.rect.size!=lastSize||lastBottom!=game.StatisticsHudBottom||lastAram!=game.IsAramGame||lastOnline!=game.UsesDotNetOnline||lastBot!=game.IsBotGame||lastCompanionBottom!=BotCompanionView.BottomInset(game))Layout();
         if(Time.unscaledTime<nextRefresh)return;nextRefresh=Time.unscaledTime+.1f;Refresh();
     }
     private void Build()
@@ -161,9 +163,11 @@ public sealed class AnalysisBoardView : MonoBehaviour
         whiteState.gameObject.SetActive(game.UsesDotNetOnline);blackState.gameObject.SetActive(game.UsesDotNetOnline);
         statusRect.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal,Mathf.Min(660,lastSize.x-40));
         float jw=Mathf.Min(410,lastSize.x-40),bottom=Mathf.Max(20,game.StatisticsHudBottom+12);
+        if(game.IsBotGame)bottom=Mathf.Max(bottom,BotCompanionView.BottomInset(game)+12);
         float start=game.IsAramGame?138:58,jh=Mathf.Max(190,Mathf.Min(650,lastSize.y-start-bottom));
         MatchHudStyle.Place(journal,Vector2.one,new Vector2(jw,jh),new Vector2(-20-jw/2,-start-jh/2));ApplyPanels();
-        lastBottom=game.StatisticsHudBottom;lastAram=game.IsAramGame;lastOnline=game.UsesDotNetOnline;
+        lastBottom=game.StatisticsHudBottom;lastAram=game.IsAramGame;lastOnline=game.UsesDotNetOnline;lastBot=game.IsBotGame;
+        lastCompanionBottom=BotCompanionView.BottomInset(game);
         if(!cameraOwner){cameraOwner=Camera.main;cameraCaptured=false;}
         if(cameraOwner)
         {

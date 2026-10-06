@@ -118,6 +118,7 @@ public partial class ChessGame : MonoBehaviour
     public bool InputLocked => inputLocked || contentLoading;
     public bool PauseLocked => pauseLocked;
     public bool IsBotGame => botMode;
+    public bool IsHotseatGame => !botMode && !serverAuthoritativeMode && !restrictInputToControlledTeam;
     public bool IsAramGame => aramMode;
     public bool UsesLocalClassicSession => localClassicCoordinator != null && !aramMode && !serverAuthoritativeMode && !botMode;
     public bool UsesClassicDomainSession => localClassicCoordinator != null && !aramMode && !serverAuthoritativeMode;
@@ -137,6 +138,7 @@ public partial class ChessGame : MonoBehaviour
     public PieceTeam MoveHistoryFirstTurn => moveHistoryFirstTurn;
     public event Action<ChessMove> MoveCommitted;
     public event Action ReturnedToMainMenu;
+    public event Action ContentReady;
     public event Action LocalGameRestarted;
 
     private void Awake()
@@ -275,8 +277,10 @@ public partial class ChessGame : MonoBehaviour
 
     public void SetContentLoading(bool loading)
     {
+        bool wasLoading = contentLoading;
         contentLoading = loading;
         RefreshLocalInteractionState();
+        if (wasLoading && !loading) ContentReady?.Invoke();
     }
 
     internal void ClearCosmeticPieces()
@@ -1082,9 +1086,7 @@ public partial class ChessGame : MonoBehaviour
         if (orbitCamera == null)
             return;
 
-        // Online seats use canonical board coordinates, so orient the camera to
-        // the assigned side. Local games keep their existing board overview.
-        orbitCamera.ConfigureForPlayerSide(serverAuthoritativeMode ? playerSide : PieceTeam.White, immediate);
+        orbitCamera.ConfigureForPlayerSide(serverAuthoritativeMode || botMode ? playerSide : PieceTeam.White, immediate);
     }
 
     private void HandleBoardClick()
@@ -1566,10 +1568,7 @@ public partial class ChessGame : MonoBehaviour
     {
         if (UsesClassicDomainSession && pendingPromotionPawn == null)
         {
-            string[] fields = ChessButWeird.Domain.FenCodec.Write(localClassicCoordinator.Snapshot)
-                .Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-            if (fields.Length >= 4)
-                return $"{fields[0]} {fields[1]} {fields[2]} {fields[3]}";
+            return ChessButWeird.Domain.FenCodec.RepetitionKey(localClassicCoordinator.Snapshot);
         }
 
         StringBuilder builder = new StringBuilder(96);
@@ -2161,7 +2160,9 @@ public partial class ChessGame : MonoBehaviour
         bool won = winner == playerTeam;
         bool lost = winner != playerTeam;
         MatchReward reward = CalculateMatchReward(won, lost, false);
-        if (dotNetState == null) matchResultRecorder.TryRecord(() => PlayerAuthService.RecordGameResult(
+        if (IsHotseatGame) matchResultRecorder.TryRecord(() => PlayerAuthService.RecordHotseatResult(
+            GetProfileMatchMode(), winner + " wins", winner + " won", matchResultRecorder.MatchId));
+        else if (dotNetState == null) matchResultRecorder.TryRecord(() => PlayerAuthService.RecordGameResult(
                 won,
                 lost,
                 false,
@@ -2172,7 +2173,7 @@ public partial class ChessGame : MonoBehaviour
                 reward.diamonds,
                 reward.tickets,
                 matchResultRecorder.MatchId));
-        PlayResultSoundIfDefaultPack(won ? ResultMenuView.ResultKind.Win : ResultMenuView.ResultKind.Lose);
+        PlayResultSoundIfDefaultPack(IsHotseatGame || won ? ResultMenuView.ResultKind.Win : ResultMenuView.ResultKind.Lose);
         drawReason = string.Empty;
         selectedPiece = null;
         gameStarted = false;
@@ -2198,7 +2199,9 @@ public partial class ChessGame : MonoBehaviour
         status = ChessGameStatus.Draw;
         frozenMatchDurationSeconds = MatchElapsedSeconds;
         MatchReward reward = CalculateMatchReward(false, false, true);
-        if (dotNetState == null) matchResultRecorder.TryRecord(() => PlayerAuthService.RecordGameResult(
+        if (IsHotseatGame) matchResultRecorder.TryRecord(() => PlayerAuthService.RecordHotseatResult(
+            GetProfileMatchMode(), "Draw", reason, matchResultRecorder.MatchId));
+        else if (dotNetState == null) matchResultRecorder.TryRecord(() => PlayerAuthService.RecordGameResult(
                 false,
                 false,
                 true,
@@ -2236,7 +2239,7 @@ public partial class ChessGame : MonoBehaviour
     private string GetProfileOpponentName()
     {
         if (botMode)
-            return $"{StockfishDifficultyProfiles.Get(botDifficulty).DisplayName} Bot";
+            return StockfishDifficultyProfiles.Get(botDifficulty).BotName + " / " + StockfishDifficultyProfiles.Get(botDifficulty).DisplayName;
         return "Player";
     }
 

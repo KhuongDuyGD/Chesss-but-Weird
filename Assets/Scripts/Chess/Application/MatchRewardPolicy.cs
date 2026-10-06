@@ -9,7 +9,7 @@ internal static class MatchRewardPolicy
         MatchReward drawReward;
         MatchReward lossReward;
 
-        switch (difficulty)
+        switch (StockfishDifficultyProfiles.RewardTier(difficulty))
         {
             case StockfishDifficulty.Beginner:
                 winReward = new MatchReward(120, 3, 0);

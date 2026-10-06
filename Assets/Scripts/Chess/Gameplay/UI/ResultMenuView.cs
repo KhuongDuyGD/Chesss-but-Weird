@@ -61,14 +61,14 @@ public sealed class ResultMenuView : MonoBehaviour
         canvasRoot.SetActive(false);
     }
 
-    public void Show(ResultKind kind)
+    public void Show(ResultKind kind, string neutralTitle = null)
     {
         if (!IsReady)
             return;
 
         GameMusicManager.PlayResultMusic(kind);
         pauseMenu?.SetResultSpectating(false);
-        Rebuild(kind);
+        Rebuild(kind, neutralTitle);
         canvasRoot.SetActive(true);
     }
 
@@ -78,7 +78,7 @@ public sealed class ResultMenuView : MonoBehaviour
             canvasRoot.SetActive(false);
     }
 
-    private void Rebuild(ResultKind kind)
+    private void Rebuild(ResultKind kind, string neutralTitle)
     {
         if (contentRoot)
             Destroy(contentRoot.gameObject);
@@ -96,11 +96,30 @@ public sealed class ResultMenuView : MonoBehaviour
 
         Image panel = CreateImage(contentRoot, "Result Panel", blank, Vector2.zero, PanelSize);
         panel.raycastTarget = false;
+        if (!string.IsNullOrEmpty(neutralTitle))
+        {
+            panel.enabled=false; // WinUIBlank itself contains the baked words 'You Win'.
+            var neutralRect=CreateRect(contentRoot,"Neutral result panel");
+            neutralRect.anchorMin=neutralRect.anchorMax=neutralRect.pivot=new Vector2(.5f,.5f);
+            neutralRect.sizeDelta=PanelSize;
+            var neutralPanel=neutralRect.gameObject.AddComponent<HandDrawnRoundedGraphic>();
+            neutralPanel.Configure(SketchbookUI.White,SketchbookUI.Ink,30,3,1,17);
+            neutralPanel.raycastTarget=false;
+        }
 
         Image decorationImage = CreateImage(contentRoot, "Result Decoration", decoration, profile.decorationPosition, profile.decorationSize);
         decorationImage.raycastTarget = false;
         HandDrawnIdleWiggle wiggle = decorationImage.gameObject.AddComponent<HandDrawnIdleWiggle>();
         wiggle.Configure(1.6f, 0.55f, 0.008f, 0.12f);
+        if (!string.IsNullOrEmpty(neutralTitle))
+        {
+            // Replace the baked personal win artwork with a side-neutral result.
+            decorationImage.gameObject.SetActive(false);
+            var label = SketchbookUI.Text(contentRoot, "Hotseat winner", neutralTitle,
+                new Rect(0, 0, 600, 180), 72, SketchbookUI.Ink, TMPro.TextAlignmentOptions.Center, true);
+            label.rectTransform.anchorMin = label.rectTransform.anchorMax = new Vector2(.5f,.5f);
+            label.rectTransform.anchoredPosition = new Vector2(0,250);
+        }
 
         CreateButton(contentRoot, "Spectated Game", spectate, profile.spectatePosition, profile.buttonSize, owner.SpectateFinishedGame);
         CreateButton(contentRoot, "New Game", newGame, profile.newGamePosition, profile.buttonSize, owner.StartNewGameFromResult);

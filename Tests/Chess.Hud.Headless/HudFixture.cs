@@ -10,7 +10,8 @@ public sealed partial class ChessGame : MonoBehaviour
 {
     public enum ChessGameStatus { Playing, Draw, Checkmate }
     private bool aramMode,botMode,serverAuthoritativeMode,gameStarted=true,pauseLocked;
-    private string botDifficulty="Beginner",lastMoveSummary;
+    private StockfishDifficulty botDifficulty=StockfishDifficulty.Beginner;
+    private string lastMoveSummary;
     private PieceTeam currentTurn,playerTeam;
     private ChessPiece checkedKing;
     private ChessTurnSelectionUI turnSelectionUI;
@@ -25,6 +26,8 @@ public sealed partial class ChessGame : MonoBehaviour
     public PieceTeam PlayerTeam { get=>playerTeam;set=>playerTeam=value; }
     public float AramHudBottom { get=>aramCoordinator.Runtime?aramCoordinator.Runtime.StatisticsHudBottom:0;set { aramCoordinator.Runtime=GetComponent<AramBuffRuntime>();aramCoordinator.Runtime.StatisticsHudBottom=value; } }
     public bool UsesDotNetOnline;
+    public string OnlineClockLabel(PieceTeam team) => "10:00";
+    public string OnlineMatchPhase => "Playing";
     public bool TryGetOnlineBuffSummary(PieceTeam team, out string summary, out string details)
     { summary = details = string.Empty; return false; }
     public bool GameOver,HasPendingPromotion;
@@ -37,6 +40,11 @@ public sealed partial class ChessGame : MonoBehaviour
     private List<PieceType> GetCapturedPieceList(PieceTeam team)=>team==PieceTeam.White?whiteCapturedPieces:blackCapturedPieces;
     public IReadOnlyList<PieceType> GetCapturedPieces(PieceTeam team)=>GetCapturedPieceList(team);
     public int GetCapturedMaterialScore(PieceTeam team) {int value=0;foreach(var piece in GetCapturedPieces(team))value+=piece==PieceType.Queen?9:piece==PieceType.Rook?5:piece==PieceType.Knight||piece==PieceType.Bishop?3:piece==PieceType.Pawn?1:0;return value;}
+}
+// The existing HUD fixture models the idle avatar's reserved space without loading bot gameplay.
+public static class BotCompanionView
+{
+    public static float BottomInset(ChessGame game)=>156;
 }
 public sealed class HudCoordinator { public AramBuffRuntime Runtime; public bool IsActive => Runtime && Runtime.IsActive; }
 public sealed class ChessPiece : MonoBehaviour { public PieceTeam Team; public PieceType Type; }

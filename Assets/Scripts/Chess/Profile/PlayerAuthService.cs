@@ -82,6 +82,12 @@ public static class PlayerAuthService
         PlayerProfileStore.Reload();
         PlayerProfileStore.ApplyServerSnapshot(user);
     }
+    public static void RecordHotseatResult(string mode, string result, string detail, string matchId)
+    {
+        if (CurrentProfile == null) return;
+        PlayerProfileStore.RecordMatch(mode, "Local players", result, detail, matchId: matchId, countStats: false);
+        if (IsGuestSession) SaveGuestProfile();
+    }
     public static bool CanUseOnlineFeatures => IsAuthenticated && !IsGuestSession && AuthStorage.HasSession();
 
     private static PlayerProfile LoadGuestProfile()

@@ -26,7 +26,9 @@ public sealed class StockfishCandidate
 
 public sealed class StockfishUciClient : IDisposable
 {
-    private const int CommandTimeoutMs = 10000;
+    private readonly int commandTimeoutMs;
+    private readonly int stopGraceMs;
+    private readonly string executablePath;
     private readonly object stateLock = new object();
     private readonly SemaphoreSlim commandGate = new SemaphoreSlim(1, 1);
     private Process process;
@@ -34,8 +36,16 @@ public sealed class StockfishUciClient : IDisposable
     private TaskCompletionSource<bool> engineReadySignal;
     private SearchSession activeSearch;
     private bool disposed;
+    private bool initialized;
 
-    public bool IsRunning => process != null && !process.HasExited;
+    public StockfishUciClient(string executablePath = null, int commandTimeoutMs = 10000, int stopGraceMs = 1500)
+    {
+        this.executablePath = executablePath ?? Path.Combine(Application.streamingAssetsPath, "Stockfish", "Windows", "stockfish.exe");
+        this.commandTimeoutMs = Math.Max(1, commandTimeoutMs);
+        this.stopGraceMs = Math.Max(1, stopGraceMs);
+    }
+
+    public bool IsRunning { get { lock (stateLock) return process != null && !process.HasExited; } }
 
     public async Task<IReadOnlyList<StockfishCandidate>> FindCandidatesAsync(
         string fen,
@@ -48,22 +58,41 @@ public sealed class StockfishUciClient : IDisposable
             throw new ArgumentNullException(nameof(profile));
 
         await commandGate.WaitAsync(cancellationToken);
+        SearchSession search = null;
         try
         {
             await EnsureStartedAsync(cancellationToken);
             SendCommand($"setoption name MultiPV value {profile.MultiPv}");
             await WaitUntilReadyAsync(cancellationToken);
 
-            SearchSession search = new SearchSession();
+            cancellationToken.ThrowIfCancellationRequested();
+            search = new SearchSession();
             lock (stateLock)
                 activeSearch = search;
 
-            using (cancellationToken.Register(() => TrySendCommand("stop")))
+            SendCommand($"position fen {fen}");
+            SendCommand($"go depth {profile.SearchDepth}");
+            var result = await AwaitSignalAsync(search.Completion.Task, cancellationToken, commandTimeoutMs);
+            cancellationToken.ThrowIfCancellationRequested();
+            return result;
+        }
+        catch (OperationCanceledException)
+        {
+            // Retain ownership until the old bestmove is consumed. isready does NOT stop a search.
+            if (search != null)
             {
-                SendCommand($"position fen {fen}");
-                SendCommand($"go depth {profile.SearchDepth}");
-                return await AwaitSignalAsync(search.Completion.Task, cancellationToken, CommandTimeoutMs);
+                TrySendCommand("stop");
+                try { await AwaitSignalAsync(search.Completion.Task, CancellationToken.None, stopGraceMs); }
+                catch { ResetProcess(); }
             }
+            else ResetProcess(); // A partially initialized process must never be reused.
+            throw;
+        }
+        catch
+        {
+            // A timeout or broken pipe leaves the protocol ambiguous; a fresh process is the boundary.
+            ResetProcess();
+            throw;
         }
         finally
         {
@@ -76,19 +105,14 @@ public sealed class StockfishUciClient : IDisposable
     private async Task EnsureStartedAsync(CancellationToken cancellationToken)
     {
         ThrowIfDisposed();
-        if (IsRunning)
+        if (IsRunning && initialized)
             return;
-
-        string executablePath = Path.Combine(
-            Application.streamingAssetsPath,
-            "Stockfish",
-            "Windows",
-            "stockfish.exe");
+        ResetProcess();
 
         if (!File.Exists(executablePath))
             throw new FileNotFoundException("Stockfish executable was not found.", executablePath);
 
-        process = new Process
+        var startedProcess = new Process
         {
             StartInfo = new ProcessStartInfo
             {
@@ -103,30 +127,33 @@ public sealed class StockfishUciClient : IDisposable
             EnableRaisingEvents = true
         };
 
-        process.OutputDataReceived += HandleOutputLine;
-        process.Exited += HandleProcessExited;
-        uciReadySignal = NewSignal<bool>();
-
-        if (!process.Start())
-            throw new InvalidOperationException("Unable to start Stockfish.");
-
-        process.BeginOutputReadLine();
-        process.BeginErrorReadLine();
+        lock (stateLock)
+        {
+            ThrowIfDisposed();
+            process = startedProcess;
+            process.OutputDataReceived += HandleOutputLine;
+            process.Exited += HandleProcessExited;
+            uciReadySignal = NewSignal<bool>();
+            if (!process.Start()) throw new InvalidOperationException("Unable to start Stockfish.");
+            process.BeginOutputReadLine();
+            process.BeginErrorReadLine();
+        }
         SendCommand("uci");
-        await AwaitSignalAsync(uciReadySignal.Task, cancellationToken, CommandTimeoutMs);
+        await AwaitSignalAsync(uciReadySignal.Task, cancellationToken, commandTimeoutMs);
 
         SendCommand("setoption name Threads value 1");
         SendCommand("setoption name Hash value 32");
         SendCommand("setoption name Ponder value false");
         SendCommand("ucinewgame");
         await WaitUntilReadyAsync(cancellationToken);
+        initialized = true;
     }
 
     private async Task WaitUntilReadyAsync(CancellationToken cancellationToken)
     {
-        engineReadySignal = NewSignal<bool>();
+        lock (stateLock) engineReadySignal = NewSignal<bool>();
         SendCommand("isready");
-        await AwaitSignalAsync(engineReadySignal.Task, cancellationToken, CommandTimeoutMs);
+        await AwaitSignalAsync(engineReadySignal.Task, cancellationToken, commandTimeoutMs);
     }
 
     private void HandleOutputLine(object sender, DataReceivedEventArgs args)
@@ -134,48 +161,53 @@ public sealed class StockfishUciClient : IDisposable
         string line = args.Data;
         if (string.IsNullOrWhiteSpace(line))
             return;
-
-        if (line == "uciok")
-        {
-            uciReadySignal?.TrySetResult(true);
-            return;
-        }
-
-        if (line == "readyok")
-        {
-            engineReadySignal?.TrySetResult(true);
-            return;
-        }
-
-        SearchSession search;
         lock (stateLock)
+        {
+            if (!ReferenceEquals(sender, process)) return;
+            if (line == "uciok")
+            {
+                uciReadySignal?.TrySetResult(true);
+                return;
+            }
+
+            if (line == "readyok")
+            {
+                engineReadySignal?.TrySetResult(true);
+                return;
+            }
+
+            SearchSession search;
             search = activeSearch;
 
-        if (search == null)
-            return;
+            if (search == null)
+                return;
 
-        if (line.StartsWith("info ", StringComparison.Ordinal))
-            search.AcceptInfo(line);
-        else if (line.StartsWith("bestmove ", StringComparison.Ordinal))
-            search.Complete(line);
+            if (line.StartsWith("info ", StringComparison.Ordinal))
+                search.AcceptInfo(line);
+            else if (line.StartsWith("bestmove ", StringComparison.Ordinal))
+                search.Complete(line);
+        }
     }
 
     private void HandleProcessExited(object sender, EventArgs args)
     {
-        SearchSession search;
         lock (stateLock)
-            search = activeSearch;
-
-        search?.Completion.TrySetException(new InvalidOperationException("Stockfish stopped unexpectedly."));
+        {
+            if (!ReferenceEquals(sender, process)) return;
+            initialized = false;
+            FaultSignals(new InvalidOperationException("Stockfish stopped unexpectedly."));
+        }
     }
 
     private void SendCommand(string command)
     {
-        if (!IsRunning)
-            throw new InvalidOperationException("Stockfish is not running.");
-
-        process.StandardInput.WriteLine(command);
-        process.StandardInput.Flush();
+        lock (stateLock)
+        {
+            ThrowIfDisposed();
+            if (!IsRunning) throw new InvalidOperationException("Stockfish is not running.");
+            process.StandardInput.WriteLine(command);
+            process.StandardInput.Flush();
+        }
     }
 
     private void TrySendCommand(string command)
@@ -193,13 +225,14 @@ public sealed class StockfishUciClient : IDisposable
 
     private static async Task<T> AwaitSignalAsync<T>(Task<T> signal, CancellationToken cancellationToken, int timeoutMs)
     {
-        Task timeout = Task.Delay(timeoutMs, cancellationToken);
-        Task completed = await Task.WhenAny(signal, timeout);
-        if (completed == signal)
-            return await signal;
-
-        cancellationToken.ThrowIfCancellationRequested();
-        throw new TimeoutException("Stockfish did not respond in time.");
+        using (var delayCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken))
+        {
+            Task completed = await Task.WhenAny(signal, Task.Delay(timeoutMs, delayCancellation.Token));
+            delayCancellation.Cancel();
+            cancellationToken.ThrowIfCancellationRequested();
+            if (completed == signal) return await signal;
+            throw new TimeoutException("Stockfish did not respond in time.");
+        }
     }
 
     private static TaskCompletionSource<T> NewSignal<T>()
@@ -215,30 +248,37 @@ public sealed class StockfishUciClient : IDisposable
 
     public void Dispose()
     {
-        if (disposed)
-            return;
-
-        disposed = true;
-        TrySendCommand("quit");
-
-        if (process != null)
+        lock (stateLock)
         {
-            try
-            {
-                if (!process.HasExited && !process.WaitForExit(750))
-                    process.Kill();
-            }
-            catch
-            {
-                // The operating system may already have released the process.
-            }
-
-            process.OutputDataReceived -= HandleOutputLine;
-            process.Exited -= HandleProcessExited;
-            process.Dispose();
-            process = null;
+            if (disposed) return;
+            disposed = true;
         }
+        ResetProcess();
+    }
 
+    private void FaultSignals(Exception error)
+    {
+        uciReadySignal?.TrySetException(error);
+        engineReadySignal?.TrySetException(error);
+        activeSearch?.Completion.TrySetException(error);
+    }
+
+    private void ResetProcess()
+    {
+        Process previous;
+        lock (stateLock)
+        {
+            previous = process; process = null; initialized = false;
+            FaultSignals(new InvalidOperationException("Stockfish session was reset."));
+            activeSearch = null;
+        }
+        if (previous == null) return;
+        previous.OutputDataReceived -= HandleOutputLine;
+        previous.Exited -= HandleProcessExited;
+        try { if (!previous.HasExited) previous.Kill(); }
+        catch (InvalidOperationException) { }
+        catch (System.ComponentModel.Win32Exception) { }
+        finally { previous.Dispose(); }
     }
 
     private sealed class SearchSession
@@ -256,6 +296,7 @@ public sealed class StockfishUciClient : IDisposable
             int multiPv = ReadIntegerAfter(tokens, "multipv", 1);
             int scoreIndex = Array.IndexOf(tokens, "score");
             int pvIndex = Array.IndexOf(tokens, "pv");
+            if (Array.IndexOf(tokens, "lowerbound") >= 0 || Array.IndexOf(tokens, "upperbound") >= 0) return;
             if (scoreIndex < 0 || scoreIndex + 2 >= tokens.Length || pvIndex < 0 || pvIndex + 1 >= tokens.Length)
                 return;
 

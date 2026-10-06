@@ -514,7 +514,7 @@ public sealed class GameMusicManager : MonoBehaviour
             case GameMusicContext.Gacha:
                 return One(MusicTrack.AngryBirds("Angry Birds Epic music extended - Camp Ca- Caw.mp3"));
             case GameMusicContext.InGame:
-                if (request.isBotGame && request.difficulty == StockfishDifficulty.Expert)
+                if (request.isBotGame && StockfishDifficultyProfiles.RewardTier(request.difficulty) == StockfishDifficulty.Expert)
                     return One(MusicTrack.AngryBirds("Angry Birds Epic music extended - King Pig and His Manic Minions Boss battle.mp3"));
                 return new[]
                 {
@@ -550,9 +550,9 @@ public sealed class GameMusicManager : MonoBehaviour
             case GameMusicContext.Gacha:
                 return One(MusicTrack.EpicSeven("Epic Seven OST Summon Theme 1 - Osvald.mp3"));
             case GameMusicContext.InGame:
-                if (request.isBotGame && request.difficulty == StockfishDifficulty.Expert)
+                if (request.isBotGame && StockfishDifficultyProfiles.RewardTier(request.difficulty) == StockfishDifficulty.Expert)
                     return One(MusicTrack.EpicSeven("Epic Seven OST Notos Theme - Osvald.mp3"));
-                if (request.isBotGame && request.difficulty >= StockfishDifficulty.Hard)
+                if (request.isBotGame && StockfishDifficultyProfiles.RewardTier(request.difficulty) >= StockfishDifficulty.Hard)
                 {
                     return new[]
                     {

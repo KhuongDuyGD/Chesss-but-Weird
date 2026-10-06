@@ -93,6 +93,26 @@ namespace ChessButWeird.Domain
             return builder.ToString();
         }
 
+        /// <summary>FIDE repetition identity: EP matters only when a legal capture exists, including king safety.</summary>
+        public static string RepetitionKey(MatchState state)
+        {
+            string[] fields = Write(state).Split(' ');
+            bool legalEnPassant = false;
+            if (state.EnPassantTarget.IsValid)
+            {
+                int forward = state.Turn == Team.White ? 1 : -1;
+                for (int offset = -1; offset <= 1; offset += 2)
+                {
+                    var from = new Square(state.EnPassantTarget.File + offset, state.EnPassantTarget.Rank - forward);
+                    if (!from.IsValid) continue;
+                    var piece = state.Board.GetPiece(from);
+                    if (piece.Kind == PieceKind.Pawn && !piece.IsEmpty && piece.Team == state.Turn &&
+                        ClassicRules.TryApply(state, new Move(from, state.EnPassantTarget), out _)) legalEnPassant = true;
+                }
+            }
+            return fields[0] + " " + fields[1] + " " + fields[2] + " " + (legalEnPassant ? fields[3] : "-");
+        }
+
         private static void AppendRight(StringBuilder builder, BoardState board, Team team, int file, char symbol)
         {
             int rank = team == Team.White ? 0 : 7;

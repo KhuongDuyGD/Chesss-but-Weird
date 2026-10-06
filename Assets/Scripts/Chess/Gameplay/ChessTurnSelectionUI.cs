@@ -395,7 +395,8 @@ public class ChessTurnSelectionUI : MonoBehaviour
         analysisBoard?.SetVisible(true);
         analysisBoard?.SetInteractionEnabled(true);
         pauseMenu?.SetResultSpectating(false);
-        resultMenu?.Show(winningTeam == playerTeam ? ResultMenuView.ResultKind.Win : ResultMenuView.ResultKind.Lose);
+        resultMenu?.Show(chessGame.IsHotseatGame || winningTeam == playerTeam ? ResultMenuView.ResultKind.Win : ResultMenuView.ResultKind.Lose,
+            chessGame.IsHotseatGame ? winningTeam + " wins" : null);
     }
 
     public void ShowDraw(PieceTeam selectedPlayerTeam, string reason)
@@ -633,7 +634,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
 
         GUI.Box(panelRect, string.Empty);
         string title = resultIsDraw ? "Match Drawn!" : "Game Over";
-        string result = resultIsDraw ? "Draw" : winningTeam == playerTeam ? "You Win" : "You Lose";
+        string result = resultIsDraw ? "Draw" : chessGame.IsHotseatGame ? winningTeam + " wins" : winningTeam == playerTeam ? "You Win" : "You Lose";
         string detail = resultIsDraw ? $"Reason: {drawReason}" : $"{winningTeam} wins";
 
         GUI.Label(new Rect(panelRect.x, panelRect.y + 56f, panelRect.width, 80f), title, titleStyle);

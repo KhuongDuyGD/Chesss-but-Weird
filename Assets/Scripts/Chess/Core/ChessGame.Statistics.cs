@@ -28,7 +28,7 @@ public partial class ChessGame
     {
         string supplied = turnSelectionUI ? turnSelectionUI.GetMatchPlayerName(team) : null;
         if (!string.IsNullOrWhiteSpace(supplied)) return supplied;
-        if (botMode) return team == playerTeam ? "You" : "Bot · " + botDifficulty;
+        if (botMode) return team == playerTeam ? "You" : StockfishDifficultyProfiles.Get(botDifficulty).BotName;
         if (serverAuthoritativeMode) return team == playerTeam ? "You" : "Opponent";
         return team == PieceTeam.White ? "White player" : "Black player";
     }
