@@ -67,6 +67,7 @@ public partial class ChessGame : MonoBehaviour
     private bool gameStarted;
     private bool contentLoading;
     private bool gameOver;
+    private bool matchEnding;
     private bool inputLocked;
     private bool pauseLocked;
     private PieceTeam winningTeam;
@@ -115,6 +116,7 @@ public partial class ChessGame : MonoBehaviour
     public bool GameStarted => gameStarted && !contentLoading;
     public Chessboard Board => chessboard;
     public bool GameOver => gameOver;
+    public bool IsMatchEnding => matchEnding;
     public bool InputLocked => inputLocked || contentLoading;
     public bool PauseLocked => pauseLocked;
     public bool IsBotGame => botMode;
@@ -140,6 +142,7 @@ public partial class ChessGame : MonoBehaviour
     public event Action ReturnedToMainMenu;
     public event Action ContentReady;
     public event Action LocalGameRestarted;
+    public event Action MatchEnding;
 
     private void Awake()
     {
@@ -461,6 +464,7 @@ public partial class ChessGame : MonoBehaviour
         restrictInputToControlledTeam = restrictInput;
         selectedPiece = null;
         gameOver = false;
+        matchEnding = false;
         inputLocked = false;
         status = ChessGameStatus.Playing;
         drawReason = string.Empty;
@@ -810,6 +814,7 @@ public partial class ChessGame : MonoBehaviour
         if (IsCheckmate(currentTurn))
         {
             if (aramMode && aramCoordinator.Runtime.TryOfferEscape(currentTurn)) return true;
+            BeginMatchEnding();
             StartCoroutine(AnimateMoveAndFinishGame(movingPiece, destination, currentTurn == PieceTeam.White ? PieceTeam.Black : PieceTeam.White));
             return true;
         }
@@ -818,6 +823,7 @@ public partial class ChessGame : MonoBehaviour
 
         if (TryGetDrawReason(out string reason))
         {
+            BeginMatchEnding();
             StartCoroutine(AnimateMoveAndFinishDraw(movingPiece, destination, reason));
             return true;
         }
@@ -980,6 +986,7 @@ public partial class ChessGame : MonoBehaviour
         status = ChessGameStatus.NotStarted;
         gameStarted = false;
         gameOver = false;
+        matchEnding = false;
         inputLocked = false;
         pauseLocked = false;
         playerTeam = PieceTeam.White;
@@ -2148,11 +2155,19 @@ public partial class ChessGame : MonoBehaviour
         FinishDraw(reason);
     }
 
+    private void BeginMatchEnding()
+    {
+        if (matchEnding) return;
+        matchEnding = true;
+        MatchEnding?.Invoke();
+    }
+
     private void FinishGame(PieceTeam winner)
     {
         if (gameOver)
             return;
 
+        BeginMatchEnding();
         StopCheckWarning();
         status = ChessGameStatus.Win;
         winningTeam = winner;
@@ -2195,6 +2210,7 @@ public partial class ChessGame : MonoBehaviour
             if(whiteLoses!=blackLoses&&!AramLostRoyalCondition(whiteLoses?PieceTeam.Black:PieceTeam.White))
             {FinishGame(whiteLoses?PieceTeam.Black:PieceTeam.White);return;}
         }
+        BeginMatchEnding();
         StopCheckWarning();
         status = ChessGameStatus.Draw;
         frozenMatchDurationSeconds = MatchElapsedSeconds;
@@ -2436,6 +2452,7 @@ public partial class ChessGame : MonoBehaviour
 
         gameStarted = true;
         gameOver = false;
+        matchEnding = false;
         inputLocked = false;
         status = ChessGameStatus.Playing;
         SetRuntimePiecesVisible(true);

@@ -36,7 +36,7 @@ public sealed class StockfishBotController : MonoBehaviour
 
     public void RetryBotTurn()
     {
-        if (thinking || !botGameActive || chessGame.GameOver || chessGame.CurrentTurn != botTeam) return;
+        if (thinking || !botGameActive || chessGame.GameOver || chessGame.IsMatchEnding || chessGame.CurrentTurn != botTeam) return;
         ErrorMessage = null;
         ResetReview();
         QueueBotTurnIfNeeded();
@@ -49,6 +49,7 @@ public sealed class StockfishBotController : MonoBehaviour
         chessGame.ReturnedToMainMenu += HandleReturnedToMainMenu;
         chessGame.LocalGameRestarted += HandleLocalGameRestarted;
         chessGame.ContentReady += HandleContentReady;
+        chessGame.MatchEnding += HandleMatchEnding;
         var companion = gameObject.AddComponent<BotCompanionView>();
         companion.Initialize(chessGame, this);
     }
@@ -73,7 +74,7 @@ public sealed class StockfishBotController : MonoBehaviour
     {
         string before=lastPositionFen;
         lastPositionFen=chessGame.ExportFen();
-        if(botGameActive&&!chessGame.GameOver&&!string.IsNullOrEmpty(before)&&FenCodec.Parse(before).Turn==(Team)chessGame.PlayerTeam)
+        if(botGameActive&&!chessGame.GameOver&&!chessGame.IsMatchEnding&&!string.IsNullOrEmpty(before)&&FenCodec.Parse(before).Turn==(Team)chessGame.PlayerTeam)
         {
             reviewCancellation?.Cancel();reviewCancellation?.Dispose();
             reviewCancellation=new CancellationTokenSource(3500);
@@ -91,7 +92,7 @@ public sealed class StockfishBotController : MonoBehaviour
             if(reviewClient==null)reviewClient=new StockfishUciClient();
             var quality=await BotMoveAssessment.AssessAsync(reviewClient,before,after,played,token);
             token.ThrowIfCancellationRequested();
-            if(botGameActive&&generation==gameGeneration&&sequence==reviewSequence&&!chessGame.GameOver&&quality!=BotMoveQuality.Ordinary)
+            if(botGameActive&&generation==gameGeneration&&sequence==reviewSequence&&!chessGame.GameOver&&!chessGame.IsMatchEnding&&quality!=BotMoveQuality.Ordinary)
                 PlayerMoveAssessed?.Invoke(quality);
         }
         catch(OperationCanceledException) { }
@@ -131,9 +132,19 @@ public sealed class StockfishBotController : MonoBehaviour
         client?.Dispose(); client = null;
     }
 
+    private void HandleMatchEnding()
+    {
+        if (!botGameActive) return;
+        gameGeneration++;
+        CancelPendingTurn();
+        ErrorMessage = null;
+        ResetReview();
+        client?.Dispose(); client = null;
+    }
+
     private void QueueBotTurnIfNeeded()
     {
-        if (!botGameActive || chessGame == null || !chessGame.GameStarted || chessGame.GameOver || chessGame.CurrentTurn != botTeam)
+        if (!botGameActive || chessGame == null || !chessGame.GameStarted || chessGame.GameOver || chessGame.IsMatchEnding || chessGame.CurrentTurn != botTeam)
             return;
 
         CancelPendingTurn();
@@ -150,6 +161,10 @@ public sealed class StockfishBotController : MonoBehaviour
         {
             string requestedFen = chessGame.ExportFen();
             ErrorMessage = null;
+            // MoveCommitted precedes result adjudication and its final animation.
+            // Checkmate/stalemate has no next bot turn, rather than a failed engine search.
+            var position = FenCodec.Parse(requestedFen);
+            if (ClassicRules.LegalMoves(position).Count == 0) return;
             SetActivity("Thinking...");
             var minimumThinkTime = Task.Delay(profile.MinimumThinkTimeMs, cancellationToken);
             IReadOnlyList<StockfishCandidate> candidates = null;
@@ -160,11 +175,12 @@ public sealed class StockfishBotController : MonoBehaviour
                 {
                     if (client == null) client = new StockfishUciClient();
                     candidates = await client.FindCandidatesAsync(requestedFen, profile, cancellationToken);
-                    var position = FenCodec.Parse(requestedFen);
+                    cancellationToken.ThrowIfCancellationRequested();
                     candidates = candidates.Where(candidate => candidate != null &&
                         StockfishMoveAdapter.TryParseUci(candidate.Move, out Move legalMove) &&
                         ClassicRules.TryApply(position, legalMove, out _)).ToArray();
                     if (candidates.Count == 0) throw new InvalidOperationException("Stockfish returned no legal move.");
+                    SetActivity("Thinking...");
                     break;
                 }
                 catch (OperationCanceledException) { throw; }
@@ -184,7 +200,7 @@ public sealed class StockfishBotController : MonoBehaviour
                 await Task.Yield();
             }
 
-            if (!botGameActive || generation != gameGeneration || chessGame.GameOver ||
+            if (!botGameActive || generation != gameGeneration || chessGame.GameOver || chessGame.IsMatchEnding ||
                 chessGame.CurrentTurn != botTeam || chessGame.ExportFen() != requestedFen)
                 return;
 
@@ -203,7 +219,8 @@ public sealed class StockfishBotController : MonoBehaviour
         }
         catch (Exception exception)
         {
-            if (!cancellationToken.IsCancellationRequested && generation == gameGeneration && sequence == turnSequence)
+            if (!cancellationToken.IsCancellationRequested && generation == gameGeneration && sequence == turnSequence &&
+                !chessGame.GameOver && !chessGame.IsMatchEnding)
             {
                 ErrorMessage = "I lost my train of thought. Try reconnecting me.";
                 SetActivity("Connection paused");
@@ -251,13 +268,11 @@ public sealed class StockfishBotController : MonoBehaviour
     private void CancelPendingTurn()
     {
         turnSequence++;
-        if (turnCancellation == null)
-            return;
-
-        turnCancellation.Cancel();
-        turnCancellation.Dispose();
+        turnCancellation?.Cancel();
+        turnCancellation?.Dispose();
         turnCancellation = null;
         thinking = false;
+        SetActivity(string.Empty);
     }
 
     private void OnDestroy()
@@ -268,6 +283,7 @@ public sealed class StockfishBotController : MonoBehaviour
             chessGame.ReturnedToMainMenu -= HandleReturnedToMainMenu;
             chessGame.LocalGameRestarted -= HandleLocalGameRestarted;
             chessGame.ContentReady -= HandleContentReady;
+            chessGame.MatchEnding -= HandleMatchEnding;
         }
 
         CancelPendingTurn();

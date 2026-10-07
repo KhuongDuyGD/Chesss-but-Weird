@@ -14,6 +14,8 @@ public sealed class BotCompanionView : MonoBehaviour
     private StockfishBotController controller;
     private GameObject canvasObject;
     private RectTransform bubble;
+    private RectTransform activityPanel;
+    private TextMeshProUGUI activityLabel;
     private TextMeshProUGUI nameLabel,speech,muteLabel;
     private Image portrait;
     private Button avatarButton,retry,menu,mute;
@@ -53,6 +55,15 @@ public sealed class BotCompanionView : MonoBehaviour
         var image=MatchHudStyle.Rect(avatar,"Portrait",Vector2.zero,Vector2.one,new Vector2(-12,-12),Vector2.zero);
         portrait=image.gameObject.AddComponent<Image>();portrait.preserveAspect=true;portrait.raycastTarget=false;
 
+        activityPanel=MatchHudStyle.Rect(panel,"Bot activity",new Vector2(1,0),new Vector2(1,0),new Vector2(224,38),new Vector2(-260,68));
+        var activityFrame=activityPanel.gameObject.AddComponent<HandDrawnRoundedGraphic>();
+        activityFrame.Configure(MatchHudStyle.Paper,MatchHudStyle.Ink,12,1.5f,.4f,10);activityFrame.raycastTarget=false;
+        activityLabel=MatchHudStyle.Text(activityPanel,"Bot activity text","",19);
+        activityLabel.alignment=TextAlignmentOptions.Center;
+        activityLabel.enableAutoSizing=true;activityLabel.fontSizeMin=16;activityLabel.fontSizeMax=19;
+        activityLabel.rectTransform.sizeDelta=new Vector2(-12,-4);
+        activityPanel.gameObject.SetActive(false);
+
         bubble=MatchHudStyle.Rect(panel,"Bot speech bubble",new Vector2(1,0),new Vector2(1,0),new Vector2(380,170),new Vector2(-190,BubbleBottom+85));
         bubble.gameObject.AddComponent<BotSpeechBubbleGraphic>().raycastTarget=false;
         nameLabel=Label(bubble,"Opponent",new Vector2(136,-24),new Vector2(228,28),17);
@@ -67,9 +78,16 @@ public sealed class BotCompanionView : MonoBehaviour
         menu=MatchHudStyle.Button(bubble,"Leave bot game","Main menu",game.RestartToMainMenu);
         MatchHudStyle.Place((RectTransform)retry.transform,new Vector2(0,0),new Vector2(145,34),new Vector2(100,52));
         MatchHudStyle.Place((RectTransform)menu.transform,new Vector2(1,0),new Vector2(145,34),new Vector2(-100,52));
+        foreach(var button in new[]{retry,menu})
+        {
+            var label=button.GetComponentInChildren<TextMeshProUGUI>();
+            label.enableAutoSizing=true;label.fontSizeMin=14;label.fontSizeMax=18;
+            label.rectTransform.sizeDelta=new Vector2(-12,-4);
+        }
         muted=PlayerPrefs.GetInt("Bot.ChatMuted",0)!=0;
         game.LocalGameRestarted+=Reset;game.ReturnedToMainMenu+=Hide;
         controller.PlayerMoveAssessed+=OnMoveAssessed;
+        controller.ActivityChanged+=OnActivityChanged;
         DismissDialogue();canvasObject.SetActive(false);
     }
     private static TextMeshProUGUI Label(RectTransform parent,string label,Vector2 position,Vector2 size,float fontSize)
@@ -82,9 +100,17 @@ public sealed class BotCompanionView : MonoBehaviour
         loadedDifficulty=controller.Difficulty;profileLoaded=true;
         portrait.sprite=BotAvatarCatalog.Get(profile);nameLabel.text=profile.BotName+" / "+profile.DisplayName;
         avatarButton.gameObject.name="Bot avatar";
-        DismissDialogue();canvasObject.SetActive(true);
+        DismissDialogue();canvasObject.SetActive(true);RefreshActivity();
     }
-    private void Hide(){DismissDialogue();canvasObject.SetActive(false);wasOver=false;profileLoaded=false;openingPending=false;pendingReaction=null;}
+    private void Hide(){DismissDialogue();activityPanel.gameObject.SetActive(false);activityLabel.text=string.Empty;canvasObject.SetActive(false);wasOver=false;profileLoaded=false;openingPending=false;pendingReaction=null;}
+    private void OnActivityChanged(string value)=>RefreshActivity();
+    private void RefreshActivity()
+    {
+        bool visible=canvasObject.activeSelf&&controller.IsThinking&&!game.GameOver&&!game.IsMatchEnding&&
+            !game.PauseLocked&&controller.ErrorMessage==null&&!string.IsNullOrEmpty(controller.Activity);
+        activityLabel.text=visible?controller.Activity:string.Empty;
+        activityPanel.gameObject.SetActive(visible);
+    }
     private void MuteChat(){muted=true;PlayerPrefs.SetInt("Bot.ChatMuted",1);DismissDialogue();}
     private void OnAvatarPressed()
     {
@@ -138,7 +164,8 @@ public sealed class BotCompanionView : MonoBehaviour
         if(!canvasObject.activeSelf||!profileLoaded||loadedDifficulty!=controller.Difficulty)Reset();
         // Let the final sentence remain visible above ResultMenuView's dim overlay (order 2000).
         canvasObject.GetComponent<Canvas>().sortingOrder=game.GameOver?2001:19;
-        string error=controller.ErrorMessage;
+        RefreshActivity();
+        string error=game.GameOver||game.IsMatchEnding?null:controller.ErrorMessage;
         if(!string.IsNullOrEmpty(error))
         {
             if(lastError!=error){lastError=error;ShowDialogue(error,true);}
@@ -163,7 +190,7 @@ public sealed class BotCompanionView : MonoBehaviour
     private void OnDestroy()
     {
         if(game){game.LocalGameRestarted-=Reset;game.ReturnedToMainMenu-=Hide;}
-        if(controller)controller.PlayerMoveAssessed-=OnMoveAssessed;
+        if(controller){controller.PlayerMoveAssessed-=OnMoveAssessed;controller.ActivityChanged-=OnActivityChanged;}
         if(canvasObject)Destroy(canvasObject);
         if(activeInstance==this)activeInstance=null;
     }
