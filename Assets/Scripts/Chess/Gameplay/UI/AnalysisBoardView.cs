@@ -33,6 +33,9 @@ public sealed class AnalysisBoardView : MonoBehaviour
     private string preferenceMode;
     private TextMeshProUGUI whiteMoves,blackMoves,whiteBuff,blackBuff;
     private MatchHudTooltip tooltip;
+    private ChessOrbitCamera orbitCamera;
+    private RectTransform cameraHint;
+    private TextMeshProUGUI cameraHintState,cameraHintControls;
 
     public void Initialize(ChessGame source)
     {
@@ -70,6 +73,7 @@ public sealed class AnalysisBoardView : MonoBehaviour
         if(!visible||!game||activeInstance!=this)return;
         bool modeChanged=LoadPreference();
         if(modeChanged||root.rect.size!=lastSize||lastBottom!=game.StatisticsHudBottom||lastAram!=game.IsAramGame||lastOnline!=game.UsesDotNetOnline||lastBot!=game.IsBotGame||lastCompanionBottom!=BotCompanionView.BottomInset(game))Layout();
+        RefreshCameraHint();
         if(Time.unscaledTime<nextRefresh)return;nextRefresh=Time.unscaledTime+.1f;Refresh();
     }
     private void Build()
@@ -82,6 +86,14 @@ public sealed class AnalysisBoardView : MonoBehaviour
         root=MatchHudStyle.Rect(canvasObject.transform,"Statistics Safe Area",Vector2.zero,Vector2.one,Vector2.zero,Vector2.zero);
         root.gameObject.AddComponent<ResponsiveSafeArea>();
         raycaster=canvasObject.GetComponent<GraphicRaycaster>();
+        cameraHint=MatchHudStyle.Rect(root,"Camera lock hint",Vector2.zero,Vector2.zero,new Vector2(310,78),new Vector2(175,59));
+        MatchHudStyle.Surface(cameraHint,false);
+        cameraHintState=MatchHudStyle.Text(cameraHint,"Camera state","Camera locked · Y to unlock",20);
+        MatchHudStyle.Place(cameraHintState.rectTransform,new Vector2(.5f,1),new Vector2(286,28),new Vector2(0,-19));
+        cameraHintState.enableAutoSizing=true;cameraHintState.fontSizeMin=16;cameraHintState.fontSizeMax=20;
+        cameraHintControls=MatchHudStyle.Text(cameraHint,"Camera controls","Scroll to zoom",16);
+        MatchHudStyle.Place(cameraHintControls.rectTransform,new Vector2(.5f,0),new Vector2(286,38),new Vector2(0,24));
+        cameraHintControls.color=MatchHudStyle.Muted;
         top=MatchHudStyle.Rect(root,"Players",Vector2.one,Vector2.one,new Vector2(900,88),new Vector2(0,-62));
         whiteCard=Player(top,"White",out whiteName,out whiteState);blackCard=Player(top,"Black",out blackName,out blackState);
         statusRect=MatchHudStyle.Rect(root,"Match status",new Vector2(.5f,1),new Vector2(.5f,1),new Vector2(660,32),new Vector2(0,-104));
@@ -153,17 +165,23 @@ public sealed class AnalysisBoardView : MonoBehaviour
     private void Layout()
     {
         Canvas.ForceUpdateCanvases();lastSize=root.rect.size;float width=Mathf.Min(620,lastSize.x-410),card=(width-10)/2;
-        float cardHeight=game.UsesDotNetOnline?64:42;
+        float cardHeight=game.UsesDotNetOnline?78:42;
         MatchHudStyle.Place(top,new Vector2(0,1),new Vector2(width,cardHeight),new Vector2(20+width/2,-10-cardHeight/2));
         MatchHudStyle.Place(whiteCard,new Vector2(0,.5f),new Vector2(card,cardHeight),new Vector2(card/2,0));
         MatchHudStyle.Place(blackCard,new Vector2(1,.5f),new Vector2(card,cardHeight),new Vector2(-card/2,0));
         whiteName.rectTransform.sizeDelta=blackName.rectTransform.sizeDelta=new Vector2(card-24,32);
-        whiteState.rectTransform.sizeDelta=blackState.rectTransform.sizeDelta=new Vector2(card-32,27);
-        whiteName.rectTransform.anchoredPosition=blackName.rectTransform.anchoredPosition=new Vector2(0,game.UsesDotNetOnline?12:0);
+        whiteState.rectTransform.sizeDelta=blackState.rectTransform.sizeDelta=new Vector2(card-32,36);
+        whiteState.fontSize=blackState.fontSize=28;
+        whiteState.rectTransform.anchoredPosition=blackState.rectTransform.anchoredPosition=new Vector2(0,-17);
+        whiteName.rectTransform.anchoredPosition=blackName.rectTransform.anchoredPosition=new Vector2(0,game.UsesDotNetOnline?19:0);
         whiteState.gameObject.SetActive(game.UsesDotNetOnline);blackState.gameObject.SetActive(game.UsesDotNetOnline);
         statusRect.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal,Mathf.Min(660,lastSize.x-40));
         float jw=Mathf.Min(410,lastSize.x-40),bottom=Mathf.Max(20,game.StatisticsHudBottom+12);
         if(game.IsBotGame)bottom=Mathf.Max(bottom,BotCompanionView.BottomInset(game)+12);
+        float cameraHintWidth=Mathf.Min(310,lastSize.x-40);
+        MatchHudStyle.Place(cameraHint,Vector2.zero,new Vector2(cameraHintWidth,78),new Vector2(20+cameraHintWidth/2,bottom+39));
+        cameraHintState.rectTransform.sizeDelta=new Vector2(cameraHintWidth-24,28);
+        cameraHintControls.rectTransform.sizeDelta=new Vector2(cameraHintWidth-24,38);
         float start=game.IsAramGame?138:58,jh=Mathf.Max(190,Mathf.Min(650,lastSize.y-start-bottom));
         MatchHudStyle.Place(journal,Vector2.one,new Vector2(jw,jh),new Vector2(-20-jw/2,-start-jh/2));ApplyPanels();
         lastBottom=game.StatisticsHudBottom;lastAram=game.IsAramGame;lastOnline=game.UsesDotNetOnline;lastBot=game.IsBotGame;
@@ -174,18 +192,21 @@ public sealed class AnalysisBoardView : MonoBehaviour
             if(!cameraCaptured){originalCameraRect=cameraOwner.rect;originalFieldOfView=cameraOwner.fieldOfView;cameraCaptured=true;}
             // Keep rendering the entire world. A clipped viewport leaves unrendered bars in Game View.
             cameraOwner.rect=new Rect(0,0,1,1);
-            float safeFraction=game.IsAramGame?.76f:.88f;
-            cameraOwner.fieldOfView=2*Mathf.Atan(Mathf.Tan(originalFieldOfView*Mathf.Deg2Rad*.5f)/safeFraction)*Mathf.Rad2Deg;
+            if(!cameraOwner.orthographic&&!cameraOwner.GetComponent<ChessOrbitCamera>())
+            {
+                float safeFraction=game.IsAramGame?.76f:.88f;
+                cameraOwner.fieldOfView=2*Mathf.Atan(Mathf.Tan(originalFieldOfView*Mathf.Deg2Rad*.5f)/safeFraction)*Mathf.Rad2Deg;
+            }
         }
         historyLayoutDirty=true;
     }
     private void RestoreCamera(){if(cameraOwner&&cameraCaptured){cameraOwner.rect=originalCameraRect;cameraOwner.fieldOfView=originalFieldOfView;}cameraCaptured=false;}
     private void ApplyPanels()
     {
-        top.gameObject.SetActive(!focus);journal.gameObject.SetActive(expanded);
+        top.gameObject.SetActive(!focus||game.UsesDotNetOnline);journal.gameObject.SetActive(expanded);
         buffSummary.gameObject.SetActive(game.IsAramGame);
         float statusWidth=Mathf.Min(620,lastSize.x-410);
-        MatchHudStyle.Place(statusRect,new Vector2(0,1),new Vector2(statusWidth,36),new Vector2(20+statusWidth/2,focus?-30:game.UsesDotNetOnline?-100:-72));
+        MatchHudStyle.Place(statusRect,new Vector2(0,1),new Vector2(statusWidth,36),new Vector2(20+statusWidth/2,game.UsesDotNetOnline?-112:focus?-30:-72));
         MatchHudStyle.Place(controls,Vector2.one,new Vector2(330,38),new Vector2(-185,-30));
         ((RectTransform)journalButton.transform).SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical,38);
         ((RectTransform)focusButton.transform).SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical,38);
@@ -199,12 +220,34 @@ public sealed class AnalysisBoardView : MonoBehaviour
     private void SelectJournalTab(bool capturesSelected)
     {if(showCaptures==capturesSelected)return;showCaptures=capturesSelected;historyLayoutDirty=true;followLatest=true;Refresh();}
     private void SavePreference(){PlayerPrefs.SetInt("MatchHud.Journal."+preferenceMode,expanded?1:0);PlayerPrefs.SetInt("MatchHud.Focus."+preferenceMode,focus?1:0);}
+    private void RefreshCameraHint()
+    {
+        if(!cameraHint)return;
+        if(!orbitCamera)
+        {
+            var boardCamera=Camera.main;
+            if(boardCamera)orbitCamera=boardCamera.GetComponent<ChessOrbitCamera>();
+        }
+        bool show=game&&game.GameStarted&&!game.PauseLocked&&orbitCamera&&orbitCamera.IsBoardViewActive;
+        cameraHint.gameObject.SetActive(show);
+        if(!show)return;
+        bool unlocked=orbitCamera.IsOrbitUnlocked;
+        string state=unlocked?"Camera unlocked · Y to lock":"Camera locked · Y to unlock";
+        if(cameraHintState.text==state)return;
+        cameraHintState.text=state;
+        cameraHintState.color=unlocked?MatchHudStyle.Accent:MatchHudStyle.Ink;
+        cameraHintControls.text=unlocked?"Right / middle drag to orbit\nScroll to zoom":"Scroll to zoom";
+        MatchHudStyle.Highlight(cameraHint,unlocked);
+    }
     private void Refresh()
     {
+        RefreshCameraHint();
         if(!game||!history)return;whiteName.text="WHITE · "+game.StatisticsPlayerName(PieceTeam.White);blackName.text="BLACK · "+game.StatisticsPlayerName(PieceTeam.Black);
         bool ended=game.GameOver;
         whiteState.text=game.UsesDotNetOnline?game.OnlineClockLabel(PieceTeam.White):TurnLabel(PieceTeam.White,ended);
         blackState.text=game.UsesDotNetOnline?game.OnlineClockLabel(PieceTeam.Black):TurnLabel(PieceTeam.Black,ended);
+        whiteState.color=game.CurrentTurn==PieceTeam.White&&!ended?MatchHudStyle.Accent:MatchHudStyle.Muted;
+        blackState.color=game.CurrentTurn==PieceTeam.Black&&!ended?MatchHudStyle.Accent:MatchHudStyle.Muted;
         MatchHudStyle.Highlight(whiteCard,!ended&&game.CurrentTurn==PieceTeam.White);
         MatchHudStyle.Highlight(blackCard,!ended&&game.CurrentTurn==PieceTeam.Black);
         string state=ended?(game.Status==ChessGame.ChessGameStatus.Draw?"Draw · "+game.DrawReason:game.WinningTeam+" wins"):

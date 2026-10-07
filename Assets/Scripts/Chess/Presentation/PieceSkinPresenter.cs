@@ -17,6 +17,7 @@ internal static class PieceSkinPresenter
         if (manager == null || !manager.TryGetPrefab(piece.Team, piece.Type, out GameObject prefab))
         {
             skinState.ApplyDefault();
+            ChessModelRendering.ApplySettings(piece.gameObject);
             PieceViewGeometry.UpdatePieceRootColliderFromVisibleRenderers(piece.gameObject);
             return;
         }
@@ -25,6 +26,7 @@ internal static class PieceSkinPresenter
         skinState.ApplyPrefabSkin(prefab, data ? data.skinId : skinId, piece.Type,
             data ? data.GetTuning(piece.Type) : PieceSkinPieceTuning.Default, piece.transform);
         manager.ApplyColor(skinState.ActiveVisual, piece.Team);
+        ChessModelRendering.ApplySettings(piece.gameObject);
         PieceViewGeometry.UpdatePieceRootColliderFromVisibleRenderers(piece.gameObject);
     }
 

@@ -49,17 +49,22 @@ public partial class ChessGame
     public void ApplyDotNetState(MatchState state)
     {
         if (state == null || runtimePiecesRoot == null) return;
+        var previous = dotNetState;
+        bool animateChanges = previous != null && previous.matchId == state.matchId &&
+            previous.status == "InProgress" && state.stateVersion == previous.stateVersion + 1;
         bool changed = dotNetState == null || !SameBoard(dotNetState, state);
         bool turnChanged = dotNetState == null || dotNetState.turn != state.turn || dotNetState.status != state.status;
         dotNetState = state;
         dotNetSnapshotReceivedAt = Time.realtimeSinceStartup;
         if (changed)
         {
-            StopCheckWarning(); ClearSelection(); pieceAnimator?.CancelAll(); ClearPieceMap();
+            StopCheckWarning(); ClearSelection();
+            if (!animateChanges) pieceAnimator?.CancelAll();
+            ClearPieceMap();
             var live = new HashSet<int>(state.board.Select(p => p.id));
             foreach (int id in dotNetPieces.Keys.Where(id => !live.Contains(id)).ToList())
             {
-                if (dotNetPieces[id]) { dotNetPieces[id].gameObject.SetActive(false); Destroy(dotNetPieces[id].gameObject); }
+                if (dotNetPieces[id]) { Animator.Cancel(dotNetPieces[id]); dotNetPieces[id].gameObject.SetActive(false); Destroy(dotNetPieces[id].gameObject); }
                 dotNetPieces.Remove(id);
             }
             foreach (var p in state.board)
@@ -68,8 +73,11 @@ public partial class ChessGame
                 var team = ParseOnlineTeam(p.team);
                 if (!Enum.TryParse(p.kind, out PieceType kind)) throw new InvalidOperationException("Unsupported server piece kind.");
                 dotNetPieces.TryGetValue(p.id, out var view);
+                bool relocated = view && view.BoardPosition != square;
+                bool animate = animateChanges && relocated;
+                Vector3 start = view ? view.transform.position : Vector3.zero;
                 if (view && (view.Type != kind || view.Team != team))
-                { view.gameObject.SetActive(false); Destroy(view.gameObject); view = null; }
+                { Animator.Cancel(view); view.gameObject.SetActive(false); Destroy(view.gameObject); view = null; }
                 if (!view) view = CreateCosmeticPiece(kind, team, square);
                 view.Initialize(team, square, p.forward); if (p.hasMoved) view.MarkMoved();
                 dotNetPieces[p.id] = view; pieces[square.x, square.y] = view;
@@ -80,8 +88,18 @@ public partial class ChessGame
                 if (decoy && !tag) view.gameObject.AddComponent<AramDecoyTag>();
                 else if (!decoy && tag) Destroy(tag);
                 if (!decoy) CacheKing(view);
-                MovePieceToTile(view, square, 0);
-                if (state.aram != null) ConfigureOnlineHitbox(view, p.kind, state);
+                // Same-position presence/clock updates must not interrupt motion.
+                if (!animateChanges || relocated || !Animator.IsAnimating(view))
+                {
+                    MovePieceToTile(view, square, 0);
+                    if (state.aram != null) ConfigureOnlineHitbox(view, p.kind, state);
+                    if (animate)
+                    {
+                        Vector3 target = view.transform.position;
+                        view.transform.position = start;
+                        Animator.Play(view, target, moveAnimationDuration, moveArcHeight);
+                    }
+                }
             }
         }
         currentTurn = ParseOnlineTeam(state.turn);

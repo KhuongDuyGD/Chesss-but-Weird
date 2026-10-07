@@ -11,6 +11,8 @@ public sealed partial class AramBuffRuntime
         var go=new GameObject("One Man Army First Person",typeof(Camera));rifleCamera=go.GetComponent<Camera>();
         rifleCamera.CopyFrom(previousCamera);rifleCamera.tag="Untagged";rifleCamera.nearClipPlane=.03f;
         rifleCamera.orthographic=false;rifleCamera.fieldOfView=60f;
+        rifleCamera.ResetProjectionMatrix(); // CopyFrom must not retain the board's explicit orthographic matrix.
+        rifleCamera.nonJitteredProjectionMatrix=rifleCamera.projectionMatrix;
         rifleCamera.rect=new Rect(0,0,1,1);
         float tile=Vector3.Distance(game.AramTile(Vector2Int.zero),game.AramTile(Vector2Int.right));
         rifleCamera.transform.position=king.transform.position+Vector3.up*tile*.95f;

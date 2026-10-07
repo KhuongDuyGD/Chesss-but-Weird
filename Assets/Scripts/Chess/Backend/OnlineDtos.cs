@@ -55,9 +55,13 @@ namespace ChessButWeird.Online
         public GameSettings settings;
         public List<Piece> board = new List<Piece>();
         public List<Player> players = new List<Player>();
+        // Null means an older server; never infer ARAM captures from missing models.
+        public List<CapturedPiece> captures;
         public Clocks clocks; public DrawOffer drawOffer; public JObject aram; public Result result;
         public bool IsActive => status == "AwaitingReady" || status == "InProgress";
     }
+    [Serializable, Preserve] public sealed class CapturedPiece
+    { public int pieceId; public string kind, team, capturedBy; }
     [Serializable, Preserve] public sealed class MatchSummary
     {
         public string matchId, status; public GameSettings settings;
