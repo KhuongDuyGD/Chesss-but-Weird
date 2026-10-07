@@ -3,53 +3,6 @@ using System.Text;
 /// <summary>Reward calculation only; persistence remains in the existing profile service.</summary>
 internal static class MatchRewardPolicy
 {
-    public static MatchReward CalculateBotReward(StockfishDifficulty difficulty, bool won, bool lost, bool draw)
-    {
-        MatchReward winReward;
-        MatchReward drawReward;
-        MatchReward lossReward;
-
-        switch (StockfishDifficultyProfiles.RewardTier(difficulty))
-        {
-            case StockfishDifficulty.Beginner:
-                winReward = new MatchReward(120, 3, 0);
-                drawReward = new MatchReward(55, 1, 0);
-                lossReward = new MatchReward(25, 0, 0);
-                break;
-            case StockfishDifficulty.Easy:
-                winReward = new MatchReward(180, 5, 0);
-                drawReward = new MatchReward(80, 2, 0);
-                lossReward = new MatchReward(35, 1, 0);
-                break;
-            case StockfishDifficulty.Medium:
-                winReward = new MatchReward(260, 8, 1);
-                drawReward = new MatchReward(115, 3, 0);
-                lossReward = new MatchReward(50, 1, 0);
-                break;
-            case StockfishDifficulty.Hard:
-                winReward = new MatchReward(380, 12, 1);
-                drawReward = new MatchReward(165, 5, 0);
-                lossReward = new MatchReward(70, 2, 0);
-                break;
-            case StockfishDifficulty.Expert:
-                winReward = new MatchReward(540, 18, 2);
-                drawReward = new MatchReward(230, 7, 1);
-                lossReward = new MatchReward(95, 3, 0);
-                break;
-            default:
-                winReward = new MatchReward(260, 8, 1);
-                drawReward = new MatchReward(115, 3, 0);
-                lossReward = new MatchReward(50, 1, 0);
-                break;
-        }
-
-        if (won)
-            return winReward;
-        if (draw)
-            return drawReward;
-        return lost ? lossReward : MatchReward.None;
-    }
-
     public static MatchReward CalculateNetworkReward(bool won, bool lost, bool draw)
     {
         if (won)

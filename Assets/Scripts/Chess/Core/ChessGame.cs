@@ -2193,8 +2193,8 @@ public partial class ChessGame : MonoBehaviour
         MatchReward reward = CalculateMatchReward(won, lost, false);
         if (IsHotseatGame) matchResultRecorder.TryRecord(() => PlayerAuthService.RecordHotseatResult(
             GetProfileMatchMode(), winner + " wins", winner + " won", matchResultRecorder.MatchId));
-        else if (IsBotPractice) matchResultRecorder.TryRecord(() => PlayerAuthService.RecordPracticeResult(
-            GetProfileOpponentName(), won ? "Win" : "Lose", winner + " won", matchResultRecorder.MatchId));
+        else if (botMode) matchResultRecorder.TryRecord(() => PlayerAuthService.RecordBotResult(
+            botDifficulty, botOptions.Mode, won ? "Win" : "Lose", winner + " won", matchResultRecorder.MatchId));
         else if (dotNetState == null) matchResultRecorder.TryRecord(() => PlayerAuthService.RecordGameResult(
                 won,
                 lost,
@@ -2235,8 +2235,8 @@ public partial class ChessGame : MonoBehaviour
         MatchReward reward = CalculateMatchReward(false, false, true);
         if (IsHotseatGame) matchResultRecorder.TryRecord(() => PlayerAuthService.RecordHotseatResult(
             GetProfileMatchMode(), "Draw", reason, matchResultRecorder.MatchId));
-        else if (IsBotPractice) matchResultRecorder.TryRecord(() => PlayerAuthService.RecordPracticeResult(
-            GetProfileOpponentName(), "Draw", reason, matchResultRecorder.MatchId));
+        else if (botMode) matchResultRecorder.TryRecord(() => PlayerAuthService.RecordBotResult(
+            botDifficulty, botOptions.Mode, "Draw", reason, matchResultRecorder.MatchId));
         else if (dotNetState == null) matchResultRecorder.TryRecord(() => PlayerAuthService.RecordGameResult(
                 false,
                 false,
@@ -2295,9 +2295,8 @@ public partial class ChessGame : MonoBehaviour
 
     private MatchReward CalculateMatchReward(bool won, bool lost, bool draw)
     {
-        if (IsBotPractice) return MatchReward.None;
-        if (botMode)
-            return MatchRewardPolicy.CalculateBotReward(botDifficulty, won, lost, draw);
+        // Bot rewards are calculated with persisted first-win and daily quota data when recording the result.
+        if (botMode) return MatchReward.None;
 
         if (serverAuthoritativeMode || restrictInputToControlledTeam)
             return MatchRewardPolicy.CalculateNetworkReward(won, lost, draw);

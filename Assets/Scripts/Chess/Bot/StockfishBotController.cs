@@ -206,6 +206,7 @@ public sealed class StockfishBotController : MonoBehaviour
                 HintText = "Try moving your " + piece.Kind.ToString().ToLowerInvariant() + " from " + move.From + " to " + move.To +
                     (move.Promotion.HasValue ? " and promoting it to a " + move.Promotion.Value.ToString().ToLowerInvariant() : string.Empty) + ".";
                 if (!chessGame.PauseLocked && !chessGame.InputLocked) chessGame.ShowBotPracticeHint(move);
+                PlayerAuthService.RecordBotPracticeAssist(Difficulty, hint: true);
                 HintReady?.Invoke(HintText);
                 return;
             }

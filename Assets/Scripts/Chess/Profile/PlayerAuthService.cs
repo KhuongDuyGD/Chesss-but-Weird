@@ -89,11 +89,17 @@ public static class PlayerAuthService
         if (IsGuestSession) SaveGuestProfile();
     }
     public static bool CanUseOnlineFeatures => IsAuthenticated && !IsGuestSession && AuthStorage.HasSession();
-    public static void RecordPracticeResult(string opponent, string result, string detail, string matchId)
+    public static void RecordBotResult(StockfishDifficulty difficulty, BotGameMode mode, string result, string detail, string matchId)
     {
         if (CurrentProfile == null) return;
-        PlayerProfileStore.RecordMatch("Bot Practice", opponent, result, detail, matchId: matchId, countStats: false);
+        PlayerProfileStore.RecordBotMatch(difficulty, mode, result, detail, matchId, DateTime.UtcNow);
         if (IsGuestSession) SaveGuestProfile();
+    }
+
+    public static void RecordBotPracticeAssist(StockfishDifficulty difficulty, bool hint)
+    {
+        if (CurrentProfile == null) return;
+        PlayerProfileStore.RecordBotPracticeAssist(difficulty, hint);
     }
 
     private static PlayerProfile LoadGuestProfile()

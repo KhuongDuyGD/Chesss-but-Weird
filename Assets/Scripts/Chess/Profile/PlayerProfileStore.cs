@@ -23,6 +23,12 @@ public sealed class PlayerProfileSaveData
     public int totalGames;
     public List<PlayerMatchHistoryEntry> matchHistory = new List<PlayerMatchHistoryEntry>();
     public List<string> recordedMatchIds = new List<string>();
+    public List<BotProgress> botProgress = new List<BotProgress>();
+    public List<string> recordedBotMatchIds = new List<string>();
+    public string practiceRewardDay = string.Empty;
+    public int practiceRewardsClaimed;
+    // Unspent, locally earned bot gold is preserved when a server wallet refreshes.
+    public int localBotGold;
 
     public static PlayerProfileSaveData Create(PlayerProfile profile)
     {
@@ -132,7 +138,7 @@ public static class PlayerProfileStore
         data.displayName = string.IsNullOrWhiteSpace(user.profile?.displayName) ? user.username : user.profile.displayName;
         if (user.wallet != null)
         {
-            data.gold = user.wallet.golds;
+            data.gold = user.wallet.golds + data.localBotGold;
             data.diamonds = user.wallet.diamonds;
             data.tickets = user.wallet.tickets;
         }
@@ -193,6 +199,7 @@ public static class PlayerProfileStore
         if (data.gold < amount)
             return false;
         data.gold -= amount;
+        data.localBotGold = Mathf.Max(0, data.localBotGold - amount);
         Save();
         return true;
     }
@@ -209,7 +216,7 @@ public static class PlayerProfileStore
     public static void SetCurrency(int gold, int diamonds, int tickets)
     {
         EnsureLoaded();
-        data.gold = Mathf.Max(0, gold);
+        data.gold = Mathf.Max(0, gold) + data.localBotGold;
         data.diamonds = Mathf.Max(0, diamonds);
         data.tickets = Mathf.Max(0, tickets);
         Save();
@@ -257,11 +264,12 @@ public static class PlayerProfileStore
 
             data.totalGames++;
             data.experience += 35 + (string.Equals(normalizedResult, "Win", StringComparison.OrdinalIgnoreCase) ? 25 : 0);
-            data.gold = Mathf.Max(0, data.gold + Mathf.Max(0, rewardGold));
-            data.diamonds = Mathf.Max(0, data.diamonds + Mathf.Max(0, rewardDiamonds));
-            data.tickets = Mathf.Max(0, data.tickets + Mathf.Max(0, rewardTickets));
             RecalculateLevel();
         }
+
+        data.gold = Mathf.Max(0, data.gold + Mathf.Max(0, rewardGold));
+        data.diamonds = Mathf.Max(0, data.diamonds + Mathf.Max(0, rewardDiamonds));
+        data.tickets = Mathf.Max(0, data.tickets + Mathf.Max(0, rewardTickets));
 
         data.matchHistory.Insert(0, new PlayerMatchHistoryEntry
         {
@@ -277,6 +285,83 @@ public static class PlayerProfileStore
             data.matchHistory.RemoveAt(data.matchHistory.Count - 1);
 
         Save();
+    }
+
+    public static BotProgress GetBotProgress(StockfishDifficulty difficulty)
+    {
+        EnsureLoaded();
+        difficulty = StockfishDifficultyProfiles.Get(difficulty).Difficulty;
+        foreach (var progress in data.botProgress)
+            if (progress.difficulty == difficulty) return progress;
+        var created = new BotProgress { difficulty = difficulty };
+        data.botProgress.Add(created);
+        return created;
+    }
+
+    public static void RecordBotPracticeAssist(StockfishDifficulty difficulty, bool hint)
+    {
+        var progress = GetBotProgress(difficulty);
+        if (hint) progress.hintsUsed++;
+        else progress.undosUsed++;
+        Save();
+    }
+
+    public static int PracticeRewardsRemaining(DateTime utcNow)
+    {
+        EnsureLoaded();
+        string day = BotProgressPolicy.PracticeRewardDay(utcNow);
+        // A backwards clock change must not renew an already used quota.
+        return string.CompareOrdinal(day, data.practiceRewardDay) > 0
+            ? BotProgressPolicy.DailyPracticeRewardLimit
+            : Mathf.Max(0, BotProgressPolicy.DailyPracticeRewardLimit - data.practiceRewardsClaimed);
+    }
+
+    public static bool RecordBotMatch(StockfishDifficulty difficulty, BotGameMode mode,
+        string result, string detail, string matchId, DateTime utcNow)
+    {
+        EnsureLoaded();
+        string id = Limit(matchId, 96);
+        if (string.IsNullOrWhiteSpace(id) || data.recordedBotMatchIds.Contains(id) || data.recordedMatchIds.Contains(id))
+            return false;
+        var profile = StockfishDifficultyProfiles.Get(difficulty);
+        var progress = GetBotProgress(profile.Difficulty);
+        bool won = string.Equals(result, "Win", StringComparison.OrdinalIgnoreCase);
+        bool lost = string.Equals(result, "Lose", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(result, "Loss", StringComparison.OrdinalIgnoreCase);
+        bool practice = mode == BotGameMode.Practice;
+        int gold = 0;
+        if (practice)
+        {
+            if (won && BotProgressPolicy.PracticeGold(profile.Difficulty) > 0 && PracticeRewardsRemaining(utcNow) > 0)
+            {
+                string day = BotProgressPolicy.PracticeRewardDay(utcNow);
+                if (string.CompareOrdinal(day, data.practiceRewardDay) > 0)
+                { data.practiceRewardDay = day; data.practiceRewardsClaimed = 0; }
+                gold = BotProgressPolicy.PracticeGold(profile.Difficulty);
+                data.practiceRewardsClaimed++;
+            }
+            if (won) progress.practiceWins++;
+            else if (lost) progress.practiceLosses++;
+            else progress.practiceDraws++;
+        }
+        else
+        {
+            if (won)
+            {
+                gold = BotProgressPolicy.ChallengeGold(profile.Difficulty) * (progress.ChallengeBeaten ? 1 : 3);
+                progress.challengeWins++;
+            }
+            else if (lost) progress.challengeLosses++;
+            else progress.challengeDraws++;
+        }
+        // Persist progress, wallet, reward quota and match identity together in RecordMatch's single save.
+        data.recordedBotMatchIds.Add(id);
+        data.localBotGold += gold;
+        RecordMatch(practice ? "Bot Practice" : "Bot Challenge", profile.BotName + " / " + profile.DisplayName,
+            won ? "Win" : lost ? "Lose" : "Draw",
+            MatchRewardPolicy.AppendRewardDetail(detail, new MatchRewardPolicy.MatchReward(gold, 0, 0)),
+            rewardGold: gold, matchId: id, countStats: !practice);
+        return true;
     }
 
     private static void Normalize()
@@ -303,6 +388,23 @@ public static class PlayerProfileStore
             data.matchHistory = new List<PlayerMatchHistoryEntry>();
         if (data.recordedMatchIds == null)
             data.recordedMatchIds = new List<string>();
+        if (data.botProgress == null) data.botProgress = new List<BotProgress>();
+        if (data.recordedBotMatchIds == null) data.recordedBotMatchIds = new List<string>();
+        if (data.practiceRewardDay == null) data.practiceRewardDay = string.Empty;
+        data.practiceRewardsClaimed = Mathf.Clamp(data.practiceRewardsClaimed, 0, BotProgressPolicy.DailyPracticeRewardLimit);
+        data.localBotGold = Mathf.Clamp(data.localBotGold, 0, data.gold);
+        data.botProgress.RemoveAll(progress => progress == null);
+        foreach (var progress in data.botProgress)
+        {
+            progress.practiceWins = Mathf.Max(0, progress.practiceWins);
+            progress.practiceLosses = Mathf.Max(0, progress.practiceLosses);
+            progress.practiceDraws = Mathf.Max(0, progress.practiceDraws);
+            progress.challengeWins = Mathf.Max(0, progress.challengeWins);
+            progress.challengeLosses = Mathf.Max(0, progress.challengeLosses);
+            progress.challengeDraws = Mathf.Max(0, progress.challengeDraws);
+            progress.hintsUsed = Mathf.Max(0, progress.hintsUsed);
+            progress.undosUsed = Mathf.Max(0, progress.undosUsed);
+        }
     }
 
     private static void UpdateLoginStreak()

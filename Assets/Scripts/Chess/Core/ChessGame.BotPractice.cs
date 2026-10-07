@@ -85,6 +85,7 @@ public partial class ChessGame
             positionHistory.TryGetValue(key, out int count); positionHistory[key] = count + 1;
         }
         chessboard?.ClearLegalMoveHighlights();
+        PlayerAuthService.RecordBotPracticeAssist(botDifficulty, hint: false);
         BotPositionRestored?.Invoke();
         return true;
     }
