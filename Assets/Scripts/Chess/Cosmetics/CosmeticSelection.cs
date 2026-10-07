@@ -14,13 +14,15 @@ public sealed class CosmeticSelection
     public string blackSkinId = LowPolyId;
     public string boardId = LowPolyId;
     public string environmentId = "";
+    public string moveEffectId = "classic";
 
     public CosmeticSelection Copy() => new CosmeticSelection
     {
         whiteSkinId = whiteSkinId,
         blackSkinId = blackSkinId,
         boardId = boardId,
-        environmentId = environmentId
+        environmentId = environmentId,
+        moveEffectId = moveEffectId
     };
 
     public void Save()
@@ -55,6 +57,7 @@ public sealed class CosmeticSelection
         {
             whiteSkinId = blackSkinId = boardId = LowPolyId;
             environmentId = "";
+            moveEffectId = "classic";
             return;
         }
 
@@ -64,6 +67,7 @@ public sealed class CosmeticSelection
             string.Equals(boardId, "default", StringComparison.OrdinalIgnoreCase))
             boardId = LowPolyId;
         environmentId = environmentId ?? "";
+        if (moveEffectId != "ink_sparks" && moveEffectId != "confetti") moveEffectId = "classic";
     }
 
     private static string ReplaceRemovedPieceId(string id) =>

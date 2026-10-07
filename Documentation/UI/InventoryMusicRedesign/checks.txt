@@ -1,0 +1,1305 @@
+PASS Default collection contains owned skins and three built-in effects
+PASS Default filter excludes locked items
+PASS Inventory is restricted to cosmetics
+PASS Next page moves to page two
+PASS Search matches an owned skin by name
+PASS All-items filter also shows locked skins
+PASS Equipped filter includes both skins and the selected effect
+PASS Metadata tags filter the player's collection
+PASS Rarity tags work without metadata tags
+PASS Effects category contains three supported move effects
+PASS Equipping an effect persists it for gameplay
+PASS Refreshing inventory preserves the equipped effect
+PASS Inventory (1920, 1080): Eyebrow fits
+PASS Inventory (1920, 1080): Title fits
+PASS Inventory (1920, 1080): Label fits
+PASS Inventory (1920, 1080): Loadout Heading fits
+PASS Inventory (1920, 1080): Collection Heading fits
+PASS Inventory (1920, 1080): Collection Count fits
+PASS Inventory (1920, 1080): Slot Label fits
+PASS Inventory (1920, 1080): Equipped Name fits
+PASS Inventory (1920, 1080): Slot Label fits
+PASS Inventory (1920, 1080): Equipped Name fits
+PASS Inventory (1920, 1080): Slot Label fits
+PASS Inventory (1920, 1080): Equipped Name fits
+PASS Inventory (1920, 1080): Label fits
+PASS Inventory (1920, 1080): Label fits
+PASS Inventory (1920, 1080): Label fits
+PASS Inventory (1920, 1080): Label fits
+PASS Inventory (1920, 1080): Label fits
+PASS Inventory (1920, 1080): Search Text fits
+PASS Inventory (1920, 1080): Search Placeholder fits
+PASS Inventory (1920, 1080): Active Filter Summary fits
+PASS Inventory (1920, 1080): Rarity fits
+PASS Inventory (1920, 1080): Item Name fits
+PASS Inventory (1920, 1080): Category Tag fits
+PASS Inventory (1920, 1080): Item State fits
+PASS Inventory (1920, 1080): Rarity fits
+PASS Inventory (1920, 1080): Item Name fits
+PASS Inventory (1920, 1080): Category Tag fits
+PASS Inventory (1920, 1080): Item State fits
+PASS Inventory (1920, 1080): Rarity fits
+PASS Inventory (1920, 1080): Item Name fits
+PASS Inventory (1920, 1080): Category Tag fits
+PASS Inventory (1920, 1080): Item State fits
+PASS Inventory (1920, 1080): Rarity fits
+PASS Inventory (1920, 1080): Item Name fits
+PASS Inventory (1920, 1080): Category Tag fits
+PASS Inventory (1920, 1080): Item State fits
+PASS Inventory (1920, 1080): Rarity fits
+PASS Inventory (1920, 1080): Item Name fits
+PASS Inventory (1920, 1080): Category Tag fits
+PASS Inventory (1920, 1080): Item State fits
+PASS Inventory (1920, 1080): Rarity fits
+PASS Inventory (1920, 1080): Item Name fits
+PASS Inventory (1920, 1080): Category Tag fits
+PASS Inventory (1920, 1080): Item State fits
+PASS Inventory (1920, 1080): Label fits
+PASS Inventory (1920, 1080): Page fits
+PASS Inventory (1920, 1080): Label fits
+PASS Inventory (1920, 1080): Inventory Status fits
+PASS Inventory (1920, 1080): Back to Menu stays in viewport
+PASS Inventory (1920, 1080): Chess Loadout stays in viewport
+PASS Inventory (1920, 1080): Board Loadout stays in viewport
+PASS Inventory (1920, 1080): Effects Loadout stays in viewport
+PASS Inventory (1920, 1080): ALL Category stays in viewport
+PASS Inventory (1920, 1080): CHESS Category stays in viewport
+PASS Inventory (1920, 1080): BOARD Category stays in viewport
+PASS Inventory (1920, 1080): EFFECTS Category stays in viewport
+PASS Inventory (1920, 1080): Filter Inventory stays in viewport
+PASS Inventory (1920, 1080): Item local-effect:classic stays in viewport
+PASS Inventory (1920, 1080): Item local-effect:ink_sparks stays in viewport
+PASS Inventory (1920, 1080): Item fixture-2 stays in viewport
+PASS Inventory (1920, 1080): Previous Page stays in viewport
+PASS Inventory (1920, 1080): Next Page stays in viewport
+PASS Inventory (1920, 1080): rendered image contains visible ink
+PASS Inventory (1280, 720): Eyebrow fits
+PASS Inventory (1280, 720): Title fits
+PASS Inventory (1280, 720): Label fits
+PASS Inventory (1280, 720): Loadout Heading fits
+PASS Inventory (1280, 720): Collection Heading fits
+PASS Inventory (1280, 720): Collection Count fits
+PASS Inventory (1280, 720): Slot Label fits
+PASS Inventory (1280, 720): Equipped Name fits
+PASS Inventory (1280, 720): Slot Label fits
+PASS Inventory (1280, 720): Equipped Name fits
+PASS Inventory (1280, 720): Slot Label fits
+PASS Inventory (1280, 720): Equipped Name fits
+PASS Inventory (1280, 720): Label fits
+PASS Inventory (1280, 720): Label fits
+PASS Inventory (1280, 720): Label fits
+PASS Inventory (1280, 720): Label fits
+PASS Inventory (1280, 720): Label fits
+PASS Inventory (1280, 720): Search Text fits
+PASS Inventory (1280, 720): Search Placeholder fits
+PASS Inventory (1280, 720): Active Filter Summary fits
+PASS Inventory (1280, 720): Rarity fits
+PASS Inventory (1280, 720): Item Name fits
+PASS Inventory (1280, 720): Category Tag fits
+PASS Inventory (1280, 720): Item State fits
+PASS Inventory (1280, 720): Rarity fits
+PASS Inventory (1280, 720): Item Name fits
+PASS Inventory (1280, 720): Category Tag fits
+PASS Inventory (1280, 720): Item State fits
+PASS Inventory (1280, 720): Rarity fits
+PASS Inventory (1280, 720): Item Name fits
+PASS Inventory (1280, 720): Category Tag fits
+PASS Inventory (1280, 720): Item State fits
+PASS Inventory (1280, 720): Rarity fits
+PASS Inventory (1280, 720): Item Name fits
+PASS Inventory (1280, 720): Category Tag fits
+PASS Inventory (1280, 720): Item State fits
+PASS Inventory (1280, 720): Rarity fits
+PASS Inventory (1280, 720): Item Name fits
+PASS Inventory (1280, 720): Category Tag fits
+PASS Inventory (1280, 720): Item State fits
+PASS Inventory (1280, 720): Rarity fits
+PASS Inventory (1280, 720): Item Name fits
+PASS Inventory (1280, 720): Category Tag fits
+PASS Inventory (1280, 720): Item State fits
+PASS Inventory (1280, 720): Label fits
+PASS Inventory (1280, 720): Page fits
+PASS Inventory (1280, 720): Label fits
+PASS Inventory (1280, 720): Inventory Status fits
+PASS Inventory (1280, 720): Back to Menu stays in viewport
+PASS Inventory (1280, 720): Chess Loadout stays in viewport
+PASS Inventory (1280, 720): Board Loadout stays in viewport
+PASS Inventory (1280, 720): Effects Loadout stays in viewport
+PASS Inventory (1280, 720): ALL Category stays in viewport
+PASS Inventory (1280, 720): CHESS Category stays in viewport
+PASS Inventory (1280, 720): BOARD Category stays in viewport
+PASS Inventory (1280, 720): EFFECTS Category stays in viewport
+PASS Inventory (1280, 720): Filter Inventory stays in viewport
+PASS Inventory (1280, 720): Item local-effect:classic stays in viewport
+PASS Inventory (1280, 720): Item local-effect:ink_sparks stays in viewport
+PASS Inventory (1280, 720): Item fixture-2 stays in viewport
+PASS Inventory (1280, 720): Previous Page stays in viewport
+PASS Inventory (1280, 720): Next Page stays in viewport
+PASS Inventory (1280, 720): rendered image contains visible ink
+PASS Inventory (800, 600): Eyebrow fits
+PASS Inventory (800, 600): Title fits
+PASS Inventory (800, 600): Label fits
+PASS Inventory (800, 600): Loadout Heading fits
+PASS Inventory (800, 600): Collection Heading fits
+PASS Inventory (800, 600): Collection Count fits
+PASS Inventory (800, 600): Slot Label fits
+PASS Inventory (800, 600): Equipped Name fits
+PASS Inventory (800, 600): Slot Label fits
+PASS Inventory (800, 600): Equipped Name fits
+PASS Inventory (800, 600): Slot Label fits
+PASS Inventory (800, 600): Equipped Name fits
+PASS Inventory (800, 600): Label fits
+PASS Inventory (800, 600): Label fits
+PASS Inventory (800, 600): Label fits
+PASS Inventory (800, 600): Label fits
+PASS Inventory (800, 600): Label fits
+PASS Inventory (800, 600): Search Text fits
+PASS Inventory (800, 600): Search Placeholder fits
+PASS Inventory (800, 600): Active Filter Summary fits
+PASS Inventory (800, 600): Rarity fits
+PASS Inventory (800, 600): Item Name fits
+PASS Inventory (800, 600): Category Tag fits
+PASS Inventory (800, 600): Item State fits
+PASS Inventory (800, 600): Rarity fits
+PASS Inventory (800, 600): Item Name fits
+PASS Inventory (800, 600): Category Tag fits
+PASS Inventory (800, 600): Item State fits
+PASS Inventory (800, 600): Rarity fits
+PASS Inventory (800, 600): Item Name fits
+PASS Inventory (800, 600): Category Tag fits
+PASS Inventory (800, 600): Item State fits
+PASS Inventory (800, 600): Rarity fits
+PASS Inventory (800, 600): Item Name fits
+PASS Inventory (800, 600): Category Tag fits
+PASS Inventory (800, 600): Item State fits
+PASS Inventory (800, 600): Rarity fits
+PASS Inventory (800, 600): Item Name fits
+PASS Inventory (800, 600): Category Tag fits
+PASS Inventory (800, 600): Item State fits
+PASS Inventory (800, 600): Rarity fits
+PASS Inventory (800, 600): Item Name fits
+PASS Inventory (800, 600): Category Tag fits
+PASS Inventory (800, 600): Item State fits
+PASS Inventory (800, 600): Label fits
+PASS Inventory (800, 600): Page fits
+PASS Inventory (800, 600): Label fits
+PASS Inventory (800, 600): Inventory Status fits
+PASS Inventory (800, 600): Back to Menu stays in viewport
+PASS Inventory (800, 600): Chess Loadout stays in viewport
+PASS Inventory (800, 600): Board Loadout stays in viewport
+PASS Inventory (800, 600): Effects Loadout stays in viewport
+PASS Inventory (800, 600): ALL Category stays in viewport
+PASS Inventory (800, 600): CHESS Category stays in viewport
+PASS Inventory (800, 600): BOARD Category stays in viewport
+PASS Inventory (800, 600): EFFECTS Category stays in viewport
+PASS Inventory (800, 600): Filter Inventory stays in viewport
+PASS Inventory (800, 600): Item local-effect:classic stays in viewport
+PASS Inventory (800, 600): Item local-effect:ink_sparks stays in viewport
+PASS Inventory (800, 600): Item fixture-2 stays in viewport
+PASS Inventory (800, 600): Previous Page stays in viewport
+PASS Inventory (800, 600): Next Page stays in viewport
+PASS Inventory (800, 600): rendered image contains visible ink
+PASS Inventory (2560, 1080): Eyebrow fits
+PASS Inventory (2560, 1080): Title fits
+PASS Inventory (2560, 1080): Label fits
+PASS Inventory (2560, 1080): Loadout Heading fits
+PASS Inventory (2560, 1080): Collection Heading fits
+PASS Inventory (2560, 1080): Collection Count fits
+PASS Inventory (2560, 1080): Slot Label fits
+PASS Inventory (2560, 1080): Equipped Name fits
+PASS Inventory (2560, 1080): Slot Label fits
+PASS Inventory (2560, 1080): Equipped Name fits
+PASS Inventory (2560, 1080): Slot Label fits
+PASS Inventory (2560, 1080): Equipped Name fits
+PASS Inventory (2560, 1080): Label fits
+PASS Inventory (2560, 1080): Label fits
+PASS Inventory (2560, 1080): Label fits
+PASS Inventory (2560, 1080): Label fits
+PASS Inventory (2560, 1080): Label fits
+PASS Inventory (2560, 1080): Search Text fits
+PASS Inventory (2560, 1080): Search Placeholder fits
+PASS Inventory (2560, 1080): Active Filter Summary fits
+PASS Inventory (2560, 1080): Rarity fits
+PASS Inventory (2560, 1080): Item Name fits
+PASS Inventory (2560, 1080): Category Tag fits
+PASS Inventory (2560, 1080): Item State fits
+PASS Inventory (2560, 1080): Rarity fits
+PASS Inventory (2560, 1080): Item Name fits
+PASS Inventory (2560, 1080): Category Tag fits
+PASS Inventory (2560, 1080): Item State fits
+PASS Inventory (2560, 1080): Rarity fits
+PASS Inventory (2560, 1080): Item Name fits
+PASS Inventory (2560, 1080): Category Tag fits
+PASS Inventory (2560, 1080): Item State fits
+PASS Inventory (2560, 1080): Rarity fits
+PASS Inventory (2560, 1080): Item Name fits
+PASS Inventory (2560, 1080): Category Tag fits
+PASS Inventory (2560, 1080): Item State fits
+PASS Inventory (2560, 1080): Rarity fits
+PASS Inventory (2560, 1080): Item Name fits
+PASS Inventory (2560, 1080): Category Tag fits
+PASS Inventory (2560, 1080): Item State fits
+PASS Inventory (2560, 1080): Rarity fits
+PASS Inventory (2560, 1080): Item Name fits
+PASS Inventory (2560, 1080): Category Tag fits
+PASS Inventory (2560, 1080): Item State fits
+PASS Inventory (2560, 1080): Label fits
+PASS Inventory (2560, 1080): Page fits
+PASS Inventory (2560, 1080): Label fits
+PASS Inventory (2560, 1080): Inventory Status fits
+PASS Inventory (2560, 1080): Back to Menu stays in viewport
+PASS Inventory (2560, 1080): Chess Loadout stays in viewport
+PASS Inventory (2560, 1080): Board Loadout stays in viewport
+PASS Inventory (2560, 1080): Effects Loadout stays in viewport
+PASS Inventory (2560, 1080): ALL Category stays in viewport
+PASS Inventory (2560, 1080): CHESS Category stays in viewport
+PASS Inventory (2560, 1080): BOARD Category stays in viewport
+PASS Inventory (2560, 1080): EFFECTS Category stays in viewport
+PASS Inventory (2560, 1080): Filter Inventory stays in viewport
+PASS Inventory (2560, 1080): Item local-effect:classic stays in viewport
+PASS Inventory (2560, 1080): Item local-effect:ink_sparks stays in viewport
+PASS Inventory (2560, 1080): Item fixture-2 stays in viewport
+PASS Inventory (2560, 1080): Previous Page stays in viewport
+PASS Inventory (2560, 1080): Next Page stays in viewport
+PASS Inventory (2560, 1080): rendered image contains visible ink
+PASS Inventory (1080, 1920): Eyebrow fits
+PASS Inventory (1080, 1920): Title fits
+PASS Inventory (1080, 1920): Label fits
+PASS Inventory (1080, 1920): Loadout Heading fits
+PASS Inventory (1080, 1920): Collection Heading fits
+PASS Inventory (1080, 1920): Collection Count fits
+PASS Inventory (1080, 1920): Slot Label fits
+PASS Inventory (1080, 1920): Equipped Name fits
+PASS Inventory (1080, 1920): Slot Label fits
+PASS Inventory (1080, 1920): Equipped Name fits
+PASS Inventory (1080, 1920): Slot Label fits
+PASS Inventory (1080, 1920): Equipped Name fits
+PASS Inventory (1080, 1920): Label fits
+PASS Inventory (1080, 1920): Label fits
+PASS Inventory (1080, 1920): Label fits
+PASS Inventory (1080, 1920): Label fits
+PASS Inventory (1080, 1920): Label fits
+PASS Inventory (1080, 1920): Search Text fits
+PASS Inventory (1080, 1920): Search Placeholder fits
+PASS Inventory (1080, 1920): Active Filter Summary fits
+PASS Inventory (1080, 1920): Rarity fits
+PASS Inventory (1080, 1920): Item Name fits
+PASS Inventory (1080, 1920): Category Tag fits
+PASS Inventory (1080, 1920): Item State fits
+PASS Inventory (1080, 1920): Rarity fits
+PASS Inventory (1080, 1920): Item Name fits
+PASS Inventory (1080, 1920): Category Tag fits
+PASS Inventory (1080, 1920): Item State fits
+PASS Inventory (1080, 1920): Rarity fits
+PASS Inventory (1080, 1920): Item Name fits
+PASS Inventory (1080, 1920): Category Tag fits
+PASS Inventory (1080, 1920): Item State fits
+PASS Inventory (1080, 1920): Rarity fits
+PASS Inventory (1080, 1920): Item Name fits
+PASS Inventory (1080, 1920): Category Tag fits
+PASS Inventory (1080, 1920): Item State fits
+PASS Inventory (1080, 1920): Rarity fits
+PASS Inventory (1080, 1920): Item Name fits
+PASS Inventory (1080, 1920): Category Tag fits
+PASS Inventory (1080, 1920): Item State fits
+PASS Inventory (1080, 1920): Rarity fits
+PASS Inventory (1080, 1920): Item Name fits
+PASS Inventory (1080, 1920): Category Tag fits
+PASS Inventory (1080, 1920): Item State fits
+PASS Inventory (1080, 1920): Label fits
+PASS Inventory (1080, 1920): Page fits
+PASS Inventory (1080, 1920): Label fits
+PASS Inventory (1080, 1920): Inventory Status fits
+PASS Inventory (1080, 1920): Back to Menu stays in viewport
+PASS Inventory (1080, 1920): Chess Loadout stays in viewport
+PASS Inventory (1080, 1920): Board Loadout stays in viewport
+PASS Inventory (1080, 1920): Effects Loadout stays in viewport
+PASS Inventory (1080, 1920): ALL Category stays in viewport
+PASS Inventory (1080, 1920): CHESS Category stays in viewport
+PASS Inventory (1080, 1920): BOARD Category stays in viewport
+PASS Inventory (1080, 1920): EFFECTS Category stays in viewport
+PASS Inventory (1080, 1920): Filter Inventory stays in viewport
+PASS Inventory (1080, 1920): Item local-effect:classic stays in viewport
+PASS Inventory (1080, 1920): Item local-effect:ink_sparks stays in viewport
+PASS Inventory (1080, 1920): Item fixture-2 stays in viewport
+PASS Inventory (1080, 1920): Previous Page stays in viewport
+PASS Inventory (1080, 1920): Next Page stays in viewport
+PASS Inventory (1080, 1920): rendered image contains visible ink
+PASS Opening filters blocks the underlying inventory
+PASS Filter popup exposes catalog tags
+PASS Inventory-Filters (1920, 1080): Eyebrow fits
+PASS Inventory-Filters (1920, 1080): Title fits
+PASS Inventory-Filters (1920, 1080): Label fits
+PASS Inventory-Filters (1920, 1080): Loadout Heading fits
+PASS Inventory-Filters (1920, 1080): Collection Heading fits
+PASS Inventory-Filters (1920, 1080): Collection Count fits
+PASS Inventory-Filters (1920, 1080): Slot Label fits
+PASS Inventory-Filters (1920, 1080): Equipped Name fits
+PASS Inventory-Filters (1920, 1080): Slot Label fits
+PASS Inventory-Filters (1920, 1080): Equipped Name fits
+PASS Inventory-Filters (1920, 1080): Slot Label fits
+PASS Inventory-Filters (1920, 1080): Equipped Name fits
+PASS Inventory-Filters (1920, 1080): Label fits
+PASS Inventory-Filters (1920, 1080): Label fits
+PASS Inventory-Filters (1920, 1080): Label fits
+PASS Inventory-Filters (1920, 1080): Label fits
+PASS Inventory-Filters (1920, 1080): Label fits
+PASS Inventory-Filters (1920, 1080): Search Text fits
+PASS Inventory-Filters (1920, 1080): Search Placeholder fits
+PASS Inventory-Filters (1920, 1080): Active Filter Summary fits
+PASS Inventory-Filters (1920, 1080): Rarity fits
+PASS Inventory-Filters (1920, 1080): Item Name fits
+PASS Inventory-Filters (1920, 1080): Category Tag fits
+PASS Inventory-Filters (1920, 1080): Item State fits
+PASS Inventory-Filters (1920, 1080): Rarity fits
+PASS Inventory-Filters (1920, 1080): Item Name fits
+PASS Inventory-Filters (1920, 1080): Category Tag fits
+PASS Inventory-Filters (1920, 1080): Item State fits
+PASS Inventory-Filters (1920, 1080): Rarity fits
+PASS Inventory-Filters (1920, 1080): Item Name fits
+PASS Inventory-Filters (1920, 1080): Category Tag fits
+PASS Inventory-Filters (1920, 1080): Item State fits
+PASS Inventory-Filters (1920, 1080): Rarity fits
+PASS Inventory-Filters (1920, 1080): Item Name fits
+PASS Inventory-Filters (1920, 1080): Category Tag fits
+PASS Inventory-Filters (1920, 1080): Item State fits
+PASS Inventory-Filters (1920, 1080): Rarity fits
+PASS Inventory-Filters (1920, 1080): Item Name fits
+PASS Inventory-Filters (1920, 1080): Category Tag fits
+PASS Inventory-Filters (1920, 1080): Item State fits
+PASS Inventory-Filters (1920, 1080): Rarity fits
+PASS Inventory-Filters (1920, 1080): Item Name fits
+PASS Inventory-Filters (1920, 1080): Category Tag fits
+PASS Inventory-Filters (1920, 1080): Item State fits
+PASS Inventory-Filters (1920, 1080): Label fits
+PASS Inventory-Filters (1920, 1080): Page fits
+PASS Inventory-Filters (1920, 1080): Label fits
+PASS Inventory-Filters (1920, 1080): Inventory Status fits
+PASS Inventory-Filters (1920, 1080): Filter Heading fits
+PASS Inventory-Filters (1920, 1080): Label fits
+PASS Inventory-Filters (1920, 1080): Ownership Heading fits
+PASS Inventory-Filters (1920, 1080): Label fits
+PASS Inventory-Filters (1920, 1080): Label fits
+PASS Inventory-Filters (1920, 1080): Label fits
+PASS Inventory-Filters (1920, 1080): Label fits
+PASS Inventory-Filters (1920, 1080): Label fits
+PASS Inventory-Filters (1920, 1080): Label fits
+PASS Inventory-Filters (1920, 1080): Tags Heading fits
+PASS Inventory-Filters (1920, 1080): Label fits
+PASS Inventory-Filters (1920, 1080): Label fits
+PASS Inventory-Filters (1920, 1080): Label fits
+PASS Inventory-Filters (1920, 1080): Label fits
+PASS Inventory-Filters (1920, 1080): Label fits
+PASS Inventory-Filters (1920, 1080): Label fits
+PASS Inventory-Filters (1920, 1080): Label fits
+PASS Inventory-Filters (1920, 1080): Sort Heading fits
+PASS Inventory-Filters (1920, 1080): Label fits
+PASS Inventory-Filters (1920, 1080): Label fits
+PASS Inventory-Filters (1920, 1080): Back to Menu stays in viewport
+PASS Inventory-Filters (1920, 1080): Chess Loadout stays in viewport
+PASS Inventory-Filters (1920, 1080): Board Loadout stays in viewport
+PASS Inventory-Filters (1920, 1080): Effects Loadout stays in viewport
+PASS Inventory-Filters (1920, 1080): ALL Category stays in viewport
+PASS Inventory-Filters (1920, 1080): CHESS Category stays in viewport
+PASS Inventory-Filters (1920, 1080): BOARD Category stays in viewport
+PASS Inventory-Filters (1920, 1080): EFFECTS Category stays in viewport
+PASS Inventory-Filters (1920, 1080): Filter Inventory stays in viewport
+PASS Inventory-Filters (1920, 1080): Item local-effect:classic stays in viewport
+PASS Inventory-Filters (1920, 1080): Item local-effect:ink_sparks stays in viewport
+PASS Inventory-Filters (1920, 1080): Item fixture-2 stays in viewport
+PASS Inventory-Filters (1920, 1080): Previous Page stays in viewport
+PASS Inventory-Filters (1920, 1080): Next Page stays in viewport
+PASS Inventory-Filters (1920, 1080): Inventory Filter Overlay stays in viewport
+PASS Inventory-Filters (1920, 1080): Close Filters stays in viewport
+PASS Inventory-Filters (1920, 1080): Ownership Owned stays in viewport
+PASS Inventory-Filters (1920, 1080): Sort Equipped stays in viewport
+PASS Inventory-Filters (1920, 1080): Ownership Equipped stays in viewport
+PASS Inventory-Filters (1920, 1080): Sort Name stays in viewport
+PASS Inventory-Filters (1920, 1080): Ownership All stays in viewport
+PASS Inventory-Filters (1920, 1080): Sort Rarity stays in viewport
+PASS Inventory-Filters (1920, 1080): Reset Filters stays in viewport
+PASS Inventory-Filters (1920, 1080): Apply Filters stays in viewport
+PASS Inventory-Filters (1920, 1080): rendered image contains visible ink
+PASS Inventory-Filters (1280, 720): Eyebrow fits
+PASS Inventory-Filters (1280, 720): Title fits
+PASS Inventory-Filters (1280, 720): Label fits
+PASS Inventory-Filters (1280, 720): Loadout Heading fits
+PASS Inventory-Filters (1280, 720): Collection Heading fits
+PASS Inventory-Filters (1280, 720): Collection Count fits
+PASS Inventory-Filters (1280, 720): Slot Label fits
+PASS Inventory-Filters (1280, 720): Equipped Name fits
+PASS Inventory-Filters (1280, 720): Slot Label fits
+PASS Inventory-Filters (1280, 720): Equipped Name fits
+PASS Inventory-Filters (1280, 720): Slot Label fits
+PASS Inventory-Filters (1280, 720): Equipped Name fits
+PASS Inventory-Filters (1280, 720): Label fits
+PASS Inventory-Filters (1280, 720): Label fits
+PASS Inventory-Filters (1280, 720): Label fits
+PASS Inventory-Filters (1280, 720): Label fits
+PASS Inventory-Filters (1280, 720): Label fits
+PASS Inventory-Filters (1280, 720): Search Text fits
+PASS Inventory-Filters (1280, 720): Search Placeholder fits
+PASS Inventory-Filters (1280, 720): Active Filter Summary fits
+PASS Inventory-Filters (1280, 720): Rarity fits
+PASS Inventory-Filters (1280, 720): Item Name fits
+PASS Inventory-Filters (1280, 720): Category Tag fits
+PASS Inventory-Filters (1280, 720): Item State fits
+PASS Inventory-Filters (1280, 720): Rarity fits
+PASS Inventory-Filters (1280, 720): Item Name fits
+PASS Inventory-Filters (1280, 720): Category Tag fits
+PASS Inventory-Filters (1280, 720): Item State fits
+PASS Inventory-Filters (1280, 720): Rarity fits
+PASS Inventory-Filters (1280, 720): Item Name fits
+PASS Inventory-Filters (1280, 720): Category Tag fits
+PASS Inventory-Filters (1280, 720): Item State fits
+PASS Inventory-Filters (1280, 720): Rarity fits
+PASS Inventory-Filters (1280, 720): Item Name fits
+PASS Inventory-Filters (1280, 720): Category Tag fits
+PASS Inventory-Filters (1280, 720): Item State fits
+PASS Inventory-Filters (1280, 720): Rarity fits
+PASS Inventory-Filters (1280, 720): Item Name fits
+PASS Inventory-Filters (1280, 720): Category Tag fits
+PASS Inventory-Filters (1280, 720): Item State fits
+PASS Inventory-Filters (1280, 720): Rarity fits
+PASS Inventory-Filters (1280, 720): Item Name fits
+PASS Inventory-Filters (1280, 720): Category Tag fits
+PASS Inventory-Filters (1280, 720): Item State fits
+PASS Inventory-Filters (1280, 720): Label fits
+PASS Inventory-Filters (1280, 720): Page fits
+PASS Inventory-Filters (1280, 720): Label fits
+PASS Inventory-Filters (1280, 720): Inventory Status fits
+PASS Inventory-Filters (1280, 720): Filter Heading fits
+PASS Inventory-Filters (1280, 720): Label fits
+PASS Inventory-Filters (1280, 720): Ownership Heading fits
+PASS Inventory-Filters (1280, 720): Label fits
+PASS Inventory-Filters (1280, 720): Label fits
+PASS Inventory-Filters (1280, 720): Label fits
+PASS Inventory-Filters (1280, 720): Label fits
+PASS Inventory-Filters (1280, 720): Label fits
+PASS Inventory-Filters (1280, 720): Label fits
+PASS Inventory-Filters (1280, 720): Tags Heading fits
+PASS Inventory-Filters (1280, 720): Label fits
+PASS Inventory-Filters (1280, 720): Label fits
+PASS Inventory-Filters (1280, 720): Label fits
+PASS Inventory-Filters (1280, 720): Label fits
+PASS Inventory-Filters (1280, 720): Label fits
+PASS Inventory-Filters (1280, 720): Label fits
+PASS Inventory-Filters (1280, 720): Label fits
+PASS Inventory-Filters (1280, 720): Sort Heading fits
+PASS Inventory-Filters (1280, 720): Label fits
+PASS Inventory-Filters (1280, 720): Label fits
+PASS Inventory-Filters (1280, 720): Back to Menu stays in viewport
+PASS Inventory-Filters (1280, 720): Chess Loadout stays in viewport
+PASS Inventory-Filters (1280, 720): Board Loadout stays in viewport
+PASS Inventory-Filters (1280, 720): Effects Loadout stays in viewport
+PASS Inventory-Filters (1280, 720): ALL Category stays in viewport
+PASS Inventory-Filters (1280, 720): CHESS Category stays in viewport
+PASS Inventory-Filters (1280, 720): BOARD Category stays in viewport
+PASS Inventory-Filters (1280, 720): EFFECTS Category stays in viewport
+PASS Inventory-Filters (1280, 720): Filter Inventory stays in viewport
+PASS Inventory-Filters (1280, 720): Item local-effect:classic stays in viewport
+PASS Inventory-Filters (1280, 720): Item local-effect:ink_sparks stays in viewport
+PASS Inventory-Filters (1280, 720): Item fixture-2 stays in viewport
+PASS Inventory-Filters (1280, 720): Previous Page stays in viewport
+PASS Inventory-Filters (1280, 720): Next Page stays in viewport
+PASS Inventory-Filters (1280, 720): Inventory Filter Overlay stays in viewport
+PASS Inventory-Filters (1280, 720): Close Filters stays in viewport
+PASS Inventory-Filters (1280, 720): Ownership Owned stays in viewport
+PASS Inventory-Filters (1280, 720): Sort Equipped stays in viewport
+PASS Inventory-Filters (1280, 720): Ownership Equipped stays in viewport
+PASS Inventory-Filters (1280, 720): Sort Name stays in viewport
+PASS Inventory-Filters (1280, 720): Ownership All stays in viewport
+PASS Inventory-Filters (1280, 720): Sort Rarity stays in viewport
+PASS Inventory-Filters (1280, 720): Reset Filters stays in viewport
+PASS Inventory-Filters (1280, 720): Apply Filters stays in viewport
+PASS Inventory-Filters (1280, 720): rendered image contains visible ink
+PASS Inventory-Filters (800, 600): Eyebrow fits
+PASS Inventory-Filters (800, 600): Title fits
+PASS Inventory-Filters (800, 600): Label fits
+PASS Inventory-Filters (800, 600): Loadout Heading fits
+PASS Inventory-Filters (800, 600): Collection Heading fits
+PASS Inventory-Filters (800, 600): Collection Count fits
+PASS Inventory-Filters (800, 600): Slot Label fits
+PASS Inventory-Filters (800, 600): Equipped Name fits
+PASS Inventory-Filters (800, 600): Slot Label fits
+PASS Inventory-Filters (800, 600): Equipped Name fits
+PASS Inventory-Filters (800, 600): Slot Label fits
+PASS Inventory-Filters (800, 600): Equipped Name fits
+PASS Inventory-Filters (800, 600): Label fits
+PASS Inventory-Filters (800, 600): Label fits
+PASS Inventory-Filters (800, 600): Label fits
+PASS Inventory-Filters (800, 600): Label fits
+PASS Inventory-Filters (800, 600): Label fits
+PASS Inventory-Filters (800, 600): Search Text fits
+PASS Inventory-Filters (800, 600): Search Placeholder fits
+PASS Inventory-Filters (800, 600): Active Filter Summary fits
+PASS Inventory-Filters (800, 600): Rarity fits
+PASS Inventory-Filters (800, 600): Item Name fits
+PASS Inventory-Filters (800, 600): Category Tag fits
+PASS Inventory-Filters (800, 600): Item State fits
+PASS Inventory-Filters (800, 600): Rarity fits
+PASS Inventory-Filters (800, 600): Item Name fits
+PASS Inventory-Filters (800, 600): Category Tag fits
+PASS Inventory-Filters (800, 600): Item State fits
+PASS Inventory-Filters (800, 600): Rarity fits
+PASS Inventory-Filters (800, 600): Item Name fits
+PASS Inventory-Filters (800, 600): Category Tag fits
+PASS Inventory-Filters (800, 600): Item State fits
+PASS Inventory-Filters (800, 600): Rarity fits
+PASS Inventory-Filters (800, 600): Item Name fits
+PASS Inventory-Filters (800, 600): Category Tag fits
+PASS Inventory-Filters (800, 600): Item State fits
+PASS Inventory-Filters (800, 600): Rarity fits
+PASS Inventory-Filters (800, 600): Item Name fits
+PASS Inventory-Filters (800, 600): Category Tag fits
+PASS Inventory-Filters (800, 600): Item State fits
+PASS Inventory-Filters (800, 600): Rarity fits
+PASS Inventory-Filters (800, 600): Item Name fits
+PASS Inventory-Filters (800, 600): Category Tag fits
+PASS Inventory-Filters (800, 600): Item State fits
+PASS Inventory-Filters (800, 600): Label fits
+PASS Inventory-Filters (800, 600): Page fits
+PASS Inventory-Filters (800, 600): Label fits
+PASS Inventory-Filters (800, 600): Inventory Status fits
+PASS Inventory-Filters (800, 600): Filter Heading fits
+PASS Inventory-Filters (800, 600): Label fits
+PASS Inventory-Filters (800, 600): Ownership Heading fits
+PASS Inventory-Filters (800, 600): Label fits
+PASS Inventory-Filters (800, 600): Label fits
+PASS Inventory-Filters (800, 600): Label fits
+PASS Inventory-Filters (800, 600): Label fits
+PASS Inventory-Filters (800, 600): Label fits
+PASS Inventory-Filters (800, 600): Label fits
+PASS Inventory-Filters (800, 600): Tags Heading fits
+PASS Inventory-Filters (800, 600): Label fits
+PASS Inventory-Filters (800, 600): Label fits
+PASS Inventory-Filters (800, 600): Label fits
+PASS Inventory-Filters (800, 600): Label fits
+PASS Inventory-Filters (800, 600): Label fits
+PASS Inventory-Filters (800, 600): Label fits
+PASS Inventory-Filters (800, 600): Label fits
+PASS Inventory-Filters (800, 600): Sort Heading fits
+PASS Inventory-Filters (800, 600): Label fits
+PASS Inventory-Filters (800, 600): Label fits
+PASS Inventory-Filters (800, 600): Back to Menu stays in viewport
+PASS Inventory-Filters (800, 600): Chess Loadout stays in viewport
+PASS Inventory-Filters (800, 600): Board Loadout stays in viewport
+PASS Inventory-Filters (800, 600): Effects Loadout stays in viewport
+PASS Inventory-Filters (800, 600): ALL Category stays in viewport
+PASS Inventory-Filters (800, 600): CHESS Category stays in viewport
+PASS Inventory-Filters (800, 600): BOARD Category stays in viewport
+PASS Inventory-Filters (800, 600): EFFECTS Category stays in viewport
+PASS Inventory-Filters (800, 600): Filter Inventory stays in viewport
+PASS Inventory-Filters (800, 600): Item local-effect:classic stays in viewport
+PASS Inventory-Filters (800, 600): Item local-effect:ink_sparks stays in viewport
+PASS Inventory-Filters (800, 600): Item fixture-2 stays in viewport
+PASS Inventory-Filters (800, 600): Previous Page stays in viewport
+PASS Inventory-Filters (800, 600): Next Page stays in viewport
+PASS Inventory-Filters (800, 600): Inventory Filter Overlay stays in viewport
+PASS Inventory-Filters (800, 600): Close Filters stays in viewport
+PASS Inventory-Filters (800, 600): Ownership Owned stays in viewport
+PASS Inventory-Filters (800, 600): Sort Equipped stays in viewport
+PASS Inventory-Filters (800, 600): Ownership Equipped stays in viewport
+PASS Inventory-Filters (800, 600): Sort Name stays in viewport
+PASS Inventory-Filters (800, 600): Ownership All stays in viewport
+PASS Inventory-Filters (800, 600): Sort Rarity stays in viewport
+PASS Inventory-Filters (800, 600): Reset Filters stays in viewport
+PASS Inventory-Filters (800, 600): Apply Filters stays in viewport
+PASS Inventory-Filters (800, 600): rendered image contains visible ink
+PASS Inventory-Filters (2560, 1080): Eyebrow fits
+PASS Inventory-Filters (2560, 1080): Title fits
+PASS Inventory-Filters (2560, 1080): Label fits
+PASS Inventory-Filters (2560, 1080): Loadout Heading fits
+PASS Inventory-Filters (2560, 1080): Collection Heading fits
+PASS Inventory-Filters (2560, 1080): Collection Count fits
+PASS Inventory-Filters (2560, 1080): Slot Label fits
+PASS Inventory-Filters (2560, 1080): Equipped Name fits
+PASS Inventory-Filters (2560, 1080): Slot Label fits
+PASS Inventory-Filters (2560, 1080): Equipped Name fits
+PASS Inventory-Filters (2560, 1080): Slot Label fits
+PASS Inventory-Filters (2560, 1080): Equipped Name fits
+PASS Inventory-Filters (2560, 1080): Label fits
+PASS Inventory-Filters (2560, 1080): Label fits
+PASS Inventory-Filters (2560, 1080): Label fits
+PASS Inventory-Filters (2560, 1080): Label fits
+PASS Inventory-Filters (2560, 1080): Label fits
+PASS Inventory-Filters (2560, 1080): Search Text fits
+PASS Inventory-Filters (2560, 1080): Search Placeholder fits
+PASS Inventory-Filters (2560, 1080): Active Filter Summary fits
+PASS Inventory-Filters (2560, 1080): Rarity fits
+PASS Inventory-Filters (2560, 1080): Item Name fits
+PASS Inventory-Filters (2560, 1080): Category Tag fits
+PASS Inventory-Filters (2560, 1080): Item State fits
+PASS Inventory-Filters (2560, 1080): Rarity fits
+PASS Inventory-Filters (2560, 1080): Item Name fits
+PASS Inventory-Filters (2560, 1080): Category Tag fits
+PASS Inventory-Filters (2560, 1080): Item State fits
+PASS Inventory-Filters (2560, 1080): Rarity fits
+PASS Inventory-Filters (2560, 1080): Item Name fits
+PASS Inventory-Filters (2560, 1080): Category Tag fits
+PASS Inventory-Filters (2560, 1080): Item State fits
+PASS Inventory-Filters (2560, 1080): Rarity fits
+PASS Inventory-Filters (2560, 1080): Item Name fits
+PASS Inventory-Filters (2560, 1080): Category Tag fits
+PASS Inventory-Filters (2560, 1080): Item State fits
+PASS Inventory-Filters (2560, 1080): Rarity fits
+PASS Inventory-Filters (2560, 1080): Item Name fits
+PASS Inventory-Filters (2560, 1080): Category Tag fits
+PASS Inventory-Filters (2560, 1080): Item State fits
+PASS Inventory-Filters (2560, 1080): Rarity fits
+PASS Inventory-Filters (2560, 1080): Item Name fits
+PASS Inventory-Filters (2560, 1080): Category Tag fits
+PASS Inventory-Filters (2560, 1080): Item State fits
+PASS Inventory-Filters (2560, 1080): Label fits
+PASS Inventory-Filters (2560, 1080): Page fits
+PASS Inventory-Filters (2560, 1080): Label fits
+PASS Inventory-Filters (2560, 1080): Inventory Status fits
+PASS Inventory-Filters (2560, 1080): Filter Heading fits
+PASS Inventory-Filters (2560, 1080): Label fits
+PASS Inventory-Filters (2560, 1080): Ownership Heading fits
+PASS Inventory-Filters (2560, 1080): Label fits
+PASS Inventory-Filters (2560, 1080): Label fits
+PASS Inventory-Filters (2560, 1080): Label fits
+PASS Inventory-Filters (2560, 1080): Label fits
+PASS Inventory-Filters (2560, 1080): Label fits
+PASS Inventory-Filters (2560, 1080): Label fits
+PASS Inventory-Filters (2560, 1080): Tags Heading fits
+PASS Inventory-Filters (2560, 1080): Label fits
+PASS Inventory-Filters (2560, 1080): Label fits
+PASS Inventory-Filters (2560, 1080): Label fits
+PASS Inventory-Filters (2560, 1080): Label fits
+PASS Inventory-Filters (2560, 1080): Label fits
+PASS Inventory-Filters (2560, 1080): Label fits
+PASS Inventory-Filters (2560, 1080): Label fits
+PASS Inventory-Filters (2560, 1080): Sort Heading fits
+PASS Inventory-Filters (2560, 1080): Label fits
+PASS Inventory-Filters (2560, 1080): Label fits
+PASS Inventory-Filters (2560, 1080): Back to Menu stays in viewport
+PASS Inventory-Filters (2560, 1080): Chess Loadout stays in viewport
+PASS Inventory-Filters (2560, 1080): Board Loadout stays in viewport
+PASS Inventory-Filters (2560, 1080): Effects Loadout stays in viewport
+PASS Inventory-Filters (2560, 1080): ALL Category stays in viewport
+PASS Inventory-Filters (2560, 1080): CHESS Category stays in viewport
+PASS Inventory-Filters (2560, 1080): BOARD Category stays in viewport
+PASS Inventory-Filters (2560, 1080): EFFECTS Category stays in viewport
+PASS Inventory-Filters (2560, 1080): Filter Inventory stays in viewport
+PASS Inventory-Filters (2560, 1080): Item local-effect:classic stays in viewport
+PASS Inventory-Filters (2560, 1080): Item local-effect:ink_sparks stays in viewport
+PASS Inventory-Filters (2560, 1080): Item fixture-2 stays in viewport
+PASS Inventory-Filters (2560, 1080): Previous Page stays in viewport
+PASS Inventory-Filters (2560, 1080): Next Page stays in viewport
+PASS Inventory-Filters (2560, 1080): Inventory Filter Overlay stays in viewport
+PASS Inventory-Filters (2560, 1080): Close Filters stays in viewport
+PASS Inventory-Filters (2560, 1080): Ownership Owned stays in viewport
+PASS Inventory-Filters (2560, 1080): Sort Equipped stays in viewport
+PASS Inventory-Filters (2560, 1080): Ownership Equipped stays in viewport
+PASS Inventory-Filters (2560, 1080): Sort Name stays in viewport
+PASS Inventory-Filters (2560, 1080): Ownership All stays in viewport
+PASS Inventory-Filters (2560, 1080): Sort Rarity stays in viewport
+PASS Inventory-Filters (2560, 1080): Reset Filters stays in viewport
+PASS Inventory-Filters (2560, 1080): Apply Filters stays in viewport
+PASS Inventory-Filters (2560, 1080): rendered image contains visible ink
+PASS Inventory-Filters (1080, 1920): Eyebrow fits
+PASS Inventory-Filters (1080, 1920): Title fits
+PASS Inventory-Filters (1080, 1920): Label fits
+PASS Inventory-Filters (1080, 1920): Loadout Heading fits
+PASS Inventory-Filters (1080, 1920): Collection Heading fits
+PASS Inventory-Filters (1080, 1920): Collection Count fits
+PASS Inventory-Filters (1080, 1920): Slot Label fits
+PASS Inventory-Filters (1080, 1920): Equipped Name fits
+PASS Inventory-Filters (1080, 1920): Slot Label fits
+PASS Inventory-Filters (1080, 1920): Equipped Name fits
+PASS Inventory-Filters (1080, 1920): Slot Label fits
+PASS Inventory-Filters (1080, 1920): Equipped Name fits
+PASS Inventory-Filters (1080, 1920): Label fits
+PASS Inventory-Filters (1080, 1920): Label fits
+PASS Inventory-Filters (1080, 1920): Label fits
+PASS Inventory-Filters (1080, 1920): Label fits
+PASS Inventory-Filters (1080, 1920): Label fits
+PASS Inventory-Filters (1080, 1920): Search Text fits
+PASS Inventory-Filters (1080, 1920): Search Placeholder fits
+PASS Inventory-Filters (1080, 1920): Active Filter Summary fits
+PASS Inventory-Filters (1080, 1920): Rarity fits
+PASS Inventory-Filters (1080, 1920): Item Name fits
+PASS Inventory-Filters (1080, 1920): Category Tag fits
+PASS Inventory-Filters (1080, 1920): Item State fits
+PASS Inventory-Filters (1080, 1920): Rarity fits
+PASS Inventory-Filters (1080, 1920): Item Name fits
+PASS Inventory-Filters (1080, 1920): Category Tag fits
+PASS Inventory-Filters (1080, 1920): Item State fits
+PASS Inventory-Filters (1080, 1920): Rarity fits
+PASS Inventory-Filters (1080, 1920): Item Name fits
+PASS Inventory-Filters (1080, 1920): Category Tag fits
+PASS Inventory-Filters (1080, 1920): Item State fits
+PASS Inventory-Filters (1080, 1920): Rarity fits
+PASS Inventory-Filters (1080, 1920): Item Name fits
+PASS Inventory-Filters (1080, 1920): Category Tag fits
+PASS Inventory-Filters (1080, 1920): Item State fits
+PASS Inventory-Filters (1080, 1920): Rarity fits
+PASS Inventory-Filters (1080, 1920): Item Name fits
+PASS Inventory-Filters (1080, 1920): Category Tag fits
+PASS Inventory-Filters (1080, 1920): Item State fits
+PASS Inventory-Filters (1080, 1920): Rarity fits
+PASS Inventory-Filters (1080, 1920): Item Name fits
+PASS Inventory-Filters (1080, 1920): Category Tag fits
+PASS Inventory-Filters (1080, 1920): Item State fits
+PASS Inventory-Filters (1080, 1920): Label fits
+PASS Inventory-Filters (1080, 1920): Page fits
+PASS Inventory-Filters (1080, 1920): Label fits
+PASS Inventory-Filters (1080, 1920): Inventory Status fits
+PASS Inventory-Filters (1080, 1920): Filter Heading fits
+PASS Inventory-Filters (1080, 1920): Label fits
+PASS Inventory-Filters (1080, 1920): Ownership Heading fits
+PASS Inventory-Filters (1080, 1920): Label fits
+PASS Inventory-Filters (1080, 1920): Label fits
+PASS Inventory-Filters (1080, 1920): Label fits
+PASS Inventory-Filters (1080, 1920): Label fits
+PASS Inventory-Filters (1080, 1920): Label fits
+PASS Inventory-Filters (1080, 1920): Label fits
+PASS Inventory-Filters (1080, 1920): Tags Heading fits
+PASS Inventory-Filters (1080, 1920): Label fits
+PASS Inventory-Filters (1080, 1920): Label fits
+PASS Inventory-Filters (1080, 1920): Label fits
+PASS Inventory-Filters (1080, 1920): Label fits
+PASS Inventory-Filters (1080, 1920): Label fits
+PASS Inventory-Filters (1080, 1920): Label fits
+PASS Inventory-Filters (1080, 1920): Label fits
+PASS Inventory-Filters (1080, 1920): Sort Heading fits
+PASS Inventory-Filters (1080, 1920): Label fits
+PASS Inventory-Filters (1080, 1920): Label fits
+PASS Inventory-Filters (1080, 1920): Back to Menu stays in viewport
+PASS Inventory-Filters (1080, 1920): Chess Loadout stays in viewport
+PASS Inventory-Filters (1080, 1920): Board Loadout stays in viewport
+PASS Inventory-Filters (1080, 1920): Effects Loadout stays in viewport
+PASS Inventory-Filters (1080, 1920): ALL Category stays in viewport
+PASS Inventory-Filters (1080, 1920): CHESS Category stays in viewport
+PASS Inventory-Filters (1080, 1920): BOARD Category stays in viewport
+PASS Inventory-Filters (1080, 1920): EFFECTS Category stays in viewport
+PASS Inventory-Filters (1080, 1920): Filter Inventory stays in viewport
+PASS Inventory-Filters (1080, 1920): Item local-effect:classic stays in viewport
+PASS Inventory-Filters (1080, 1920): Item local-effect:ink_sparks stays in viewport
+PASS Inventory-Filters (1080, 1920): Item fixture-2 stays in viewport
+PASS Inventory-Filters (1080, 1920): Previous Page stays in viewport
+PASS Inventory-Filters (1080, 1920): Next Page stays in viewport
+PASS Inventory-Filters (1080, 1920): Inventory Filter Overlay stays in viewport
+PASS Inventory-Filters (1080, 1920): Close Filters stays in viewport
+PASS Inventory-Filters (1080, 1920): Ownership Owned stays in viewport
+PASS Inventory-Filters (1080, 1920): Sort Equipped stays in viewport
+PASS Inventory-Filters (1080, 1920): Ownership Equipped stays in viewport
+PASS Inventory-Filters (1080, 1920): Sort Name stays in viewport
+PASS Inventory-Filters (1080, 1920): Ownership All stays in viewport
+PASS Inventory-Filters (1080, 1920): Sort Rarity stays in viewport
+PASS Inventory-Filters (1080, 1920): Reset Filters stays in viewport
+PASS Inventory-Filters (1080, 1920): Apply Filters stays in viewport
+PASS Inventory-Filters (1080, 1920): rendered image contains visible ink
+PASS Closing filters restores inventory controls
+PASS Back forwards the menu action once
+PASS Music picker updates the playback manager and persists the selected pack
+PASS Hub displays the selected music pack
+PASS Hub contains the antialiased record drawing
+PASS Record participates in hub keyboard navigation
+PASS Record animation rotates the vinyl
+PASS Music record has visible mesh geometry
+PASS MainMenu2-Music (1920, 1080): Mode Hub Title fits
+PASS MainMenu2-Music (1920, 1080): Mode Hub Welcome fits
+PASS MainMenu2-Music (1920, 1080): Modes Section fits
+PASS MainMenu2-Music (1920, 1080): Tools Section fits
+PASS MainMenu2-Music (1920, 1080): Local Title fits
+PASS MainMenu2-Music (1920, 1080): Local Description fits
+PASS MainMenu2-Music (1920, 1080): Local Note fits
+PASS MainMenu2-Music (1920, 1080): Online Title fits
+PASS MainMenu2-Music (1920, 1080): Online Description fits
+PASS MainMenu2-Music (1920, 1080): Online Note fits
+PASS MainMenu2-Music (1920, 1080): Aram Title fits
+PASS MainMenu2-Music (1920, 1080): Aram Description fits
+PASS MainMenu2-Music (1920, 1080): Aram Note fits
+PASS MainMenu2-Music (1920, 1080): Shop Title fits
+PASS MainMenu2-Music (1920, 1080): Shop Description fits
+PASS MainMenu2-Music (1920, 1080): Shop Note fits
+PASS MainMenu2-Music (1920, 1080): Inventory Title fits
+PASS MainMenu2-Music (1920, 1080): Inventory Description fits
+PASS MainMenu2-Music (1920, 1080): Gacha Title fits
+PASS MainMenu2-Music (1920, 1080): Gacha Description fits
+PASS MainMenu2-Music (1920, 1080): Profile Title fits
+PASS MainMenu2-Music (1920, 1080): Profile Description fits
+PASS MainMenu2-Music (1920, 1080): Settings Title fits
+PASS MainMenu2-Music (1920, 1080): Settings Description fits
+PASS MainMenu2-Music (1920, 1080): Back Label fits
+PASS MainMenu2-Music (1920, 1080): Logout Label fits
+PASS MainMenu2-Music (1920, 1080): Now Playing fits
+PASS MainMenu2-Music (1920, 1080): Active Music Pack fits
+PASS MainMenu2-Music (1920, 1080): Mode Hub Footer fits
+PASS MainMenu2-Music (1920, 1080): Mode Hub Version fits
+PASS MainMenu2-Music (1920, 1080): Local stays in viewport
+PASS MainMenu2-Music (1920, 1080): Online stays in viewport
+PASS MainMenu2-Music (1920, 1080): Aram stays in viewport
+PASS MainMenu2-Music (1920, 1080): Shop stays in viewport
+PASS MainMenu2-Music (1920, 1080): Inventory stays in viewport
+PASS MainMenu2-Music (1920, 1080): Gacha stays in viewport
+PASS MainMenu2-Music (1920, 1080): Profile stays in viewport
+PASS MainMenu2-Music (1920, 1080): Settings stays in viewport
+PASS MainMenu2-Music (1920, 1080): Back stays in viewport
+PASS MainMenu2-Music (1920, 1080): Logout stays in viewport
+PASS MainMenu2-Music (1920, 1080): Music Record stays in viewport
+PASS MainMenu2-Music (1920, 1080): rendered image contains visible ink
+PASS Music record has visible mesh geometry
+PASS MainMenu2-Music (1280, 720): Mode Hub Title fits
+PASS MainMenu2-Music (1280, 720): Mode Hub Welcome fits
+PASS MainMenu2-Music (1280, 720): Modes Section fits
+PASS MainMenu2-Music (1280, 720): Tools Section fits
+PASS MainMenu2-Music (1280, 720): Local Title fits
+PASS MainMenu2-Music (1280, 720): Local Description fits
+PASS MainMenu2-Music (1280, 720): Local Note fits
+PASS MainMenu2-Music (1280, 720): Online Title fits
+PASS MainMenu2-Music (1280, 720): Online Description fits
+PASS MainMenu2-Music (1280, 720): Online Note fits
+PASS MainMenu2-Music (1280, 720): Aram Title fits
+PASS MainMenu2-Music (1280, 720): Aram Description fits
+PASS MainMenu2-Music (1280, 720): Aram Note fits
+PASS MainMenu2-Music (1280, 720): Shop Title fits
+PASS MainMenu2-Music (1280, 720): Shop Description fits
+PASS MainMenu2-Music (1280, 720): Shop Note fits
+PASS MainMenu2-Music (1280, 720): Inventory Title fits
+PASS MainMenu2-Music (1280, 720): Inventory Description fits
+PASS MainMenu2-Music (1280, 720): Gacha Title fits
+PASS MainMenu2-Music (1280, 720): Gacha Description fits
+PASS MainMenu2-Music (1280, 720): Profile Title fits
+PASS MainMenu2-Music (1280, 720): Profile Description fits
+PASS MainMenu2-Music (1280, 720): Settings Title fits
+PASS MainMenu2-Music (1280, 720): Settings Description fits
+PASS MainMenu2-Music (1280, 720): Back Label fits
+PASS MainMenu2-Music (1280, 720): Logout Label fits
+PASS MainMenu2-Music (1280, 720): Now Playing fits
+PASS MainMenu2-Music (1280, 720): Active Music Pack fits
+PASS MainMenu2-Music (1280, 720): Mode Hub Footer fits
+PASS MainMenu2-Music (1280, 720): Mode Hub Version fits
+PASS MainMenu2-Music (1280, 720): Local stays in viewport
+PASS MainMenu2-Music (1280, 720): Online stays in viewport
+PASS MainMenu2-Music (1280, 720): Aram stays in viewport
+PASS MainMenu2-Music (1280, 720): Shop stays in viewport
+PASS MainMenu2-Music (1280, 720): Inventory stays in viewport
+PASS MainMenu2-Music (1280, 720): Gacha stays in viewport
+PASS MainMenu2-Music (1280, 720): Profile stays in viewport
+PASS MainMenu2-Music (1280, 720): Settings stays in viewport
+PASS MainMenu2-Music (1280, 720): Back stays in viewport
+PASS MainMenu2-Music (1280, 720): Logout stays in viewport
+PASS MainMenu2-Music (1280, 720): Music Record stays in viewport
+PASS MainMenu2-Music (1280, 720): rendered image contains visible ink
+PASS Music record has visible mesh geometry
+PASS MainMenu2-Music (800, 600): Mode Hub Title fits
+PASS MainMenu2-Music (800, 600): Mode Hub Welcome fits
+PASS MainMenu2-Music (800, 600): Modes Section fits
+PASS MainMenu2-Music (800, 600): Tools Section fits
+PASS MainMenu2-Music (800, 600): Local Title fits
+PASS MainMenu2-Music (800, 600): Local Description fits
+PASS MainMenu2-Music (800, 600): Local Note fits
+PASS MainMenu2-Music (800, 600): Online Title fits
+PASS MainMenu2-Music (800, 600): Online Description fits
+PASS MainMenu2-Music (800, 600): Online Note fits
+PASS MainMenu2-Music (800, 600): Aram Title fits
+PASS MainMenu2-Music (800, 600): Aram Description fits
+PASS MainMenu2-Music (800, 600): Aram Note fits
+PASS MainMenu2-Music (800, 600): Shop Title fits
+PASS MainMenu2-Music (800, 600): Shop Description fits
+PASS MainMenu2-Music (800, 600): Shop Note fits
+PASS MainMenu2-Music (800, 600): Inventory Title fits
+PASS MainMenu2-Music (800, 600): Inventory Description fits
+PASS MainMenu2-Music (800, 600): Gacha Title fits
+PASS MainMenu2-Music (800, 600): Gacha Description fits
+PASS MainMenu2-Music (800, 600): Profile Title fits
+PASS MainMenu2-Music (800, 600): Profile Description fits
+PASS MainMenu2-Music (800, 600): Settings Title fits
+PASS MainMenu2-Music (800, 600): Settings Description fits
+PASS MainMenu2-Music (800, 600): Back Label fits
+PASS MainMenu2-Music (800, 600): Logout Label fits
+PASS MainMenu2-Music (800, 600): Now Playing fits
+PASS MainMenu2-Music (800, 600): Active Music Pack fits
+PASS MainMenu2-Music (800, 600): Mode Hub Footer fits
+PASS MainMenu2-Music (800, 600): Mode Hub Version fits
+PASS MainMenu2-Music (800, 600): Local stays in viewport
+PASS MainMenu2-Music (800, 600): Online stays in viewport
+PASS MainMenu2-Music (800, 600): Aram stays in viewport
+PASS MainMenu2-Music (800, 600): Shop stays in viewport
+PASS MainMenu2-Music (800, 600): Inventory stays in viewport
+PASS MainMenu2-Music (800, 600): Gacha stays in viewport
+PASS MainMenu2-Music (800, 600): Profile stays in viewport
+PASS MainMenu2-Music (800, 600): Settings stays in viewport
+PASS MainMenu2-Music (800, 600): Back stays in viewport
+PASS MainMenu2-Music (800, 600): Logout stays in viewport
+PASS MainMenu2-Music (800, 600): Music Record stays in viewport
+PASS MainMenu2-Music (800, 600): rendered image contains visible ink
+PASS Music record has visible mesh geometry
+PASS MainMenu2-Music (2560, 1080): Mode Hub Title fits
+PASS MainMenu2-Music (2560, 1080): Mode Hub Welcome fits
+PASS MainMenu2-Music (2560, 1080): Modes Section fits
+PASS MainMenu2-Music (2560, 1080): Tools Section fits
+PASS MainMenu2-Music (2560, 1080): Local Title fits
+PASS MainMenu2-Music (2560, 1080): Local Description fits
+PASS MainMenu2-Music (2560, 1080): Local Note fits
+PASS MainMenu2-Music (2560, 1080): Online Title fits
+PASS MainMenu2-Music (2560, 1080): Online Description fits
+PASS MainMenu2-Music (2560, 1080): Online Note fits
+PASS MainMenu2-Music (2560, 1080): Aram Title fits
+PASS MainMenu2-Music (2560, 1080): Aram Description fits
+PASS MainMenu2-Music (2560, 1080): Aram Note fits
+PASS MainMenu2-Music (2560, 1080): Shop Title fits
+PASS MainMenu2-Music (2560, 1080): Shop Description fits
+PASS MainMenu2-Music (2560, 1080): Shop Note fits
+PASS MainMenu2-Music (2560, 1080): Inventory Title fits
+PASS MainMenu2-Music (2560, 1080): Inventory Description fits
+PASS MainMenu2-Music (2560, 1080): Gacha Title fits
+PASS MainMenu2-Music (2560, 1080): Gacha Description fits
+PASS MainMenu2-Music (2560, 1080): Profile Title fits
+PASS MainMenu2-Music (2560, 1080): Profile Description fits
+PASS MainMenu2-Music (2560, 1080): Settings Title fits
+PASS MainMenu2-Music (2560, 1080): Settings Description fits
+PASS MainMenu2-Music (2560, 1080): Back Label fits
+PASS MainMenu2-Music (2560, 1080): Logout Label fits
+PASS MainMenu2-Music (2560, 1080): Now Playing fits
+PASS MainMenu2-Music (2560, 1080): Active Music Pack fits
+PASS MainMenu2-Music (2560, 1080): Mode Hub Footer fits
+PASS MainMenu2-Music (2560, 1080): Mode Hub Version fits
+PASS MainMenu2-Music (2560, 1080): Local stays in viewport
+PASS MainMenu2-Music (2560, 1080): Online stays in viewport
+PASS MainMenu2-Music (2560, 1080): Aram stays in viewport
+PASS MainMenu2-Music (2560, 1080): Shop stays in viewport
+PASS MainMenu2-Music (2560, 1080): Inventory stays in viewport
+PASS MainMenu2-Music (2560, 1080): Gacha stays in viewport
+PASS MainMenu2-Music (2560, 1080): Profile stays in viewport
+PASS MainMenu2-Music (2560, 1080): Settings stays in viewport
+PASS MainMenu2-Music (2560, 1080): Back stays in viewport
+PASS MainMenu2-Music (2560, 1080): Logout stays in viewport
+PASS MainMenu2-Music (2560, 1080): Music Record stays in viewport
+PASS MainMenu2-Music (2560, 1080): rendered image contains visible ink
+PASS Music record has visible mesh geometry
+PASS MainMenu2-Music (1080, 1920): Mode Hub Title fits
+PASS MainMenu2-Music (1080, 1920): Mode Hub Welcome fits
+PASS MainMenu2-Music (1080, 1920): Modes Section fits
+PASS MainMenu2-Music (1080, 1920): Tools Section fits
+PASS MainMenu2-Music (1080, 1920): Local Title fits
+PASS MainMenu2-Music (1080, 1920): Local Description fits
+PASS MainMenu2-Music (1080, 1920): Local Note fits
+PASS MainMenu2-Music (1080, 1920): Online Title fits
+PASS MainMenu2-Music (1080, 1920): Online Description fits
+PASS MainMenu2-Music (1080, 1920): Online Note fits
+PASS MainMenu2-Music (1080, 1920): Aram Title fits
+PASS MainMenu2-Music (1080, 1920): Aram Description fits
+PASS MainMenu2-Music (1080, 1920): Aram Note fits
+PASS MainMenu2-Music (1080, 1920): Shop Title fits
+PASS MainMenu2-Music (1080, 1920): Shop Description fits
+PASS MainMenu2-Music (1080, 1920): Shop Note fits
+PASS MainMenu2-Music (1080, 1920): Inventory Title fits
+PASS MainMenu2-Music (1080, 1920): Inventory Description fits
+PASS MainMenu2-Music (1080, 1920): Gacha Title fits
+PASS MainMenu2-Music (1080, 1920): Gacha Description fits
+PASS MainMenu2-Music (1080, 1920): Profile Title fits
+PASS MainMenu2-Music (1080, 1920): Profile Description fits
+PASS MainMenu2-Music (1080, 1920): Settings Title fits
+PASS MainMenu2-Music (1080, 1920): Settings Description fits
+PASS MainMenu2-Music (1080, 1920): Back Label fits
+PASS MainMenu2-Music (1080, 1920): Logout Label fits
+PASS MainMenu2-Music (1080, 1920): Now Playing fits
+PASS MainMenu2-Music (1080, 1920): Active Music Pack fits
+PASS MainMenu2-Music (1080, 1920): Mode Hub Footer fits
+PASS MainMenu2-Music (1080, 1920): Mode Hub Version fits
+PASS MainMenu2-Music (1080, 1920): Local stays in viewport
+PASS MainMenu2-Music (1080, 1920): Online stays in viewport
+PASS MainMenu2-Music (1080, 1920): Aram stays in viewport
+PASS MainMenu2-Music (1080, 1920): Shop stays in viewport
+PASS MainMenu2-Music (1080, 1920): Inventory stays in viewport
+PASS MainMenu2-Music (1080, 1920): Gacha stays in viewport
+PASS MainMenu2-Music (1080, 1920): Profile stays in viewport
+PASS MainMenu2-Music (1080, 1920): Settings stays in viewport
+PASS MainMenu2-Music (1080, 1920): Back stays in viewport
+PASS MainMenu2-Music (1080, 1920): Logout stays in viewport
+PASS MainMenu2-Music (1080, 1920): Music Record stays in viewport
+PASS MainMenu2-Music (1080, 1920): rendered image contains visible ink
+PASS Clicking the record opens the music picker
+PASS Music picker offers every existing pack
+PASS Music popup blocks underlying record and hub
+PASS Music record has visible mesh geometry
+PASS Music-Picker (1920, 1080): Mode Hub Title fits
+PASS Music-Picker (1920, 1080): Mode Hub Welcome fits
+PASS Music-Picker (1920, 1080): Modes Section fits
+PASS Music-Picker (1920, 1080): Tools Section fits
+PASS Music-Picker (1920, 1080): Local Title fits
+PASS Music-Picker (1920, 1080): Local Description fits
+PASS Music-Picker (1920, 1080): Local Note fits
+PASS Music-Picker (1920, 1080): Online Title fits
+PASS Music-Picker (1920, 1080): Online Description fits
+PASS Music-Picker (1920, 1080): Online Note fits
+PASS Music-Picker (1920, 1080): Aram Title fits
+PASS Music-Picker (1920, 1080): Aram Description fits
+PASS Music-Picker (1920, 1080): Aram Note fits
+PASS Music-Picker (1920, 1080): Shop Title fits
+PASS Music-Picker (1920, 1080): Shop Description fits
+PASS Music-Picker (1920, 1080): Shop Note fits
+PASS Music-Picker (1920, 1080): Inventory Title fits
+PASS Music-Picker (1920, 1080): Inventory Description fits
+PASS Music-Picker (1920, 1080): Gacha Title fits
+PASS Music-Picker (1920, 1080): Gacha Description fits
+PASS Music-Picker (1920, 1080): Profile Title fits
+PASS Music-Picker (1920, 1080): Profile Description fits
+PASS Music-Picker (1920, 1080): Settings Title fits
+PASS Music-Picker (1920, 1080): Settings Description fits
+PASS Music-Picker (1920, 1080): Back Label fits
+PASS Music-Picker (1920, 1080): Logout Label fits
+PASS Music-Picker (1920, 1080): Now Playing fits
+PASS Music-Picker (1920, 1080): Active Music Pack fits
+PASS Music-Picker (1920, 1080): Mode Hub Footer fits
+PASS Music-Picker (1920, 1080): Mode Hub Version fits
+PASS Music-Picker (1920, 1080): Music Heading fits
+PASS Music-Picker (1920, 1080): Label fits
+PASS Music-Picker (1920, 1080): Label fits
+PASS Music-Picker (1920, 1080): Label fits
+PASS Music-Picker (1920, 1080): Label fits
+PASS Music-Picker (1920, 1080): Label fits
+PASS Music-Picker (1920, 1080): Label fits
+PASS Music-Picker (1920, 1080): Local stays in viewport
+PASS Music-Picker (1920, 1080): Online stays in viewport
+PASS Music-Picker (1920, 1080): Aram stays in viewport
+PASS Music-Picker (1920, 1080): Shop stays in viewport
+PASS Music-Picker (1920, 1080): Inventory stays in viewport
+PASS Music-Picker (1920, 1080): Gacha stays in viewport
+PASS Music-Picker (1920, 1080): Profile stays in viewport
+PASS Music-Picker (1920, 1080): Settings stays in viewport
+PASS Music-Picker (1920, 1080): Back stays in viewport
+PASS Music-Picker (1920, 1080): Logout stays in viewport
+PASS Music-Picker (1920, 1080): Music Record stays in viewport
+PASS Music-Picker (1920, 1080): Music Pack Overlay stays in viewport
+PASS Music-Picker (1920, 1080): Close Music Picker stays in viewport
+PASS Music-Picker (1920, 1080): Music Pack Default stays in viewport
+PASS Music-Picker (1920, 1080): Music Pack AngryBirdsEpic stays in viewport
+PASS Music-Picker (1920, 1080): Music Pack EpicSeven stays in viewport
+PASS Music-Picker (1920, 1080): Music Pack CounterStrikeGO stays in viewport
+PASS Music-Picker (1920, 1080): Music Pack EyeOfTheDragon stays in viewport
+PASS Music-Picker (1920, 1080): rendered image contains visible ink
+PASS Music record has visible mesh geometry
+PASS Music-Picker (1280, 720): Mode Hub Title fits
+PASS Music-Picker (1280, 720): Mode Hub Welcome fits
+PASS Music-Picker (1280, 720): Modes Section fits
+PASS Music-Picker (1280, 720): Tools Section fits
+PASS Music-Picker (1280, 720): Local Title fits
+PASS Music-Picker (1280, 720): Local Description fits
+PASS Music-Picker (1280, 720): Local Note fits
+PASS Music-Picker (1280, 720): Online Title fits
+PASS Music-Picker (1280, 720): Online Description fits
+PASS Music-Picker (1280, 720): Online Note fits
+PASS Music-Picker (1280, 720): Aram Title fits
+PASS Music-Picker (1280, 720): Aram Description fits
+PASS Music-Picker (1280, 720): Aram Note fits
+PASS Music-Picker (1280, 720): Shop Title fits
+PASS Music-Picker (1280, 720): Shop Description fits
+PASS Music-Picker (1280, 720): Shop Note fits
+PASS Music-Picker (1280, 720): Inventory Title fits
+PASS Music-Picker (1280, 720): Inventory Description fits
+PASS Music-Picker (1280, 720): Gacha Title fits
+PASS Music-Picker (1280, 720): Gacha Description fits
+PASS Music-Picker (1280, 720): Profile Title fits
+PASS Music-Picker (1280, 720): Profile Description fits
+PASS Music-Picker (1280, 720): Settings Title fits
+PASS Music-Picker (1280, 720): Settings Description fits
+PASS Music-Picker (1280, 720): Back Label fits
+PASS Music-Picker (1280, 720): Logout Label fits
+PASS Music-Picker (1280, 720): Now Playing fits
+PASS Music-Picker (1280, 720): Active Music Pack fits
+PASS Music-Picker (1280, 720): Mode Hub Footer fits
+PASS Music-Picker (1280, 720): Mode Hub Version fits
+PASS Music-Picker (1280, 720): Music Heading fits
+PASS Music-Picker (1280, 720): Label fits
+PASS Music-Picker (1280, 720): Label fits
+PASS Music-Picker (1280, 720): Label fits
+PASS Music-Picker (1280, 720): Label fits
+PASS Music-Picker (1280, 720): Label fits
+PASS Music-Picker (1280, 720): Label fits
+PASS Music-Picker (1280, 720): Local stays in viewport
+PASS Music-Picker (1280, 720): Online stays in viewport
+PASS Music-Picker (1280, 720): Aram stays in viewport
+PASS Music-Picker (1280, 720): Shop stays in viewport
+PASS Music-Picker (1280, 720): Inventory stays in viewport
+PASS Music-Picker (1280, 720): Gacha stays in viewport
+PASS Music-Picker (1280, 720): Profile stays in viewport
+PASS Music-Picker (1280, 720): Settings stays in viewport
+PASS Music-Picker (1280, 720): Back stays in viewport
+PASS Music-Picker (1280, 720): Logout stays in viewport
+PASS Music-Picker (1280, 720): Music Record stays in viewport
+PASS Music-Picker (1280, 720): Music Pack Overlay stays in viewport
+PASS Music-Picker (1280, 720): Close Music Picker stays in viewport
+PASS Music-Picker (1280, 720): Music Pack Default stays in viewport
+PASS Music-Picker (1280, 720): Music Pack AngryBirdsEpic stays in viewport
+PASS Music-Picker (1280, 720): Music Pack EpicSeven stays in viewport
+PASS Music-Picker (1280, 720): Music Pack CounterStrikeGO stays in viewport
+PASS Music-Picker (1280, 720): Music Pack EyeOfTheDragon stays in viewport
+PASS Music-Picker (1280, 720): rendered image contains visible ink
+PASS Music record has visible mesh geometry
+PASS Music-Picker (800, 600): Mode Hub Title fits
+PASS Music-Picker (800, 600): Mode Hub Welcome fits
+PASS Music-Picker (800, 600): Modes Section fits
+PASS Music-Picker (800, 600): Tools Section fits
+PASS Music-Picker (800, 600): Local Title fits
+PASS Music-Picker (800, 600): Local Description fits
+PASS Music-Picker (800, 600): Local Note fits
+PASS Music-Picker (800, 600): Online Title fits
+PASS Music-Picker (800, 600): Online Description fits
+PASS Music-Picker (800, 600): Online Note fits
+PASS Music-Picker (800, 600): Aram Title fits
+PASS Music-Picker (800, 600): Aram Description fits
+PASS Music-Picker (800, 600): Aram Note fits
+PASS Music-Picker (800, 600): Shop Title fits
+PASS Music-Picker (800, 600): Shop Description fits
+PASS Music-Picker (800, 600): Shop Note fits
+PASS Music-Picker (800, 600): Inventory Title fits
+PASS Music-Picker (800, 600): Inventory Description fits
+PASS Music-Picker (800, 600): Gacha Title fits
+PASS Music-Picker (800, 600): Gacha Description fits
+PASS Music-Picker (800, 600): Profile Title fits
+PASS Music-Picker (800, 600): Profile Description fits
+PASS Music-Picker (800, 600): Settings Title fits
+PASS Music-Picker (800, 600): Settings Description fits
+PASS Music-Picker (800, 600): Back Label fits
+PASS Music-Picker (800, 600): Logout Label fits
+PASS Music-Picker (800, 600): Now Playing fits
+PASS Music-Picker (800, 600): Active Music Pack fits
+PASS Music-Picker (800, 600): Mode Hub Footer fits
+PASS Music-Picker (800, 600): Mode Hub Version fits
+PASS Music-Picker (800, 600): Music Heading fits
+PASS Music-Picker (800, 600): Label fits
+PASS Music-Picker (800, 600): Label fits
+PASS Music-Picker (800, 600): Label fits
+PASS Music-Picker (800, 600): Label fits
+PASS Music-Picker (800, 600): Label fits
+PASS Music-Picker (800, 600): Label fits
+PASS Music-Picker (800, 600): Local stays in viewport
+PASS Music-Picker (800, 600): Online stays in viewport
+PASS Music-Picker (800, 600): Aram stays in viewport
+PASS Music-Picker (800, 600): Shop stays in viewport
+PASS Music-Picker (800, 600): Inventory stays in viewport
+PASS Music-Picker (800, 600): Gacha stays in viewport
+PASS Music-Picker (800, 600): Profile stays in viewport
+PASS Music-Picker (800, 600): Settings stays in viewport
+PASS Music-Picker (800, 600): Back stays in viewport
+PASS Music-Picker (800, 600): Logout stays in viewport
+PASS Music-Picker (800, 600): Music Record stays in viewport
+PASS Music-Picker (800, 600): Music Pack Overlay stays in viewport
+PASS Music-Picker (800, 600): Close Music Picker stays in viewport
+PASS Music-Picker (800, 600): Music Pack Default stays in viewport
+PASS Music-Picker (800, 600): Music Pack AngryBirdsEpic stays in viewport
+PASS Music-Picker (800, 600): Music Pack EpicSeven stays in viewport
+PASS Music-Picker (800, 600): Music Pack CounterStrikeGO stays in viewport
+PASS Music-Picker (800, 600): Music Pack EyeOfTheDragon stays in viewport
+PASS Music-Picker (800, 600): rendered image contains visible ink
+PASS Music record has visible mesh geometry
+PASS Music-Picker (2560, 1080): Mode Hub Title fits
+PASS Music-Picker (2560, 1080): Mode Hub Welcome fits
+PASS Music-Picker (2560, 1080): Modes Section fits
+PASS Music-Picker (2560, 1080): Tools Section fits
+PASS Music-Picker (2560, 1080): Local Title fits
+PASS Music-Picker (2560, 1080): Local Description fits
+PASS Music-Picker (2560, 1080): Local Note fits
+PASS Music-Picker (2560, 1080): Online Title fits
+PASS Music-Picker (2560, 1080): Online Description fits
+PASS Music-Picker (2560, 1080): Online Note fits
+PASS Music-Picker (2560, 1080): Aram Title fits
+PASS Music-Picker (2560, 1080): Aram Description fits
+PASS Music-Picker (2560, 1080): Aram Note fits
+PASS Music-Picker (2560, 1080): Shop Title fits
+PASS Music-Picker (2560, 1080): Shop Description fits
+PASS Music-Picker (2560, 1080): Shop Note fits
+PASS Music-Picker (2560, 1080): Inventory Title fits
+PASS Music-Picker (2560, 1080): Inventory Description fits
+PASS Music-Picker (2560, 1080): Gacha Title fits
+PASS Music-Picker (2560, 1080): Gacha Description fits
+PASS Music-Picker (2560, 1080): Profile Title fits
+PASS Music-Picker (2560, 1080): Profile Description fits
+PASS Music-Picker (2560, 1080): Settings Title fits
+PASS Music-Picker (2560, 1080): Settings Description fits
+PASS Music-Picker (2560, 1080): Back Label fits
+PASS Music-Picker (2560, 1080): Logout Label fits
+PASS Music-Picker (2560, 1080): Now Playing fits
+PASS Music-Picker (2560, 1080): Active Music Pack fits
+PASS Music-Picker (2560, 1080): Mode Hub Footer fits
+PASS Music-Picker (2560, 1080): Mode Hub Version fits
+PASS Music-Picker (2560, 1080): Music Heading fits
+PASS Music-Picker (2560, 1080): Label fits
+PASS Music-Picker (2560, 1080): Label fits
+PASS Music-Picker (2560, 1080): Label fits
+PASS Music-Picker (2560, 1080): Label fits
+PASS Music-Picker (2560, 1080): Label fits
+PASS Music-Picker (2560, 1080): Label fits
+PASS Music-Picker (2560, 1080): Local stays in viewport
+PASS Music-Picker (2560, 1080): Online stays in viewport
+PASS Music-Picker (2560, 1080): Aram stays in viewport
+PASS Music-Picker (2560, 1080): Shop stays in viewport
+PASS Music-Picker (2560, 1080): Inventory stays in viewport
+PASS Music-Picker (2560, 1080): Gacha stays in viewport
+PASS Music-Picker (2560, 1080): Profile stays in viewport
+PASS Music-Picker (2560, 1080): Settings stays in viewport
+PASS Music-Picker (2560, 1080): Back stays in viewport
+PASS Music-Picker (2560, 1080): Logout stays in viewport
+PASS Music-Picker (2560, 1080): Music Record stays in viewport
+PASS Music-Picker (2560, 1080): Music Pack Overlay stays in viewport
+PASS Music-Picker (2560, 1080): Close Music Picker stays in viewport
+PASS Music-Picker (2560, 1080): Music Pack Default stays in viewport
+PASS Music-Picker (2560, 1080): Music Pack AngryBirdsEpic stays in viewport
+PASS Music-Picker (2560, 1080): Music Pack EpicSeven stays in viewport
+PASS Music-Picker (2560, 1080): Music Pack CounterStrikeGO stays in viewport
+PASS Music-Picker (2560, 1080): Music Pack EyeOfTheDragon stays in viewport
+PASS Music-Picker (2560, 1080): rendered image contains visible ink
+PASS Music record has visible mesh geometry
+PASS Music-Picker (1080, 1920): Mode Hub Title fits
+PASS Music-Picker (1080, 1920): Mode Hub Welcome fits
+PASS Music-Picker (1080, 1920): Modes Section fits
+PASS Music-Picker (1080, 1920): Tools Section fits
+PASS Music-Picker (1080, 1920): Local Title fits
+PASS Music-Picker (1080, 1920): Local Description fits
+PASS Music-Picker (1080, 1920): Local Note fits
+PASS Music-Picker (1080, 1920): Online Title fits
+PASS Music-Picker (1080, 1920): Online Description fits
+PASS Music-Picker (1080, 1920): Online Note fits
+PASS Music-Picker (1080, 1920): Aram Title fits
+PASS Music-Picker (1080, 1920): Aram Description fits
+PASS Music-Picker (1080, 1920): Aram Note fits
+PASS Music-Picker (1080, 1920): Shop Title fits
+PASS Music-Picker (1080, 1920): Shop Description fits
+PASS Music-Picker (1080, 1920): Shop Note fits
+PASS Music-Picker (1080, 1920): Inventory Title fits
+PASS Music-Picker (1080, 1920): Inventory Description fits
+PASS Music-Picker (1080, 1920): Gacha Title fits
+PASS Music-Picker (1080, 1920): Gacha Description fits
+PASS Music-Picker (1080, 1920): Profile Title fits
+PASS Music-Picker (1080, 1920): Profile Description fits
+PASS Music-Picker (1080, 1920): Settings Title fits
+PASS Music-Picker (1080, 1920): Settings Description fits
+PASS Music-Picker (1080, 1920): Back Label fits
+PASS Music-Picker (1080, 1920): Logout Label fits
+PASS Music-Picker (1080, 1920): Now Playing fits
+PASS Music-Picker (1080, 1920): Active Music Pack fits
+PASS Music-Picker (1080, 1920): Mode Hub Footer fits
+PASS Music-Picker (1080, 1920): Mode Hub Version fits
+PASS Music-Picker (1080, 1920): Music Heading fits
+PASS Music-Picker (1080, 1920): Label fits
+PASS Music-Picker (1080, 1920): Label fits
+PASS Music-Picker (1080, 1920): Label fits
+PASS Music-Picker (1080, 1920): Label fits
+PASS Music-Picker (1080, 1920): Label fits
+PASS Music-Picker (1080, 1920): Label fits
+PASS Music-Picker (1080, 1920): Local stays in viewport
+PASS Music-Picker (1080, 1920): Online stays in viewport
+PASS Music-Picker (1080, 1920): Aram stays in viewport
+PASS Music-Picker (1080, 1920): Shop stays in viewport
+PASS Music-Picker (1080, 1920): Inventory stays in viewport
+PASS Music-Picker (1080, 1920): Gacha stays in viewport
+PASS Music-Picker (1080, 1920): Profile stays in viewport
+PASS Music-Picker (1080, 1920): Settings stays in viewport
+PASS Music-Picker (1080, 1920): Back stays in viewport
+PASS Music-Picker (1080, 1920): Logout stays in viewport
+PASS Music-Picker (1080, 1920): Music Record stays in viewport
+PASS Music-Picker (1080, 1920): Music Pack Overlay stays in viewport
+PASS Music-Picker (1080, 1920): Close Music Picker stays in viewport
+PASS Music-Picker (1080, 1920): Music Pack Default stays in viewport
+PASS Music-Picker (1080, 1920): Music Pack AngryBirdsEpic stays in viewport
+PASS Music-Picker (1080, 1920): Music Pack EpicSeven stays in viewport
+PASS Music-Picker (1080, 1920): Music Pack CounterStrikeGO stays in viewport
+PASS Music-Picker (1080, 1920): Music Pack EyeOfTheDragon stays in viewport
+PASS Music-Picker (1080, 1920): rendered image contains visible ink
+PASS Closing the music picker restores hub controls

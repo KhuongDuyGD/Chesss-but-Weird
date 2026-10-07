@@ -9,6 +9,7 @@ public sealed class ItemCatalogResponse
     public string type;
     public string rarity;
     public string unityAssetKey;
+    public string[] tags;
     public bool isDefault;
     public bool isActive;
 }
@@ -23,6 +24,7 @@ public sealed class InventoryItemResponse
     public string type;
     public string rarity;
     public string unityAssetKey;
+    public string[] tags;
     public bool isDefault;
     public bool isEquipped;
     public string acquiredSource;

@@ -11,7 +11,7 @@ PASS High-contrast ink mipmaps average in the project's colour space (actual: 18
 PASS Preserved logo has a mip chain and Trilinear filtering
 PASS Root canvas retains both UI colour channels
 PASS Nested animated canvases retain the coverage colour channels
-PASS Turning MSAA on/off keeps menu edges stable (mean RGB byte difference: 0.033)
+PASS Turning MSAA on/off keeps menu edges stable (mean RGB byte difference: 0.000)
 PASS AA-off silhouette has a narrow, partially covered edge (pixels: 360)
 PASS Coverage survives fractional/low UI scale 0.25
 PASS Coverage survives fractional/low UI scale 0.5

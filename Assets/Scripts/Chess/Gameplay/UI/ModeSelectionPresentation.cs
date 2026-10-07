@@ -17,7 +17,7 @@ public sealed class ModeSelectionPresentation : MonoBehaviour
     private static readonly Color Ink = new Color(.15f, .145f, .17f);
     private static readonly Color QuietInk = new Color(.40f, .375f, .37f);
     private CanvasGroup controls;
-    private Button local, online, aram, shop, inventory, gacha, profile, settings, back, logout;
+    private Button local, online, aram, shop, inventory, gacha, profile, settings, back, logout, music;
     private Button[] navigationRing;
     private GameObject selectionBeforeOverlay;
 
@@ -69,8 +69,10 @@ public sealed class ModeSelectionPresentation : MonoBehaviour
         Label(page, "Mode Hub Footer", "Play well. Respect others. Stay weird.", new Rect(361, 985, 897, 42), 26, QuietInk);
         Label(page, "Mode Hub Version", "v" + Application.version, new Rect(1597, 987, 206, 39), 25, QuietInk, TextAlignmentOptions.Right);
 
+        music = page.gameObject.AddComponent<MenuMusicWidget>().Build(page, content, this);
+
         LinkNavigation();
-        navigationRing = new[] { local, online, aram, shop, inventory, gacha, profile, settings, back, logout };
+        navigationRing = new[] { local, online, aram, shop, inventory, gacha, profile, settings, back, logout, music };
     }
 
     private static Button ModeCard(Transform parent, string name, string title, string description, string note,
@@ -161,7 +163,8 @@ public sealed class ModeSelectionPresentation : MonoBehaviour
         Nav(aram, local, back, null, shop); Nav(shop, online, back, aram, profile);
         Nav(inventory, logout, gacha, online, null); Nav(gacha, inventory, profile, online, null);
         Nav(profile, gacha, settings, shop, null); Nav(settings, profile, back, shop, null);
-        Nav(back, aram, null, null, settings); Nav(logout, null, inventory, online, null);
+        Nav(back, aram, null, null, settings); Nav(logout, null, music, online, null);
+        Nav(music, logout, inventory, online, null);
     }
 
     private static void Nav(Button button, Selectable up, Selectable down, Selectable left, Selectable right)

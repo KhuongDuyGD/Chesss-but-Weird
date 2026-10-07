@@ -52,6 +52,8 @@ PASS ModeSelection-1920x1080.png: Settings Title fits without clipped copy (pref
 PASS ModeSelection-1920x1080.png: Settings Description fits without clipped copy (preferred: 184.91 x 31.5)
 PASS ModeSelection-1920x1080.png: Back Label fits without clipped copy (preferred: 63.27 x 39.71)
 PASS ModeSelection-1920x1080.png: Logout Label fits without clipped copy (preferred: 84.72 x 31.5)
+PASS ModeSelection-1920x1080.png: Now Playing fits without clipped copy (preferred: 108.36 x 27.39)
+PASS ModeSelection-1920x1080.png: Active Music Pack fits without clipped copy (preferred: 136.07 x 38.34)
 PASS ModeSelection-1920x1080.png: Mode Hub Footer fits without clipped copy (preferred: 380.44 x 35.6)
 PASS ModeSelection-1920x1080.png: Mode Hub Version fits without clipped copy (preferred: 46.85 x 34.23)
 PASS ModeSelection-1920x1080.png: Local stays in viewport
@@ -64,6 +66,7 @@ PASS ModeSelection-1920x1080.png: Profile stays in viewport
 PASS ModeSelection-1920x1080.png: Settings stays in viewport
 PASS ModeSelection-1920x1080.png: Back stays in viewport
 PASS ModeSelection-1920x1080.png: Logout stays in viewport
+PASS ModeSelection-1920x1080.png: Music Record stays in viewport
 PASS ModeSelection-1280x720.png: Mode Hub Title fits without clipped copy (preferred: 551.04 x 90.37)
 PASS ModeSelection-1280x720.png: Mode Hub Welcome fits without clipped copy (preferred: 347.61 x 42.45)
 PASS ModeSelection-1280x720.png: Modes Section fits without clipped copy (preferred: 204.85 x 41.08)
@@ -90,6 +93,8 @@ PASS ModeSelection-1280x720.png: Settings Title fits without clipped copy (prefe
 PASS ModeSelection-1280x720.png: Settings Description fits without clipped copy (preferred: 184.91 x 31.5)
 PASS ModeSelection-1280x720.png: Back Label fits without clipped copy (preferred: 63.27 x 39.71)
 PASS ModeSelection-1280x720.png: Logout Label fits without clipped copy (preferred: 84.72 x 31.5)
+PASS ModeSelection-1280x720.png: Now Playing fits without clipped copy (preferred: 108.36 x 27.39)
+PASS ModeSelection-1280x720.png: Active Music Pack fits without clipped copy (preferred: 136.07 x 38.34)
 PASS ModeSelection-1280x720.png: Mode Hub Footer fits without clipped copy (preferred: 380.44 x 35.6)
 PASS ModeSelection-1280x720.png: Mode Hub Version fits without clipped copy (preferred: 46.85 x 34.23)
 PASS ModeSelection-1280x720.png: Local stays in viewport
@@ -102,6 +107,7 @@ PASS ModeSelection-1280x720.png: Profile stays in viewport
 PASS ModeSelection-1280x720.png: Settings stays in viewport
 PASS ModeSelection-1280x720.png: Back stays in viewport
 PASS ModeSelection-1280x720.png: Logout stays in viewport
+PASS ModeSelection-1280x720.png: Music Record stays in viewport
 PASS ModeSelection-1024x768.png: Mode Hub Title fits without clipped copy (preferred: 551.04 x 90.37)
 PASS ModeSelection-1024x768.png: Mode Hub Welcome fits without clipped copy (preferred: 347.61 x 42.45)
 PASS ModeSelection-1024x768.png: Modes Section fits without clipped copy (preferred: 204.85 x 41.08)
@@ -128,6 +134,8 @@ PASS ModeSelection-1024x768.png: Settings Title fits without clipped copy (prefe
 PASS ModeSelection-1024x768.png: Settings Description fits without clipped copy (preferred: 184.91 x 31.5)
 PASS ModeSelection-1024x768.png: Back Label fits without clipped copy (preferred: 63.27 x 39.71)
 PASS ModeSelection-1024x768.png: Logout Label fits without clipped copy (preferred: 84.72 x 31.5)
+PASS ModeSelection-1024x768.png: Now Playing fits without clipped copy (preferred: 108.36 x 27.39)
+PASS ModeSelection-1024x768.png: Active Music Pack fits without clipped copy (preferred: 136.07 x 38.34)
 PASS ModeSelection-1024x768.png: Mode Hub Footer fits without clipped copy (preferred: 380.44 x 35.6)
 PASS ModeSelection-1024x768.png: Mode Hub Version fits without clipped copy (preferred: 46.85 x 34.23)
 PASS ModeSelection-1024x768.png: Local stays in viewport
@@ -140,6 +148,7 @@ PASS ModeSelection-1024x768.png: Profile stays in viewport
 PASS ModeSelection-1024x768.png: Settings stays in viewport
 PASS ModeSelection-1024x768.png: Back stays in viewport
 PASS ModeSelection-1024x768.png: Logout stays in viewport
+PASS ModeSelection-1024x768.png: Music Record stays in viewport
 PASS ModeSelection-800x600.png: Mode Hub Title fits without clipped copy (preferred: 551.04 x 90.37)
 PASS ModeSelection-800x600.png: Mode Hub Welcome fits without clipped copy (preferred: 347.61 x 42.45)
 PASS ModeSelection-800x600.png: Modes Section fits without clipped copy (preferred: 204.85 x 41.08)
@@ -166,6 +175,8 @@ PASS ModeSelection-800x600.png: Settings Title fits without clipped copy (prefer
 PASS ModeSelection-800x600.png: Settings Description fits without clipped copy (preferred: 184.91 x 31.5)
 PASS ModeSelection-800x600.png: Back Label fits without clipped copy (preferred: 63.27 x 39.71)
 PASS ModeSelection-800x600.png: Logout Label fits without clipped copy (preferred: 84.72 x 31.5)
+PASS ModeSelection-800x600.png: Now Playing fits without clipped copy (preferred: 108.36 x 27.39)
+PASS ModeSelection-800x600.png: Active Music Pack fits without clipped copy (preferred: 136.07 x 38.34)
 PASS ModeSelection-800x600.png: Mode Hub Footer fits without clipped copy (preferred: 380.44 x 35.6)
 PASS ModeSelection-800x600.png: Mode Hub Version fits without clipped copy (preferred: 46.85 x 34.23)
 PASS ModeSelection-800x600.png: Local stays in viewport
@@ -178,6 +189,7 @@ PASS ModeSelection-800x600.png: Profile stays in viewport
 PASS ModeSelection-800x600.png: Settings stays in viewport
 PASS ModeSelection-800x600.png: Back stays in viewport
 PASS ModeSelection-800x600.png: Logout stays in viewport
+PASS ModeSelection-800x600.png: Music Record stays in viewport
 PASS ModeSelection-2560x1080.png: Mode Hub Title fits without clipped copy (preferred: 551.04 x 90.37)
 PASS ModeSelection-2560x1080.png: Mode Hub Welcome fits without clipped copy (preferred: 347.61 x 42.45)
 PASS ModeSelection-2560x1080.png: Modes Section fits without clipped copy (preferred: 204.85 x 41.08)
@@ -204,6 +216,8 @@ PASS ModeSelection-2560x1080.png: Settings Title fits without clipped copy (pref
 PASS ModeSelection-2560x1080.png: Settings Description fits without clipped copy (preferred: 184.91 x 31.5)
 PASS ModeSelection-2560x1080.png: Back Label fits without clipped copy (preferred: 63.27 x 39.71)
 PASS ModeSelection-2560x1080.png: Logout Label fits without clipped copy (preferred: 84.72 x 31.5)
+PASS ModeSelection-2560x1080.png: Now Playing fits without clipped copy (preferred: 108.36 x 27.39)
+PASS ModeSelection-2560x1080.png: Active Music Pack fits without clipped copy (preferred: 136.07 x 38.34)
 PASS ModeSelection-2560x1080.png: Mode Hub Footer fits without clipped copy (preferred: 380.44 x 35.6)
 PASS ModeSelection-2560x1080.png: Mode Hub Version fits without clipped copy (preferred: 46.85 x 34.23)
 PASS ModeSelection-2560x1080.png: Local stays in viewport
@@ -216,6 +230,7 @@ PASS ModeSelection-2560x1080.png: Profile stays in viewport
 PASS ModeSelection-2560x1080.png: Settings stays in viewport
 PASS ModeSelection-2560x1080.png: Back stays in viewport
 PASS ModeSelection-2560x1080.png: Logout stays in viewport
+PASS ModeSelection-2560x1080.png: Music Record stays in viewport
 PASS ModeSelection-3840x2160.png: Mode Hub Title fits without clipped copy (preferred: 551.04 x 90.37)
 PASS ModeSelection-3840x2160.png: Mode Hub Welcome fits without clipped copy (preferred: 347.61 x 42.45)
 PASS ModeSelection-3840x2160.png: Modes Section fits without clipped copy (preferred: 204.85 x 41.08)
@@ -242,6 +257,8 @@ PASS ModeSelection-3840x2160.png: Settings Title fits without clipped copy (pref
 PASS ModeSelection-3840x2160.png: Settings Description fits without clipped copy (preferred: 184.91 x 31.5)
 PASS ModeSelection-3840x2160.png: Back Label fits without clipped copy (preferred: 63.27 x 39.71)
 PASS ModeSelection-3840x2160.png: Logout Label fits without clipped copy (preferred: 84.72 x 31.5)
+PASS ModeSelection-3840x2160.png: Now Playing fits without clipped copy (preferred: 108.36 x 27.39)
+PASS ModeSelection-3840x2160.png: Active Music Pack fits without clipped copy (preferred: 136.07 x 38.34)
 PASS ModeSelection-3840x2160.png: Mode Hub Footer fits without clipped copy (preferred: 380.44 x 35.6)
 PASS ModeSelection-3840x2160.png: Mode Hub Version fits without clipped copy (preferred: 46.85 x 34.23)
 PASS ModeSelection-3840x2160.png: Local stays in viewport
@@ -254,6 +271,7 @@ PASS ModeSelection-3840x2160.png: Profile stays in viewport
 PASS ModeSelection-3840x2160.png: Settings stays in viewport
 PASS ModeSelection-3840x2160.png: Back stays in viewport
 PASS ModeSelection-3840x2160.png: Logout stays in viewport
+PASS ModeSelection-3840x2160.png: Music Record stays in viewport
 PASS ModeSelection-1080x1920.png: Mode Hub Title fits without clipped copy (preferred: 551.04 x 90.37)
 PASS ModeSelection-1080x1920.png: Mode Hub Welcome fits without clipped copy (preferred: 347.61 x 42.45)
 PASS ModeSelection-1080x1920.png: Modes Section fits without clipped copy (preferred: 204.85 x 41.08)
@@ -280,6 +298,8 @@ PASS ModeSelection-1080x1920.png: Settings Title fits without clipped copy (pref
 PASS ModeSelection-1080x1920.png: Settings Description fits without clipped copy (preferred: 184.91 x 31.5)
 PASS ModeSelection-1080x1920.png: Back Label fits without clipped copy (preferred: 63.27 x 39.71)
 PASS ModeSelection-1080x1920.png: Logout Label fits without clipped copy (preferred: 84.72 x 31.5)
+PASS ModeSelection-1080x1920.png: Now Playing fits without clipped copy (preferred: 108.36 x 27.39)
+PASS ModeSelection-1080x1920.png: Active Music Pack fits without clipped copy (preferred: 136.07 x 38.34)
 PASS ModeSelection-1080x1920.png: Mode Hub Footer fits without clipped copy (preferred: 380.44 x 35.6)
 PASS ModeSelection-1080x1920.png: Mode Hub Version fits without clipped copy (preferred: 46.85 x 34.23)
 PASS ModeSelection-1080x1920.png: Local stays in viewport
@@ -292,6 +312,7 @@ PASS ModeSelection-1080x1920.png: Profile stays in viewport
 PASS ModeSelection-1080x1920.png: Settings stays in viewport
 PASS ModeSelection-1080x1920.png: Back stays in viewport
 PASS ModeSelection-1080x1920.png: Logout stays in viewport
+PASS ModeSelection-1080x1920.png: Music Record stays in viewport
 PASS Local Illustration has a bounded static mesh
 PASS Online Illustration has a bounded static mesh
 PASS Aram Illustration has a bounded static mesh
@@ -328,6 +349,8 @@ PASS ModeSelectionLocal-Hover.png: Settings Title fits without clipped copy (pre
 PASS ModeSelectionLocal-Hover.png: Settings Description fits without clipped copy (preferred: 184.91 x 31.5)
 PASS ModeSelectionLocal-Hover.png: Back Label fits without clipped copy (preferred: 63.27 x 39.71)
 PASS ModeSelectionLocal-Hover.png: Logout Label fits without clipped copy (preferred: 84.72 x 31.5)
+PASS ModeSelectionLocal-Hover.png: Now Playing fits without clipped copy (preferred: 108.36 x 27.39)
+PASS ModeSelectionLocal-Hover.png: Active Music Pack fits without clipped copy (preferred: 136.07 x 38.34)
 PASS ModeSelectionLocal-Hover.png: Mode Hub Footer fits without clipped copy (preferred: 380.44 x 35.6)
 PASS ModeSelectionLocal-Hover.png: Mode Hub Version fits without clipped copy (preferred: 46.85 x 34.23)
 PASS ModeSelectionLocal-Hover.png: Local stays in viewport
@@ -340,6 +363,7 @@ PASS ModeSelectionLocal-Hover.png: Profile stays in viewport
 PASS ModeSelectionLocal-Hover.png: Settings stays in viewport
 PASS ModeSelectionLocal-Hover.png: Back stays in viewport
 PASS ModeSelectionLocal-Hover.png: Logout stays in viewport
+PASS ModeSelectionLocal-Hover.png: Music Record stays in viewport
 PASS ModeSelectionLocal compresses on press
 PASS ModeSelectionLocal-Pressed.png: Mode Hub Title fits without clipped copy (preferred: 551.04 x 90.37)
 PASS ModeSelectionLocal-Pressed.png: Mode Hub Welcome fits without clipped copy (preferred: 347.61 x 42.45)
@@ -367,6 +391,8 @@ PASS ModeSelectionLocal-Pressed.png: Settings Title fits without clipped copy (p
 PASS ModeSelectionLocal-Pressed.png: Settings Description fits without clipped copy (preferred: 184.91 x 31.5)
 PASS ModeSelectionLocal-Pressed.png: Back Label fits without clipped copy (preferred: 63.27 x 39.71)
 PASS ModeSelectionLocal-Pressed.png: Logout Label fits without clipped copy (preferred: 84.72 x 31.5)
+PASS ModeSelectionLocal-Pressed.png: Now Playing fits without clipped copy (preferred: 108.36 x 27.39)
+PASS ModeSelectionLocal-Pressed.png: Active Music Pack fits without clipped copy (preferred: 136.07 x 38.34)
 PASS ModeSelectionLocal-Pressed.png: Mode Hub Footer fits without clipped copy (preferred: 380.44 x 35.6)
 PASS ModeSelectionLocal-Pressed.png: Mode Hub Version fits without clipped copy (preferred: 46.85 x 34.23)
 PASS ModeSelectionLocal-Pressed.png: Local stays in viewport
@@ -379,6 +405,7 @@ PASS ModeSelectionLocal-Pressed.png: Profile stays in viewport
 PASS ModeSelectionLocal-Pressed.png: Settings stays in viewport
 PASS ModeSelectionLocal-Pressed.png: Back stays in viewport
 PASS ModeSelectionLocal-Pressed.png: Logout stays in viewport
+PASS ModeSelectionLocal-Pressed.png: Music Record stays in viewport
 PASS ModeSelectionLocal settles to its original transform after pointer exit
 PASS ModeSelectionInventory uses soft hover lift and scale
 PASS ModeSelectionInventory-Hover.png: Mode Hub Title fits without clipped copy (preferred: 551.04 x 90.37)
@@ -407,6 +434,8 @@ PASS ModeSelectionInventory-Hover.png: Settings Title fits without clipped copy 
 PASS ModeSelectionInventory-Hover.png: Settings Description fits without clipped copy (preferred: 184.91 x 31.5)
 PASS ModeSelectionInventory-Hover.png: Back Label fits without clipped copy (preferred: 63.27 x 39.71)
 PASS ModeSelectionInventory-Hover.png: Logout Label fits without clipped copy (preferred: 84.72 x 31.5)
+PASS ModeSelectionInventory-Hover.png: Now Playing fits without clipped copy (preferred: 108.36 x 27.39)
+PASS ModeSelectionInventory-Hover.png: Active Music Pack fits without clipped copy (preferred: 136.07 x 38.34)
 PASS ModeSelectionInventory-Hover.png: Mode Hub Footer fits without clipped copy (preferred: 380.44 x 35.6)
 PASS ModeSelectionInventory-Hover.png: Mode Hub Version fits without clipped copy (preferred: 46.85 x 34.23)
 PASS ModeSelectionInventory-Hover.png: Local stays in viewport
@@ -419,6 +448,7 @@ PASS ModeSelectionInventory-Hover.png: Profile stays in viewport
 PASS ModeSelectionInventory-Hover.png: Settings stays in viewport
 PASS ModeSelectionInventory-Hover.png: Back stays in viewport
 PASS ModeSelectionInventory-Hover.png: Logout stays in viewport
+PASS ModeSelectionInventory-Hover.png: Music Record stays in viewport
 PASS ModeSelectionInventory compresses on press
 PASS ModeSelectionInventory-Pressed.png: Mode Hub Title fits without clipped copy (preferred: 551.04 x 90.37)
 PASS ModeSelectionInventory-Pressed.png: Mode Hub Welcome fits without clipped copy (preferred: 347.61 x 42.45)
@@ -446,6 +476,8 @@ PASS ModeSelectionInventory-Pressed.png: Settings Title fits without clipped cop
 PASS ModeSelectionInventory-Pressed.png: Settings Description fits without clipped copy (preferred: 184.91 x 31.5)
 PASS ModeSelectionInventory-Pressed.png: Back Label fits without clipped copy (preferred: 63.27 x 39.71)
 PASS ModeSelectionInventory-Pressed.png: Logout Label fits without clipped copy (preferred: 84.72 x 31.5)
+PASS ModeSelectionInventory-Pressed.png: Now Playing fits without clipped copy (preferred: 108.36 x 27.39)
+PASS ModeSelectionInventory-Pressed.png: Active Music Pack fits without clipped copy (preferred: 136.07 x 38.34)
 PASS ModeSelectionInventory-Pressed.png: Mode Hub Footer fits without clipped copy (preferred: 380.44 x 35.6)
 PASS ModeSelectionInventory-Pressed.png: Mode Hub Version fits without clipped copy (preferred: 46.85 x 34.23)
 PASS ModeSelectionInventory-Pressed.png: Local stays in viewport
@@ -458,6 +490,7 @@ PASS ModeSelectionInventory-Pressed.png: Profile stays in viewport
 PASS ModeSelectionInventory-Pressed.png: Settings stays in viewport
 PASS ModeSelectionInventory-Pressed.png: Back stays in viewport
 PASS ModeSelectionInventory-Pressed.png: Logout stays in viewport
+PASS ModeSelectionInventory-Pressed.png: Music Record stays in viewport
 PASS ModeSelectionInventory settles to its original transform after pointer exit
 PASS Opening a modal blocks pointer and keyboard activation of the hub
 PASS Opening a modal clears the underlying selected control

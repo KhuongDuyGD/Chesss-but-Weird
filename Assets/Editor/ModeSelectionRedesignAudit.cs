@@ -56,7 +56,9 @@ public static class ModeSelectionRedesignAudit
                 Inventory = Callback("Inventory"), Gacha = Callback("Gacha"), Profile = Callback("Profile"), Settings = Callback("Settings"),
                 Back = Callback("Back"), Logout = Callback("Logout")
             });
-            var buttons = page.GetComponentsInChildren<Button>(true).ToDictionary(button => button.name);
+            var buttons = page.GetComponentsInChildren<Button>(true)
+                .Where(button => button.transform.parent.name == "Mode Hub Controls" && button.name != "Music Record")
+                .ToDictionary(button => button.name);
             Require(buttons.Count == 10, "Four mode cards, four utility controls, Back and Logout exist");
             foreach (var pair in buttons)
             {

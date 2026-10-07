@@ -63,7 +63,12 @@ internal sealed class PieceAnimator
             piece.transform.position = position;
             yield return null;
         }
-        if (piece) piece.transform.position = target;
+        if (piece)
+        {
+            piece.transform.position = target;
+            if ((new Vector2(start.x - target.x, start.z - target.z)).sqrMagnitude > .0001f)
+                CosmeticMoveEffect.Play(owner, piece.transform, target);
+        }
         running.Remove(piece);
         piece.Destroyed -= HandleDestroyed;
     }
