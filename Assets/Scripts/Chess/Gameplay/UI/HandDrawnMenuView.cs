@@ -357,7 +357,6 @@ public class HandDrawnMenuView : MonoBehaviour
 
     private void ShowSettingsMenu()
     {
-        if (!owner.RequireAccountAccess("Settings")) return;
         if (!settingsOverlay)
             return;
 
@@ -1035,7 +1034,7 @@ public class HandDrawnMenuView : MonoBehaviour
         group.blocksRaycasts = visible;
 
         float elapsed = 0f;
-        while (elapsed < OverlayTransitionDuration)
+        while (!UserSettings.Presentation.ReducedMotion && elapsed < OverlayTransitionDuration)
         {
             float eased = EaseOutCubic(elapsed / OverlayTransitionDuration);
             overlay.localScale = Vector3.one * Mathf.Lerp(startScale, endScale, eased);

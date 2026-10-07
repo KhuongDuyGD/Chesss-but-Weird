@@ -111,6 +111,7 @@ public sealed class AnalysisBoardView : MonoBehaviour
         blackMoves=SummaryLabel(buffSummary,"Black moves",new Vector2(-112,-17),new Vector2(86,30));
         whiteBuff=SummaryLabel(buffSummary,"White buff",new Vector2(46,17),new Vector2(220,30));
         blackBuff=SummaryLabel(buffSummary,"Black buff",new Vector2(46,-17),new Vector2(220,30));
+        canvasObject.AddComponent<SettingsUiScale>();
         tooltip=canvasObject.AddComponent<MatchHudTooltip>();tooltip.Initialize(root);
         whiteBuff.raycastTarget=blackBuff.raycastTarget=true;
         whiteBuff.gameObject.AddComponent<MatchHudTooltipTarget>();blackBuff.gameObject.AddComponent<MatchHudTooltipTarget>();
@@ -235,11 +236,16 @@ public sealed class AnalysisBoardView : MonoBehaviour
         cameraHint.gameObject.SetActive(show);
         if(!show)return;
         bool unlocked=orbitCamera.IsOrbitUnlocked;
-        string state=unlocked?"Camera unlocked · Y to lock":"Camera locked · Y to unlock";
-        if(cameraHintState.text==state)return;
+        string shortcut=ChessButWeird.Settings.SettingsRegistry.BindingKeys[(int)UserSettings.Get("key_orbit")];
+        string state=unlocked?"Camera unlocked · "+shortcut+" to lock":"Camera locked · "+shortcut+" to unlock";
+        string zoom=UserSettings.Enabled("wheel_zoom")?"Scroll to zoom":"Wheel zoom disabled";
+        string drag=UserSettings.Enabled("right_orbit")?(UserSettings.Enabled("middle_orbit")?"Right / middle drag to orbit":"Right drag to orbit"):
+            UserSettings.Enabled("middle_orbit")?"Middle drag to orbit":"Orbit drag disabled";
+        string controls=unlocked?drag+"\n"+zoom:zoom;
+        if(cameraHintState.text==state&&cameraHintControls.text==controls)return;
         cameraHintState.text=state;
         cameraHintState.color=unlocked?MatchHudStyle.Accent:MatchHudStyle.Ink;
-        cameraHintControls.text=unlocked?"Right / middle drag to orbit\nScroll to zoom":"Scroll to zoom";
+        cameraHintControls.text=controls;
         MatchHudStyle.Highlight(cameraHint,unlocked);
     }
     private void Refresh()
@@ -297,7 +303,7 @@ public sealed class AnalysisBoardView : MonoBehaviour
         if(game.TryGetOnlineBuffSummary(side,out string onlineName,out string onlineDetails))
         {
             label.text=onlineName;
-            label.GetComponent<MatchHudTooltipTarget>().Configure(tooltip,side+" online buff",onlineDetails);
+            label.GetComponent<MatchHudTooltipTarget>().Configure(tooltip,UserSettings.Enabled("buff_source")?side+" online buff":"Online buff",TooltipPreferences.Description(onlineDetails));
             return;
         }
         var names=new StringBuilder();var details=new StringBuilder();
@@ -305,12 +311,11 @@ public sealed class AnalysisBoardView : MonoBehaviour
         foreach(var buff in game.StatisticsBuffs(side))if(buff)
         {
             if(names.Length>0){names.Append(", ");details.Append("\n\n");}
-            names.Append(buff.ShortName);details.Append(buff.DisplayName).Append(" · ").Append(buff.Tier).Append('\n').Append(buff.Description);
-            var progress=game.StatisticsBuffProgress(side,buff.Id);
-            if(!string.IsNullOrEmpty(progress))details.Append("\n\n").Append(progress);
+            names.Append(buff.ShortName);
+            details.Append(TooltipPreferences.Buff(buff,game.StatisticsBuffProgress(side,buff.Id)));
         }
         label.text=names.Length>0?names.ToString():"No buff";
-        label.GetComponent<MatchHudTooltipTarget>().Configure(tooltip,side+" buffs",details.Length>0?details.ToString():"No buff selected.");
+        label.GetComponent<MatchHudTooltipTarget>().Configure(tooltip,UserSettings.Enabled("buff_source")?side+" buffs":"Buffs",details.Length>0?details.ToString():"No buff selected.");
     }
     private string TurnLabel(PieceTeam team,bool ended)
     {

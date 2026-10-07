@@ -12,7 +12,8 @@ $uiFiles=@(
     'Gameplay/UI/ResponsiveSafeArea.cs','Gameplay/UI/MenuDesignFrame.cs',
     'Gameplay/ARAM/AramAbilityView.cs','Gameplay/ARAM/AramBuffDraftView.cs','Gameplay/ARAM/AramBuffDefinition.cs',
     'Profile/HandDrawnRoundedGraphic.cs','UI/AntialiasedUIGraphic.cs','UI/UIEdgeMesh.cs','Application/MatchStatistics.cs',
-    'Core/ChessGame.Statistics.cs','Gameplay/UI/MatchHudTooltip.cs','UI/ChessFontCatalog.cs','Bot/StockfishDifficulty.cs'
+    'Core/ChessGame.Statistics.cs','Gameplay/UI/MatchHudTooltip.cs','UI/ChessFontCatalog.cs','Bot/StockfishDifficulty.cs',
+    'Gameplay/Settings/SettingsModel.cs','Gameplay/Settings/SettingsRegistry.cs','Gameplay/Settings/SettingsLanguages.cs','Gameplay/Settings/TooltipPreferences.cs','Gameplay/Settings/SettingsUiScale.cs'
 )
 $hashes=@()
 foreach($relative in $uiFiles) {

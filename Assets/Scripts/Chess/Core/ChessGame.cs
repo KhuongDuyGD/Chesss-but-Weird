@@ -183,8 +183,10 @@ public partial class ChessGame : MonoBehaviour
 
     private void PlaySound(AudioClip clip)
     {
+        if ((clip == moveSound || clip == castleSound) && !UserSettings.Enabled("move_sounds")) return;
+        if (clip == hitSound && !UserSettings.Enabled("capture_sounds")) return;
         audioSource = MatchAudioPresenter.Play(gameObject, audioSource, clip,
-            soundVolume * GameRuntimeSettings.SoundVolume01);
+            soundVolume);
     }
 
     private void AutoAssignDefaultAudioClips()
@@ -2104,7 +2106,7 @@ public partial class ChessGame : MonoBehaviour
     {
         Vector3 targetPosition = chessboard.GetTileCenterWorld(tile);
         targetPosition += chessboard.TransformBoardLocalOffset(pieceBoardLocalOffset);
-        targetPosition.y += liftHeight + GetPieceBottomOffset(piece);
+        targetPosition.y += (UserSettings.Enabled("selected_piece") ? liftHeight : 0f) + GetPieceBottomOffset(piece);
         return targetPosition;
     }
 

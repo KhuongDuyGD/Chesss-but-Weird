@@ -16,7 +16,7 @@ public partial class ChessGame
     internal bool AramIsAlive(ChessPiece piece) => piece && ChessMoveRules.IsInsideBoard(piece.BoardPosition) && pieces[piece.BoardPosition.x,piece.BoardPosition.y] == piece;
     internal Vector3 AramTile(Vector2Int square) => chessboard.GetTileCenterWorld(square);
     internal void AramHighlight(List<Vector2Int> squares)
-    { if(squares==null)chessboard.ClearLegalMoveHighlights();else chessboard.SetLegalMoveHighlights(squares); }
+    { if(squares==null)chessboard.ClearLegalMoveHighlights();else chessboard.SetLegalMoveHighlights(squares, true); }
     internal bool AramSafeRemoval(ChessPiece piece,PieceTeam team)
     {
         if(!AramIsAlive(piece))return false;

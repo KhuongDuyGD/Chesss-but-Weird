@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
@@ -15,76 +16,18 @@ public enum GameAntiAliasingMode
 
 public static class GameRuntimeSettings
 {
-    private const string MusicVolumeKey = "cbw_settings_music_volume";
-    private const string SoundVolumeKey = "cbw_settings_sound_volume";
-    private const string GraphicsPresetKey = "cbw_settings_graphics_preset_v2";
-    private const string AutomaticGraphicsKey = "cbw_settings_graphics_auto_v2";
-    private const string FpsKey = "cbw_settings_fps";
-    private const string AutomaticFpsKey = "cbw_settings_fps_auto_v2";
-    private const string AntiAliasingKey = "cbw_settings_antialiasing_v1";
-    private const string ShadowsKey = "cbw_settings_shadows_v1";
-
-    private const int DefaultMusicVolume = 80;
-    private const int DefaultSoundVolume = 100;
+    private static readonly Dictionary<int, RenderPipelineAsset> pipelineOverrides = new Dictionary<int, RenderPipelineAsset>();
+    private static readonly Dictionary<int, UniversalRenderPipelineAsset> pipelineCopies = new Dictionary<int, UniversalRenderPipelineAsset>();
     private const int MinimumFps = 30;
     private const int MaximumFps = 240;
-
-    public static int MusicVolumePercent
-    {
-        get => Mathf.Clamp(PlayerPrefs.GetInt(MusicVolumeKey, DefaultMusicVolume), 0, 100);
-        set
-        {
-            PlayerPrefs.SetInt(MusicVolumeKey, Mathf.Clamp(value, 0, 100));
-            PlayerPrefs.Save();
-            GameMusicManager.RefreshVolumeFromSettings();
-        }
-    }
-
-    public static int SoundVolumePercent
-    {
-        get => Mathf.Clamp(PlayerPrefs.GetInt(SoundVolumeKey, DefaultSoundVolume), 0, 100);
-        set
-        {
-            PlayerPrefs.SetInt(SoundVolumeKey, Mathf.Clamp(value, 0, 100));
-            PlayerPrefs.Save();
-        }
-    }
-
-    public static bool AutomaticGraphics => PlayerPrefs.GetInt(AutomaticGraphicsKey, 1) != 0;
-    public static bool AutomaticFrameRate => PlayerPrefs.GetInt(AutomaticFpsKey, 1) != 0;
-    public static bool ShadowsEnabled
-    {
-        get => PlayerPrefs.GetInt(ShadowsKey, 0) != 0;
-        set
-        {
-            PlayerPrefs.SetInt(ShadowsKey, value ? 1 : 0);
-            PlayerPrefs.Save();
-            ApplyShadows();
-        }
-    }
-
-    public static int GraphicsPreset => AutomaticGraphics
-        ? RecommendedGraphicsPreset
-        : Mathf.Clamp(PlayerPrefs.GetInt(GraphicsPresetKey, RecommendedGraphicsPreset), 0, 2);
-
-    public static int TargetFps => AutomaticFrameRate
-        ? RecommendedTargetFps
-        : Mathf.Clamp(PlayerPrefs.GetInt(FpsKey, RecommendedTargetFps), MinimumFps, MaximumFps);
-
-    public static GameAntiAliasingMode AntiAliasing
-    {
-        get => (GameAntiAliasingMode)Mathf.Clamp(
-            PlayerPrefs.GetInt(AntiAliasingKey, (int)GameAntiAliasingMode.Auto),
-            (int)GameAntiAliasingMode.Auto,
-            (int)GameAntiAliasingMode.MSAA4x);
-        set
-        {
-            GameAntiAliasingMode mode = ClampAntiAliasing(value);
-            PlayerPrefs.SetInt(AntiAliasingKey, (int)mode);
-            PlayerPrefs.Save();
-            ApplyAntiAliasing(mode);
-        }
-    }
+    public static int MusicVolumePercent { get => (int)UserSettings.Get("music"); set => UserSettings.Manager.Set("music", value); }
+    public static int SoundVolumePercent { get => (int)UserSettings.Get("sfx"); set => UserSettings.Manager.Set("sfx", value); }
+    public static bool AutomaticGraphics => UserSettings.Get("graphics") == 0;
+    public static bool AutomaticFrameRate => UserSettings.Get("fps") == 0;
+    public static bool ShadowsEnabled { get => UserSettings.Get("shadows") > 0; set => UserSettings.Manager.Set("shadows", value ? 2 : 0); }
+    public static int GraphicsPreset => AutomaticGraphics ? RecommendedGraphicsPreset : (int)UserSettings.Get("graphics") - 1;
+    public static int TargetFps => AutomaticFrameRate ? RecommendedTargetFps : (int)UserSettings.Get("fps");
+    public static GameAntiAliasingMode AntiAliasing { get => (GameAntiAliasingMode)(int)UserSettings.Get("aa"); set => UserSettings.Manager.Set("aa", (int)value); }
 
     public static float MusicVolume01 => MusicVolumePercent / 100f;
     public static float SoundVolume01 => SoundVolumePercent / 100f;
@@ -103,8 +46,8 @@ public static class GameRuntimeSettings
 
     public static void ApplySaved()
     {
-        EnsureAutomaticDefaults();
         ApplyQualityProfile(GraphicsPreset);
+        EnsureRuntimePipeline();
         ApplyFrameRate(TargetFps);
         ApplyAntiAliasing(AntiAliasing);
         ApplyShadows();
@@ -115,52 +58,11 @@ public static class GameRuntimeSettings
         GameMusicManager.RefreshVolumeFromSettings();
     }
 
-    public static void UseAutomaticGraphics()
-    {
-        PlayerPrefs.SetInt(AutomaticGraphicsKey, 1);
-        PlayerPrefs.Save();
-        ApplyQualityProfile(GraphicsPreset);
-        ApplyAntiAliasing(AntiAliasing);
-    }
-
-    public static void SetGraphicsPreset(int preset)
-    {
-        preset = Mathf.Clamp(preset, 0, 2);
-        PlayerPrefs.SetInt(AutomaticGraphicsKey, 0);
-        PlayerPrefs.SetInt(GraphicsPresetKey, preset);
-        PlayerPrefs.Save();
-        ApplyQualityProfile(preset);
-        ApplyAntiAliasing(AntiAliasing);
-    }
-
-    public static void UseAutomaticFrameRate()
-    {
-        PlayerPrefs.SetInt(AutomaticFpsKey, 1);
-        PlayerPrefs.Save();
-        ApplyFrameRate(RecommendedTargetFps);
-    }
-
-    public static void SetTargetFps(int fps)
-    {
-        fps = Mathf.Clamp(fps, MinimumFps, MaximumFps);
-        PlayerPrefs.SetInt(AutomaticFpsKey, 0);
-        PlayerPrefs.SetInt(FpsKey, fps);
-        PlayerPrefs.Save();
-        ApplyFrameRate(fps);
-    }
-
-    public static void ResetPerformanceToRecommended()
-    {
-        PlayerPrefs.SetInt(AutomaticGraphicsKey, 1);
-        PlayerPrefs.SetInt(AutomaticFpsKey, 1);
-        PlayerPrefs.SetInt(AntiAliasingKey, (int)GameAntiAliasingMode.Auto);
-        PlayerPrefs.SetInt(ShadowsKey, 0);
-        PlayerPrefs.Save();
-        ApplyQualityProfile(RecommendedGraphicsPreset);
-        ApplyFrameRate(RecommendedTargetFps);
-        ApplyAntiAliasing(GameAntiAliasingMode.Auto);
-        ApplyShadows();
-    }
+    public static void UseAutomaticGraphics() => UserSettings.Manager.Set("graphics", 0);
+    public static void SetGraphicsPreset(int preset) => UserSettings.Manager.Set("graphics", Mathf.Clamp(preset, 0, 2) + 1);
+    public static void UseAutomaticFrameRate() => UserSettings.Manager.Set("fps", 0);
+    public static void SetTargetFps(int fps) => UserSettings.Manager.Set("fps", fps);
+    public static void ResetPerformanceToRecommended() => UserSettings.Manager.ResetCategory(ChessButWeird.Settings.SettingsCategory.Graphics);
 
     public static string GraphicsPresetLabel(int preset)
     {
@@ -191,31 +93,6 @@ public static class GameRuntimeSettings
         if (names == null || names.Length == 0)
             return "Default";
         return names[Mathf.Clamp(index, 0, names.Length - 1)];
-    }
-
-    private static void EnsureAutomaticDefaults()
-    {
-        bool changed = false;
-        if (!PlayerPrefs.HasKey(AutomaticGraphicsKey))
-        {
-            PlayerPrefs.SetInt(AutomaticGraphicsKey, 1);
-            changed = true;
-        }
-
-        if (!PlayerPrefs.HasKey(AutomaticFpsKey))
-        {
-            PlayerPrefs.SetInt(AutomaticFpsKey, 1);
-            changed = true;
-        }
-
-        if (!PlayerPrefs.HasKey(AntiAliasingKey))
-        {
-            PlayerPrefs.SetInt(AntiAliasingKey, (int)GameAntiAliasingMode.Auto);
-            changed = true;
-        }
-
-        if (changed)
-            PlayerPrefs.Save();
     }
 
     private static void ApplyQualityProfile(int preset)
@@ -255,9 +132,42 @@ public static class GameRuntimeSettings
         ApplyShadows();
     }
 
+    private static void EnsureRuntimePipeline()
+    {
+        if(!Application.isPlaying || !(GraphicsSettings.currentRenderPipeline is UniversalRenderPipelineAsset asset))return;
+        int index=QualitySettings.GetQualityLevel();
+        if(pipelineCopies.TryGetValue(index,out var existing) && existing==asset)return;
+        pipelineOverrides[index]=QualitySettings.renderPipeline;
+        var copy=Object.Instantiate(asset);copy.name=asset.name+" (User settings runtime)";copy.hideFlags=HideFlags.HideAndDontSave;
+        pipelineCopies[index]=copy;QualitySettings.renderPipeline=copy;
+    }
+    public static void ReleaseRuntimePipelines()
+    {
+        int selected=QualitySettings.GetQualityLevel();
+        foreach(var entry in pipelineOverrides){QualitySettings.SetQualityLevel(entry.Key,false);QualitySettings.renderPipeline=entry.Value;}
+        QualitySettings.SetQualityLevel(selected,false);
+        foreach(var copy in pipelineCopies.Values)if(copy)Object.Destroy(copy);
+        pipelineOverrides.Clear();pipelineCopies.Clear();
+        SceneManager.sceneLoaded -= HandleSceneLoaded;
+    }
+
     private static void ApplyShadows()
     {
-        bool enabled = ShadowsEnabled;
+        int tier = (int)UserSettings.Get("shadows");
+        EnsureRuntimePipeline();
+        bool enabled = tier > 0;
+        float distance = tier == 1 ? 25 : tier == 2 ? 50 : 80;
+        int atlas = tier == 1 ? 512 : tier == 2 ? 1024 : 2048;
+        if (GraphicsSettings.currentRenderPipeline is UniversalRenderPipelineAsset pipeline)
+        {
+            pipeline.shadowDistance = enabled ? distance : 0;
+            pipeline.mainLightShadowmapResolution = atlas;
+            pipeline.additionalLightsShadowmapResolution = atlas;
+            pipeline.shadowCascadeCount = tier <= 1 ? 1 : tier == 2 ? 2 : 4;
+        }
+        QualitySettings.shadowDistance = enabled ? distance : 0;
+        QualitySettings.shadowResolution = tier == 1 ? UnityEngine.ShadowResolution.Low : tier == 2 ? UnityEngine.ShadowResolution.Medium : UnityEngine.ShadowResolution.High;
+        QualitySettings.shadowCascades = tier <= 1 ? 0 : tier == 2 ? 2 : 4;
         QualitySettings.shadows = enabled ? UnityEngine.ShadowQuality.All : UnityEngine.ShadowQuality.Disable;
         foreach (var camera in Object.FindObjectsByType<Camera>(FindObjectsInactive.Include))
         {
@@ -271,8 +181,8 @@ public static class GameRuntimeSettings
 
     private static void ApplyFrameRate(int fps)
     {
-        QualitySettings.vSyncCount = 0;
-        Application.targetFrameRate = Mathf.Clamp(fps, MinimumFps, MaximumFps);
+        QualitySettings.vSyncCount = UserSettings.Enabled("vsync") ? 1 : 0;
+        Application.targetFrameRate = fps == -1 ? -1 : Mathf.Clamp(fps, MinimumFps, MaximumFps);
     }
 
     private static void ApplyAntiAliasing(GameAntiAliasingMode selectedMode)
@@ -336,14 +246,6 @@ public static class GameRuntimeSettings
         }
 
         return mode;
-    }
-
-    private static GameAntiAliasingMode ClampAntiAliasing(GameAntiAliasingMode mode)
-    {
-        return (GameAntiAliasingMode)Mathf.Clamp(
-            (int)mode,
-            (int)GameAntiAliasingMode.Auto,
-            (int)GameAntiAliasingMode.MSAA4x);
     }
 
     private static int PresetToQualityIndex(int preset)

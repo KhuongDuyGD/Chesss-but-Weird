@@ -8,6 +8,7 @@ internal static class MatchAudioPresenter
         if (!source) source = owner.AddComponent<AudioSource>();
         source.playOnAwake = false;
         source.spatialBlend = 0f;
+        if (!source.GetComponent<SettingsSfxVolume>()) source.gameObject.AddComponent<SettingsSfxVolume>();
         return source;
     }
 

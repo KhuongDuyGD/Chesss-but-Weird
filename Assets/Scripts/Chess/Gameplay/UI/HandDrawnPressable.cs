@@ -46,8 +46,8 @@ public class HandDrawnPressable : MonoBehaviour, IPointerEnterHandler, IPointerE
         if (!hovering && !pressing && IsAtRest())
             return;
 
-        float targetScale = pressing ? pressedScale : hovering ? hoverScale : 1f;
-        float targetRotation = hovering ? hoverDirection * rotationAmount : 0f;
+        float targetScale = UserSettings.Presentation.ReducedMotion ? 1f : pressing ? pressedScale : hovering ? hoverScale : 1f;
+        float targetRotation = hovering && !UserSettings.Presentation.ReducedMotion ? hoverDirection * rotationAmount : 0f;
         float blend = 1f - Mathf.Exp(-responseSpeed * Time.unscaledDeltaTime);
 
         rectTransform.localScale = Vector3.Lerp(rectTransform.localScale, baseScale * targetScale, blend);

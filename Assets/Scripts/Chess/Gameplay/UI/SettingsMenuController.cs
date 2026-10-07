@@ -1,689 +1,356 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
+using ChessButWeird.Settings;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
+using UI = SketchbookUI;
 
+/// <summary>One registry-generated menu, used in the main menu and while locally paused.</summary>
 public sealed class SettingsMenuController : MonoBehaviour
 {
-    private const float DesignWidth = 1672f;
-    private const float DesignHeight = 941f;
-    private const float MenuViewportScale = 0.88f;
-    private static readonly Vector2 DesignSize = new Vector2(DesignWidth, DesignHeight);
-    private static readonly int[] FpsOptions = { 0, 30, 60, 90, 120, 144, 165, 240 };
-    private static readonly string[] GraphicOptions = { "Auto (Recommended)", "Low", "Medium", "High" };
-    private static readonly string[] AntiAliasingOptions = { "Auto", "Off", "FXAA", "SMAA", "MSAA 2x", "MSAA 4x" };
-    private static readonly string[] ShadowOptions = { "Off", "On" };
-    private static readonly Color Ink = new Color(0.15f, 0.20f, 0.22f);
-    private static readonly Color MutedInk = new Color(0.36f, 0.42f, 0.43f);
-    private static readonly Color Paper = new Color(1f, 0.985f, 0.94f);
-    private static readonly Color Blue = new Color(0.28f, 0.51f, 0.64f);
-    private static readonly Color Sage = new Color(0.77f, 0.86f, 0.73f);
-
-    private RectTransform root;
-    private RectTransform contentRoot;
-    private RectTransform popupRoot;
-    private RectTransform activeDropdownPopup;
+    private const float Width=1440, Height=900;
+    private RectTransform root, frame, content, popupLayer, popup;
+    private ScrollRect scroll;
+    private TextMeshProUGUI categoryTitle, status, confirmationText;
     private UnityAction closeAction;
-    private SettingNumberControl musicControl;
-    private SettingNumberControl soundControl;
-    private SettingDropdownControl graphicDropdown;
-    private SettingDropdownControl fpsDropdown;
-    private SettingDropdownControl antiAliasingDropdown;
-    private SettingDropdownControl shadowDropdown;
-    private TextMeshProUGUI statusLabel;
-    private int graphicPreset;
-    private int fpsValue;
-    private GameObject dropdownSelection;
+    private SettingsCategory category;
+    private readonly Dictionary<string,Action> refreshers=new Dictionary<string,Action>();
+    private readonly List<Button> tabs=new List<Button>();
+    private readonly List<Selectable> focusOrder=new List<Selectable>();
+    private DisplayConfirmation display;
+    private GameObject previousSelection;
+    private string rebindId;
+    private float rebuildAt=-1;
+    private bool subscribed, opened;
+    private Action confirmAction;
+    private Vector3Int observedDisplay;
+    public static int EscapeConsumedFrame { get; private set; }=-1;
+    public bool IsOpen => opened && root && root.gameObject.activeInHierarchy;
+    public SettingsCategory CurrentCategory => category;
+    public RectTransform Content => content;
+    private float TextScale => UserSettings.Get("ui_scale")/100 * (UserSettings.Enabled("large_text")?1.15f:1);
 
-    public void Initialize(RectTransform newRoot, UnityAction newCloseAction)
+    public void Initialize(RectTransform newRoot,UnityAction close)
     {
-        root = newRoot;
-        closeAction = newCloseAction;
-        Build();
+        root=newRoot;closeAction=close;
+        display=new DisplayConfirmation(SettingsDisplay.Apply,SettingsDisplay.Save);
+        var group=root.GetComponent<CanvasGroup>();
+        if(!group)group=root.gameObject.AddComponent<CanvasGroup>();
+        group.blocksRaycasts=true;group.interactable=true;
+        UI.Background(root);
+        frame=MenuDesignFrame.Create(root,"Settings",new Vector2(Width,Height));
+        BuildShell(); Subscribe(); SelectCategory(SettingsCategory.General);
     }
-
     public void Open()
     {
-        HideDropdown();
-        GameRuntimeSettings.ApplySaved();
-        RefreshFromSettings();
-        SetStatus("Detected: " + GameRuntimeSettings.RecommendedSettingsLabel);
+        opened=true; Subscribe(); GameRuntimeSettings.ApplySaved(); Refresh();
+        observedDisplay=new Vector3Int(Screen.width,Screen.height,(int)Screen.fullScreenMode);
+        if(tabs.Count>0)tabs[(int)category].Select();
     }
-
-    private void Build()
+    private void Subscribe()
+    { if(subscribed)return;UserSettings.Manager.Changed+=OnSettingsChanged;subscribed=true; }
+    private void BuildShell()
     {
-        Image blocker = root.gameObject.AddComponent<AntialiasedMenuImage>();
-        blocker.color = new Color(0.82f, 0.87f, 0.84f);
-        blocker.raycastTarget = true;
-
-        var safeArea = CreateChild(root, "Settings Safe Area", Vector2.zero, Vector2.zero);
-        safeArea.anchorMin = Vector2.zero;
-        safeArea.anchorMax = Vector2.one;
-        safeArea.offsetMin = safeArea.offsetMax = Vector2.zero;
-        safeArea.gameObject.AddComponent<ResponsiveSafeArea>();
-        contentRoot = CreateChild(safeArea, "Settings Content Root", Vector2.zero, DesignSize);
-        contentRoot.gameObject.AddComponent<InventoryContentRootFitter>().Configure(DesignWidth, DesignHeight, MenuViewportScale);
-
-        BuildBackdrop();
-        BuildPanel();
-        popupRoot = CreateChild(contentRoot, "Settings Popup Root", Vector2.zero, DesignSize);
-        Image dismissArea = popupRoot.gameObject.AddComponent<AntialiasedMenuImage>();
-        dismissArea.color = new Color(0.10f, 0.16f, 0.15f, 0.08f);
-        dismissArea.raycastTarget = true;
-        Button dismissPopup = popupRoot.gameObject.AddComponent<Button>();
-        dismissPopup.transition = Selectable.Transition.None;
-        dismissPopup.navigation = new Navigation { mode = Navigation.Mode.None };
-        dismissPopup.onClick.AddListener(HideDropdown);
-        popupRoot.SetAsLastSibling();
-        popupRoot.gameObject.SetActive(false);
-    }
-
-    private void BuildBackdrop()
-    {
-        Color grid = new Color(0.28f, 0.43f, 0.40f, 0.10f);
-        for (int x = -816; x <= 816; x += 48)
-            AddFrameEdge(contentRoot, "Notebook Grid Vertical", new Vector2(x, 0f), new Vector2(1.5f, DesignHeight), grid);
-        for (int y = -456; y <= 456; y += 48)
-            AddFrameEdge(contentRoot, "Notebook Grid Horizontal", new Vector2(0f, y), new Vector2(DesignWidth, 1.5f), grid);
-
-        Image spareSheet = AddImage(contentRoot, "Loose Notebook Page", null, new Vector2(-8f, -4f), new Vector2(1480f, 838f));
-        spareSheet.color = new Color(0.91f, 0.92f, 0.85f);
-        spareSheet.rectTransform.localRotation = Quaternion.Euler(0f, 0f, -1.4f);
-        AddSolidFrame(spareSheet.rectTransform, "Loose Page Edge", spareSheet.rectTransform.sizeDelta, 2f, new Color(0.40f, 0.48f, 0.42f, 0.35f));
-        AddDoodleStroke(contentRoot, "Blue Margin Marks", new Vector2(-784f, 270f), 12f, Blue);
-        AddDoodleStroke(contentRoot, "Green Margin Marks", new Vector2(788f, -280f), 185f, new Color(0.39f, 0.56f, 0.43f));
-    }
-
-    private void BuildPanel()
-    {
-        Image shadow = AddImage(contentRoot, "Settings Paper Shadow", null, new Vector2(12f, -14f), new Vector2(1460f, 820f));
-        shadow.color = new Color(0.12f, 0.20f, 0.18f, 0.17f);
-        RectTransform panel = CreateChild(contentRoot, "Settings Panel", Vector2.zero, new Vector2(1460f, 820f));
-        Image panelImage = panel.gameObject.AddComponent<AntialiasedMenuImage>();
-        panelImage.color = Paper;
-        panelImage.raycastTarget = true;
-        AddSolidFrame(panel, "Settings Panel Frame", panel.sizeDelta, 3f, Ink);
-
-        Image tape = AddImage(panel, "Blue Paper Tape", null, new Vector2(-480f, 408f), new Vector2(180f, 38f));
-        tape.color = new Color(0.63f, 0.78f, 0.83f, 0.85f);
-        tape.rectTransform.localRotation = Quaternion.Euler(0f, 0f, 3f);
-        AddText(panel, "Settings Eyebrow", new Vector2(-400f, 350f), new Vector2(510f, 30f), 21f, TextAlignmentOptions.MidlineLeft, Blue).text = "CHESS, BUT YOUR WAY";
-        AddText(panel, "Settings Title", new Vector2(-400f, 294f), new Vector2(510f, 78f), 68f, TextAlignmentOptions.MidlineLeft, Ink).text = "Settings";
-        AddText(panel, "Settings Subtitle", new Vector2(-220f, 231f), new Vector2(870f, 40f), 27f, TextAlignmentOptions.MidlineLeft, MutedInk).text = "A little tuning before your next move.";
-        AddButton(panel, "Close Settings", new Vector2(656f, 336f), new Vector2(58f, 58f), Close, "X", Paper, 26f);
-
-        RectTransform audio = BuildSection(panel, "Audio", "Set the mood for your match.", new Vector2(-342f, -34f), new Color(0.91f, 0.95f, 0.95f), Blue);
-        RectTransform display = BuildSection(panel, "Display", "Auto-tuned for this device, with manual overrides.", new Vector2(342f, -34f), new Color(0.94f, 0.95f, 0.88f), new Color(0.43f, 0.56f, 0.35f));
-        musicControl = AddNumberControl(audio, "Music", new Vector2(0f, 25f), 0, 100, OnMusicChanged);
-        soundControl = AddNumberControl(audio, "Sound effects", new Vector2(0f, -115f), 0, 100, OnSoundChanged);
-        graphicDropdown = AddDropdownControl(display, "Graphics quality", new Vector2(0f, 50f), GraphicOptions, OnGraphicDropdownChanged);
-        fpsDropdown = AddDropdownControl(display, "Frame rate limit", new Vector2(0f, -32f), GetFpsLabels(), OnFpsDropdownChanged);
-        antiAliasingDropdown = AddDropdownControl(display, "Anti-aliasing", new Vector2(0f, -114f), AntiAliasingOptions, OnAntiAliasingDropdownChanged);
-        shadowDropdown = AddDropdownControl(display, "Shadows", new Vector2(0f, -196f), ShadowOptions, OnShadowDropdownChanged);
-
-        AddFrameEdge(panel, "Footer Divider", new Vector2(0f, -304f), new Vector2(1310f, 2f), new Color(0.15f, 0.20f, 0.22f, 0.15f));
-        statusLabel = AddText(panel, "Settings Status", new Vector2(-315f, -356f), new Vector2(680f, 48f), 22f, TextAlignmentOptions.MidlineLeft, MutedInk);
-        AddButton(panel, "Reset Settings", new Vector2(238f, -356f), new Vector2(240f, 72f), ResetDefaults, "Auto-detect", Paper, 27f);
-        AddButton(panel, "Done Settings", new Vector2(537f, -356f), new Vector2(240f, 72f), Close, "Done", Sage, 32f);
-    }
-
-    private RectTransform BuildSection(RectTransform parent, string title, string subtitle, Vector2 position, Color color, Color accent)
-    {
-        Image card = AddImage(parent, title + " Card", null, position, new Vector2(636f, 500f));
-        card.color = color;
-        AddSolidFrame(card.rectTransform, title + " Card Frame", card.rectTransform.sizeDelta, 2f, new Color(Ink.r, Ink.g, Ink.b, 0.28f));
-        AddFrameEdge(card.rectTransform, title + " Accent", new Vector2(-314f, 152f), new Vector2(6f, 58f), accent);
-        AddText(card.transform, title + " Heading", new Vector2(-44f, 155f), new Vector2(468f, 52f), 39f, TextAlignmentOptions.MidlineLeft, Ink).text = title;
-        AddText(card.transform, title + " Description", new Vector2(0f, 108f), new Vector2(556f, 36f), 23f, TextAlignmentOptions.MidlineLeft, MutedInk).text = subtitle;
-        for (int i = 0; i < 3; i++)
+        UI.Card(frame,"Settings notebook",new Rect(10,12,1420,872),UI.White,shadow:false);
+        UI.Tape(frame,76,8,145,-3);
+        UI.Text(frame,"Settings title",SettingsLocalization.Text("settings.title","SETTINGS"),new Rect(44,42,1100,64),46);
+        UI.Text(frame,"Settings subtitle",SettingsLocalization.Text("settings.subtitle","Your game, your comfort. Changes save automatically."),new Rect(46,106,1150,32),23,UI.Muted);
+        UI.Card(frame,"Tab rail",new Rect(36,164,238,586),UI.Paper,shadow:false,radius:16);
+        for(int i=0;i<6;i++)
         {
-            float x = 230f + i * 18f;
-            AddFrameEdge(card.rectTransform, title + " Dial Line", new Vector2(x, 155f), new Vector2(3f, 36f), accent);
-            AddFrameEdge(card.rectTransform, title + " Dial Handle", new Vector2(x, 147f + (i % 2) * 17f), new Vector2(11f, 7f), accent);
+            var tab=(SettingsCategory)i;
+            var button=UI.Button(frame,tab+" tab",tab.ToString(),new Rect(48,178+i*78,214,60),UI.Paper,()=>SelectCategory(tab),26);
+            tabs.Add(button);
         }
-        return card.rectTransform;
+        categoryTitle=UI.Text(frame,"Category title","",new Rect(308,160,1020,44),32);
+        var viewport=UI.Node(frame,"Settings viewport",new Rect(300,220,1098,510));
+        var hit=viewport.gameObject.AddComponent<AntialiasedMenuImage>();hit.color=Color.clear;hit.raycastTarget=true;
+        viewport.gameObject.AddComponent<RectMask2D>();
+        scroll=viewport.gameObject.AddComponent<ScrollRect>();scroll.viewport=viewport;
+        scroll.horizontal=false;scroll.vertical=true;scroll.movementType=ScrollRect.MovementType.Clamped;
+        scroll.scrollSensitivity=42;scroll.inertia=false;
+        content=UI.Node(viewport,"Settings rows",new Rect(0,0,1064,510));
+        content.anchorMin=new Vector2(0,1);content.anchorMax=new Vector2(1,1);content.pivot=new Vector2(.5f,1);
+        content.anchoredPosition=new Vector2(-17,0);content.sizeDelta=new Vector2(-34,510);scroll.content=content;
+        var scrollbarRect=UI.Node(viewport,"Scroll bar",new Rect(1080,0,12,510));
+        var track=scrollbarRect.gameObject.AddComponent<AntialiasedMenuImage>();track.color=UI.Paper;
+        var bar=scrollbarRect.gameObject.AddComponent<Scrollbar>();bar.direction=Scrollbar.Direction.BottomToTop;
+        var handle=UI.Node(scrollbarRect,"Scroll thumb",new Rect(0,0,12,42));
+        var handleImage=handle.gameObject.AddComponent<AntialiasedMenuImage>();handleImage.color=UI.Muted;
+        bar.handleRect=handle;bar.targetGraphic=handleImage;scroll.verticalScrollbar=bar;
+        status=UI.Text(frame,"Settings status","Changes save automatically",new Rect(310,748,1070,40),21,UI.Muted);
+        UI.Button(frame,"Reset tab","Reset This Tab",new Rect(40,804,240,52),UI.Paper,ResetTab,24);
+        UI.Button(frame,"Reset all","Reset All Settings",new Rect(300,804,265,52),UI.Paper,()=>Confirm("Reset all settings to default?\nControls and accessibility preferences will also reset.",()=>{UserSettings.Manager.ResetAll();BuildRows();BeginDisplayReset();},"Reset All"),24);
+        UI.Button(frame,"Close settings","Close  ·  ESC",new Rect(1158,804,235,52),UI.Green,Close,24);
+        popupLayer=UI.Node(frame,"Settings popups",new Rect(0,0,Width,Height));
+        var shade=popupLayer.gameObject.AddComponent<AntialiasedMenuImage>();shade.color=new Color(0,0,0,.38f);shade.raycastTarget=true;
+        var dismiss=popupLayer.gameObject.AddComponent<Button>();dismiss.transition=Selectable.Transition.None;
+        dismiss.onClick.AddListener(()=>{if(display.Pending)RevertDisplay();else HidePopup();});
+        popupLayer.gameObject.SetActive(false);
     }
-
-    private SettingNumberControl AddNumberControl(RectTransform parent, string label, Vector2 position, int min, int max, Action<int> onChanged)
+    public void SelectCategory(SettingsCategory selected)
     {
-        RectTransform row = CreateChild(parent, $"{label} Row", position, new Vector2(556f, 112f));
-        AddText(row, $"{label} Label", new Vector2(-70f, 31f), new Vector2(416f, 44f), 30f, TextAlignmentOptions.MidlineLeft, Ink).text = label;
-
-        Slider slider = CreateSlider(row, $"{label} Slider", new Vector2(-80f, -25f), new Vector2(396f, 54f), min, max);
-        TMP_InputField input = CreateInputField(row, $"{label} Input", new Vector2(204f, -25f), new Vector2(92f, 58f), max >= 100 ? 3 : 2);
-        AddText(row, $"{label} Percent", new Vector2(269f, -25f), new Vector2(28f, 42f), 22f, TextAlignmentOptions.MidlineLeft, MutedInk).text = "%";
-        return new SettingNumberControl(slider, input, min, max, onChanged);
-    }
-
-    private SettingDropdownControl AddDropdownControl(RectTransform parent, string label, Vector2 position, string[] options, Action<int> onChanged)
-    {
-        RectTransform row = CreateChild(parent, $"{label} Row", position, new Vector2(556f, 82f));
-        AddText(row, $"{label} Label", new Vector2(0f, 21f), new Vector2(556f, 28f), 24f, TextAlignmentOptions.MidlineLeft, Ink).text = label;
-
-        RectTransform box = CreateChild(row, $"{label} Dropdown", new Vector2(0f, -19f), new Vector2(556f, 44f));
-        Image boxImage = box.gameObject.AddComponent<AntialiasedMenuImage>();
-        boxImage.color = Paper;
-        boxImage.raycastTarget = true;
-        AddSolidFrame(box, $"{label} Dropdown Frame", box.sizeDelta, 2f, Ink);
-        Button button = box.gameObject.AddComponent<Button>();
-        button.targetGraphic = boxImage;
-        ConfigureButtonFocus(button);
-        HandDrawnPressable pressable = box.gameObject.AddComponent<HandDrawnPressable>();
-        pressable.Configure(1.015f, 0.98f, 0.25f, new Color(1f, 0.96f, 0.72f, 1f));
-
-        TextMeshProUGUI valueLabel = AddText(box, $"{label} Value", new Vector2(-18f, 0f), new Vector2(472f, 38f), 24f, TextAlignmentOptions.MidlineLeft, Ink);
-        for (int i = 0; i < 2; i++)
+        if(display!=null&&display.Pending)RevertDisplay();else HidePopup();
+        category=selected;categoryTitle.text=SettingsLocalization.Text("tab."+selected,selected.ToString()).ToUpperInvariant();
+        for(int i=0;i<tabs.Count;i++)
         {
-            Image stroke = AddImage(box, "Dropdown Chevron", null, new Vector2(236f + i * 10f, 0f), new Vector2(16f, 3f));
-            stroke.color = Ink;
-            stroke.rectTransform.localRotation = Quaternion.Euler(0f, 0f, i == 0 ? -40f : 40f);
+            var graphic=tabs[i].GetComponent<HandDrawnRoundedGraphic>();
+            graphic.Configure(i==(int)selected?UI.Blue:UI.Paper,UI.Ink,15, i==(int)selected?4:2,1.2f,i);
+            tabs[i].GetComponentInChildren<TextMeshProUGUI>().text=(i==(int)selected?">  ":"")+SettingsLocalization.Text("tab."+(SettingsCategory)i,((SettingsCategory)i).ToString());
         }
-
-        SettingDropdownControl control = new SettingDropdownControl(this, box, valueLabel, options, onChanged);
-        button.onClick.AddListener(control.Toggle);
-        return control;
+        BuildRows();scroll.verticalNormalizedPosition=1;
     }
-
-    private Slider CreateSlider(RectTransform parent, string name, Vector2 position, Vector2 size, int min, int max)
+    private void OnSettingsChanged(IReadOnlyList<string> ids)
     {
-        RectTransform sliderRoot = CreateChild(parent, name, position, size);
-        Image hitArea = sliderRoot.gameObject.AddComponent<AntialiasedMenuImage>();
-        hitArea.color = new Color(1f, 1f, 1f, 0f);
-        hitArea.raycastTarget = true;
-
-        Slider slider = sliderRoot.gameObject.AddComponent<Slider>();
-        slider.minValue = min;
-        slider.maxValue = max;
-        slider.wholeNumbers = true;
-        slider.direction = Slider.Direction.LeftToRight;
-        slider.transition = Selectable.Transition.None;
-
-        Image track = AddImage(sliderRoot, "Track", null, Vector2.zero, new Vector2(size.x, 16f));
-        track.color = new Color(0.75f, 0.82f, 0.82f);
-        track.preserveAspect = false;
-        track.raycastTarget = true;
-        AddSolidFrame(track.rectTransform, "Track Border", track.rectTransform.sizeDelta, 1.5f, new Color(Ink.r, Ink.g, Ink.b, 0.4f));
-
-        RectTransform fillArea = CreateStretchChild(sliderRoot, "Fill Area", new Vector2(19f, 0f), new Vector2(-19f, 0f));
-        Image fill = AddImage(fillArea, "Fill", null, Vector2.zero, new Vector2(0f, 16f));
-        fill.color = Blue;
-        fill.preserveAspect = false;
-        RectTransform fillRect = fill.rectTransform;
-        fillRect.anchorMin = new Vector2(0f, 0.5f);
-        fillRect.anchorMax = new Vector2(1f, 0.5f);
-        fillRect.pivot = new Vector2(0f, 0.5f);
-        fillRect.offsetMin = new Vector2(0f, -8f);
-        fillRect.offsetMax = new Vector2(0f, 8f);
-        fillRect.anchoredPosition = Vector2.zero;
-
-        RectTransform handleArea = CreateStretchChild(sliderRoot, "Handle Slide Area", new Vector2(19f, 0f), new Vector2(-19f, 0f));
-        Image handle = AddImage(handleArea, "Handle", null, Vector2.zero, new Vector2(38f, 38f));
-        handle.color = Paper;
-        handle.preserveAspect = false;
-        handle.raycastTarget = true;
-        AddSolidFrame(handle.rectTransform, "Handle Border", handle.rectTransform.sizeDelta, 2f, Ink);
-        AddFrameEdge(handle.rectTransform, "Grip Left", new Vector2(-4f, 0f), new Vector2(2f, 14f), Blue);
-        AddFrameEdge(handle.rectTransform, "Grip Right", new Vector2(4f, 0f), new Vector2(2f, 14f), Blue);
-
-        slider.targetGraphic = handle;
-        slider.fillRect = fillRect;
-        slider.handleRect = handle.rectTransform;
+        Refresh();
+        if(ids.Any(id=>id=="ui_scale"||id=="large_text"||id=="contrast_ui"||id=="language"))rebuildAt=Time.unscaledTime+.12f;
+    }
+    private void Refresh(){foreach(var refresh in refreshers.Values)refresh();}
+    private void BuildRows()
+    {
+        RefreshShellText();
+        refreshers.Clear();
+        foreach(Transform child in content){child.gameObject.SetActive(false);Destroy(child.gameObject);}
+        float y=4;
+        if(category==SettingsCategory.Controls)
+            AddNote(ref y,"Mouse & keyboard","Left click selects and moves pieces. ESC cancels selection / goes back. Rifle: right mouse aims, left mouse fires, Alt releases the cursor. Camera and Settings shortcuts below can be rebound. Controller support is not available.");
+        if(category==SettingsCategory.Accessibility)
+            AddNote(ref y,"Text & information","UI Scale and Tooltip Size are in General. Buff detail is in Gameplay. These tabs share one set of preferences.");
+        foreach(var definition in UserSettings.Manager.Definitions)
+            if(definition.Category==category)AddRow(definition,ref y);
+        if(category==SettingsCategory.Graphics)AddDisplayRows(ref y);
+        content.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical,Mathf.Max(y+12,scroll.viewport.rect.height));
+        Canvas.ForceUpdateCanvases();Refresh();RefreshFocusOrder();
+    }
+    private void RefreshShellText()
+    {
+        frame.Find("Settings title").GetComponent<TextMeshProUGUI>().text=SettingsLocalization.Text("settings.title","SETTINGS");
+        frame.Find("Settings subtitle").GetComponent<TextMeshProUGUI>().text=SettingsLocalization.Text("settings.subtitle","Your game, your comfort. Changes save automatically.");
+        categoryTitle.text=SettingsLocalization.Text("tab."+category,category.ToString()).ToUpperInvariant();
+        for(int i=0;i<tabs.Count;i++)tabs[i].GetComponentInChildren<TextMeshProUGUI>().text=(i==(int)category?">  ":"")+SettingsLocalization.Text("tab."+(SettingsCategory)i,((SettingsCategory)i).ToString());
+        frame.Find("Reset tab").GetComponentInChildren<TextMeshProUGUI>().text=SettingsLocalization.Text("settings.reset_tab","Reset This Tab");
+        frame.Find("Reset all").GetComponentInChildren<TextMeshProUGUI>().text=SettingsLocalization.Text("settings.reset_all","Reset All Settings");
+        frame.Find("Close settings").GetComponentInChildren<TextMeshProUGUI>().text=SettingsLocalization.Text("settings.close","Close  ·  ESC");
+    }
+    private void AddNote(ref float y,string title,string text)
+    {
+        float size=22*TextScale;
+        var label=UI.Text(content,title,title+"\n"+text,new Rect(12,y,1032,120),size,UI.Muted,wrap:true);
+        float height=label.GetPreferredValues(label.text,1032,0).y+24;
+        label.rectTransform.sizeDelta=new Vector2(1032,height);label.rectTransform.anchoredPosition=new Vector2(528,-y-height/2);y+=height+14;
+    }
+    private void AddRow(SettingDefinition definition,ref float y)
+    {
+        float scale=TextScale;
+        float rowHeight=Mathf.Max(110,108*scale);
+        var row=UI.Node(content,definition.Id+" row",new Rect(0,y,1064,rowHeight));
+        var label=UI.Text(row,"Setting name",SettingsLocalization.Text(definition.Id+".name",definition.Name),new Rect(16,8,550,36*scale),27*scale,UserSettings.Enabled("contrast_ui")?Color.black:UI.Ink,wrap:true);
+        var description=UI.Text(row,"Description",SettingsLocalization.Text(definition.Id+".description",definition.Description),new Rect(16,12+36*scale,550,50*scale),21*scale,UserSettings.Enabled("contrast_ui")?UI.Ink:UI.Muted,wrap:true);
+        float nameHeight=Mathf.Max(36*scale,label.GetPreferredValues(label.text,550,0).y+4);
+        float descHeight=Mathf.Max(40*scale,description.GetPreferredValues(description.text,550,0).y+4);
+        label.rectTransform.sizeDelta=new Vector2(550,nameHeight);label.rectTransform.anchoredPosition=new Vector2(291,-8-nameHeight/2);
+        description.rectTransform.sizeDelta=new Vector2(550,descHeight);description.rectTransform.anchoredPosition=new Vector2(291,-12-nameHeight-descHeight/2);
+        rowHeight=Mathf.Max(rowHeight,20+nameHeight+descHeight);
+        row.sizeDelta=new Vector2(1064,rowHeight);row.anchoredPosition=new Vector2(532,-y-rowHeight/2);
+        float controlY=(rowHeight-48)/2;
+        Action refresh;
+        if(definition.Type==SettingType.Slider)
+        {
+            var value=UI.Text(row,"Value","",new Rect(770,controlY-34*scale,210,32*scale),22*scale,UI.Ink,TextAlignmentOptions.Right);
+            var slider=CreateSlider(row,new Rect(596,controlY+20*scale,360,28),definition);
+            slider.onValueChanged.AddListener(v=>UserSettings.Manager.Set(definition.Id,v));
+            refresh=()=>{slider.SetValueWithoutNotify(UserSettings.Get(definition.Id));value.text=FormatValue(definition,UserSettings.Get(definition.Id));};
+        }
+        else
+        {
+            Button button=null;
+            button=UI.Button(row,definition.Id+" control","",new Rect(590,controlY,368,48),UI.White,()=>
+            {
+                if(definition.Type==SettingType.Toggle)UserSettings.Manager.Set(definition.Id,UserSettings.Enabled(definition.Id)?0:1);
+                else if(definition.Type==SettingType.Keybind)BeginRebind(definition.Id);
+                else ShowChoices((RectTransform)button.transform,OptionLabels(definition),definition.OptionIndex(UserSettings.Get(definition.Id)),index=>UserSettings.Manager.Set(definition.Id,definition.Values[index]));
+            },24*Mathf.Min(scale,1.25f));
+            refresh=()=>button.GetComponentInChildren<TextMeshProUGUI>().text=definition.Type==SettingType.Toggle?(UserSettings.Enabled(definition.Id)?SettingsLocalization.Text("common.on","ON"):SettingsLocalization.Text("common.off","OFF")):SettingsLocalization.Text(definition.Id+".option."+definition.OptionIndex(UserSettings.Get(definition.Id)),definition.Labels[definition.OptionIndex(UserSettings.Get(definition.Id))])+(definition.Type==SettingType.Dropdown?"  v":"");
+        }
+        var reset=UI.Button(row,definition.Id+" reset","Reset",new Rect(976,controlY,78,48),UI.Paper,()=>
+        {
+            if(definition.Type==SettingType.Keybind)
+            {
+                if(!UserSettings.Manager.TryRebind(definition.Id,definition.Default,out var conflict))
+                    status.text=definition.Labels[definition.OptionIndex(definition.Default)]+" is already assigned to "+conflict+". Rebind that action first.";
+            }
+            else UserSettings.Manager.Reset(definition.Id);
+        },19);
+        var dot=UI.Text(row,"Modified","",new Rect(566,controlY+7,22,28),24,UI.Muted,TextAlignmentOptions.Center);
+        refreshers[definition.Id]=()=>{refresh();bool changed=UserSettings.Manager.IsModified(definition.Id);dot.text=changed?"*":"";reset.interactable=changed;};
+        y+=rowHeight+12;
+    }
+    private static string[] OptionLabels(SettingDefinition definition) => definition.Labels.Select((label,index)=>SettingsLocalization.Text(definition.Id+".option."+index,label)).ToArray();
+    private Slider CreateSlider(Transform parent,Rect area,SettingDefinition definition)
+    {
+        var rect=UI.Node(parent,definition.Id+" slider",area);
+        var hit=rect.gameObject.AddComponent<AntialiasedMenuImage>();hit.color=Color.clear;hit.raycastTarget=true;
+        var slider=rect.gameObject.AddComponent<Slider>();slider.minValue=definition.Minimum;slider.maxValue=definition.Maximum;
+        var track=UI.Image(rect,"Slider track",null,new Rect(0,10,area.width,8));track.color=UI.Muted;
+        var handleArea=UI.Node(rect,"Handle area",new Rect(10,0,area.width-20,area.height));
+        handleArea.anchorMin=Vector2.zero;handleArea.anchorMax=Vector2.one;handleArea.offsetMin=new Vector2(10,0);handleArea.offsetMax=new Vector2(-10,0);
+        var thumb=UI.Image(handleArea,"Slider handle",null,new Rect(0,0,20,28));thumb.color=UI.Ink;thumb.raycastTarget=true;
+        slider.handleRect=thumb.rectTransform;slider.targetGraphic=thumb;
         return slider;
     }
-
-    private TMP_InputField CreateInputField(RectTransform parent, string name, Vector2 position, Vector2 size, int characterLimit)
+    private static string FormatValue(SettingDefinition definition,float value) => definition.Id=="tooltip_delay"?value.ToString("0.00",CultureInfo.InvariantCulture)+" s":Mathf.RoundToInt(value)+"%";
+    private void ResetTab()
     {
-        GameObject inputObject = new GameObject(name, typeof(RectTransform), typeof(AntialiasedMenuImage), typeof(TMP_InputField));
-        RectTransform rect = inputObject.GetComponent<RectTransform>();
-        rect.SetParent(parent, false);
-        rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 0.5f);
-        rect.anchoredPosition = position;
-        rect.sizeDelta = size;
-
-        Image background = inputObject.GetComponent<Image>();
-        background.color = Paper;
-        background.raycastTarget = true;
-        AddSolidFrame(rect, $"{name} Border", size, 2f, Ink);
-
-        TMP_InputField input = inputObject.GetComponent<TMP_InputField>();
-        input.characterLimit = characterLimit;
-        input.contentType = TMP_InputField.ContentType.IntegerNumber;
-        input.lineType = TMP_InputField.LineType.SingleLine;
-        input.richText = false;
-
-        TextMeshProUGUI text = AddText(rect, "Text", Vector2.zero, new Vector2(size.x - 20f, size.y - 8f), 28f, TextAlignmentOptions.Center, Ink);
-        input.textViewport = rect;
-        input.textComponent = text;
-        return input;
+        UserSettings.Manager.ResetCategory(category);
+        if(category==SettingsCategory.Graphics)
+            Confirm("Reset display mode and resolution too?",BeginDisplayReset,"Reset Display");
+        status.text="Reset "+category+" to defaults.";
     }
-
-    private void RefreshFromSettings()
+    private void AddDisplayRows(ref float y)
     {
-        musicControl.SetValue(GameRuntimeSettings.MusicVolumePercent, false);
-        soundControl.SetValue(GameRuntimeSettings.SoundVolumePercent, false);
-        graphicPreset = GameRuntimeSettings.AutomaticGraphics ? 0 : GameRuntimeSettings.GraphicsPreset + 1;
-        graphicDropdown.SetSelectedIndex(graphicPreset, false);
-        fpsValue = GameRuntimeSettings.AutomaticFrameRate ? 0 : ClosestFps(GameRuntimeSettings.TargetFps);
-        fpsDropdown.SetSelectedIndex(FpsIndex(fpsValue), false);
-        antiAliasingDropdown.SetSelectedIndex((int)GameRuntimeSettings.AntiAliasing, false);
-        shadowDropdown.SetSelectedIndex(GameRuntimeSettings.ShadowsEnabled ? 1 : 0, false);
+#if UNITY_EDITOR
+        AddNote(ref y,"Display","Display mode and resolution confirmation are available in the Windows player. The Editor game view is not resized.");
+#else
+        AddNote(ref y,"Display","Display changes require confirmation and revert after 15 seconds. VSync and frame rate changes above are immediate.");
+        var modes=new[]{FullScreenMode.Windowed,FullScreenMode.FullScreenWindow,FullScreenMode.ExclusiveFullScreen};
+        AddDisplayChoice("Display Mode",new[]{"Windowed","Borderless","Exclusive Fullscreen"},Array.IndexOf(modes,Screen.fullScreenMode),i=>BeginDisplay(new DisplayConfiguration(Screen.width,Screen.height,(int)modes[i])),ref y);
+        var resolutions=Screen.resolutions.Select(r=>new Vector2Int(r.width,r.height)).Where(r=>r.x>=800&&r.y>=600).Distinct().ToList();
+        var current=new Vector2Int(Screen.width,Screen.height);if(!resolutions.Contains(current))resolutions.Add(current);
+        resolutions.Sort((a,b)=>a.x!=b.x?a.x.CompareTo(b.x):a.y.CompareTo(b.y));
+        AddDisplayChoice("Resolution",resolutions.Select(r=>r.x+" x "+r.y).ToArray(),resolutions.IndexOf(current),i=>BeginDisplay(new DisplayConfiguration(resolutions[i].x,resolutions[i].y,(int)Screen.fullScreenMode)),ref y);
+#endif
     }
-
-    private void OnMusicChanged(int value)
+    private void AddDisplayChoice(string name,string[] options,int selected,Action<int> changed,ref float y)
     {
-        GameRuntimeSettings.MusicVolumePercent = value;
-        SetStatus($"Saved: music volume {value}%");
+        var row=UI.Node(content,name,new Rect(0,y,1064,100));
+        var label=UI.Text(row,"Name",name,new Rect(16,16,550,44*TextScale),27*TextScale,wrap:true);
+        float nameHeight=Mathf.Max(44*TextScale,label.GetPreferredValues(name,550,0).y+4),height=Mathf.Max(100,nameHeight+32);
+        row.sizeDelta=new Vector2(1064,height);row.anchoredPosition=new Vector2(532,-y-height/2);
+        label.rectTransform.sizeDelta=new Vector2(550,nameHeight);label.rectTransform.anchoredPosition=new Vector2(291,-16-nameHeight/2);
+        Button button=null;button=UI.Button(row,"Display control",options[Mathf.Clamp(selected,0,options.Length-1)],new Rect(590,(height-48)/2,368,48),UI.White,()=>ShowChoices((RectTransform)button.transform,options,Mathf.Max(0,selected),changed),24*Mathf.Min(TextScale,1.25f));
+        y+=height+12;
     }
-
-    private void OnSoundChanged(int value)
+    private void BeginDisplay(DisplayConfiguration value)
     {
-        GameRuntimeSettings.SoundVolumePercent = value;
-        SetStatus($"Saved: sound effects {value}%");
+        display.Begin(SettingsDisplay.Current,value,Time.realtimeSinceStartupAsDouble);
+        Confirm("Display settings changed.\nKeep these settings?",()=>{display.Keep();BuildRows();},"Keep",RevertDisplay);
     }
-
-    private void OnGraphicDropdownChanged(int index)
+    private void BeginDisplayReset()
     {
-        graphicPreset = Mathf.Clamp(index, 0, GraphicOptions.Length - 1);
-        if (graphicPreset == 0)
-            GameRuntimeSettings.UseAutomaticGraphics();
-        else
-            GameRuntimeSettings.SetGraphicsPreset(graphicPreset - 1);
-        graphicDropdown.SetSelectedIndex(graphicPreset, false);
-        SetStatus(graphicPreset == 0
-            ? "Auto graphics: " + GameRuntimeSettings.RecommendedSettingsLabel
-            : $"Saved: {GraphicOptions[graphicPreset].ToLowerInvariant()} graphics quality");
+#if UNITY_EDITOR
+        SettingsDisplay.ClearSaved();
+#else
+        var recommended=new DisplayConfiguration(Screen.currentResolution.width,Screen.currentResolution.height,(int)FullScreenMode.FullScreenWindow);
+        BeginDisplay(recommended);
+#endif
     }
-
-    private void OnFpsDropdownChanged(int index)
+    private void RevertDisplay(){display?.Revert();HidePopup();BuildRows();}
+    private void ShowChoices(RectTransform anchor,string[] options,int selected,Action<int> chosen)
     {
-        int clamped = Mathf.Clamp(index, 0, FpsOptions.Length - 1);
-        fpsValue = FpsOptions[clamped];
-        if (fpsValue == 0)
-            GameRuntimeSettings.UseAutomaticFrameRate();
-        else
-            GameRuntimeSettings.SetTargetFps(fpsValue);
-        fpsDropdown.SetSelectedIndex(clamped, false);
-        SetStatus(fpsValue == 0
-            ? $"Auto frame rate: {GameRuntimeSettings.RecommendedTargetFps} FPS for this device"
-            : $"Saved: frame rate limit {fpsValue} FPS");
-    }
-
-    private void OnAntiAliasingDropdownChanged(int index)
-    {
-        GameAntiAliasingMode mode = (GameAntiAliasingMode)Mathf.Clamp(index, 0, AntiAliasingOptions.Length - 1);
-        GameRuntimeSettings.AntiAliasing = mode;
-        antiAliasingDropdown.SetSelectedIndex((int)mode, false);
-        SetStatus(mode == GameAntiAliasingMode.Auto
-            ? $"Auto anti-aliasing: {GameRuntimeSettings.AntiAliasingLabel(GameRuntimeSettings.AppliedAntiAliasing)}"
-            : $"Saved: anti-aliasing {GameRuntimeSettings.AntiAliasingLabel(mode)}");
-    }
-
-    private void ResetDefaults()
-    {
-        GameRuntimeSettings.MusicVolumePercent = 80;
-        GameRuntimeSettings.SoundVolumePercent = 100;
-        GameRuntimeSettings.ResetPerformanceToRecommended();
-        RefreshFromSettings();
-        SetStatus("Auto-detected: " + GameRuntimeSettings.RecommendedSettingsLabel);
-    }
-    private void OnShadowDropdownChanged(int index)
-    {
-        bool enabled = index == 1;
-        GameRuntimeSettings.ShadowsEnabled = enabled;
-        shadowDropdown.SetSelectedIndex(enabled ? 1 : 0, false);
-        SetStatus(enabled ? "Saved: shadows on" : "Saved: shadows off");
-    }
-
-    private void Close()
-    {
-        HideDropdown();
-        closeAction?.Invoke();
-    }
-
-    private void SetStatus(string message)
-    {
-        if (statusLabel)
-            statusLabel.text = message ?? string.Empty;
-    }
-
-    private void ShowDropdown(RectTransform anchor, string[] options, int selectedIndex, Action<int> onSelected)
-    {
-        HideDropdown();
-        popupRoot.gameObject.SetActive(true);
-        popupRoot.SetAsLastSibling();
-
-        dropdownSelection = EventSystem.current ? EventSystem.current.currentSelectedGameObject : null;
-        // Convert the actual anchor bounds, including the nested section and
-        // hover scale, into popup space. Open upward when there is no room below.
-        var corners = new Vector3[4];
-        anchor.GetWorldCorners(corners);
-        Vector3 bottomLeft = popupRoot.InverseTransformPoint(corners[0]);
-        Vector3 topRight = popupRoot.InverseTransformPoint(corners[2]);
-        float height = options.Length * 50f + 18f;
-        float lowerBound = -DesignHeight * 0.5f + 24f;
-        float upperBound = DesignHeight * 0.5f - 24f;
-        float y = bottomLeft.y - 8f - height * 0.5f;
-        if (y - height * 0.5f < lowerBound)
-            y = topRight.y + 8f + height * 0.5f;
-        y = Mathf.Clamp(y, lowerBound + height * 0.5f, upperBound - height * 0.5f);
-        float x = Mathf.Clamp((bottomLeft.x + topRight.x) * 0.5f,
-            -DesignWidth * 0.5f + anchor.sizeDelta.x * 0.5f + 24f,
-            DesignWidth * 0.5f - anchor.sizeDelta.x * 0.5f - 24f);
-        RectTransform popup = CreateChild(popupRoot, "Dropdown Popup", new Vector2(x, y), new Vector2(anchor.sizeDelta.x, height));
-        popup.SetAsLastSibling();
-        activeDropdownPopup = popup;
-        Image background = popup.gameObject.AddComponent<AntialiasedMenuImage>();
-        background.color = Paper;
-        background.raycastTarget = true;
-        AddSolidFrame(popup, "Dropdown Popup Frame", popup.sizeDelta, 2f, Ink);
-
-        var optionButtons = new Button[options.Length];
-        for (int i = 0; i < options.Length; i++)
+        HidePopup();previousSelection=EventSystem.current?EventSystem.current.currentSelectedGameObject:null;
+        popupLayer.gameObject.SetActive(true);popupLayer.SetAsLastSibling();
+        var corners=new Vector3[4];anchor.GetWorldCorners(corners);
+        var bottom=frame.InverseTransformPoint(corners[0]);var top=frame.InverseTransformPoint(corners[2]);
+        float height=Mathf.Min(480,options.Length*52+16),width=390;
+        // Coordinates are local to the centered design frame, then converted to its top-left artwork system.
+        float left=Mathf.Clamp(bottom.x+Width/2,24,Width-width-24);
+        float topY=Height/2-bottom.y+8;
+        if(topY+height>Height-24)topY=Height/2-top.y-height-8;
+        topY=Mathf.Clamp(topY,24,Height-height-24);
+        popup=UI.Card(popupLayer,"Choices",new Rect(left,topY,width,height),UI.White,shadow:false).rectTransform;
+        popup.GetComponent<HandDrawnRoundedGraphic>().raycastTarget=true;
+        var viewport=UI.Node(popup,"Choices viewport",new Rect(8,8,width-16,height-16));viewport.gameObject.AddComponent<RectMask2D>();
+        var hit=viewport.gameObject.AddComponent<AntialiasedMenuImage>();hit.color=Color.clear;hit.raycastTarget=true;
+        var list=UI.Node(viewport,"Choices content",new Rect(0,0,width-16,options.Length*52));list.pivot=new Vector2(.5f,1);list.anchoredPosition=new Vector2((width-16)/2,0);
+        var dropdownScroll=viewport.gameObject.AddComponent<ScrollRect>();dropdownScroll.viewport=viewport;dropdownScroll.content=list;dropdownScroll.horizontal=false;dropdownScroll.inertia=false;dropdownScroll.scrollSensitivity=40;dropdownScroll.movementType=ScrollRect.MovementType.Clamped;
+        var buttons=new List<Button>();
+        for(int i=0;i<options.Length;i++)
         {
-            int index = i;
-            Color color = i == selectedIndex ? Sage : Paper;
-            Button option = AddButton(popup, $"Option {i}", new Vector2(0f, popup.sizeDelta.y * 0.5f - 34f - i * 50f), new Vector2(popup.sizeDelta.x - 24f, 42f), () =>
-            {
-                onSelected?.Invoke(index);
-                HideDropdown();
-            }, options[i], color, 24f);
-            option.transform.SetAsLastSibling();
-            optionButtons[i] = option;
+            int index=i;
+            var button=UI.Button(list,"Choice "+i,options[i],new Rect(4,i*52+2,width-24,44),i==selected?UI.Blue:UI.White,()=>{HidePopup();chosen(index);},23);
+            buttons.Add(button);button.gameObject.AddComponent<SettingsScrollFocus>().Configure(dropdownScroll,(RectTransform)button.transform);
         }
-        for (int i = 0; i < optionButtons.Length; i++)
-            optionButtons[i].navigation = new Navigation
-            {
-                mode = Navigation.Mode.Explicit,
-                selectOnUp = optionButtons[(i + optionButtons.Length - 1) % optionButtons.Length],
-                selectOnDown = optionButtons[(i + 1) % optionButtons.Length]
-            };
-        optionButtons[Mathf.Clamp(selectedIndex, 0, optionButtons.Length - 1)].Select();
+        for(int i=0;i<buttons.Count;i++)buttons[i].navigation=new Navigation{mode=Navigation.Mode.Explicit,selectOnUp=buttons[Mathf.Max(0,i-1)],selectOnDown=buttons[Mathf.Min(buttons.Count-1,i+1)]};
+        buttons[Mathf.Clamp(selected,0,buttons.Count-1)].Select();
     }
-
-    private void HideDropdown()
+    public void Confirm(string text,Action confirmed,string label="Confirm",Action cancelled=null)
     {
-        if (!popupRoot)
-            return;
-
-        if (activeDropdownPopup)
-        {
-            activeDropdownPopup.gameObject.SetActive(false);
-            Destroy(activeDropdownPopup.gameObject);
-        }
-        activeDropdownPopup = null;
-        popupRoot.gameObject.SetActive(false);
-        if (EventSystem.current && dropdownSelection && dropdownSelection.activeInHierarchy)
-            EventSystem.current.SetSelectedGameObject(dropdownSelection);
-        dropdownSelection = null;
+        HidePopup();popupLayer.gameObject.SetActive(true);popupLayer.SetAsLastSibling();confirmAction=confirmed;
+        previousSelection=EventSystem.current?EventSystem.current.currentSelectedGameObject:null;
+        popup=UI.Card(popupLayer,"Confirmation",new Rect(360,260,720,340),UI.White,shadow:false).rectTransform;
+        popup.GetComponent<HandDrawnRoundedGraphic>().raycastTarget=true;
+        confirmationText=UI.Text(popup,"Question",text,new Rect(32,24,656,190),27,UI.Ink,TextAlignmentOptions.Center,true);
+        UI.Button(popup,"Confirm action",label,new Rect(386,256,282,54),UI.Green,()=>{var action=confirmAction;HidePopup();action?.Invoke();},25);
+        var cancel=UI.Button(popup,"Cancel action",display.Pending?"Revert":"Cancel",new Rect(40,256,282,54),UI.Paper,()=>{HidePopup();cancelled?.Invoke();},25);cancel.Select();
     }
-
+    private void BeginRebind(string id)
+    {
+        Confirm("Press a letter, F1–F12, Space, Tab or Backquote.\nESC cancels. Duplicate bindings are rejected.",()=>{},"Waiting…");rebindId=id;
+        var waiting=popup.Find("Confirm action");if(waiting)waiting.GetComponent<Button>().interactable=false;
+    }
+    private void HidePopup()
+    {
+        rebindId=null;confirmAction=null;
+        if(popup){popup.gameObject.SetActive(false);Destroy(popup.gameObject);}popup=null;
+        if(popupLayer)popupLayer.gameObject.SetActive(false);
+        if(previousSelection&&previousSelection.activeInHierarchy&&EventSystem.current)EventSystem.current.SetSelectedGameObject(previousSelection);
+        previousSelection=null;
+    }
+    private void RefreshFocusOrder()
+    {
+        focusOrder.Clear();focusOrder.AddRange(frame.GetComponentsInChildren<Selectable>().Where(s=>s.gameObject.activeInHierarchy&&s.interactable&&!(s is Scrollbar)));
+        foreach(var selectable in content.GetComponentsInChildren<Selectable>())
+            if(!selectable.GetComponent<SettingsScrollFocus>())selectable.gameObject.AddComponent<SettingsScrollFocus>().Configure(scroll,(RectTransform)selectable.transform);
+    }
     private void Update()
     {
-        if (Keyboard.current == null || !Keyboard.current.escapeKey.wasPressedThisFrame) return;
-        if (activeDropdownPopup)
-            HideDropdown();
-        else
+        if(!IsOpen)return;
+        var actualDisplay=new Vector3Int(Screen.width,Screen.height,(int)Screen.fullScreenMode);
+        if(actualDisplay!=observedDisplay)
+        {observedDisplay=actualDisplay;if(category==SettingsCategory.Graphics&&!popup)rebuildAt=Time.unscaledTime+.12f;}
+        if(rebuildAt>=0&&Time.unscaledTime>=rebuildAt&&(Mouse.current==null||!Mouse.current.leftButton.isPressed))
+        {rebuildAt=-1;float position=scroll.verticalNormalizedPosition;BuildRows();scroll.verticalNormalizedPosition=position;}
+        if(display.Pending)
         {
-            var selected = EventSystem.current ? EventSystem.current.currentSelectedGameObject : null;
-            if (selected && selected.TryGetComponent<TMP_InputField>(out var input) && input.isFocused) return;
-            Close();
+            display.Tick(Time.realtimeSinceStartupAsDouble);
+            if(!display.Pending){HidePopup();BuildRows();}
+            else if(confirmationText)confirmationText.text="Display settings changed.\nKeep these settings?\nReverting in "+display.SecondsRemaining(Time.realtimeSinceStartupAsDouble)+" seconds.";
+        }
+        var keyboard=Keyboard.current;if(keyboard==null)return;
+        if(keyboard.escapeKey.wasPressedThisFrame)
+        {
+            EscapeConsumedFrame=Time.frameCount;
+            if(display.Pending)RevertDisplay();else if(popup)HidePopup();else Close();return;
+        }
+        if(rebindId!=null)
+        {
+            foreach(var key in keyboard.allKeys)
+                if(key.wasPressedThisFrame)
+                {
+                    int index=Array.IndexOf(SettingsRegistry.BindingKeys,key.keyCode.ToString());if(index<0)continue;
+                    if(UserSettings.Manager.TryRebind(rebindId,index,out string conflict)){HidePopup();status.text="Shortcut saved.";}
+                    else if(confirmationText)confirmationText.text=key.displayName+" is already assigned to "+conflict+".\nChoose another key, or press ESC to cancel.";
+                    break;
+                }
+            return;
+        }
+        if(keyboard.tabKey.wasPressedThisFrame&&!popup)
+        {
+            RefreshFocusOrder();var selected=EventSystem.current?EventSystem.current.currentSelectedGameObject:null;
+            int index=focusOrder.FindIndex(s=>s.gameObject==selected);int step=keyboard.leftShiftKey.isPressed||keyboard.rightShiftKey.isPressed?-1:1;
+            if(focusOrder.Count>0)focusOrder[(index+step+focusOrder.Count)%focusOrder.Count].Select();
         }
     }
-
+    private void Close()
+    {EscapeConsumedFrame=Time.frameCount;display?.Revert();HidePopup();opened=false;UserSettings.Manager.Flush();closeAction?.Invoke();}
+    private void OnApplicationFocus(bool focused){if(!focused&&display!=null&&display.Pending)RevertDisplay();}
     private void OnDisable()
-    {
-        HideDropdown();
-    }
-
-    private Button AddButton(Transform parent, string name, Vector2 position, Vector2 size, UnityAction action, string text, Color color, float fontSize = 30f)
-    {
-        Image image = AddImage(parent, name, null, position, size);
-        image.raycastTarget = true;
-        image.color = color;
-        image.preserveAspect = false;
-        AddSolidFrame(image.rectTransform, $"{name} Border", size, 2f, Ink);
-
-        Button button = image.gameObject.AddComponent<Button>();
-        button.targetGraphic = image;
-        ConfigureButtonFocus(button);
-        button.onClick.AddListener(action);
-
-        HandDrawnPressable pressable = image.gameObject.AddComponent<HandDrawnPressable>();
-        pressable.Configure(1.025f, 0.965f, 0.55f, new Color(1f, 0.96f, 0.72f, 1f));
-
-        AddText(image.rectTransform, $"{name} Label", Vector2.zero, size - new Vector2(18f, 8f), fontSize, TextAlignmentOptions.Center, Ink).text = text;
-        return button;
-    }
-
-    private static void ConfigureButtonFocus(Button button)
-    {
-        button.transition = Selectable.Transition.ColorTint;
-        ColorBlock colors = button.colors;
-        colors.normalColor = Color.white;
-        colors.highlightedColor = Color.white;
-        colors.selectedColor = new Color(0.76f, 0.88f, 1f);
-        colors.pressedColor = new Color(0.69f, 0.80f, 0.88f);
-        colors.fadeDuration = 0.1f;
-        button.colors = colors;
-    }
-
-    private Image AddImage(Transform parent, string name, Sprite sprite, Vector2 position, Vector2 size)
-    {
-        GameObject imageObject = new GameObject(name, typeof(RectTransform), typeof(AntialiasedMenuImage));
-        RectTransform rect = imageObject.GetComponent<RectTransform>();
-        rect.SetParent(parent, false);
-        rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 0.5f);
-        rect.anchoredPosition = position;
-        rect.sizeDelta = size;
-
-        Image image = imageObject.GetComponent<Image>();
-        image.sprite = sprite;
-        image.preserveAspect = true;
-        image.raycastTarget = false;
-        return image;
-    }
-
-    private TextMeshProUGUI AddText(Transform parent, string name, Vector2 position, Vector2 size, float fontSize, TextAlignmentOptions alignment, Color color)
-    {
-        GameObject textObject = new GameObject(name, typeof(RectTransform), typeof(TextMeshProUGUI));
-        RectTransform rect = textObject.GetComponent<RectTransform>();
-        rect.SetParent(parent, false);
-        rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 0.5f);
-        rect.anchoredPosition = position;
-        rect.sizeDelta = size;
-
-        TextMeshProUGUI text = textObject.GetComponent<TextMeshProUGUI>();
-        text.font = ChessFontCatalog.TmpFont != null ? ChessFontCatalog.TmpFont : TMP_Settings.defaultFontAsset;
-        text.fontSize = fontSize;
-        text.enableAutoSizing = true;
-        text.fontSizeMin = Mathf.Max(13f, fontSize * 0.6f);
-        text.fontSizeMax = fontSize;
-        text.alignment = alignment;
-        text.color = color;
-        text.textWrappingMode = TextWrappingModes.NoWrap;
-        text.overflowMode = TextOverflowModes.Ellipsis;
-        text.raycastTarget = false;
-        return text;
-    }
-
-    private RectTransform CreateChild(Transform parent, string name, Vector2 position, Vector2 size)
-    {
-        GameObject child = new GameObject(name, typeof(RectTransform));
-        RectTransform rect = child.GetComponent<RectTransform>();
-        rect.SetParent(parent, false);
-        rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 0.5f);
-        rect.anchoredPosition = position;
-        rect.sizeDelta = size;
-        return rect;
-    }
-
-    private RectTransform CreateStretchChild(Transform parent, string name, Vector2 offsetMin, Vector2 offsetMax)
-    {
-        GameObject child = new GameObject(name, typeof(RectTransform));
-        RectTransform rect = child.GetComponent<RectTransform>();
-        rect.SetParent(parent, false);
-        rect.anchorMin = Vector2.zero;
-        rect.anchorMax = Vector2.one;
-        rect.pivot = new Vector2(0.5f, 0.5f);
-        rect.offsetMin = offsetMin;
-        rect.offsetMax = offsetMax;
-        return rect;
-    }
-
-    private void AddSolidFrame(RectTransform parent, string name, Vector2 size, float thickness, Color color)
-    {
-        AddFrameEdge(parent, $"{name} Top", new Vector2(0f, size.y * 0.5f - thickness * 0.5f), new Vector2(size.x, thickness), color);
-        AddFrameEdge(parent, $"{name} Bottom", new Vector2(0f, -size.y * 0.5f + thickness * 0.5f), new Vector2(size.x, thickness), color);
-        AddFrameEdge(parent, $"{name} Left", new Vector2(-size.x * 0.5f + thickness * 0.5f, 0f), new Vector2(thickness, size.y), color);
-        AddFrameEdge(parent, $"{name} Right", new Vector2(size.x * 0.5f - thickness * 0.5f, 0f), new Vector2(thickness, size.y), color);
-    }
-
-    private void AddFrameEdge(RectTransform parent, string name, Vector2 position, Vector2 size, Color color)
-    {
-        GameObject edgeObject = new GameObject(name, typeof(RectTransform), typeof(AntialiasedMenuImage));
-        RectTransform rect = edgeObject.GetComponent<RectTransform>();
-        rect.SetParent(parent, false);
-        rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 0.5f);
-        rect.anchoredPosition = position;
-        rect.sizeDelta = size;
-
-        Image image = edgeObject.GetComponent<Image>();
-        image.color = color;
-        image.raycastTarget = false;
-    }
-
-    private void AddDoodleStroke(RectTransform parent, string name, Vector2 position, float rotation, Color color)
-    {
-        RectTransform rootStroke = CreateChild(parent, name, position, new Vector2(92f, 62f));
-        rootStroke.localRotation = Quaternion.Euler(0f, 0f, rotation);
-        for (int i = 0; i < 3; i++)
-        {
-            Image line = AddImage(rootStroke, $"Stroke {i}", null, new Vector2(0f, -20f + i * 20f), new Vector2(62f - i * 8f, 5f));
-            line.color = color;
-            line.preserveAspect = false;
-            line.rectTransform.localRotation = Quaternion.Euler(0f, 0f, -16f + i * 16f);
-        }
-    }
-
-    private static string[] GetFpsLabels()
-    {
-        string[] labels = new string[FpsOptions.Length];
-        for (int i = 0; i < FpsOptions.Length; i++)
-            labels[i] = FpsOptions[i] == 0
-                ? "Auto"
-                : FpsOptions[i].ToString(CultureInfo.InvariantCulture) + " FPS";
-        return labels;
-    }
-
-    private static int ClosestFps(int value)
-    {
-        int best = FpsOptions[0];
-        int bestDistance = Mathf.Abs(value - best);
-        for (int i = 1; i < FpsOptions.Length; i++)
-        {
-            int distance = Mathf.Abs(value - FpsOptions[i]);
-            if (distance >= bestDistance)
-                continue;
-            best = FpsOptions[i];
-            bestDistance = distance;
-        }
-        return best;
-    }
-
-    private static int FpsIndex(int fps)
-    {
-        for (int i = 0; i < FpsOptions.Length; i++)
-            if (FpsOptions[i] == fps)
-                return i;
-        return 1;
-    }
-
-    private void OnDestroy()
-    {
-        HideDropdown();
-    }
-
-    private sealed class SettingNumberControl
-    {
-        private readonly Slider slider;
-        private readonly TMP_InputField input;
-        private readonly int min;
-        private readonly int max;
-        private readonly Action<int> onChanged;
-        private bool silent;
-
-        public SettingNumberControl(Slider newSlider, TMP_InputField newInput, int newMin, int newMax, Action<int> newOnChanged)
-        {
-            slider = newSlider;
-            input = newInput;
-            min = newMin;
-            max = newMax;
-            onChanged = newOnChanged;
-            slider.onValueChanged.AddListener(HandleSliderChanged);
-            input.onEndEdit.AddListener(HandleInputEnded);
-        }
-
-        public void SetValue(int value, bool notify)
-        {
-            value = Mathf.Clamp(value, min, max);
-            silent = !notify;
-            slider.SetValueWithoutNotify(value);
-            input.SetTextWithoutNotify(value.ToString(CultureInfo.InvariantCulture));
-            silent = false;
-            if (notify)
-                onChanged?.Invoke(value);
-        }
-
-        private void HandleSliderChanged(float value)
-        {
-            if (silent)
-                return;
-            SetValue(Mathf.RoundToInt(value), true);
-        }
-
-        private void HandleInputEnded(string raw)
-        {
-            if (silent)
-                return;
-            if (!int.TryParse(raw, NumberStyles.Integer, CultureInfo.InvariantCulture, out int value))
-                value = Mathf.RoundToInt(slider.value);
-            SetValue(value, true);
-        }
-    }
-
-    private sealed class SettingDropdownControl
-    {
-        private readonly SettingsMenuController menu;
-        private readonly RectTransform anchor;
-        private readonly TextMeshProUGUI valueLabel;
-        private readonly string[] options;
-        private readonly Action<int> onChanged;
-        private int selectedIndex;
-
-        public SettingDropdownControl(SettingsMenuController newMenu, RectTransform newAnchor, TextMeshProUGUI newValueLabel, string[] newOptions, Action<int> newOnChanged)
-        {
-            menu = newMenu;
-            anchor = newAnchor;
-            valueLabel = newValueLabel;
-            options = newOptions;
-            onChanged = newOnChanged;
-        }
-
-        public void SetSelectedIndex(int index, bool notify)
-        {
-            selectedIndex = Mathf.Clamp(index, 0, options.Length - 1);
-            valueLabel.text = options[selectedIndex];
-            if (notify)
-                onChanged?.Invoke(selectedIndex);
-        }
-
-        public void Toggle()
-        {
-            menu.ShowDropdown(anchor, options, selectedIndex, index => SetSelectedIndex(index, true));
-        }
-    }
+    {display?.Revert();HidePopup();opened=false;if(subscribed){UserSettings.Manager.Changed-=OnSettingsChanged;subscribed=false;}UserSettings.Manager.Flush();}
+    private void OnDestroy(){if(subscribed)UserSettings.Manager.Changed-=OnSettingsChanged;display?.Revert();}
 }

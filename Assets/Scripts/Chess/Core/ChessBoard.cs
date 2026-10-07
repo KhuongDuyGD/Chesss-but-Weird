@@ -44,6 +44,7 @@ public class Chessboard : MonoBehaviour
     private Camera currentCamera;
     private Vector2Int currentHover = -Vector2Int.one;
     private bool[,] legalMoveHighlights;
+    private bool abilityHints;
     private bool interactionEnabled;
     private bool presentationVisible = true;
     private Transform cosmeticBoard;
@@ -102,13 +103,16 @@ public class Chessboard : MonoBehaviour
         hoverLayer = LayerMask.NameToLayer("Hover");
         hoverRaycastMask = CreateLayerMaskOrDefault("Tile", "Hover");
 
+        UserSettings.Manager.Changed += OnSettingsChanged;
         CreateTileMaterials();
         currentBoardLayout = ResolveBoardLayout();
         GenerateAllTiles(currentBoardLayout, TILE_COUNT_X, TILE_COUNT_Y);
+        OnSettingsChanged(null);
     }
 
     private void OnDestroy()
     {
+        UserSettings.Manager.Changed -= OnSettingsChanged;
         DestroyRuntimeMaterial(lightTileMaterial);
         DestroyRuntimeMaterial(darkTileMaterial);
         DestroyRuntimeMaterial(legalMoveTileMaterial);
@@ -239,9 +243,10 @@ public class Chessboard : MonoBehaviour
         SetTileHover(previousHover, false);
     }
 
-    public void SetLegalMoveHighlights(IEnumerable<Vector2Int> positions)
+    public void SetLegalMoveHighlights(IEnumerable<Vector2Int> positions, bool forAbility = false)
     {
         ClearLegalMoveHighlights();
+        abilityHints = forAbility;
 
         if (positions == null)
             return;
@@ -295,7 +300,8 @@ public class Chessboard : MonoBehaviour
             return;
 
         bool isHovering = currentHover == position;
-        bool isLegalMove = legalMoveHighlights != null && legalMoveHighlights[position.x, position.y];
+        bool isLegalMove = UserSettings.Enabled(abilityHints ? "ability_targets" : "legal_moves") &&
+            legalMoveHighlights != null && legalMoveHighlights[position.x, position.y];
         tileRenderers[position.x, position.y].enabled = presentationVisible && (showGeneratedTiles || isHovering || isLegalMove);
 
         if (isHovering && hoverMaterial)
@@ -306,6 +312,22 @@ public class Chessboard : MonoBehaviour
             tileRenderers[position.x, position.y].sharedMaterial = baseTileMaterials[position.x, position.y];
     }
 
+    private void OnSettingsChanged(System.Collections.Generic.IReadOnlyList<string> ids)
+    {
+        if (ids != null)
+        {
+            bool relevant=false;foreach(var id in ids)relevant|=id=="legal_moves"||id=="ability_targets"||id=="colorblind";
+            if(!relevant)return;
+        }
+        if (legalMoveTileMaterial)
+        {
+            int palette=(int)UserSettings.Get("colorblind");
+            Color color=palette==1?new Color(.1f,.65f,1f,.5f):palette==2?new Color(.95f,.65f,.1f,.5f):palette==3?new Color(.9f,.3f,.6f,.5f):legalMoveTileColor;
+            if(legalMoveTileMaterial.HasProperty(BaseColorId))legalMoveTileMaterial.SetColor(BaseColorId,color);
+            if(legalMoveTileMaterial.HasProperty(ColorId))legalMoveTileMaterial.SetColor(ColorId,color);
+        }
+        RefreshAllTileVisuals();
+    }
     private void RefreshAllTileVisuals()
     {
         if (tileRenderers == null)

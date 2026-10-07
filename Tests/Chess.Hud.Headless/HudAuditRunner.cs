@@ -195,7 +195,12 @@ public static class HudAuditRunner
         for(int i=0;i<101;i++)game.Statistics.AddLocal(Team.White,"e2-e4",false,null);Call(view,"Refresh");
         Check(Field<TextMeshProUGUI>(view,"whiteMoves").text.Contains("99+")&&game.Statistics.ConfirmedMoveNumber>99,"Capping display discarded underlying move history");
         var tooltip=Field<MatchHudTooltip>(view,"tooltip");var buffLabel=Field<TextMeshProUGUI>(view,"whiteBuff");
-        buffLabel.GetComponent<MatchHudTooltipTarget>().OnPointerEnter(null);
+        UserSettings.Manager.Set("buff_detail",2);
+        Call(view,"Refresh");
+        var hoverTarget=buffLabel.GetComponent<MatchHudTooltipTarget>();hoverTarget.OnPointerEnter(null);
+        Check(!Field<RectTransform>(tooltip,"panel").gameObject.activeSelf,"Tooltip ignored the configured delay");
+        Set(hoverTarget,"hoverSince",Time.unscaledTime-1);Call(hoverTarget,"Update");
+        UserSettings.Manager.Set("tooltip_delay",0);
         Check(Field<RectTransform>(tooltip,"panel").gameObject.activeSelf,"Hover did not open buff information");
         runtime.BuffProgressText="Tickets: 13 · Drop: 0/1";Call(view,"Refresh");
         Check(Field<TextMeshProUGUI>(tooltip,"body").text.Contains("Tickets: 13"),"Hovered buff information did not update live progress");

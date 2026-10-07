@@ -115,7 +115,7 @@ public sealed class ChessOrbitCamera : MonoBehaviour
             ((selected.GetComponentInParent<TMP_InputField>() is TMP_InputField tmp && tmp.isFocused) ||
              (selected.GetComponentInParent<InputField>() is InputField input && input.isFocused));
         if (typing) { orbitDragging = false; return; }
-        if (Keyboard.current != null && Keyboard.current.yKey.wasPressedThisFrame)
+        if (UserSettings.KeyPressed("key_orbit"))
         {
             orbitUnlocked = !orbitUnlocked;
             orbitDragging = false;
@@ -126,16 +126,17 @@ public sealed class ChessOrbitCamera : MonoBehaviour
         var mouse = Mouse.current;
         bool overUi = EventSystem.current && EventSystem.current.IsPointerOverGameObject();
         overUi |= chessGame.OnlinePointerBlocked?.Invoke(mouse.position.ReadValue()) == true;
-        if (mouse.rightButton.wasPressedThisFrame || mouse.middleButton.wasPressedThisFrame)
+        bool right = UserSettings.Enabled("right_orbit"), middle = UserSettings.Enabled("middle_orbit");
+        if ((right && mouse.rightButton.wasPressedThisFrame) || (middle && mouse.middleButton.wasPressedThisFrame))
             orbitDragging = orbitUnlocked && !overUi;
-        if (!mouse.rightButton.isPressed && !mouse.middleButton.isPressed) orbitDragging = false;
+        if (!(right && mouse.rightButton.isPressed) && !(middle && mouse.middleButton.isPressed)) orbitDragging = false;
         if (orbitUnlocked && orbitDragging && !overUi)
         {
-            Vector2 delta = mouse.delta.ReadValue();
+            Vector2 delta = mouse.delta.ReadValue() * (UserSettings.Get("orbit_sensitivity") / 100f);
             orbitYaw = Mathf.Repeat(orbitYaw + delta.x * orbitSensitivity, 360f);
             orbitPitch = Mathf.Clamp(orbitPitch - delta.y * orbitSensitivity, 25f - boardViewPitch, 85f - boardViewPitch);
         }
-        if (overUi) return;
+        if (overUi || !UserSettings.Enabled("wheel_zoom")) return;
         float scroll = Mouse.current.scroll.ReadValue().y;
         if (Mathf.Abs(scroll) < .001f) return;
         // Windows reports 120 units per wheel notch; normalized devices report 1.

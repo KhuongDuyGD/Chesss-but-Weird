@@ -233,8 +233,8 @@ public sealed class GachaSummonRevealController : MonoBehaviour
             background.color = new Color(0.02f, 0.018f, 0.03f, Mathf.Lerp(startBackgroundAlpha, targetBackgroundAlpha, charge) * (1f - overlayExit * 0.42f));
             canvasGroup.alpha = finalReward ? 1f - overlayExit : 1f;
 
-            AnimateRings(elapsed, charge, burst, itemExit);
-            AnimateTopTier(elapsed, charge, burst, reveal, itemExit);
+            AnimateRings(UserSettings.Presentation.ReducedMotion ? 0 : elapsed, charge, burst, itemExit);
+            AnimateTopTier(UserSettings.Presentation.ReducedMotion ? 0 : elapsed, charge, burst, reveal, itemExit);
             AnimateCard(reveal, burst, itemExit);
             AnimateLabels(reveal, itemExit);
             AnimateGlyphs(elapsed, charge, burst, itemExit);
@@ -277,8 +277,11 @@ public sealed class GachaSummonRevealController : MonoBehaviour
 
     private void AnimateRings(float elapsed, float charge, float burst, float exit)
     {
+        rayImage.gameObject.SetActive(UserSettings.Presentation.Effects>0 && !UserSettings.Presentation.ReducedMotion);
+        auraRing.gameObject.SetActive(UserSettings.Presentation.Effects>0);
+        topTierHalo.gameObject.SetActive(UserSettings.Presentation.Effects>1 && !UserSettings.Presentation.ReducedMotion);
         float topBoost = currentTopTier ? 1.22f : 1f;
-        float pulse = 0.5f + Mathf.Sin(elapsed * (currentTopTier ? 18.5f : 13.5f)) * 0.5f;
+        float pulse = UserSettings.Presentation.ReducedMotion ? 0 : 0.5f + Mathf.Sin(elapsed * (currentTopTier ? 18.5f : 13.5f)) * 0.5f;
         auraRing.rectTransform.localScale = Vector3.one * Mathf.Lerp(0.74f, 1.18f * topBoost, charge);
         summonRing.rectTransform.localScale = Vector3.one * Mathf.Lerp(0.42f, 1.08f * topBoost + pulse * 0.04f, burst);
         rayImage.rectTransform.localScale = Vector3.one * Mathf.Lerp(0.45f, currentTopTier ? 1.34f : 1.1f, burst);
@@ -307,7 +310,7 @@ public sealed class GachaSummonRevealController : MonoBehaviour
 
         float flash = Mathf.Sin(Mathf.Clamp01(Mathf.InverseLerp(0.12f, 0.92f, burst)) * Mathf.PI);
         float revealGlint = Mathf.Sin(Mathf.Clamp01(reveal) * Mathf.PI) * 0.18f;
-        SetGraphicColorAlpha(topTierFlash, currentPalette.flash, (flash * 0.34f + revealGlint) * (1f - exit));
+        SetGraphicColorAlpha(topTierFlash, currentPalette.flash, (flash * 0.34f + revealGlint) * (1f - exit) * UserSettings.Presentation.Flash);
     }
 
     private void AnimateCard(float reveal, float burst, float exit)
@@ -316,7 +319,9 @@ public sealed class GachaSummonRevealController : MonoBehaviour
         float pop = Mathf.Sin(Mathf.Clamp01(reveal) * Mathf.PI);
         card.localScale = new Vector3(Mathf.Lerp(0.18f, 1f, reveal), Mathf.Lerp(0.96f, 1f + pop * 0.08f, reveal), 1f);
         card.anchoredPosition = new Vector2(0f, Mathf.Lerp(-42f, -12f, reveal));
-        card.localRotation = Quaternion.Euler(0f, 0f, Mathf.Lerp(-8f, 0f, reveal));
+        card.localRotation = Quaternion.Euler(0f, 0f, UserSettings.Presentation.ReducedMotion ? 0 : Mathf.Lerp(-8f, 0f, reveal));
+        if (UserSettings.Presentation.ReducedMotion) { card.localScale = Vector3.one; card.anchoredPosition = new Vector2(0,-12); }
+        else card.anchoredPosition += new Vector2(Mathf.Sin(burst*70),Mathf.Cos(burst*83))*Mathf.Sin(burst*Mathf.PI)*8*UserSettings.Presentation.Shake;
 
         float alpha = Mathf.Clamp01(reveal * 1.5f) * (1f - exit);
         SetGraphicAlpha(cardFrame, alpha);
@@ -337,6 +342,8 @@ public sealed class GachaSummonRevealController : MonoBehaviour
     {
         for (int i = 0; i < chessGlyphs.Count; i++)
         {
+            bool visible = !UserSettings.Presentation.ReducedMotion && UserSettings.Presentation.Effects > 0;
+            chessGlyphs[i].gameObject.SetActive(visible);if(!visible)continue;
             RectTransform glyph = chessGlyphs[i];
             float angle = elapsed * (42f + i * 6f) + i * 60f;
             float radius = Mathf.Lerp(88f, 306f, burst);
@@ -351,8 +358,12 @@ public sealed class GachaSummonRevealController : MonoBehaviour
 
     private void AnimateSparks(float elapsed, float charge, float burst, float reveal, float exit)
     {
+        int count=UserSettings.Presentation.ReducedMotion?0:UserSettings.Presentation.Effects==0?6:UserSettings.Presentation.Effects==1?15:30;
         for (int i = 0; i < sparks.Count; i++)
-            sparks[i].Animate(elapsed, charge, burst, reveal, exit, currentPalette.spark, currentTopTier ? 1.45f : 1f);
+        {
+            sparks[i].SetVisible(i<count);
+            if(i<count)sparks[i].Animate(elapsed, charge, burst, reveal, exit, currentPalette.spark, currentTopTier ? 1.45f : 1f);
+        }
     }
 
     private Image AddImage(RectTransform parent, string name, Sprite sprite, Vector2 position, Vector2 size)
@@ -558,6 +569,7 @@ public sealed class GachaSummonRevealController : MonoBehaviour
             size = 10f + (index % 5) * 5f;
         }
 
+        public void SetVisible(bool visible) { image.gameObject.SetActive(visible); }
         public void Animate(float elapsed, float charge, float burst, float reveal, float exit, Color color, float intensity)
         {
             float orbit = elapsed * speed * intensity + offset;

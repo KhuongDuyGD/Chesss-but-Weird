@@ -1,0 +1,25 @@
+PASS layout (1280.00, 720.00), scale 80%, large text False, all six tabs
+PASS layout (1280.00, 720.00), scale 80%, large text True, all six tabs
+PASS layout (1280.00, 720.00), scale 100%, large text False, all six tabs
+PASS layout (1280.00, 720.00), scale 100%, large text True, all six tabs
+PASS layout (1280.00, 720.00), scale 150%, large text False, all six tabs
+PASS layout (1280.00, 720.00), scale 150%, large text True, all six tabs
+PASS layout (1920.00, 1080.00), scale 80%, large text False, all six tabs
+PASS layout (1920.00, 1080.00), scale 80%, large text True, all six tabs
+PASS layout (1920.00, 1080.00), scale 100%, large text False, all six tabs
+PASS layout (1920.00, 1080.00), scale 100%, large text True, all six tabs
+PASS layout (1920.00, 1080.00), scale 150%, large text False, all six tabs
+PASS layout (1920.00, 1080.00), scale 150%, large text True, all six tabs
+PASS layout (2560.00, 1440.00), scale 80%, large text False, all six tabs
+PASS layout (2560.00, 1440.00), scale 80%, large text True, all six tabs
+PASS layout (2560.00, 1440.00), scale 100%, large text False, all six tabs
+PASS layout (2560.00, 1440.00), scale 100%, large text True, all six tabs
+PASS layout (2560.00, 1440.00), scale 150%, large text False, all six tabs
+PASS layout (2560.00, 1440.00), scale 150%, large text True, all six tabs
+PASS layout (1920.00, 1200.00), scale 80%, large text False, all six tabs
+PASS layout (1920.00, 1200.00), scale 80%, large text True, all six tabs
+PASS layout (1920.00, 1200.00), scale 100%, large text False, all six tabs
+PASS layout (1920.00, 1200.00), scale 100%, large text True, all six tabs
+PASS layout (1920.00, 1200.00), scale 150%, large text False, all six tabs
+PASS layout (1920.00, 1200.00), scale 150%, large text True, all six tabs
+PASS 8202 Unity settings assertions. Raster previews included; no full gameplay or server coverage.

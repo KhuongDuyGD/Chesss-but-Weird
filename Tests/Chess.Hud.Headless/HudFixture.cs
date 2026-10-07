@@ -2,10 +2,22 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
+// Production preference model with an in-memory store; no account or real PlayerPrefs access.
+public static class UserSettings
+{
+    public static readonly ChessButWeird.Settings.SettingsManager Manager = new ChessButWeird.Settings.SettingsManager(ChessButWeird.Settings.SettingsRegistry.Create(),new HudSettingsStore());
+    public static readonly ChessButWeird.Settings.PresentationPreferences Presentation = new ChessButWeird.Settings.PresentationPreferences(Manager);
+    public static bool Enabled(string id)=>Manager.Enabled(id);
+    public static float Get(string id)=>Manager.Get(id);
+    private sealed class HudSettingsStore : ChessButWeird.Settings.ISettingsStore
+    {public string Read(string id)=>null;public void Write(string id,string value){}public void Flush(){}}
+}
+
 // Narrow dependencies for copied production HUD and ChessGame.Statistics sources.
 // No gameplay, account, transport, actual match scene or server is loaded here.
 public enum PieceTeam { White, Black }
 public enum PieceType { King, Queen, Rook, Bishop, Knight, Pawn }
+public sealed class ChessOrbitCamera : MonoBehaviour { public bool IsOrbitUnlocked; public bool IsBoardViewActive=>isActiveAndEnabled; }
 public sealed partial class ChessGame : MonoBehaviour
 {
     public enum ChessGameStatus { Playing, Draw, Checkmate }
@@ -22,6 +34,7 @@ public sealed partial class ChessGame : MonoBehaviour
     public bool IsAramGame { get=>aramMode; set=>aramMode=value; }
     public bool IsBotGame { get=>botMode; set=>botMode=value; }
     public bool IsBotPractice => false;
+    public bool GameStarted => gameStarted;
     public bool PauseLocked { get=>pauseLocked; set=>pauseLocked=value; }
     public PieceTeam CurrentTurn { get=>currentTurn;set=>currentTurn=value; }
     public PieceTeam PlayerTeam { get=>playerTeam;set=>playerTeam=value; }

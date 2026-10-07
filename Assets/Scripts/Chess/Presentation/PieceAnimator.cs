@@ -15,7 +15,7 @@ internal sealed class PieceAnimator
     {
         if (!piece) return;
         Cancel(piece);
-        if (duration <= 0f)
+        if (duration <= 0f || UserSettings.Presentation.AnimationSpeed == 0)
         {
             piece.transform.position = target;
             return;
@@ -53,11 +53,13 @@ internal sealed class PieceAnimator
         float elapsed = 0f;
         while (piece && elapsed < duration)
         {
-            elapsed += Time.deltaTime;
+            if (UserSettings.Presentation.AnimationSpeed == 0) break;
+            elapsed += Time.deltaTime * UserSettings.Presentation.AnimationSpeed;
             float t = Mathf.Clamp01(elapsed / Mathf.Max(0.001f, duration));
             float eased = t * t * (3f - 2f * t);
             Vector3 position = Vector3.Lerp(start, target, eased);
-            position.y += Mathf.Sin(eased * Mathf.PI) * arcHeight;
+            if (!UserSettings.Presentation.ReducedMotion && UserSettings.Get("animation_quality") > 0)
+                position.y += Mathf.Sin(eased * Mathf.PI) * arcHeight;
             piece.transform.position = position;
             yield return null;
         }

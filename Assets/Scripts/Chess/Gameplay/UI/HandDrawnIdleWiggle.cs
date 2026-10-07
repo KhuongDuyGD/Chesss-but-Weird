@@ -45,6 +45,11 @@ public class HandDrawnIdleWiggle : MonoBehaviour
         if (!rectTransform)
             return;
 
+        if (UserSettings.Presentation.ReducedMotion)
+        {
+            rectTransform.anchoredPosition=basePosition;rectTransform.localRotation=baseRotation;rectTransform.localScale=baseScale;
+            return;
+        }
         float speed = Mathf.Max(0.01f, interval) * 8f;
         float time = Time.unscaledTime * speed + phase;
         rectTransform.anchoredPosition = basePosition + new Vector2(Mathf.Sin(time), Mathf.Cos(time * 0.83f)) * positionAmount;

@@ -114,3 +114,4 @@ ProjectSettings/McpUnitySettings.json
 /Tests/**/obj/
 !/Tests/Chess.Domain.Tests/Chess.Domain.Tests.csproj
 !/Tests/Chess.Notifications.Tests/Chess.Notifications.Tests.csproj
+!/Tests/Chess.Settings.Tests/Chess.Settings.Tests.csproj

@@ -41,6 +41,7 @@ public sealed class AramAbilityView : MonoBehaviour
         root.GetComponent<Canvas>().renderMode=RenderMode.ScreenSpaceOverlay;
         root.GetComponent<Canvas>().sortingOrder=90;
         ResponsiveUi.ConfigureCanvasScaler(root.GetComponent<CanvasScaler>(),new Vector2(1280,720));
+        root.AddComponent<SettingsUiScale>();
         frame=MatchHudStyle.Rect(root.transform,"ARAM Actions",Vector2.zero,Vector2.one,Vector2.zero,Vector2.zero);
         frame.gameObject.AddComponent<ResponsiveSafeArea>();
         // Aim follows the camera viewport centre even with asymmetric safe areas.
@@ -86,7 +87,7 @@ public sealed class AramAbilityView : MonoBehaviour
         runtime.GetAbilityActions(actions);
         summary.text=runtime.AbilityBuffSummary;
         status.text=runtime.AbilityStatus;
-        details.text=expanded?runtime.AbilityBuffDetails:"";
+        details.text=expanded?TooltipPreferences.Description(runtime.AbilityBuffDetails):"";
         crosshair.gameObject.SetActive(runtime.RifleActive);
         rifleHint.gameObject.SetActive(runtime.RifleActive);
         rifleHint.text=runtime.RifleMouseHint;
@@ -110,7 +111,7 @@ public sealed class AramAbilityView : MonoBehaviour
         float statusHeight=string.IsNullOrEmpty(status.text)?0:Mathf.Clamp(status.GetPreferredValues(status.text,width-32,0).y+6,32,runtime.AbilityInstructionRequired?150:62);
         float header=52+summaryHeight+statusHeight+12;
         // Long summaries are available without clipping inside the expanded scroll.
-        if(expanded)details.text=runtime.AbilityBuffSummary+"\n\n"+runtime.AbilityBuffDetails;
+        if(expanded)details.text=runtime.AbilityBuffSummary+"\n\n"+TooltipPreferences.Description(runtime.AbilityBuffDetails);
         float detailHeight=expanded?details.GetPreferredValues(details.text,width-48,0).y+16:0;
         float cellHeight=expanded?64:38, gap=6;
         float contentHeight=detailHeight+actions.Count*(cellHeight+gap);

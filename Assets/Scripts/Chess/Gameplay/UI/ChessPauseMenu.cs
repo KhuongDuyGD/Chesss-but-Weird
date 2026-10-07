@@ -23,6 +23,9 @@ public sealed class ChessPauseMenu : MonoBehaviour
     private bool quitting;
     private bool resultSpectating;
     private int lastEscapeFrame = -1;
+    private SettingsMenuController settingsMenu;
+    private GameObject settingsRoot;
+    private SettingsPrompt quitPrompt;
 
     public void Initialize(ChessGame game, ChessLanController networkController)
     {
@@ -54,6 +57,8 @@ public sealed class ChessPauseMenu : MonoBehaviour
             return;
         }
 
+        if (quitPrompt || (settingsMenu && settingsMenu.IsOpen) || SettingsMenuController.EscapeConsumedFrame == Time.frameCount) return;
+        if (UserSettings.KeyPressed("key_settings")) { OpenSettings(); return; }
         bool escapePressed = Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame;
 #if ENABLE_LEGACY_INPUT_MANAGER
         escapePressed |= Input.GetKeyDown(KeyCode.Escape);
@@ -69,13 +74,13 @@ public sealed class ChessPauseMenu : MonoBehaviour
     private void OnGUI()
     {
         Event currentEvent = Event.current;
-        if (currentEvent != null && currentEvent.type == EventType.KeyDown && currentEvent.keyCode == KeyCode.Escape)
+        if (!quitPrompt && !(settingsMenu && settingsMenu.IsOpen) && SettingsMenuController.EscapeConsumedFrame != Time.frameCount && currentEvent != null && currentEvent.type == EventType.KeyDown && currentEvent.keyCode == KeyCode.Escape)
             TryToggleFromEscape();
     }
 
     private void TryToggleFromEscape()
     {
-        if (!overlay || !chessGame || (!chessGame.GameStarted && !(resultSpectating && chessGame.GameOver)) || quitting || lastEscapeFrame == Time.frameCount)
+        if (quitPrompt || (settingsMenu && settingsMenu.IsOpen) || SettingsMenuController.EscapeConsumedFrame == Time.frameCount || !overlay || !chessGame || (!chessGame.GameStarted && !(resultSpectating && chessGame.GameOver)) || quitting || lastEscapeFrame == Time.frameCount)
             return;
 
         lastEscapeFrame = Time.frameCount;
@@ -144,7 +149,7 @@ public sealed class ChessPauseMenu : MonoBehaviour
             new Rect(0.085f, 0.124f, 0.836f, 0.688f), new Vector2(0f, 15f), RestartLocalGame, true);
 
         CreateButton(buttonGroup.transform, "Settings", assets.settingsButton,
-            new Rect(0.062f, 0.180f, 0.882f, 0.640f), new Vector2(0f, -135f), ShowSettingsAccessMessage, true);
+            new Rect(0.062f, 0.180f, 0.882f, 0.640f), new Vector2(0f, -135f), OpenSettings, true);
 
         quitButton = CreateButton(buttonGroup.transform, "Quit Game", assets.quitButton,
             new Rect(0.035f, 0.165f, 0.935f, 0.675f), new Vector2(0f, -285f), QuitGame, true);
@@ -154,7 +159,7 @@ public sealed class ChessPauseMenu : MonoBehaviour
 
     private void PauseLocally()
     {
-        if (!chessGame || (!chessGame.GameStarted && !(resultSpectating && chessGame.GameOver)))
+        if (!overlay || !chessGame || (!chessGame.GameStarted && !(resultSpectating && chessGame.GameOver)))
             return;
 
         localPaused = true;
@@ -189,16 +194,22 @@ public sealed class ChessPauseMenu : MonoBehaviour
         ShowCurrentState();
     }
 
-    private void ShowSettingsAccessMessage()
+    private void OpenSettings()
     {
-        if (PlayerAuthService.IsGuestSession)
+        if (!localPaused) PauseLocally();
+        if (!settingsRoot)
         {
-            GuestAccessWarning.Show(transform, "Guest account cannot access, please login :3");
-            return;
+            settingsRoot = CreateRectObject("Pause Settings", canvasRoot.transform);
+            Stretch((RectTransform)settingsRoot.transform);
+            settingsMenu = settingsRoot.AddComponent<SettingsMenuController>();
+            settingsMenu.Initialize((RectTransform)settingsRoot.transform, () => { settingsRoot.SetActive(false); ShowCurrentState(); resumeButton.Select(); });
         }
-
-        statusText.text = "Settings are unavailable during a match.";
-        statusText.gameObject.SetActive(true);
+        settingsRoot.SetActive(true);settingsRoot.transform.SetAsLastSibling();settingsMenu.Open();
+    }
+    private void OnApplicationFocus(bool focused)
+    {
+        if (!focused && UserSettings.Enabled("pause_unfocused") && chessGame && chessGame.GameStarted &&
+            !localPaused && !opponentPaused && !(lanController && lanController.IsNetworkGameActive)) PauseLocally();
     }
 
     private void RestartLocalGame()
@@ -216,6 +227,17 @@ public sealed class ChessPauseMenu : MonoBehaviour
     }
 
     private void QuitGame()
+    {
+        if (!chessGame || quitting || quitPrompt) return;
+        if (UserSettings.Enabled("confirm_quit"))
+        {
+            quitPrompt=SettingsPrompt.Show((RectTransform)canvasRoot.transform,
+                lanController && lanController.IsNetworkGameActive ? "Leave this match?\nYou will surrender. Online clocks keep running." : "Leave this match and return to the main menu?", QuitConfirmed);
+            return;
+        }
+        QuitConfirmed();
+    }
+    private void QuitConfirmed()
     {
         if (!chessGame || quitting)
             return;
@@ -278,6 +300,8 @@ public sealed class ChessPauseMenu : MonoBehaviour
         localPaused = false;
         opponentPaused = false;
         quitting = false;
+        if(settingsRoot)settingsRoot.SetActive(false);
+        if(quitPrompt)Destroy(quitPrompt.gameObject);
         if (wasOfflinePause)
             Time.timeScale = 1f;
 
