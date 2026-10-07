@@ -6,6 +6,24 @@ namespace ChessButWeird.Application
     /// <summary>Converts Stockfish UCI output into the same domain command used by local classic.</summary>
     public static class StockfishMoveAdapter
     {
+        public static string ToUci(Move move)
+        {
+            if (!move.From.IsValid || !move.To.IsValid) throw new ArgumentException("Invalid UCI squares.");
+            string value = move.From.ToString() + move.To.ToString();
+            if (move.Promotion.HasValue)
+            {
+                switch (move.Promotion.Value)
+                {
+                    case PieceKind.Queen: return value + "q";
+                    case PieceKind.Rook: return value + "r";
+                    case PieceKind.Bishop: return value + "b";
+                    case PieceKind.Knight: return value + "n";
+                    default: throw new ArgumentException("Invalid UCI promotion.");
+                }
+            }
+            return value;
+        }
+
         public static bool TryParseUci(string uciMove, out Move move)
         {
             move = default;

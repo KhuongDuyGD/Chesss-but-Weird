@@ -410,12 +410,16 @@ public partial class ChessGame : MonoBehaviour
     }
 
     public void BeginBotGame(PieceTeam localPlayerTeam, StockfishDifficulty selectedDifficulty)
+        => BeginBotGame(localPlayerTeam, selectedDifficulty, BotGameOptions.Challenge);
+
+    public void BeginBotGame(PieceTeam localPlayerTeam, StockfishDifficulty selectedDifficulty, BotGameOptions options)
     {
         ResetDotNetPresentation();
         serverAuthoritativeMode = false;
         botMode = true;
         aramMode = false;
         botDifficulty = selectedDifficulty;
+        botOptions = options ?? BotGameOptions.Challenge;
         BeginGameInternal(PieceTeam.White, localPlayerTeam, true, PieceTeam.White);
     }
 
@@ -493,6 +497,7 @@ public partial class ChessGame : MonoBehaviour
             InitializeClassicSession(firstTurn, frontTeam);
         RecordCurrentPosition();
         gameStarted = true;
+        ResetBotHistory();
         ApplyGameplayCameraState(localPlayerTeam, true);
         chessboard?.SetPresentationVisible(true);
         chessboard?.ClearLegalMoveHighlights();
@@ -912,13 +917,14 @@ public partial class ChessGame : MonoBehaviour
         bool restartBotGame = botMode;
         bool restartAramGame = aramMode;
         StockfishDifficulty selectedBotDifficulty = botDifficulty;
+        BotGameOptions selectedBotOptions = botOptions;
         pauseLocked = false;
         Time.timeScale = 1f;
         PrepareGame();
         if (restartAramGame)
             BeginAramGame();
         else if (restartBotGame)
-            BeginBotGame(selectedTeam, selectedBotDifficulty);
+            BeginBotGame(selectedTeam, selectedBotDifficulty, selectedBotOptions);
         else
             BeginGame(selectedTeam);
         LocalGameRestarted?.Invoke();
@@ -961,6 +967,7 @@ public partial class ChessGame : MonoBehaviour
         pieceAnimator?.CancelAll();
         ClearLocalClassicSession();
         aramCoordinator?.EndMatch();
+        botFrames.Clear();
 
         if (piecesRoot)
         {
@@ -2184,6 +2191,8 @@ public partial class ChessGame : MonoBehaviour
         MatchReward reward = CalculateMatchReward(won, lost, false);
         if (IsHotseatGame) matchResultRecorder.TryRecord(() => PlayerAuthService.RecordHotseatResult(
             GetProfileMatchMode(), winner + " wins", winner + " won", matchResultRecorder.MatchId));
+        else if (IsBotPractice) matchResultRecorder.TryRecord(() => PlayerAuthService.RecordPracticeResult(
+            GetProfileOpponentName(), won ? "Win" : "Lose", winner + " won", matchResultRecorder.MatchId));
         else if (dotNetState == null) matchResultRecorder.TryRecord(() => PlayerAuthService.RecordGameResult(
                 won,
                 lost,
@@ -2224,6 +2233,8 @@ public partial class ChessGame : MonoBehaviour
         MatchReward reward = CalculateMatchReward(false, false, true);
         if (IsHotseatGame) matchResultRecorder.TryRecord(() => PlayerAuthService.RecordHotseatResult(
             GetProfileMatchMode(), "Draw", reason, matchResultRecorder.MatchId));
+        else if (IsBotPractice) matchResultRecorder.TryRecord(() => PlayerAuthService.RecordPracticeResult(
+            GetProfileOpponentName(), "Draw", reason, matchResultRecorder.MatchId));
         else if (dotNetState == null) matchResultRecorder.TryRecord(() => PlayerAuthService.RecordGameResult(
                 false,
                 false,
@@ -2251,7 +2262,7 @@ public partial class ChessGame : MonoBehaviour
         if (aramMode)
             return "ARAM";
         if (botMode)
-            return "Bot";
+            return IsBotPractice ? "Bot Practice" : "Bot Challenge";
         if (serverAuthoritativeMode)
             return "Online";
         if (restrictInputToControlledTeam)
@@ -2282,6 +2293,7 @@ public partial class ChessGame : MonoBehaviour
 
     private MatchReward CalculateMatchReward(bool won, bool lost, bool draw)
     {
+        if (IsBotPractice) return MatchReward.None;
         if (botMode)
             return MatchRewardPolicy.CalculateBotReward(botDifficulty, won, lost, draw);
 
@@ -2470,6 +2482,7 @@ public partial class ChessGame : MonoBehaviour
                 importedLocalClassicState, localClassicOrientation);
             RebindLocalClassicPieces();
         }
+        ResetBotHistory();
         turnSelectionUI?.SetTurn(currentTurn);
         RefreshLocalInteractionState();
         UpdateCheckWarningForCurrentTurn();
@@ -2558,6 +2571,7 @@ public partial class ChessGame : MonoBehaviour
 
     private void NotifyMoveCommitted(ChessMove move)
     {
+        RecordBotMove(move);
         if (!suppressMoveCommittedEvent)
             MoveCommitted?.Invoke(move);
 

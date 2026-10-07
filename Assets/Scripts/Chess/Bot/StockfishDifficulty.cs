@@ -16,6 +16,8 @@ public sealed class StockfishDifficultyProfile
     public StockfishDifficulty Difficulty { get; }
     public string DisplayName { get; }
     public string EstimatedRating { get; }
+    public string RatingGuidance { get; }
+    public string RatingTooltip => RatingGuidance + "\n\nEstimated training Elo. These bots have not been calibrated against human ratings yet; use this as a rough guide, then adjust after a few games.";
     public int SearchDepth { get; }
     public int MultiPv { get; }
     public int MinimumThinkTimeMs { get; }
@@ -44,11 +46,13 @@ public sealed class StockfishDifficultyProfile
         int minimumThinkTimeMs,
         float bestMoveChance,
         int targetCentipawnLoss,
-        int maximumCentipawnLoss)
+        int maximumCentipawnLoss,
+        string ratingGuidance = "")
     {
         Difficulty = difficulty;
         DisplayName = displayName;
         EstimatedRating = estimatedRating;
+        RatingGuidance = ratingGuidance;
         SearchDepth = searchDepth;
         MultiPv = multiPv;
         MinimumThinkTimeMs = minimumThinkTimeMs;
@@ -78,9 +82,26 @@ public static class StockfishDifficultyProfiles
     });
 
     private static StockfishDifficultyProfile Create(StockfishDifficulty id,int level,string name,string story,string avatar,
-        string style,int depth,int pv,int delay,float best,int target,int maximum) =>
-        new StockfishDifficultyProfile(id,"Level " + level,string.Empty,depth,pv,delay,best,target,maximum)
+        string style,int depth,int pv,int delay,float best,int target,int maximum)
+    {
+        string[] ratings={"250","400","550","700","850","1000","1200","1400","1600","1800","2100","2400"};
+        string[] guidance={
+            "Level 1 · First games. For players learning piece movement, checks and safe squares.",
+            "Level 2 · New players. Practise defending pieces and noticing immediate threats.",
+            "Level 3 · Early beginners. Try simple captures, forks and one-move tactics.",
+            "Level 4 · Developing beginners. Work on opening basics and avoiding hanging pieces.",
+            "Level 5 · Improving players. Practise short combinations and making a plan.",
+            "Level 6 · Around 1000. For players comfortable with the rules and common tactical patterns.",
+            "Level 7 · Club improvers. Practise calculating a few moves ahead and improving piece activity.",
+            "Level 8 · Intermediate club play. Work on positional plans and converting an advantage.",
+            "Level 9 · Strong club practice. Expect sharper tactics and fewer obvious opportunities.",
+            "Level 10 · Advanced practice. Test calculation, defence and patience under pressure.",
+            "Level 11 · Expert-level practice. For experienced players seeking demanding positions.",
+            "Level 12 · The toughest opponent. For advanced players who want a serious calculation challenge."
+        };
+        return new StockfishDifficultyProfile(id,"Level " + level,ratings[level-1],depth,pv,delay,best,target,maximum,guidance[level-1])
             .WithCharacter(level,name,story,avatar,style);
+    }
 
     public static StockfishDifficultyProfile Get(StockfishDifficulty difficulty)
     {

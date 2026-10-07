@@ -21,6 +21,7 @@ public sealed partial class ChessGame : MonoBehaviour
     private readonly HudCoordinator aramCoordinator=new HudCoordinator();
     public bool IsAramGame { get=>aramMode; set=>aramMode=value; }
     public bool IsBotGame { get=>botMode; set=>botMode=value; }
+    public bool IsBotPractice => false;
     public bool PauseLocked { get=>pauseLocked; set=>pauseLocked=value; }
     public PieceTeam CurrentTurn { get=>currentTurn;set=>currentTurn=value; }
     public PieceTeam PlayerTeam { get=>playerTeam;set=>playerTeam=value; }
@@ -46,6 +47,7 @@ public static class BotCompanionView
 {
     public static float BottomInset(ChessGame game)=>156;
 }
+public static class BotPracticeView { public static float ToolbarWidth(ChessGame game)=>0; }
 public sealed class HudCoordinator { public AramBuffRuntime Runtime; public bool IsActive => Runtime && Runtime.IsActive; }
 public sealed class ChessPiece : MonoBehaviour { public PieceTeam Team; public PieceType Type; }
 public sealed class ChessTurnSelectionUI : MonoBehaviour

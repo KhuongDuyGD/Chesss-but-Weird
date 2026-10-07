@@ -29,6 +29,7 @@ public sealed class AnalysisBoardView : MonoBehaviour
     private bool lastOnline;
     private bool lastBot;
     private float lastCompanionBottom;
+    private float lastPracticeWidth;
     private Vector2 lastSize;
     private string preferenceMode;
     private TextMeshProUGUI whiteMoves,blackMoves,whiteBuff,blackBuff;
@@ -72,7 +73,7 @@ public sealed class AnalysisBoardView : MonoBehaviour
     {
         if(!visible||!game||activeInstance!=this)return;
         bool modeChanged=LoadPreference();
-        if(modeChanged||root.rect.size!=lastSize||lastBottom!=game.StatisticsHudBottom||lastAram!=game.IsAramGame||lastOnline!=game.UsesDotNetOnline||lastBot!=game.IsBotGame||lastCompanionBottom!=BotCompanionView.BottomInset(game))Layout();
+        if(modeChanged||root.rect.size!=lastSize||lastBottom!=game.StatisticsHudBottom||lastAram!=game.IsAramGame||lastOnline!=game.UsesDotNetOnline||lastBot!=game.IsBotGame||lastCompanionBottom!=BotCompanionView.BottomInset(game)||lastPracticeWidth!=BotPracticeView.ToolbarWidth(game))Layout();
         RefreshCameraHint();
         if(Time.unscaledTime<nextRefresh)return;nextRefresh=Time.unscaledTime+.1f;Refresh();
     }
@@ -153,6 +154,7 @@ public sealed class AnalysisBoardView : MonoBehaviour
     {
         var r=MatchHudStyle.Rect(parent,label,Vector2.zero,Vector2.one,Vector2.zero,Vector2.zero);MatchHudStyle.Surface(r,false);
         name=MatchHudStyle.Text(r,"Name",label,20);
+        name.enableAutoSizing=true;name.fontSizeMin=14;name.fontSizeMax=20;
         name.rectTransform.anchorMin=name.rectTransform.anchorMax=Vector2.one*.5f;
         name.rectTransform.sizeDelta=new Vector2(280,32);name.rectTransform.anchoredPosition=Vector2.zero;
         state=MatchHudStyle.Text(r,"Turn",label,20);
@@ -164,7 +166,8 @@ public sealed class AnalysisBoardView : MonoBehaviour
     {var label=MatchHudStyle.Text(parent,name,"",19);MatchHudStyle.Place(label.rectTransform,Vector2.one*.5f,size,position);return label;}
     private void Layout()
     {
-        Canvas.ForceUpdateCanvases();lastSize=root.rect.size;float width=Mathf.Min(620,lastSize.x-410),card=(width-10)/2;
+        Canvas.ForceUpdateCanvases();lastSize=root.rect.size;lastPracticeWidth=BotPracticeView.ToolbarWidth(game);
+        float width=Mathf.Min(620,lastSize.x-410-lastPracticeWidth),card=(width-10)/2;
         float cardHeight=game.UsesDotNetOnline?78:42;
         MatchHudStyle.Place(top,new Vector2(0,1),new Vector2(width,cardHeight),new Vector2(20+width/2,-10-cardHeight/2));
         MatchHudStyle.Place(whiteCard,new Vector2(0,.5f),new Vector2(card,cardHeight),new Vector2(card/2,0));
@@ -205,7 +208,7 @@ public sealed class AnalysisBoardView : MonoBehaviour
     {
         top.gameObject.SetActive(!focus||game.UsesDotNetOnline);journal.gameObject.SetActive(expanded);
         buffSummary.gameObject.SetActive(game.IsAramGame);
-        float statusWidth=Mathf.Min(620,lastSize.x-410);
+        float statusWidth=Mathf.Min(620,lastSize.x-410-(focus?lastPracticeWidth:0));
         MatchHudStyle.Place(statusRect,new Vector2(0,1),new Vector2(statusWidth,36),new Vector2(20+statusWidth/2,game.UsesDotNetOnline?-112:focus?-30:-72));
         MatchHudStyle.Place(controls,Vector2.one,new Vector2(330,38),new Vector2(-185,-30));
         ((RectTransform)journalButton.transform).SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical,38);

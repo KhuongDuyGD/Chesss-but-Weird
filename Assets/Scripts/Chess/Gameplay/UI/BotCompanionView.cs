@@ -27,6 +27,8 @@ public sealed class BotCompanionView : MonoBehaviour
     private bool muted,wasOver,hasInteracted,profileLoaded,openingPending;
     private StockfishDifficulty loadedDifficulty;
     private BotMoveQuality? pendingReaction;
+    private string pendingHint;
+    private bool showingHint;
 
     public static float BottomInset(ChessGame source)
     {
@@ -86,7 +88,9 @@ public sealed class BotCompanionView : MonoBehaviour
         }
         muted=PlayerPrefs.GetInt("Bot.ChatMuted",0)!=0;
         game.LocalGameRestarted+=Reset;game.ReturnedToMainMenu+=Hide;
+        game.BotPositionRestoring+=DismissForUndo;
         controller.PlayerMoveAssessed+=OnMoveAssessed;
+        controller.HintReady+=OnHintReady;
         controller.ActivityChanged+=OnActivityChanged;
         DismissDialogue();canvasObject.SetActive(false);
     }
@@ -96,13 +100,16 @@ public sealed class BotCompanionView : MonoBehaviour
     private void Reset()
     {
         wasOver=false;hasInteracted=false;openingPending=true;pendingReaction=null;lastError=null;lastLine=null;nextClick=0;
+        if(pendingHint!=controller.HintText)pendingHint=null;
         var profile=StockfishDifficultyProfiles.Get(controller.Difficulty);
         loadedDifficulty=controller.Difficulty;profileLoaded=true;
         portrait.sprite=BotAvatarCatalog.Get(profile);nameLabel.text=profile.BotName+" / "+profile.DisplayName;
         avatarButton.gameObject.name="Bot avatar";
         DismissDialogue();canvasObject.SetActive(true);RefreshActivity();
     }
-    private void Hide(){DismissDialogue();activityPanel.gameObject.SetActive(false);activityLabel.text=string.Empty;canvasObject.SetActive(false);wasOver=false;profileLoaded=false;openingPending=false;pendingReaction=null;}
+    private void Hide(){DismissDialogue();activityPanel.gameObject.SetActive(false);activityLabel.text=string.Empty;canvasObject.SetActive(false);wasOver=false;profileLoaded=false;openingPending=false;pendingReaction=null;pendingHint=null;}
+    private void DismissForUndo(){pendingReaction=null;pendingHint=null;lastError=null;openingPending=false;DismissDialogue();}
+    private void OnHintReady(string line){pendingHint=line;}
     private void OnActivityChanged(string value)=>RefreshActivity();
     private void RefreshActivity()
     {
@@ -138,6 +145,7 @@ public sealed class BotCompanionView : MonoBehaviour
     }
     private void ShowDialogue(string line,bool recovery)
     {
+        showingHint=false;
         if(string.IsNullOrWhiteSpace(line)){DismissDialogue();return;}
         lastLine=line;bubble.gameObject.SetActive(true);speech.text=line;
         speech.maxVisibleCharacters=int.MaxValue;
@@ -152,6 +160,7 @@ public sealed class BotCompanionView : MonoBehaviour
     }
     private void DismissDialogue()
     {
+        showingHint=false;
         playback.Stop();
         if(bubble)bubble.gameObject.SetActive(false);
         if(speech){speech.text=string.Empty;speech.maxVisibleCharacters=0;}
@@ -165,6 +174,8 @@ public sealed class BotCompanionView : MonoBehaviour
         // Let the final sentence remain visible above ResultMenuView's dim overlay (order 2000).
         canvasObject.GetComponent<Canvas>().sortingOrder=game.GameOver?2001:19;
         RefreshActivity();
+        if(showingHint&&string.IsNullOrEmpty(controller.HintText))DismissDialogue();
+        if(pendingHint!=null&&pendingHint!=controller.HintText)pendingHint=null;
         string error=game.GameOver||game.IsMatchEnding?null:controller.ErrorMessage;
         if(!string.IsNullOrEmpty(error))
         {
@@ -175,9 +186,14 @@ public sealed class BotCompanionView : MonoBehaviour
         {
             if(game.GameOver&&!wasOver)
             {wasOver=true;openingPending=false;pendingReaction=null;Say(game.Status==ChessGame.ChessGameStatus.Draw?BotSpeechMoment.Draw:game.WinningTeam==game.PlayerTeam?BotSpeechMoment.Lose:BotSpeechMoment.Win);}
+            else if(pendingHint!=null&&game.IsBotPractice&&!game.IsMatchEnding)
+            {
+                string line=pendingHint;pendingHint=null;openingPending=false;pendingReaction=null;
+                ShowDialogue(line,false);showingHint=true;
+            }
             else if(openingPending&&!game.GameOver)
             {openingPending=false;hasInteracted=true;Say(BotSpeechMoment.Opening);}
-            else if(pendingReaction.HasValue)
+            else if(pendingReaction.HasValue&&!showingHint)
             {
                 var quality=pendingReaction.Value;pendingReaction=null;
                 Say(quality==BotMoveQuality.Brilliant?BotSpeechMoment.Brilliant:quality==BotMoveQuality.Great?BotSpeechMoment.Great:BotSpeechMoment.Blunder);
@@ -189,8 +205,8 @@ public sealed class BotCompanionView : MonoBehaviour
     }
     private void OnDestroy()
     {
-        if(game){game.LocalGameRestarted-=Reset;game.ReturnedToMainMenu-=Hide;}
-        if(controller){controller.PlayerMoveAssessed-=OnMoveAssessed;controller.ActivityChanged-=OnActivityChanged;}
+        if(game){game.LocalGameRestarted-=Reset;game.ReturnedToMainMenu-=Hide;game.BotPositionRestoring-=DismissForUndo;}
+        if(controller){controller.PlayerMoveAssessed-=OnMoveAssessed;controller.ActivityChanged-=OnActivityChanged;controller.HintReady-=OnHintReady;}
         if(canvasObject)Destroy(canvasObject);
         if(activeInstance==this)activeInstance=null;
     }

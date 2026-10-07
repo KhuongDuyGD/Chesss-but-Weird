@@ -14,7 +14,12 @@ public sealed class StockfishBotController : MonoBehaviour
     private StockfishUciClient client;
     private StockfishUciClient reviewClient;
     private CancellationTokenSource reviewCancellation;
-    private string lastPositionFen;
+    private StockfishPosition lastPosition;
+    private StockfishUciClient hintClient;
+    private CancellationTokenSource hintCancellation;
+    private int hintSequence;
+    private static readonly StockfishDifficultyProfile HintProfile = new StockfishDifficultyProfile(
+        StockfishDifficulty.Expert, "Practice hint", string.Empty, 10, 1, 0, 1, 0, 0);
     private int reviewSequence;
     private CancellationTokenSource turnCancellation;
     private bool botGameActive;
@@ -29,8 +34,14 @@ public sealed class StockfishBotController : MonoBehaviour
     public StockfishDifficulty Difficulty => difficulty;
     public string ErrorMessage { get; private set; }
     public string Activity { get; private set; } = string.Empty;
+    public string HintText { get; private set; } = string.Empty;
+    public bool IsHintThinking { get; private set; }
+    public bool CanRequestHint => botGameActive && chessGame && chessGame.IsBotPractice && chessGame.BotOptions.AllowHints &&
+        chessGame.GameStarted && !chessGame.GameOver && !chessGame.IsMatchEnding && !chessGame.InputLocked &&
+        !chessGame.PauseLocked && !chessGame.HasPendingPromotion && chessGame.CurrentTurn == chessGame.PlayerTeam && !IsHintThinking;
     public event Action<string> ActivityChanged;
     public event Action<BotMoveQuality> PlayerMoveAssessed;
+    public event Action<string> HintReady;
 
     private void SetActivity(string value) { Activity = value; ActivityChanged?.Invoke(value); }
 
@@ -50,11 +61,17 @@ public sealed class StockfishBotController : MonoBehaviour
         chessGame.LocalGameRestarted += HandleLocalGameRestarted;
         chessGame.ContentReady += HandleContentReady;
         chessGame.MatchEnding += HandleMatchEnding;
+        chessGame.BotPositionRestoring += HandleBotPositionRestoring;
+        chessGame.BotPositionRestored += HandleBotPositionRestored;
         var companion = gameObject.AddComponent<BotCompanionView>();
         companion.Initialize(chessGame, this);
+        gameObject.AddComponent<BotPracticeView>().Initialize(chessGame, this);
     }
 
     public void StartBotGame(PieceTeam playerTeam, StockfishDifficulty selectedDifficulty)
+        => StartBotGame(playerTeam, selectedDifficulty, BotGameOptions.Challenge);
+
+    public void StartBotGame(PieceTeam playerTeam, StockfishDifficulty selectedDifficulty, BotGameOptions options)
     {
         CancelPendingTurn();
         gameGeneration++;
@@ -65,27 +82,29 @@ public sealed class StockfishBotController : MonoBehaviour
         client?.Dispose(); client = null;
         botTeam = playerTeam == PieceTeam.White ? PieceTeam.Black : PieceTeam.White;
         GameMusicManager.PlayInGameMusic(true, difficulty);
-        chessGame.BeginBotGame(playerTeam, difficulty);
-        lastPositionFen=chessGame.ExportFen();
+        CancelHint();
+        chessGame.BeginBotGame(playerTeam, difficulty, options);
+        lastPosition=chessGame.BotEnginePosition;
         QueueBotTurnIfNeeded();
     }
 
     private void HandleMoveCommitted(ChessMove move)
     {
-        string before=lastPositionFen;
-        lastPositionFen=chessGame.ExportFen();
-        if(botGameActive&&!chessGame.GameOver&&!chessGame.IsMatchEnding&&!string.IsNullOrEmpty(before)&&FenCodec.Parse(before).Turn==(Team)chessGame.PlayerTeam)
+        CancelHint();
+        StockfishPosition before=lastPosition;
+        lastPosition=chessGame.BotEnginePosition;
+        if(botGameActive&&!chessGame.GameOver&&!chessGame.IsMatchEnding&&before!=null&&FenCodec.Parse(before.Fen).Turn==(Team)chessGame.PlayerTeam)
         {
             reviewCancellation?.Cancel();reviewCancellation?.Dispose();
             reviewCancellation=new CancellationTokenSource(3500);
             int sequence=++reviewSequence;
             var played=new Move(new Square(move.from.x,move.from.y),new Square(move.to.x,move.to.y),
                 move.hasPromotion?(PieceKind?)move.promotionType:null);
-            _=ReviewPlayerMoveAsync(before,lastPositionFen,played,gameGeneration,sequence,reviewCancellation.Token);
+            _=ReviewPlayerMoveAsync(before,lastPosition,played,gameGeneration,sequence,reviewCancellation.Token);
         }
         QueueBotTurnIfNeeded();
     }
-    private async Task ReviewPlayerMoveAsync(string before,string after,Move played,int generation,int sequence,CancellationToken token)
+    private async Task ReviewPlayerMoveAsync(StockfishPosition before,StockfishPosition after,Move played,int generation,int sequence,CancellationToken token)
     {
         try
         {
@@ -101,7 +120,7 @@ public sealed class StockfishBotController : MonoBehaviour
     private void ResetReview()
     {
         reviewSequence++;reviewCancellation?.Cancel();reviewCancellation?.Dispose();reviewCancellation=null;
-        reviewClient?.Dispose();reviewClient=null;lastPositionFen=null;
+        reviewClient?.Dispose();reviewClient=null;lastPosition=null;
     }
     private void HandleContentReady()
     {
@@ -116,7 +135,8 @@ public sealed class StockfishBotController : MonoBehaviour
         CancelPendingTurn();
         gameGeneration++;
         ErrorMessage = null;
-        ResetReview();lastPositionFen=chessGame.ExportFen();
+        CancelHint();
+        ResetReview();lastPosition=chessGame.BotEnginePosition;
         client?.Dispose(); client = null;
         GameMusicManager.PlayInGameMusic(true, difficulty);
         QueueBotTurnIfNeeded();
@@ -129,6 +149,7 @@ public sealed class StockfishBotController : MonoBehaviour
         CancelPendingTurn();
         ErrorMessage = null;
         ResetReview();
+        CancelHint();
         client?.Dispose(); client = null;
     }
 
@@ -139,7 +160,83 @@ public sealed class StockfishBotController : MonoBehaviour
         CancelPendingTurn();
         ErrorMessage = null;
         ResetReview();
+        CancelHint();
         client?.Dispose(); client = null;
+    }
+
+    private void HandleBotPositionRestoring()
+    {
+        gameGeneration++;
+        CancelPendingTurn(); CancelHint(); ResetReview();
+        ErrorMessage = null;
+        client?.Dispose(); client = null;
+    }
+
+    private void HandleBotPositionRestored()
+    {
+        lastPosition = chessGame.BotEnginePosition;
+        QueueBotTurnIfNeeded();
+    }
+
+    public void RequestHint()
+    {
+        if (!CanRequestHint) return;
+        CancelHint();
+        hintCancellation = new CancellationTokenSource();
+        IsHintThinking = true; HintText = "Finding a hint...";
+        _ = FindHintAsync(chessGame.BotEnginePosition, gameGeneration, hintSequence, hintCancellation.Token);
+    }
+
+    private async Task FindHintAsync(StockfishPosition requested, int generation, int sequence, CancellationToken token)
+    {
+        try
+        {
+            hintClient = new StockfishUciClient();
+            var choices = await hintClient.FindCandidatesAsync(requested, HintProfile, token);
+            token.ThrowIfCancellationRequested();
+            if (generation != gameGeneration || sequence != hintSequence) return;
+            if (chessGame.ExportFen() != requested.Fen || chessGame.GameOver || chessGame.IsMatchEnding ||
+                chessGame.InputLocked || chessGame.HasPendingPromotion || chessGame.CurrentTurn != chessGame.PlayerTeam)
+            { HintText = string.Empty; return; }
+            foreach (var choice in choices.OrderByDescending(c => c.ScoreCentipawns))
+            {
+                if (!StockfishMoveAdapter.TryParseUci(choice.Move, out var move) ||
+                    !ClassicRules.TryApply(FenCodec.Parse(requested.Fen), move, out _)) continue;
+                var piece = FenCodec.Parse(requested.Fen).Board.GetPiece(move.From);
+                HintText = "Try moving your " + piece.Kind.ToString().ToLowerInvariant() + " from " + move.From + " to " + move.To +
+                    (move.Promotion.HasValue ? " and promoting it to a " + move.Promotion.Value.ToString().ToLowerInvariant() : string.Empty) + ".";
+                if (!chessGame.PauseLocked && !chessGame.InputLocked) chessGame.ShowBotPracticeHint(move);
+                HintReady?.Invoke(HintText);
+                return;
+            }
+            HintText = "No hint is available for this position.";
+            HintReady?.Invoke(HintText);
+        }
+        catch (OperationCanceledException) { }
+        catch (Exception)
+        {
+            if (!token.IsCancellationRequested && generation == gameGeneration && sequence == hintSequence)
+            {
+                HintText = "Hint unavailable. Try again.";
+                HintReady?.Invoke(HintText);
+            }
+        }
+        finally
+        {
+            if (generation == gameGeneration && sequence == hintSequence)
+            {
+                IsHintThinking = false;
+                hintClient?.Dispose(); hintClient = null;
+            }
+        }
+    }
+
+    private void CancelHint()
+    {
+        hintSequence++;
+        hintCancellation?.Cancel(); hintCancellation?.Dispose(); hintCancellation = null;
+        hintClient?.Dispose(); hintClient = null;
+        IsHintThinking = false; HintText = string.Empty;
     }
 
     private void QueueBotTurnIfNeeded()
@@ -159,7 +256,8 @@ public sealed class StockfishBotController : MonoBehaviour
 
         try
         {
-            string requestedFen = chessGame.ExportFen();
+            StockfishPosition requestedPosition = chessGame.BotEnginePosition;
+            string requestedFen = requestedPosition.Fen;
             ErrorMessage = null;
             // MoveCommitted precedes result adjudication and its final animation.
             // Checkmate/stalemate has no next bot turn, rather than a failed engine search.
@@ -174,7 +272,7 @@ public sealed class StockfishBotController : MonoBehaviour
                 try
                 {
                     if (client == null) client = new StockfishUciClient();
-                    candidates = await client.FindCandidatesAsync(requestedFen, profile, cancellationToken);
+                    candidates = await client.FindCandidatesAsync(requestedPosition, profile, cancellationToken);
                     cancellationToken.ThrowIfCancellationRequested();
                     candidates = candidates.Where(candidate => candidate != null &&
                         StockfishMoveAdapter.TryParseUci(candidate.Move, out Move legalMove) &&
@@ -211,7 +309,7 @@ public sealed class StockfishBotController : MonoBehaviour
             if (!ClassicRules.TryApply(FenCodec.Parse(requestedFen),move,out var committed)||!chessGame.ApplyBotMove(move))
                 throw new InvalidOperationException($"The game rejected Stockfish move {selected.Move}.");
             // Controlled moves suppress MoveCommitted; promotion commits after animation, so use its complete domain state.
-            lastPositionFen=FenCodec.Write(committed.State);
+            lastPosition=requestedPosition.Play(move);
         }
         catch (OperationCanceledException)
         {
@@ -284,10 +382,13 @@ public sealed class StockfishBotController : MonoBehaviour
             chessGame.LocalGameRestarted -= HandleLocalGameRestarted;
             chessGame.ContentReady -= HandleContentReady;
             chessGame.MatchEnding -= HandleMatchEnding;
+            chessGame.BotPositionRestoring -= HandleBotPositionRestoring;
+            chessGame.BotPositionRestored -= HandleBotPositionRestored;
         }
 
         CancelPendingTurn();
         ResetReview();
+        CancelHint();
         client?.Dispose();
         client = null;
     }

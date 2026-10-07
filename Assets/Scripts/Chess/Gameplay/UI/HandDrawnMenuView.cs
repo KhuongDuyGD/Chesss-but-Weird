@@ -545,7 +545,7 @@ public class HandDrawnMenuView : MonoBehaviour
     private void BuildBotDifficultyScreen()
     {
         botDifficultyScreen = CreateScreen("Bot Difficulty");
-        BotRosterView.Build(botDifficultyScreen, owner.SelectBotDifficulty, () => ShowModeSelection());
+        BotRosterView.Build(botDifficultyScreen, owner.SelectBotMatch, () => ShowModeSelection());
     }
 
     private Sprite CreateRuntimeSprite(Texture2D texture, Rect topLeftCrop)

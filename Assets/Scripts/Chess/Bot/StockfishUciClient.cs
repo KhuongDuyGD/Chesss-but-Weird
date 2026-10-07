@@ -7,6 +7,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
+using ChessButWeird.Application;
 
 public sealed class StockfishCandidate
 {
@@ -47,13 +48,18 @@ public sealed class StockfishUciClient : IDisposable
 
     public bool IsRunning { get { lock (stateLock) return process != null && !process.HasExited; } }
 
-    public async Task<IReadOnlyList<StockfishCandidate>> FindCandidatesAsync(
+    public Task<IReadOnlyList<StockfishCandidate>> FindCandidatesAsync(
         string fen,
         StockfishDifficultyProfile profile,
         CancellationToken cancellationToken)
+        => FindCandidatesAsync(StockfishPosition.FromFen(fen), profile, cancellationToken);
+
+    public async Task<IReadOnlyList<StockfishCandidate>> FindCandidatesAsync(
+        StockfishPosition position,
+        StockfishDifficultyProfile profile,
+        CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(fen))
-            throw new ArgumentException("A FEN position is required.", nameof(fen));
+        if (position == null) throw new ArgumentNullException(nameof(position));
         if (profile == null)
             throw new ArgumentNullException(nameof(profile));
 
@@ -70,7 +76,7 @@ public sealed class StockfishUciClient : IDisposable
             lock (stateLock)
                 activeSearch = search;
 
-            SendCommand($"position fen {fen}");
+            SendCommand(position.UciCommand);
             SendCommand($"go depth {profile.SearchDepth}");
             var result = await AwaitSignalAsync(search.Completion.Task, cancellationToken, commandTimeoutMs);
             cancellationToken.ThrowIfCancellationRequested();

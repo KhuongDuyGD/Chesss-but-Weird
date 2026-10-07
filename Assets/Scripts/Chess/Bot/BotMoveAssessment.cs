@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using ChessButWeird.Domain;
+using ChessButWeird.Application;
 
 public enum BotMoveQuality { Ordinary, Great, Brilliant, Blunder }
 
@@ -15,12 +16,16 @@ public static class BotMoveAssessment
     private static readonly StockfishDifficultyProfile ReplyProfile=new StockfishDifficultyProfile(
         StockfishDifficulty.Medium,"Move reply",string.Empty,8,1,0,1,0,0);
 
-    public static async Task<BotMoveQuality> AssessAsync(StockfishUciClient engine,string beforeFen,string afterFen,Move played,CancellationToken cancellation)
+    public static Task<BotMoveQuality> AssessAsync(StockfishUciClient engine,string beforeFen,string afterFen,Move played,CancellationToken cancellation)
+        => AssessAsync(engine,StockfishPosition.FromFen(beforeFen),StockfishPosition.FromFen(afterFen),played,cancellation);
+
+    public static async Task<BotMoveQuality> AssessAsync(StockfishUciClient engine,StockfishPosition beforePosition,StockfishPosition afterPosition,Move played,CancellationToken cancellation)
     {
+        string beforeFen=beforePosition.Fen,afterFen=afterPosition.Fen;
         var before=FenCodec.Parse(beforeFen);
         if(!ClassicRules.TryApply(before,played,out var applied)||FenCodec.Write(applied.State)!=afterFen)return BotMoveQuality.Ordinary;
-        var choices=await engine.FindCandidatesAsync(beforeFen,ReviewProfile,cancellation);
-        var replies=await engine.FindCandidatesAsync(afterFen,ReplyProfile,cancellation);
+        var choices=await engine.FindCandidatesAsync(beforePosition,ReviewProfile,cancellation);
+        var replies=await engine.FindCandidatesAsync(afterPosition,ReplyProfile,cancellation);
         if(choices.Count<2||replies.Count==0)return BotMoveQuality.Ordinary;
         string uci=played.From.ToString()+played.To.ToString();
         if(played.Promotion.HasValue)uci+="kqrbnp"[(int)played.Promotion.Value];

@@ -89,6 +89,12 @@ public static class PlayerAuthService
         if (IsGuestSession) SaveGuestProfile();
     }
     public static bool CanUseOnlineFeatures => IsAuthenticated && !IsGuestSession && AuthStorage.HasSession();
+    public static void RecordPracticeResult(string opponent, string result, string detail, string matchId)
+    {
+        if (CurrentProfile == null) return;
+        PlayerProfileStore.RecordMatch("Bot Practice", opponent, result, detail, matchId: matchId, countStats: false);
+        if (IsGuestSession) SaveGuestProfile();
+    }
 
     private static PlayerProfile LoadGuestProfile()
     {

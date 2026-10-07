@@ -44,6 +44,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
     private ResultMenuView resultMenu;
     private StockfishBotController botController;
     private StockfishDifficulty selectedBotDifficulty = StockfishDifficulty.Medium;
+    private BotGameOptions selectedBotOptions = BotGameOptions.Challenge;
     private string whitePlayerName;
     private string blackPlayerName;
     private float uiWidth = UiReferenceWidth;
@@ -178,6 +179,12 @@ public class ChessTurnSelectionUI : MonoBehaviour
         ShowSideSelection();
     }
 
+    public void SelectBotMatch(StockfishDifficulty difficulty, BotGameOptions options)
+    {
+        selectedBotOptions = options ?? BotGameOptions.Challenge;
+        SelectBotDifficulty(difficulty);
+    }
+
     public void ShowBotSkinSelection(PieceTeam selectedPlayerTeam)
     {
         showCheckWarning = false;
@@ -274,7 +281,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
     private void StartBotGameWithConfiguredSkins(PieceTeam playerTeam)
     {
         if (botController)
-            botController.StartBotGame(playerTeam, selectedBotDifficulty);
+            botController.StartBotGame(playerTeam, selectedBotDifficulty, selectedBotOptions);
         else
             chessGame.BeginGame(playerTeam);
     }
