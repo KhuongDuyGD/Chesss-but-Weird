@@ -288,6 +288,7 @@ public partial class ChessGame : MonoBehaviour
 
     internal void ClearCosmeticPieces()
     {
+        GetComponent<CapturedPieceDisplay>()?.ResetDisplay();
         ResetDotNetPresentation();
         ClearLocalClassicSession();
         aramCoordinator?.EndMatch();
@@ -456,6 +457,12 @@ public partial class ChessGame : MonoBehaviour
             PrepareGame();
         }
         ClearLocalClassicSession();
+        var prisoners = GetComponent<CapturedPieceDisplay>();
+        if (!prisoners) prisoners = gameObject.AddComponent<CapturedPieceDisplay>();
+        prisoners.Initialize(this, chessboard);
+        var pieceNames = GetComponent<PieceHoverTooltip>();
+        if (!pieceNames) pieceNames = gameObject.AddComponent<PieceHoverTooltip>();
+        pieceNames.Initialize(this);
         matchResultRecorder.Begin(Guid.NewGuid().ToString("N"));
         currentTurn = firstTurn;
         moveHistoryFirstTurn = firstTurn;

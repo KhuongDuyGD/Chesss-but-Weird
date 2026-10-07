@@ -16,6 +16,7 @@ public sealed class SettingsMenuController : MonoBehaviour
     private static readonly int[] FpsOptions = { 0, 30, 60, 90, 120, 144, 165, 240 };
     private static readonly string[] GraphicOptions = { "Auto (Recommended)", "Low", "Medium", "High" };
     private static readonly string[] AntiAliasingOptions = { "Auto", "Off", "FXAA", "SMAA", "MSAA 2x", "MSAA 4x" };
+    private static readonly string[] ShadowOptions = { "Off", "On" };
     private static readonly Color Ink = new Color(0.15f, 0.20f, 0.22f);
     private static readonly Color MutedInk = new Color(0.36f, 0.42f, 0.43f);
     private static readonly Color Paper = new Color(1f, 0.985f, 0.94f);
@@ -32,6 +33,7 @@ public sealed class SettingsMenuController : MonoBehaviour
     private SettingDropdownControl graphicDropdown;
     private SettingDropdownControl fpsDropdown;
     private SettingDropdownControl antiAliasingDropdown;
+    private SettingDropdownControl shadowDropdown;
     private TextMeshProUGUI statusLabel;
     private int graphicPreset;
     private int fpsValue;
@@ -118,9 +120,10 @@ public sealed class SettingsMenuController : MonoBehaviour
         RectTransform display = BuildSection(panel, "Display", "Auto-tuned for this device, with manual overrides.", new Vector2(342f, -34f), new Color(0.94f, 0.95f, 0.88f), new Color(0.43f, 0.56f, 0.35f));
         musicControl = AddNumberControl(audio, "Music", new Vector2(0f, 25f), 0, 100, OnMusicChanged);
         soundControl = AddNumberControl(audio, "Sound effects", new Vector2(0f, -115f), 0, 100, OnSoundChanged);
-        graphicDropdown = AddDropdownControl(display, "Graphics quality", new Vector2(0f, 57f), GraphicOptions, OnGraphicDropdownChanged);
-        fpsDropdown = AddDropdownControl(display, "Frame rate limit", new Vector2(0f, -65f), GetFpsLabels(), OnFpsDropdownChanged);
-        antiAliasingDropdown = AddDropdownControl(display, "Anti-aliasing", new Vector2(0f, -187f), AntiAliasingOptions, OnAntiAliasingDropdownChanged);
+        graphicDropdown = AddDropdownControl(display, "Graphics quality", new Vector2(0f, 50f), GraphicOptions, OnGraphicDropdownChanged);
+        fpsDropdown = AddDropdownControl(display, "Frame rate limit", new Vector2(0f, -32f), GetFpsLabels(), OnFpsDropdownChanged);
+        antiAliasingDropdown = AddDropdownControl(display, "Anti-aliasing", new Vector2(0f, -114f), AntiAliasingOptions, OnAntiAliasingDropdownChanged);
+        shadowDropdown = AddDropdownControl(display, "Shadows", new Vector2(0f, -196f), ShadowOptions, OnShadowDropdownChanged);
 
         AddFrameEdge(panel, "Footer Divider", new Vector2(0f, -304f), new Vector2(1310f, 2f), new Color(0.15f, 0.20f, 0.22f, 0.15f));
         statusLabel = AddText(panel, "Settings Status", new Vector2(-315f, -356f), new Vector2(680f, 48f), 22f, TextAlignmentOptions.MidlineLeft, MutedInk);
@@ -158,10 +161,10 @@ public sealed class SettingsMenuController : MonoBehaviour
 
     private SettingDropdownControl AddDropdownControl(RectTransform parent, string label, Vector2 position, string[] options, Action<int> onChanged)
     {
-        RectTransform row = CreateChild(parent, $"{label} Row", position, new Vector2(556f, 112f));
-        AddText(row, $"{label} Label", new Vector2(0f, 31f), new Vector2(556f, 44f), 30f, TextAlignmentOptions.MidlineLeft, Ink).text = label;
+        RectTransform row = CreateChild(parent, $"{label} Row", position, new Vector2(556f, 82f));
+        AddText(row, $"{label} Label", new Vector2(0f, 21f), new Vector2(556f, 28f), 24f, TextAlignmentOptions.MidlineLeft, Ink).text = label;
 
-        RectTransform box = CreateChild(row, $"{label} Dropdown", new Vector2(0f, -25f), new Vector2(556f, 58f));
+        RectTransform box = CreateChild(row, $"{label} Dropdown", new Vector2(0f, -19f), new Vector2(556f, 44f));
         Image boxImage = box.gameObject.AddComponent<AntialiasedMenuImage>();
         boxImage.color = Paper;
         boxImage.raycastTarget = true;
@@ -172,7 +175,7 @@ public sealed class SettingsMenuController : MonoBehaviour
         HandDrawnPressable pressable = box.gameObject.AddComponent<HandDrawnPressable>();
         pressable.Configure(1.015f, 0.98f, 0.25f, new Color(1f, 0.96f, 0.72f, 1f));
 
-        TextMeshProUGUI valueLabel = AddText(box, $"{label} Value", new Vector2(-18f, 0f), new Vector2(472f, 48f), 29f, TextAlignmentOptions.MidlineLeft, Ink);
+        TextMeshProUGUI valueLabel = AddText(box, $"{label} Value", new Vector2(-18f, 0f), new Vector2(472f, 38f), 24f, TextAlignmentOptions.MidlineLeft, Ink);
         for (int i = 0; i < 2; i++)
         {
             Image stroke = AddImage(box, "Dropdown Chevron", null, new Vector2(236f + i * 10f, 0f), new Vector2(16f, 3f));
@@ -267,6 +270,7 @@ public sealed class SettingsMenuController : MonoBehaviour
         fpsValue = GameRuntimeSettings.AutomaticFrameRate ? 0 : ClosestFps(GameRuntimeSettings.TargetFps);
         fpsDropdown.SetSelectedIndex(FpsIndex(fpsValue), false);
         antiAliasingDropdown.SetSelectedIndex((int)GameRuntimeSettings.AntiAliasing, false);
+        shadowDropdown.SetSelectedIndex(GameRuntimeSettings.ShadowsEnabled ? 1 : 0, false);
     }
 
     private void OnMusicChanged(int value)
@@ -325,6 +329,13 @@ public sealed class SettingsMenuController : MonoBehaviour
         GameRuntimeSettings.ResetPerformanceToRecommended();
         RefreshFromSettings();
         SetStatus("Auto-detected: " + GameRuntimeSettings.RecommendedSettingsLabel);
+    }
+    private void OnShadowDropdownChanged(int index)
+    {
+        bool enabled = index == 1;
+        GameRuntimeSettings.ShadowsEnabled = enabled;
+        shadowDropdown.SetSelectedIndex(enabled ? 1 : 0, false);
+        SetStatus(enabled ? "Saved: shadows on" : "Saved: shadows off");
     }
 
     private void Close()

@@ -47,6 +47,19 @@ public class Chessboard : MonoBehaviour
     private bool interactionEnabled;
     private bool presentationVisible = true;
     private Transform cosmeticBoard;
+    // Measured centers/surface of the six gold pads in Tazji's arena (board units).
+    [Header("Prisoner Rails")]
+    [SerializeField] private float prisonRailX = 4.93f;
+    [SerializeField] private float prisonFirstRowZ = 3.15f;
+    [SerializeField] private float prisonRowSpacing = 1.26f;
+    [SerializeField] private float prisonSurfaceY = .036f;
+    public Vector3 GetPrisonSlotWorld(PieceTeam capturer, int slot)
+    {
+        float side = capturer == PieceTeam.White ? -1f : 1f;
+        var local = new Vector3(side * prisonRailX, prisonSurfaceY, -side * (prisonFirstRowZ - slot * prisonRowSpacing));
+        if (cosmeticBoard) return cosmeticBoard.TransformPoint(local);
+        return GetBoardCenterWorld() + TransformBoardLocalOffset(new Vector3(local.x * currentBoardLayout.tileWidth, local.y, local.z * currentBoardLayout.tileDepth));
+    }
     private bool generatedTilesBeforeCosmetic;
 
     // Board prefabs use an 8x8 playable area centered at origin, surface at local Y=0.

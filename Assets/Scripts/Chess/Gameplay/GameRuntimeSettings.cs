@@ -22,6 +22,7 @@ public static class GameRuntimeSettings
     private const string FpsKey = "cbw_settings_fps";
     private const string AutomaticFpsKey = "cbw_settings_fps_auto_v2";
     private const string AntiAliasingKey = "cbw_settings_antialiasing_v1";
+    private const string ShadowsKey = "cbw_settings_shadows_v1";
 
     private const int DefaultMusicVolume = 80;
     private const int DefaultSoundVolume = 100;
@@ -51,6 +52,16 @@ public static class GameRuntimeSettings
 
     public static bool AutomaticGraphics => PlayerPrefs.GetInt(AutomaticGraphicsKey, 1) != 0;
     public static bool AutomaticFrameRate => PlayerPrefs.GetInt(AutomaticFpsKey, 1) != 0;
+    public static bool ShadowsEnabled
+    {
+        get => PlayerPrefs.GetInt(ShadowsKey, 0) != 0;
+        set
+        {
+            PlayerPrefs.SetInt(ShadowsKey, value ? 1 : 0);
+            PlayerPrefs.Save();
+            ApplyShadows();
+        }
+    }
 
     public static int GraphicsPreset => AutomaticGraphics
         ? RecommendedGraphicsPreset
@@ -96,6 +107,7 @@ public static class GameRuntimeSettings
         ApplyQualityProfile(GraphicsPreset);
         ApplyFrameRate(TargetFps);
         ApplyAntiAliasing(AntiAliasing);
+        ApplyShadows();
         SceneManager.sceneLoaded -= HandleSceneLoaded;
         SceneManager.sceneLoaded += HandleSceneLoaded;
         Application.backgroundLoadingPriority = ThreadPriority.Low;
@@ -142,10 +154,12 @@ public static class GameRuntimeSettings
         PlayerPrefs.SetInt(AutomaticGraphicsKey, 1);
         PlayerPrefs.SetInt(AutomaticFpsKey, 1);
         PlayerPrefs.SetInt(AntiAliasingKey, (int)GameAntiAliasingMode.Auto);
+        PlayerPrefs.SetInt(ShadowsKey, 0);
         PlayerPrefs.Save();
         ApplyQualityProfile(RecommendedGraphicsPreset);
         ApplyFrameRate(RecommendedTargetFps);
         ApplyAntiAliasing(GameAntiAliasingMode.Auto);
+        ApplyShadows();
     }
 
     public static string GraphicsPresetLabel(int preset)
@@ -238,6 +252,21 @@ public static class GameRuntimeSettings
                 QualitySettings.realtimeReflectionProbes = true;
                 break;
         }
+        ApplyShadows();
+    }
+
+    private static void ApplyShadows()
+    {
+        bool enabled = ShadowsEnabled;
+        QualitySettings.shadows = enabled ? UnityEngine.ShadowQuality.All : UnityEngine.ShadowQuality.Disable;
+        foreach (var camera in Object.FindObjectsByType<Camera>(FindObjectsInactive.Include))
+        {
+            if (!camera || !camera.gameObject.scene.IsValid() ||
+                (camera.hideFlags & (HideFlags.DontSave | HideFlags.HideAndDontSave)) != 0) continue;
+            // URP uses per-camera shadow rendering; QualitySettings alone is insufficient.
+            camera.GetUniversalAdditionalCameraData().renderShadows = enabled;
+        }
+        ChessModelRendering.RefreshShadows(enabled);
     }
 
     private static void ApplyFrameRate(int fps)
@@ -270,6 +299,7 @@ public static class GameRuntimeSettings
 
         camera.allowMSAA = msaaSamples > 1;
         UniversalAdditionalCameraData cameraData = camera.GetUniversalAdditionalCameraData();
+        cameraData.renderShadows = ShadowsEnabled;
         cameraData.antialiasingQuality = AntialiasingQuality.High;
 
         switch (mode)
@@ -291,6 +321,7 @@ public static class GameRuntimeSettings
     private static void HandleSceneLoaded(Scene _, LoadSceneMode __)
     {
         ApplyAntiAliasing(AntiAliasing);
+        ApplyShadows();
     }
 
     private static GameAntiAliasingMode ResolveAntiAliasing(GameAntiAliasingMode mode, int graphicsPreset)

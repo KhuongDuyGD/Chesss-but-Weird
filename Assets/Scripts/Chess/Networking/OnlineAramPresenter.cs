@@ -232,6 +232,8 @@ internal sealed class OnlineAramPresenter : IDisposable
             savedFieldOfView = camera.fieldOfView; savedNearClipPlane = camera.nearClipPlane;
             savedOrbitEnabled = orbit && orbit.enabled; if (orbit) orbit.enabled = false;
             camera.orthographic = false; camera.fieldOfView = 60f; camera.nearClipPlane = .03f;
+            camera.ResetProjectionMatrix();
+            camera.nonJitteredProjectionMatrix = camera.projectionMatrix;
             var shooter = state.board.FirstOrDefault(p => p.team == team && p.kind == "King");
             var view = shooter == null ? null : game.OnlinePieceView(shooter.id);
             if (view)

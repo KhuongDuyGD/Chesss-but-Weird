@@ -51,6 +51,7 @@ public sealed class BoardSkinManager
         if (assets.IsDisposed || !BoardPrefab) return null;
         GameObject instance = UnityEngine.Object.Instantiate(BoardPrefab, parent, false);
         if (Data) SetTransform(instance.transform, Data.localPosition, Data.localRotation, Data.localScale);
+        ChessModelRendering.ApplySettings(instance);
         return instance;
     }
 
@@ -59,6 +60,7 @@ public sealed class BoardSkinManager
         if (assets.IsDisposed || !EnvironmentPrefab) return null;
         GameObject instance = UnityEngine.Object.Instantiate(EnvironmentPrefab, parent, false);
         if (Environment) SetTransform(instance.transform, Environment.localPosition, Environment.localRotation, Environment.localScale);
+        ChessModelRendering.ApplySettings(instance);
         return instance;
     }
 

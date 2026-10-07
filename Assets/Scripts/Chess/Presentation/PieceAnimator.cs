@@ -9,6 +9,7 @@ internal sealed class PieceAnimator
     private readonly Dictionary<ChessPiece, Coroutine> running = new Dictionary<ChessPiece, Coroutine>();
 
     public PieceAnimator(MonoBehaviour owner) { this.owner = owner; }
+    public bool IsAnimating(ChessPiece piece) => piece && running.ContainsKey(piece);
 
     public void Play(ChessPiece piece, Vector3 target, float duration, float arcHeight)
     {
