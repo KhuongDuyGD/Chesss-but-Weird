@@ -245,14 +245,21 @@ namespace ChessButWeird.Online
             if (Room == null) throw new ApiException("Create or join a room first.");
             var state = await Rest.StartRoomAsync(Room.roomId); await SubscribeAsync(state.matchId);
         }
-        public async Task LeaveAsync()
+        public Task LeaveAsync() => LeaveAsync(false);
+
+        public async Task LeaveAsync(bool requireAcknowledgement)
         {
             if (Ticket?.status == "Queued") await CancelQueueAsync();
             if (State?.IsActive == true)
             {
                 await ConnectAsync();
                 if (State.status == "AwaitingReady") Apply(await hub.InvokeAsync<MatchState>("DeclineMatch", State.matchId));
-                else await CommandAsync("Resign", false);
+                else
+                {
+                    var ack = await CommandAsync("Resign", false);
+                    if (requireAcknowledgement && !ack.accepted && State?.IsActive == true)
+                        throw new ApiException("The server did not accept leaving the match.", errorCode: ack.errorCode);
+                }
             }
             if (State != null) ignoredMatches.Add(State.matchId);
             if (Room?.status == "Open")

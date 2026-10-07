@@ -896,9 +896,15 @@ public partial class ChessGame : MonoBehaviour
 
     public void RestartToMainMenu()
     {
+        RestartToMainMenu(null);
+    }
+
+    public void RestartToMainMenu(Action onReturned)
+    {
         var loading = GetComponent<LoadingManager>();
-        if (loading && loading.HasMatchContent) { loading.ReturnToMenu(); return; }
+        if (loading && loading.HasMatchContent) { loading.ReturnToMenu(onReturned); return; }
         FinishReturnToMainMenu();
+        onReturned?.Invoke();
     }
 
     internal void FinishReturnToMainMenu()

@@ -1,0 +1,407 @@
+PASS Existing menu destinations are available
+PASS SP 01: Open Pause Menu pauses local play
+PASS Local pause actually prevents board selection
+PASS Singleplayer (1920, 1080): Pause Title fits
+PASS Singleplayer (1920, 1080): Pause Status fits
+PASS Singleplayer (1920, 1080): Label fits
+PASS Singleplayer (1920, 1080): Label fits
+PASS Singleplayer (1920, 1080): Label fits
+PASS Singleplayer (1920, 1080): Label fits
+PASS Singleplayer (1920, 1080): Label fits
+PASS Singleplayer (1920, 1080): Label fits
+PASS Singleplayer (1920, 1080): Resume stays in viewport
+PASS Singleplayer (1920, 1080): Restart Match stays in viewport
+PASS Singleplayer (1920, 1080): Settings stays in viewport
+PASS Singleplayer (1920, 1080): Leave Match stays in viewport
+PASS Singleplayer (1920, 1080): Main Menu stays in viewport
+PASS Singleplayer (1920, 1080): Quit Desktop stays in viewport
+PASS Singleplayer (1920, 1080): nonblank rendered ink
+PASS Singleplayer (1280, 720): Pause Title fits
+PASS Singleplayer (1280, 720): Pause Status fits
+PASS Singleplayer (1280, 720): Label fits
+PASS Singleplayer (1280, 720): Label fits
+PASS Singleplayer (1280, 720): Label fits
+PASS Singleplayer (1280, 720): Label fits
+PASS Singleplayer (1280, 720): Label fits
+PASS Singleplayer (1280, 720): Label fits
+PASS Singleplayer (1280, 720): Resume stays in viewport
+PASS Singleplayer (1280, 720): Restart Match stays in viewport
+PASS Singleplayer (1280, 720): Settings stays in viewport
+PASS Singleplayer (1280, 720): Leave Match stays in viewport
+PASS Singleplayer (1280, 720): Main Menu stays in viewport
+PASS Singleplayer (1280, 720): Quit Desktop stays in viewport
+PASS Singleplayer (1280, 720): nonblank rendered ink
+PASS Singleplayer (800, 600): Pause Title fits
+PASS Singleplayer (800, 600): Pause Status fits
+PASS Singleplayer (800, 600): Label fits
+PASS Singleplayer (800, 600): Label fits
+PASS Singleplayer (800, 600): Label fits
+PASS Singleplayer (800, 600): Label fits
+PASS Singleplayer (800, 600): Label fits
+PASS Singleplayer (800, 600): Label fits
+PASS Singleplayer (800, 600): Resume stays in viewport
+PASS Singleplayer (800, 600): Restart Match stays in viewport
+PASS Singleplayer (800, 600): Settings stays in viewport
+PASS Singleplayer (800, 600): Leave Match stays in viewport
+PASS Singleplayer (800, 600): Main Menu stays in viewport
+PASS Singleplayer (800, 600): Quit Desktop stays in viewport
+PASS Singleplayer (800, 600): nonblank rendered ink
+PASS Singleplayer (2560, 1080): Pause Title fits
+PASS Singleplayer (2560, 1080): Pause Status fits
+PASS Singleplayer (2560, 1080): Label fits
+PASS Singleplayer (2560, 1080): Label fits
+PASS Singleplayer (2560, 1080): Label fits
+PASS Singleplayer (2560, 1080): Label fits
+PASS Singleplayer (2560, 1080): Label fits
+PASS Singleplayer (2560, 1080): Label fits
+PASS Singleplayer (2560, 1080): Resume stays in viewport
+PASS Singleplayer (2560, 1080): Restart Match stays in viewport
+PASS Singleplayer (2560, 1080): Settings stays in viewport
+PASS Singleplayer (2560, 1080): Leave Match stays in viewport
+PASS Singleplayer (2560, 1080): Main Menu stays in viewport
+PASS Singleplayer (2560, 1080): Quit Desktop stays in viewport
+PASS Singleplayer (2560, 1080): nonblank rendered ink
+PASS Singleplayer (1080, 1920): Pause Title fits
+PASS Singleplayer (1080, 1920): Pause Status fits
+PASS Singleplayer (1080, 1920): Label fits
+PASS Singleplayer (1080, 1920): Label fits
+PASS Singleplayer (1080, 1920): Label fits
+PASS Singleplayer (1080, 1920): Label fits
+PASS Singleplayer (1080, 1920): Label fits
+PASS Singleplayer (1080, 1920): Label fits
+PASS Singleplayer (1080, 1920): Resume stays in viewport
+PASS Singleplayer (1080, 1920): Restart Match stays in viewport
+PASS Singleplayer (1080, 1920): Settings stays in viewport
+PASS Singleplayer (1080, 1920): Leave Match stays in viewport
+PASS Singleplayer (1080, 1920): Main Menu stays in viewport
+PASS Singleplayer (1080, 1920): Quit Desktop stays in viewport
+PASS Singleplayer (1080, 1920): nonblank rendered ink
+PASS SP 02: Resume restores control immediately
+PASS SP 03a: physical ESC opens menu
+PASS SP 03b: physical ESC closes menu
+PASS SP 04a: Restart opens confirmation
+PASS Restart-Confirmation (1920, 1080): Pause Title fits
+PASS Restart-Confirmation (1920, 1080): Pause Status fits
+PASS Restart-Confirmation (1920, 1080): Label fits
+PASS Restart-Confirmation (1920, 1080): Label fits
+PASS Restart-Confirmation (1920, 1080): Label fits
+PASS Restart-Confirmation (1920, 1080): Label fits
+PASS Restart-Confirmation (1920, 1080): Label fits
+PASS Restart-Confirmation (1920, 1080): Label fits
+PASS Restart-Confirmation (1920, 1080): Confirmation Heading fits
+PASS Restart-Confirmation (1920, 1080): Confirmation Message fits
+PASS Restart-Confirmation (1920, 1080): Label fits
+PASS Restart-Confirmation (1920, 1080): Label fits
+PASS Restart-Confirmation (1920, 1080): Resume stays in viewport
+PASS Restart-Confirmation (1920, 1080): Restart Match stays in viewport
+PASS Restart-Confirmation (1920, 1080): Settings stays in viewport
+PASS Restart-Confirmation (1920, 1080): Leave Match stays in viewport
+PASS Restart-Confirmation (1920, 1080): Main Menu stays in viewport
+PASS Restart-Confirmation (1920, 1080): Quit Desktop stays in viewport
+PASS Restart-Confirmation (1920, 1080): Cancel Pause Action stays in viewport
+PASS Restart-Confirmation (1920, 1080): Confirm Pause Action stays in viewport
+PASS Restart-Confirmation (1920, 1080): nonblank rendered ink
+PASS Restart-Confirmation (1280, 720): Pause Title fits
+PASS Restart-Confirmation (1280, 720): Pause Status fits
+PASS Restart-Confirmation (1280, 720): Label fits
+PASS Restart-Confirmation (1280, 720): Label fits
+PASS Restart-Confirmation (1280, 720): Label fits
+PASS Restart-Confirmation (1280, 720): Label fits
+PASS Restart-Confirmation (1280, 720): Label fits
+PASS Restart-Confirmation (1280, 720): Label fits
+PASS Restart-Confirmation (1280, 720): Confirmation Heading fits
+PASS Restart-Confirmation (1280, 720): Confirmation Message fits
+PASS Restart-Confirmation (1280, 720): Label fits
+PASS Restart-Confirmation (1280, 720): Label fits
+PASS Restart-Confirmation (1280, 720): Resume stays in viewport
+PASS Restart-Confirmation (1280, 720): Restart Match stays in viewport
+PASS Restart-Confirmation (1280, 720): Settings stays in viewport
+PASS Restart-Confirmation (1280, 720): Leave Match stays in viewport
+PASS Restart-Confirmation (1280, 720): Main Menu stays in viewport
+PASS Restart-Confirmation (1280, 720): Quit Desktop stays in viewport
+PASS Restart-Confirmation (1280, 720): Cancel Pause Action stays in viewport
+PASS Restart-Confirmation (1280, 720): Confirm Pause Action stays in viewport
+PASS Restart-Confirmation (1280, 720): nonblank rendered ink
+PASS Restart-Confirmation (800, 600): Pause Title fits
+PASS Restart-Confirmation (800, 600): Pause Status fits
+PASS Restart-Confirmation (800, 600): Label fits
+PASS Restart-Confirmation (800, 600): Label fits
+PASS Restart-Confirmation (800, 600): Label fits
+PASS Restart-Confirmation (800, 600): Label fits
+PASS Restart-Confirmation (800, 600): Label fits
+PASS Restart-Confirmation (800, 600): Label fits
+PASS Restart-Confirmation (800, 600): Confirmation Heading fits
+PASS Restart-Confirmation (800, 600): Confirmation Message fits
+PASS Restart-Confirmation (800, 600): Label fits
+PASS Restart-Confirmation (800, 600): Label fits
+PASS Restart-Confirmation (800, 600): Resume stays in viewport
+PASS Restart-Confirmation (800, 600): Restart Match stays in viewport
+PASS Restart-Confirmation (800, 600): Settings stays in viewport
+PASS Restart-Confirmation (800, 600): Leave Match stays in viewport
+PASS Restart-Confirmation (800, 600): Main Menu stays in viewport
+PASS Restart-Confirmation (800, 600): Quit Desktop stays in viewport
+PASS Restart-Confirmation (800, 600): Cancel Pause Action stays in viewport
+PASS Restart-Confirmation (800, 600): Confirm Pause Action stays in viewport
+PASS Restart-Confirmation (800, 600): nonblank rendered ink
+PASS Restart-Confirmation (2560, 1080): Pause Title fits
+PASS Restart-Confirmation (2560, 1080): Pause Status fits
+PASS Restart-Confirmation (2560, 1080): Label fits
+PASS Restart-Confirmation (2560, 1080): Label fits
+PASS Restart-Confirmation (2560, 1080): Label fits
+PASS Restart-Confirmation (2560, 1080): Label fits
+PASS Restart-Confirmation (2560, 1080): Label fits
+PASS Restart-Confirmation (2560, 1080): Label fits
+PASS Restart-Confirmation (2560, 1080): Confirmation Heading fits
+PASS Restart-Confirmation (2560, 1080): Confirmation Message fits
+PASS Restart-Confirmation (2560, 1080): Label fits
+PASS Restart-Confirmation (2560, 1080): Label fits
+PASS Restart-Confirmation (2560, 1080): Resume stays in viewport
+PASS Restart-Confirmation (2560, 1080): Restart Match stays in viewport
+PASS Restart-Confirmation (2560, 1080): Settings stays in viewport
+PASS Restart-Confirmation (2560, 1080): Leave Match stays in viewport
+PASS Restart-Confirmation (2560, 1080): Main Menu stays in viewport
+PASS Restart-Confirmation (2560, 1080): Quit Desktop stays in viewport
+PASS Restart-Confirmation (2560, 1080): Cancel Pause Action stays in viewport
+PASS Restart-Confirmation (2560, 1080): Confirm Pause Action stays in viewport
+PASS Restart-Confirmation (2560, 1080): nonblank rendered ink
+PASS Restart-Confirmation (1080, 1920): Pause Title fits
+PASS Restart-Confirmation (1080, 1920): Pause Status fits
+PASS Restart-Confirmation (1080, 1920): Label fits
+PASS Restart-Confirmation (1080, 1920): Label fits
+PASS Restart-Confirmation (1080, 1920): Label fits
+PASS Restart-Confirmation (1080, 1920): Label fits
+PASS Restart-Confirmation (1080, 1920): Label fits
+PASS Restart-Confirmation (1080, 1920): Label fits
+PASS Restart-Confirmation (1080, 1920): Confirmation Heading fits
+PASS Restart-Confirmation (1080, 1920): Confirmation Message fits
+PASS Restart-Confirmation (1080, 1920): Label fits
+PASS Restart-Confirmation (1080, 1920): Label fits
+PASS Restart-Confirmation (1080, 1920): Resume stays in viewport
+PASS Restart-Confirmation (1080, 1920): Restart Match stays in viewport
+PASS Restart-Confirmation (1080, 1920): Settings stays in viewport
+PASS Restart-Confirmation (1080, 1920): Leave Match stays in viewport
+PASS Restart-Confirmation (1080, 1920): Main Menu stays in viewport
+PASS Restart-Confirmation (1080, 1920): Quit Desktop stays in viewport
+PASS Restart-Confirmation (1080, 1920): Cancel Pause Action stays in viewport
+PASS Restart-Confirmation (1080, 1920): Confirm Pause Action stays in viewport
+PASS Restart-Confirmation (1080, 1920): nonblank rendered ink
+PASS SP 05: Cancel Restart keeps current match
+PASS SP 04b: Confirm Restart resets board and resumes
+PASS Restart preserves bot mode and difficulty
+PASS SP 06: Existing Settings opens while paused
+PASS SP 07: Settings returns to Pause Menu
+PASS SP 08: Leave opens confirmation
+PASS SP 09: Cancel Leave preserves match
+PASS SP 10: Leave clears match and returns to Bot Selection
+PASS SP 11: Main Menu returns directly to existing Main Menu 2
+PASS Quit cancellation does not invoke desktop exit
+PASS SP 12: Confirm Quit invokes desktop exit once (intercepted in Editor)
+PASS SP 13: Singleplayer accepts board selection after closing menu
+PASS ESC preserves the existing first-press deselect behavior
+PASS Singleplayer can actually commit a move after Resume
+PASS Resume restores an existing local time scale
+PASS Reduce Motion: no menu animation or delayed control
+PASS Busy content owner does not swallow a Pause exit or lock controls indefinitely
+PASS Loaded match exit uses existing asynchronous content owner
+PASS Content handles released and additive scene unloaded before Bot Selection
+PASS Loaded match exit uses existing asynchronous content owner
+PASS Content handles released and additive scene unloaded before Main Menu 2
+PASS MP 01: Match Menu locks only local interaction
+PASS Multiplayer (1920, 1080): Pause Title fits
+PASS Multiplayer (1920, 1080): Pause Status fits
+PASS Multiplayer (1920, 1080): Label fits
+PASS Multiplayer (1920, 1080): Label fits
+PASS Multiplayer (1920, 1080): Label fits
+PASS Multiplayer (1920, 1080): Label fits
+PASS Multiplayer (1920, 1080): Label fits
+PASS Multiplayer (1920, 1080): Label fits
+PASS Multiplayer (1920, 1080): Return to Match stays in viewport
+PASS Multiplayer (1920, 1080): Settings stays in viewport
+PASS Multiplayer (1920, 1080): Match Info stays in viewport
+PASS Multiplayer (1920, 1080): Leave Match stays in viewport
+PASS Multiplayer (1920, 1080): Main Menu stays in viewport
+PASS Multiplayer (1920, 1080): Quit Desktop stays in viewport
+PASS Multiplayer (1920, 1080): nonblank rendered ink
+PASS Multiplayer (1280, 720): Pause Title fits
+PASS Multiplayer (1280, 720): Pause Status fits
+PASS Multiplayer (1280, 720): Label fits
+PASS Multiplayer (1280, 720): Label fits
+PASS Multiplayer (1280, 720): Label fits
+PASS Multiplayer (1280, 720): Label fits
+PASS Multiplayer (1280, 720): Label fits
+PASS Multiplayer (1280, 720): Label fits
+PASS Multiplayer (1280, 720): Return to Match stays in viewport
+PASS Multiplayer (1280, 720): Settings stays in viewport
+PASS Multiplayer (1280, 720): Match Info stays in viewport
+PASS Multiplayer (1280, 720): Leave Match stays in viewport
+PASS Multiplayer (1280, 720): Main Menu stays in viewport
+PASS Multiplayer (1280, 720): Quit Desktop stays in viewport
+PASS Multiplayer (1280, 720): nonblank rendered ink
+PASS Multiplayer (800, 600): Pause Title fits
+PASS Multiplayer (800, 600): Pause Status fits
+PASS Multiplayer (800, 600): Label fits
+PASS Multiplayer (800, 600): Label fits
+PASS Multiplayer (800, 600): Label fits
+PASS Multiplayer (800, 600): Label fits
+PASS Multiplayer (800, 600): Label fits
+PASS Multiplayer (800, 600): Label fits
+PASS Multiplayer (800, 600): Return to Match stays in viewport
+PASS Multiplayer (800, 600): Settings stays in viewport
+PASS Multiplayer (800, 600): Match Info stays in viewport
+PASS Multiplayer (800, 600): Leave Match stays in viewport
+PASS Multiplayer (800, 600): Main Menu stays in viewport
+PASS Multiplayer (800, 600): Quit Desktop stays in viewport
+PASS Multiplayer (800, 600): nonblank rendered ink
+PASS Multiplayer (2560, 1080): Pause Title fits
+PASS Multiplayer (2560, 1080): Pause Status fits
+PASS Multiplayer (2560, 1080): Label fits
+PASS Multiplayer (2560, 1080): Label fits
+PASS Multiplayer (2560, 1080): Label fits
+PASS Multiplayer (2560, 1080): Label fits
+PASS Multiplayer (2560, 1080): Label fits
+PASS Multiplayer (2560, 1080): Label fits
+PASS Multiplayer (2560, 1080): Return to Match stays in viewport
+PASS Multiplayer (2560, 1080): Settings stays in viewport
+PASS Multiplayer (2560, 1080): Match Info stays in viewport
+PASS Multiplayer (2560, 1080): Leave Match stays in viewport
+PASS Multiplayer (2560, 1080): Main Menu stays in viewport
+PASS Multiplayer (2560, 1080): Quit Desktop stays in viewport
+PASS Multiplayer (2560, 1080): nonblank rendered ink
+PASS Multiplayer (1080, 1920): Pause Title fits
+PASS Multiplayer (1080, 1920): Pause Status fits
+PASS Multiplayer (1080, 1920): Label fits
+PASS Multiplayer (1080, 1920): Label fits
+PASS Multiplayer (1080, 1920): Label fits
+PASS Multiplayer (1080, 1920): Label fits
+PASS Multiplayer (1080, 1920): Label fits
+PASS Multiplayer (1080, 1920): Label fits
+PASS Multiplayer (1080, 1920): Return to Match stays in viewport
+PASS Multiplayer (1080, 1920): Settings stays in viewport
+PASS Multiplayer (1080, 1920): Match Info stays in viewport
+PASS Multiplayer (1080, 1920): Leave Match stays in viewport
+PASS Multiplayer (1080, 1920): Main Menu stays in viewport
+PASS Multiplayer (1080, 1920): Quit Desktop stays in viewport
+PASS Multiplayer (1080, 1920): nonblank rendered ink
+PASS MP 02: Return restores local interaction immediately
+PASS MP 03a: ESC opens Match Menu
+PASS MP 03b: ESC closes Match Menu
+PASS MP 04: No Restart button exists in multiplayer actions
+PASS MP 05: Open existing Settings
+PASS MP 06: ESC from Settings returns to Match Menu, not gameplay
+PASS MP 07: Match Info shows existing players/mode/clocks/connection
+PASS Match-Info (1920, 1080): Pause Title fits
+PASS Match-Info (1920, 1080): Pause Status fits
+PASS Match-Info (1920, 1080): Label fits
+PASS Match-Info (1920, 1080): Label fits
+PASS Match-Info (1920, 1080): Label fits
+PASS Match-Info (1920, 1080): Label fits
+PASS Match-Info (1920, 1080): Label fits
+PASS Match-Info (1920, 1080): Label fits
+PASS Match-Info (1920, 1080): Match Info Heading fits
+PASS Match-Info (1920, 1080): Match Details fits
+PASS Match-Info (1920, 1080): Label fits
+PASS Match-Info (1920, 1080): Return to Match stays in viewport
+PASS Match-Info (1920, 1080): Settings stays in viewport
+PASS Match-Info (1920, 1080): Match Info stays in viewport
+PASS Match-Info (1920, 1080): Leave Match stays in viewport
+PASS Match-Info (1920, 1080): Main Menu stays in viewport
+PASS Match-Info (1920, 1080): Quit Desktop stays in viewport
+PASS Match-Info (1920, 1080): Back from Match Info stays in viewport
+PASS Match-Info (1920, 1080): nonblank rendered ink
+PASS Match-Info (1280, 720): Pause Title fits
+PASS Match-Info (1280, 720): Pause Status fits
+PASS Match-Info (1280, 720): Label fits
+PASS Match-Info (1280, 720): Label fits
+PASS Match-Info (1280, 720): Label fits
+PASS Match-Info (1280, 720): Label fits
+PASS Match-Info (1280, 720): Label fits
+PASS Match-Info (1280, 720): Label fits
+PASS Match-Info (1280, 720): Match Info Heading fits
+PASS Match-Info (1280, 720): Match Details fits
+PASS Match-Info (1280, 720): Label fits
+PASS Match-Info (1280, 720): Return to Match stays in viewport
+PASS Match-Info (1280, 720): Settings stays in viewport
+PASS Match-Info (1280, 720): Match Info stays in viewport
+PASS Match-Info (1280, 720): Leave Match stays in viewport
+PASS Match-Info (1280, 720): Main Menu stays in viewport
+PASS Match-Info (1280, 720): Quit Desktop stays in viewport
+PASS Match-Info (1280, 720): Back from Match Info stays in viewport
+PASS Match-Info (1280, 720): nonblank rendered ink
+PASS Match-Info (800, 600): Pause Title fits
+PASS Match-Info (800, 600): Pause Status fits
+PASS Match-Info (800, 600): Label fits
+PASS Match-Info (800, 600): Label fits
+PASS Match-Info (800, 600): Label fits
+PASS Match-Info (800, 600): Label fits
+PASS Match-Info (800, 600): Label fits
+PASS Match-Info (800, 600): Label fits
+PASS Match-Info (800, 600): Match Info Heading fits
+PASS Match-Info (800, 600): Match Details fits
+PASS Match-Info (800, 600): Label fits
+PASS Match-Info (800, 600): Return to Match stays in viewport
+PASS Match-Info (800, 600): Settings stays in viewport
+PASS Match-Info (800, 600): Match Info stays in viewport
+PASS Match-Info (800, 600): Leave Match stays in viewport
+PASS Match-Info (800, 600): Main Menu stays in viewport
+PASS Match-Info (800, 600): Quit Desktop stays in viewport
+PASS Match-Info (800, 600): Back from Match Info stays in viewport
+PASS Match-Info (800, 600): nonblank rendered ink
+PASS Match-Info (2560, 1080): Pause Title fits
+PASS Match-Info (2560, 1080): Pause Status fits
+PASS Match-Info (2560, 1080): Label fits
+PASS Match-Info (2560, 1080): Label fits
+PASS Match-Info (2560, 1080): Label fits
+PASS Match-Info (2560, 1080): Label fits
+PASS Match-Info (2560, 1080): Label fits
+PASS Match-Info (2560, 1080): Label fits
+PASS Match-Info (2560, 1080): Match Info Heading fits
+PASS Match-Info (2560, 1080): Match Details fits
+PASS Match-Info (2560, 1080): Label fits
+PASS Match-Info (2560, 1080): Return to Match stays in viewport
+PASS Match-Info (2560, 1080): Settings stays in viewport
+PASS Match-Info (2560, 1080): Match Info stays in viewport
+PASS Match-Info (2560, 1080): Leave Match stays in viewport
+PASS Match-Info (2560, 1080): Main Menu stays in viewport
+PASS Match-Info (2560, 1080): Quit Desktop stays in viewport
+PASS Match-Info (2560, 1080): Back from Match Info stays in viewport
+PASS Match-Info (2560, 1080): nonblank rendered ink
+PASS Match-Info (1080, 1920): Pause Title fits
+PASS Match-Info (1080, 1920): Pause Status fits
+PASS Match-Info (1080, 1920): Label fits
+PASS Match-Info (1080, 1920): Label fits
+PASS Match-Info (1080, 1920): Label fits
+PASS Match-Info (1080, 1920): Label fits
+PASS Match-Info (1080, 1920): Label fits
+PASS Match-Info (1080, 1920): Label fits
+PASS Match-Info (1080, 1920): Match Info Heading fits
+PASS Match-Info (1080, 1920): Match Details fits
+PASS Match-Info (1080, 1920): Label fits
+PASS Match-Info (1080, 1920): Return to Match stays in viewport
+PASS Match-Info (1080, 1920): Settings stays in viewport
+PASS Match-Info (1080, 1920): Match Info stays in viewport
+PASS Match-Info (1080, 1920): Leave Match stays in viewport
+PASS Match-Info (1080, 1920): Main Menu stays in viewport
+PASS Match-Info (1080, 1920): Quit Desktop stays in viewport
+PASS Match-Info (1080, 1920): Back from Match Info stays in viewport
+PASS Match-Info (1080, 1920): nonblank rendered ink
+PASS MP 08: Leave opens confirmation
+PASS MP 09: Cancel Leave keeps session and match intact
+PASS Online clock advances in real time while Match Menu is open
+PASS MP 14: Real WebSocket snapshot still arrives while menu is open; turn updates do not close menu
+PASS MP 15a: Repeated confirms/exits share one pending disconnect; no early transition
+PASS MP 10: Leave returns to originating Classic Multiplayer Lobby
+PASS MP 13: Old session state and WebSocket disposed after acknowledged leave
+PASS MP 15b: Exactly one resign and one match transition after repeated clicks
+PASS Originating lobby preserved: Lan / Classic
+PASS Originating lobby preserved: Lan / Aram
+PASS Originating lobby preserved: Multiplayer / Aram
+PASS MP 11: Main Menu cleans session and returns to Main Menu 2
+PASS MP 12: Desktop exit cleans the session before invoking quit once (intercepted)
+PASS Desktop still disposes transport and quits when server rejects exit acknowledgement
+PASS Unresponsive server cannot block desktop exit beyond five seconds; local transport is cleaned
+PASS Rejected server exit keeps match/session and offers retry or Resume
+PASS Can resume after failed exit
+PASS Finished multiplayer spectating still has no local Restart
+PASS Leaving finished multiplayer closes session without another surrender
+PASS No unexpected project runtime exceptions
+RESULT PASS: all 13 singleplayer and 15 multiplayer required cases, plus regression checks.
