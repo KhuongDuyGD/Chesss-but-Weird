@@ -161,8 +161,17 @@ public sealed class ChessOrbitCamera : MonoBehaviour
 
         float tileScale = Mathf.Max(tileRight.magnitude, tileForward.magnitude);
         // Include both prisoner rails in the default board framing.
-        Vector3 halfRight = tileRight * 5.6f;
-        Vector3 halfForward = tileForward * 4f;
+        float rightTiles = 4f, forwardTiles = 4f;
+        for (int side = 0; side < 2; side++)
+            for (int slot = 0; slot < 6; slot++)
+            {
+                var capturer = side == 0 ? PieceTeam.White : PieceTeam.Black;
+                Vector3 offset = chessboard.GetPrisonSlotWorld(capturer, slot) - boardCenter;
+                rightTiles = Mathf.Max(rightTiles, Mathf.Abs(Vector3.Dot(offset, tileRight.normalized)) / tileRight.magnitude + .67f);
+                forwardTiles = Mathf.Max(forwardTiles, Mathf.Abs(Vector3.Dot(offset, tileForward.normalized)) / tileForward.magnitude + .67f);
+            }
+        Vector3 halfRight = tileRight * rightTiles;
+        Vector3 halfForward = tileForward * forwardTiles;
         Vector3 halfHeight = boardUp * tileScale * Mathf.Max(0f, pieceHeadroomInTiles) * .5f;
         currentPivot = boardCenter + halfHeight;
         Vector3 homeForward = boardViewTeam == PieceTeam.Black ? -tileForward.normalized : tileForward.normalized;

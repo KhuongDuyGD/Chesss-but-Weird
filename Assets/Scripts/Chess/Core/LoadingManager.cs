@@ -104,8 +104,9 @@ public sealed class LoadingManager : MonoBehaviour
         if (Board.BoardPrefab)
         {
             boardVisual = new GameObject("Selected board visual");
-            game.Board.AttachCosmeticBoard(boardVisual.transform);
-            Board.InstantiateBoard(boardVisual.transform);
+            var model = Board.InstantiateBoard(boardVisual.transform);
+            game.Board.AttachCosmeticBoard(boardVisual.transform, model ? model.transform : null,
+                Board.Data ? Board.Data.prisonLayoutYaw : 0f);
         }
         else game.Board.ShowFallbackBoard();
         if (Board.EnvironmentPrefab)

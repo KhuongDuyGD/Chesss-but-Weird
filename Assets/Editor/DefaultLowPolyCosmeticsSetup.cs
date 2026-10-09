@@ -45,7 +45,8 @@ public static class DefaultLowPolyCosmeticsSetup
         board.displayName = "Tazji's Low Poly Arena";
         board.boardPrefab = new AssetReferenceGameObject(AssetDatabase.AssetPathToGUID(ArenaPath));
         board.localPosition = Vector3.zero;
-        board.localRotation = Vector3.zero;
+        board.prisonLayoutYaw = GachaSkinAssetsSetup.DetectPrisonLayoutYaw(arena);
+        board.localRotation = board.prisonLayoutYaw == 0f ? new Vector3(0f, -90f, 0f) : Vector3.zero;
         board.localScale = Vector3.one;
         EditorUtility.SetDirty(board);
         Register(settings, arena, "Board_TazjiLowPoly", "Boards/TazjiLowPoly");

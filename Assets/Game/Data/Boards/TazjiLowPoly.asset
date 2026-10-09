@@ -15,17 +15,18 @@ MonoBehaviour:
   boardId: tazji_lowpoly
   displayName: Tazji's Low Poly Arena
   preview:
-    m_AssetGUID: 
-    m_SubObjectName: 
-    m_SubObjectType: 
-    m_SubObjectGUID: 
+    m_AssetGUID:
+    m_SubObjectName:
+    m_SubObjectType:
+    m_SubObjectGUID:
     m_EditorAssetChanged: 0
   boardPrefab:
     m_AssetGUID: a9e3e140b2ed92b47ac95fc374c03aa5
-    m_SubObjectName: 
-    m_SubObjectType: 
-    m_SubObjectGUID: 
+    m_SubObjectName:
+    m_SubObjectType:
+    m_SubObjectGUID:
     m_EditorAssetChanged: 0
   localPosition: {x: 0, y: 0, z: 0}
-  localRotation: {x: 0, y: 0, z: 0}
+  localRotation: {x: 0, y: -90, z: 0}
   localScale: {x: 1, y: 1, z: 1}
+  prisonLayoutYaw: 0

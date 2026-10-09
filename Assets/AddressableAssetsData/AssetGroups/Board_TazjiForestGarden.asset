@@ -1,0 +1,43 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
+  m_Name: Board_TazjiForestGarden
+  m_EditorClassIdentifier: Unity.Addressables.Editor::UnityEditor.AddressableAssets.Settings.AddressableAssetGroup
+  m_GroupName: Board_TazjiForestGarden
+  m_GUID: 1f81bd2e6624978449db3a50ad0d8694
+  m_SerializeEntries:
+  - m_GUID: 2536e2cb28f584e469894b1e4ed5df44
+    m_Address: Previews/Tazji'sForestGardenBoard
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 78c34fb73f05e434683ad38e3758fd1e
+    m_Address: Models/Tazji'sForestGardenBoard/Forest_Garden_Board
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a7aaab4fc93ab024bb455f480b75703b
+    m_Address: Board/Boards/ForestGarden
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  m_ReadOnly: 0
+  m_Settings: {fileID: 11400000, guid: 8194c9a80f156474bbbfc1ccbf68345e, type: 2}
+  m_SchemaSet:
+    m_Schemas:
+    - {fileID: 11400000, guid: 8a5ad6148c504304995e3ce5a614c478, type: 2}
+    - {fileID: 11400000, guid: 6608ecf6439d1a747806d7f47ef05eea, type: 2}
+    m_SchemaDisplayOrder:
+    - Board_TazjiForestGarden_BundledAssetGroupSchema
+    - Board_TazjiForestGarden_ContentUpdateGroupSchema
+  m_IncludeInBuild: 1
+  m_IncludeInBuildMigrated: 1

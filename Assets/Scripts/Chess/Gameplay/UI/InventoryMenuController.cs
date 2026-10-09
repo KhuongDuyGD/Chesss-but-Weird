@@ -43,10 +43,11 @@ public sealed class InventoryMenuController : MonoBehaviour
     private int page, requestVersion;
     private bool loading, equipping;
     private string loadedUserId;
+    private LoadingManager cosmetics;
 
-    public void Initialize(RectTransform newRoot, UnityAction newCloseAction)
+    public void Initialize(RectTransform newRoot, UnityAction newCloseAction, LoadingManager newCosmetics = null)
     {
-        root = newRoot; closeAction = newCloseAction; Build();
+        root = newRoot; closeAction = newCloseAction; cosmetics = newCosmetics; Build();
     }
 
     public void Open()
@@ -429,7 +430,7 @@ public sealed class InventoryMenuController : MonoBehaviour
         selection.Save();
     }
 
-    private static bool ApplyLocalVisual(InventoryEntry item)
+    private bool ApplyLocalVisual(InventoryEntry item)
     {
         var selection = CosmeticSelection.Load();
         bool supported;
@@ -448,9 +449,11 @@ public sealed class InventoryMenuController : MonoBehaviour
 
     private static bool IsChessType(string type) => !string.IsNullOrWhiteSpace(type) && type.IndexOf("CHESS", StringComparison.OrdinalIgnoreCase) >= 0;
     private static bool IsBoardType(string type) => !string.IsNullOrWhiteSpace(type) && type.IndexOf("BOARD", StringComparison.OrdinalIgnoreCase) >= 0;
-    private static bool IsKnownBoardSkin(string key) => string.Equals(key, CosmeticSelection.LowPolyId, StringComparison.OrdinalIgnoreCase);
-    private static bool IsKnownPieceSkin(string key)
+    private bool IsKnownBoardSkin(string key) => string.Equals(key, CosmeticSelection.LowPolyId, StringComparison.OrdinalIgnoreCase) ||
+        (cosmetics && cosmetics.Catalog && cosmetics.Catalog.FindBoard(key) != null);
+    private bool IsKnownPieceSkin(string key)
     {
+        if (cosmetics && cosmetics.Catalog) return cosmetics.Catalog.FindPiece(key) != null;
         foreach (PieceSkinDefinition skin in PieceSkinCatalog.All) if (string.Equals(skin.Id, key, StringComparison.OrdinalIgnoreCase)) return true;
         return false;
     }

@@ -1,0 +1,98 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1ce2f9a80e66472182ba97e02f649dd5, type: 3}
+  m_Name: TazjiCrystal
+  m_EditorClassIdentifier: Assembly-CSharp::PieceSkinData
+  skinId: ChessSets/CrystalBlue
+  displayName: Blue Crystal Chess Set
+  preview:
+    m_AssetGUID: e458bdfdb94246941af859d5473a8ebc
+    m_SubObjectName:
+    m_SubObjectType:
+    m_SubObjectGUID:
+    m_EditorAssetChanged: 0
+  pawn:
+    m_AssetGUID: f889331a0933be541bc76ac8475bf28d
+    m_SubObjectName:
+    m_SubObjectType:
+    m_SubObjectGUID:
+    m_EditorAssetChanged: 0
+  rook:
+    m_AssetGUID: 251f5c00eef5f1e4699682a1ba5af497
+    m_SubObjectName:
+    m_SubObjectType:
+    m_SubObjectGUID:
+    m_EditorAssetChanged: 0
+  knight:
+    m_AssetGUID: 93ab023df34794542909e9fbcf02b556
+    m_SubObjectName:
+    m_SubObjectType:
+    m_SubObjectGUID:
+    m_EditorAssetChanged: 0
+  bishop:
+    m_AssetGUID: ffd2dd22b1518ce44b529cefbb0338fb
+    m_SubObjectName:
+    m_SubObjectType:
+    m_SubObjectGUID:
+    m_EditorAssetChanged: 0
+  queen:
+    m_AssetGUID: 2eafcda0f53786545b23b1fea308ca9f
+    m_SubObjectName:
+    m_SubObjectType:
+    m_SubObjectGUID:
+    m_EditorAssetChanged: 0
+  king:
+    m_AssetGUID: f881e3321602873498d7c43b5188b917
+    m_SubObjectName:
+    m_SubObjectType:
+    m_SubObjectGUID:
+    m_EditorAssetChanged: 0
+  blackPawn:
+    m_AssetGUID: ce4d5081e8ddb494e9e8bd73075122af
+    m_SubObjectName:
+    m_SubObjectType:
+    m_SubObjectGUID:
+    m_EditorAssetChanged: 0
+  blackRook:
+    m_AssetGUID: 00d431e3a46433042a7aab0ee9596021
+    m_SubObjectName:
+    m_SubObjectType:
+    m_SubObjectGUID:
+    m_EditorAssetChanged: 0
+  blackKnight:
+    m_AssetGUID: 69c04a5e70d15e94bb6c468ee55d522c
+    m_SubObjectName:
+    m_SubObjectType:
+    m_SubObjectGUID:
+    m_EditorAssetChanged: 0
+  blackBishop:
+    m_AssetGUID: 64a6e379ee38c1e4f9511ef0e121d45b
+    m_SubObjectName:
+    m_SubObjectType:
+    m_SubObjectGUID:
+    m_EditorAssetChanged: 0
+  blackQueen:
+    m_AssetGUID: c24222b67e986b9468e4151af1ed1711
+    m_SubObjectName:
+    m_SubObjectType:
+    m_SubObjectGUID:
+    m_EditorAssetChanged: 0
+  blackKing:
+    m_AssetGUID: 949ecd7b6b4eb6c469b5aa83eadd03a4
+    m_SubObjectName:
+    m_SubObjectType:
+    m_SubObjectGUID:
+    m_EditorAssetChanged: 0
+  applyTeamColor: 0
+  whiteColor: {r: 0.94, g: 0.91, b: 0.82, a: 1}
+  blackColor: {r: 0.18, g: 0.21, b: 0.27, a: 1}
+  tuning: []

@@ -287,7 +287,7 @@ public class HandDrawnMenuView : MonoBehaviour
     {
         inventoryScreen = CreateScreen("Inventory");
         inventoryController = inventoryScreen.gameObject.AddComponent<InventoryMenuController>();
-        inventoryController.Initialize(inventoryScreen, ShowModeSelection);
+        inventoryController.Initialize(inventoryScreen, ShowModeSelection, chessGame ? LoadingManager.For(chessGame) : null);
     }
 
     private void BuildProfileOverlay()

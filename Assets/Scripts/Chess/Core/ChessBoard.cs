@@ -48,6 +48,8 @@ public class Chessboard : MonoBehaviour
     private bool interactionEnabled;
     private bool presentationVisible = true;
     private Transform cosmeticBoard;
+    private Transform prisonSlotSpace;
+    private float prisonLayoutYaw;
     // Measured centers/surface of the six gold pads in Tazji's arena (board units).
     [Header("Prisoner Rails")]
     [SerializeField] private float prisonRailX = 4.93f;
@@ -58,16 +60,22 @@ public class Chessboard : MonoBehaviour
     {
         float side = capturer == PieceTeam.White ? -1f : 1f;
         var local = new Vector3(side * prisonRailX, prisonSurfaceY, -side * (prisonFirstRowZ - slot * prisonRowSpacing));
-        if (cosmeticBoard) return cosmeticBoard.TransformPoint(local);
+        if (cosmeticBoard)
+        {
+            local = Quaternion.Euler(0f, prisonLayoutYaw, 0f) * local;
+            return (prisonSlotSpace ? prisonSlotSpace : cosmeticBoard).TransformPoint(local);
+        }
         return GetBoardCenterWorld() + TransformBoardLocalOffset(new Vector3(local.x * currentBoardLayout.tileWidth, local.y, local.z * currentBoardLayout.tileDepth));
     }
     private bool generatedTilesBeforeCosmetic;
 
     // Board prefabs use an 8x8 playable area centered at origin, surface at local Y=0.
-    public void AttachCosmeticBoard(Transform visual)
+    public void AttachCosmeticBoard(Transform visual, Transform slotSpace = null, float slotLayoutYaw = 0f)
     {
         if (!cosmeticBoard) generatedTilesBeforeCosmetic = showGeneratedTiles;
         cosmeticBoard = visual;
+        prisonSlotSpace = slotSpace ? slotSpace : visual;
+        prisonLayoutYaw = slotLayoutYaw;
         if (!visual) return;
         showGeneratedTiles = false;
         RefreshAllTileVisuals();
@@ -82,6 +90,8 @@ public class Chessboard : MonoBehaviour
     {
         if (cosmeticBoard) showGeneratedTiles = generatedTilesBeforeCosmetic;
         cosmeticBoard = null;
+        prisonSlotSpace = null;
+        prisonLayoutYaw = 0f;
         RefreshAllTileVisuals();
         ApplyBoardRendererVisibility();
     }

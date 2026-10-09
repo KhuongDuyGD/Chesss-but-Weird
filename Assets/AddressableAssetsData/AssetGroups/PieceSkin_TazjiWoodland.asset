@@ -1,0 +1,98 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
+  m_Name: PieceSkin_TazjiWoodland
+  m_EditorClassIdentifier: Unity.Addressables.Editor::UnityEditor.AddressableAssets.Settings.AddressableAssetGroup
+  m_GroupName: PieceSkin_TazjiWoodland
+  m_GUID: ec08151f2c06d0f49bb5a6676f383594
+  m_SerializeEntries:
+  - m_GUID: 04590c676dd153342b9d11d7f7e0951f
+    m_Address: Models/Tazji'sWoodlandChessSet/WL_Nightgrove_Rook
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 251b0a7c38e21d84a8057bfbeafeb6ca
+    m_Address: Models/Tazji'sWoodlandChessSet/WL_Oak_Pawn
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 296665b94e0117f4b99480ccb88b1fed
+    m_Address: Models/Tazji'sWoodlandChessSet/WL_Nightgrove_Queen
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 2a088153805fe674da894e4e9f446352
+    m_Address: Models/Tazji'sWoodlandChessSet/WL_Oak_Rook
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 383e08682888a754ab47b3b864bbcf25
+    m_Address: Models/Tazji'sWoodlandChessSet/WL_Oak_Bishop
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 3a7b93239bcb3c345a62be6ef9ea4528
+    m_Address: Models/Tazji'sWoodlandChessSet/WL_Oak_Queen
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 3cf8097c8aad85345a3ac9506648b324
+    m_Address: Models/Tazji'sWoodlandChessSet/WL_Oak_King
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 69df289153d11464d91106c36bb557c9
+    m_Address: Models/Tazji'sWoodlandChessSet/WL_Oak_Knight
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 753af0c71b2471e44aaf4726d17a6fba
+    m_Address: Previews/Tazji'sWoodlandChessSet
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 84c8b1a51192ffb45b823bfd1304c425
+    m_Address: PieceSkin/ChessSets/Woodland
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ab12e98c3cc681f4391199a37906c2ec
+    m_Address: Models/Tazji'sWoodlandChessSet/WL_Nightgrove_Knight
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b55b72d4de54df44ea7ac436761af0e2
+    m_Address: Models/Tazji'sWoodlandChessSet/WL_Nightgrove_King
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: cd7b1f235c7b46845840c4df19f53700
+    m_Address: Models/Tazji'sWoodlandChessSet/WL_Nightgrove_Bishop
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d5231763919d0d2449582266f02c2590
+    m_Address: Models/Tazji'sWoodlandChessSet/WL_Nightgrove_Pawn
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  m_ReadOnly: 0
+  m_Settings: {fileID: 11400000, guid: 8194c9a80f156474bbbfc1ccbf68345e, type: 2}
+  m_SchemaSet:
+    m_Schemas:
+    - {fileID: 11400000, guid: c255694bc8a935b4db1ff2ad029585ec, type: 2}
+    - {fileID: 11400000, guid: 5521226176e662846ad7c170309225b8, type: 2}
+    m_SchemaDisplayOrder:
+    - PieceSkin_TazjiWoodland_BundledAssetGroupSchema
+    - PieceSkin_TazjiWoodland_ContentUpdateGroupSchema
+  m_IncludeInBuild: 1
+  m_IncludeInBuildMigrated: 1

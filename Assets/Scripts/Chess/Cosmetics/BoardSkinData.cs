@@ -11,4 +11,6 @@ public sealed class BoardSkinData : ScriptableObject
     public Vector3 localPosition;
     public Vector3 localRotation;
     public Vector3 localScale = Vector3.one;
+    [Tooltip("Baked rotation of the prisoner pads relative to the original left/right layout. Does not rotate the board model.")]
+    public float prisonLayoutYaw;
 }

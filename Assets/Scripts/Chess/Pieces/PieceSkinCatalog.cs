@@ -83,6 +83,7 @@ public sealed class PieceSkinVisualState : MonoBehaviour
 {
     private readonly List<Renderer> originalRenderers = new List<Renderer>();
     private GameObject activeSkinVisual;
+    private GameObject activePrefab;
     public GameObject ActiveVisual => activeSkinVisual;
     private string activeSkinId;
     private PieceType activePieceType;
@@ -118,6 +119,7 @@ public sealed class PieceSkinVisualState : MonoBehaviour
         }
 
         if (activeSkinVisual &&
+            activePrefab == prefab &&
             string.Equals(activeSkinId, skinId, StringComparison.OrdinalIgnoreCase) &&
             activePieceType == pieceType)
         {
@@ -136,6 +138,7 @@ public sealed class PieceSkinVisualState : MonoBehaviour
         FitSkinVisualToOriginalBounds(skinTransform, tuning);
 
         activeSkinId = skinId;
+        activePrefab = prefab;
         activePieceType = pieceType;
     }
 

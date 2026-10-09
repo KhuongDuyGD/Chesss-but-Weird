@@ -1,0 +1,98 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
+  m_Name: PieceSkin_TazjiCrystal
+  m_EditorClassIdentifier: Unity.Addressables.Editor::UnityEditor.AddressableAssets.Settings.AddressableAssetGroup
+  m_GroupName: PieceSkin_TazjiCrystal
+  m_GUID: 3ad1705b9bf434f47ac43347ca13f4e7
+  m_SerializeEntries:
+  - m_GUID: 00d431e3a46433042a7aab0ee9596021
+    m_Address: Models/Tazji'sCrystalChessSet/CR_Amethyst_Rook
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 251f5c00eef5f1e4699682a1ba5af497
+    m_Address: Models/Tazji'sCrystalChessSet/CR_Glacier_Rook
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 2eafcda0f53786545b23b1fea308ca9f
+    m_Address: Models/Tazji'sCrystalChessSet/CR_Glacier_Queen
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 64a6e379ee38c1e4f9511ef0e121d45b
+    m_Address: Models/Tazji'sCrystalChessSet/CR_Amethyst_Bishop
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 69c04a5e70d15e94bb6c468ee55d522c
+    m_Address: Models/Tazji'sCrystalChessSet/CR_Amethyst_Knight
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 881c96052d985454dbaa483050423d6b
+    m_Address: PieceSkin/ChessSets/CrystalBlue
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 93ab023df34794542909e9fbcf02b556
+    m_Address: Models/Tazji'sCrystalChessSet/CR_Glacier_Knight
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 949ecd7b6b4eb6c469b5aa83eadd03a4
+    m_Address: Models/Tazji'sCrystalChessSet/CR_Amethyst_King
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c24222b67e986b9468e4151af1ed1711
+    m_Address: Models/Tazji'sCrystalChessSet/CR_Amethyst_Queen
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ce4d5081e8ddb494e9e8bd73075122af
+    m_Address: Models/Tazji'sCrystalChessSet/CR_Amethyst_Pawn
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e458bdfdb94246941af859d5473a8ebc
+    m_Address: Previews/Tazji'sCrystalChessSet
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f881e3321602873498d7c43b5188b917
+    m_Address: Models/Tazji'sCrystalChessSet/CR_Glacier_King
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f889331a0933be541bc76ac8475bf28d
+    m_Address: Models/Tazji'sCrystalChessSet/CR_Glacier_Pawn
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ffd2dd22b1518ce44b529cefbb0338fb
+    m_Address: Models/Tazji'sCrystalChessSet/CR_Glacier_Bishop
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  m_ReadOnly: 0
+  m_Settings: {fileID: 11400000, guid: 8194c9a80f156474bbbfc1ccbf68345e, type: 2}
+  m_SchemaSet:
+    m_Schemas:
+    - {fileID: 11400000, guid: f5eb85685fe14e14c9059ff85f124583, type: 2}
+    - {fileID: 11400000, guid: 8bdc3d33efccc234587590bdb5935757, type: 2}
+    m_SchemaDisplayOrder:
+    - PieceSkin_TazjiCrystal_BundledAssetGroupSchema
+    - PieceSkin_TazjiCrystal_ContentUpdateGroupSchema
+  m_IncludeInBuild: 1
+  m_IncludeInBuildMigrated: 1

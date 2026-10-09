@@ -15,46 +15,82 @@ MonoBehaviour:
   skinId: tazji_lowpoly
   displayName: Tazji's Low Poly Chess Set
   preview:
-    m_AssetGUID: 
-    m_SubObjectName: 
-    m_SubObjectType: 
-    m_SubObjectGUID: 
+    m_AssetGUID:
+    m_SubObjectName:
+    m_SubObjectType:
+    m_SubObjectGUID:
     m_EditorAssetChanged: 0
   pawn:
     m_AssetGUID: de9fefa7246c35746ae6281cd71973c4
-    m_SubObjectName: 
-    m_SubObjectType: 
-    m_SubObjectGUID: 
+    m_SubObjectName:
+    m_SubObjectType:
+    m_SubObjectGUID:
     m_EditorAssetChanged: 0
   rook:
     m_AssetGUID: 4ee19bf4dba98234681fbd56a1029f84
-    m_SubObjectName: 
-    m_SubObjectType: 
-    m_SubObjectGUID: 
+    m_SubObjectName:
+    m_SubObjectType:
+    m_SubObjectGUID:
     m_EditorAssetChanged: 0
   knight:
     m_AssetGUID: 7633f589212b3d742b0eb1eba6996200
-    m_SubObjectName: 
-    m_SubObjectType: 
-    m_SubObjectGUID: 
+    m_SubObjectName:
+    m_SubObjectType:
+    m_SubObjectGUID:
     m_EditorAssetChanged: 0
   bishop:
     m_AssetGUID: 82a3c4599ed280d4ebee9d72c430fe70
-    m_SubObjectName: 
-    m_SubObjectType: 
-    m_SubObjectGUID: 
+    m_SubObjectName:
+    m_SubObjectType:
+    m_SubObjectGUID:
     m_EditorAssetChanged: 0
   queen:
     m_AssetGUID: 88aaa0db6b479a24b91fe55ae1acf3f7
-    m_SubObjectName: 
-    m_SubObjectType: 
-    m_SubObjectGUID: 
+    m_SubObjectName:
+    m_SubObjectType:
+    m_SubObjectGUID:
     m_EditorAssetChanged: 0
   king:
     m_AssetGUID: 296887f8654a18440922d34298d3791e
-    m_SubObjectName: 
-    m_SubObjectType: 
-    m_SubObjectGUID: 
+    m_SubObjectName:
+    m_SubObjectType:
+    m_SubObjectGUID:
+    m_EditorAssetChanged: 0
+  blackPawn:
+    m_AssetGUID:
+    m_SubObjectName:
+    m_SubObjectType:
+    m_SubObjectGUID:
+    m_EditorAssetChanged: 0
+  blackRook:
+    m_AssetGUID:
+    m_SubObjectName:
+    m_SubObjectType:
+    m_SubObjectGUID:
+    m_EditorAssetChanged: 0
+  blackKnight:
+    m_AssetGUID:
+    m_SubObjectName:
+    m_SubObjectType:
+    m_SubObjectGUID:
+    m_EditorAssetChanged: 0
+  blackBishop:
+    m_AssetGUID:
+    m_SubObjectName:
+    m_SubObjectType:
+    m_SubObjectGUID:
+    m_EditorAssetChanged: 0
+  blackQueen:
+    m_AssetGUID:
+    m_SubObjectName:
+    m_SubObjectType:
+    m_SubObjectGUID:
+    m_EditorAssetChanged: 0
+  blackKing:
+    m_AssetGUID:
+    m_SubObjectName:
+    m_SubObjectType:
+    m_SubObjectGUID:
     m_EditorAssetChanged: 0
   applyTeamColor: 1
   whiteColor: {r: 0.94, g: 0.91, b: 0.82, a: 1}

@@ -23,11 +23,43 @@ MonoBehaviour:
       m_SubObjectType:
       m_SubObjectGUID:
       m_EditorAssetChanged: 0
+  - id: ChessSets/CrystalBlue
+    displayName: Blue Crystal Chess Set
+    data:
+      m_AssetGUID: 881c96052d985454dbaa483050423d6b
+      m_SubObjectName:
+      m_SubObjectType:
+      m_SubObjectGUID:
+      m_EditorAssetChanged: 0
+  - id: ChessSets/Woodland
+    displayName: Woodland Chess Set
+    data:
+      m_AssetGUID: 84c8b1a51192ffb45b823bfd1304c425
+      m_SubObjectName:
+      m_SubObjectType:
+      m_SubObjectGUID:
+      m_EditorAssetChanged: 0
   boards:
   - id: tazji_lowpoly
     displayName: Tazji's Low Poly Arena
     data:
       m_AssetGUID: a05a0c4b4edbf9f47a136dd34f7058c7
+      m_SubObjectName:
+      m_SubObjectType:
+      m_SubObjectGUID:
+      m_EditorAssetChanged: 0
+  - id: Boards/ForestGarden
+    displayName: Forest Garden Board
+    data:
+      m_AssetGUID: a7aaab4fc93ab024bb455f480b75703b
+      m_SubObjectName:
+      m_SubObjectType:
+      m_SubObjectGUID:
+      m_EditorAssetChanged: 0
+  - id: Boards/ClassicMarble
+    displayName: Classic Marble Board
+    data:
+      m_AssetGUID: 9e6e150ce4d9a8c4d8987b85ef5cc14c
       m_SubObjectName:
       m_SubObjectType:
       m_SubObjectGUID:

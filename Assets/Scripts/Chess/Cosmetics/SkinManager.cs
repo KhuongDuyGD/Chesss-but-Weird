@@ -23,48 +23,49 @@ public sealed class SkinManager
     {
         float highest = 0;
         Action<float> report = value => { highest = Mathf.Max(highest, value); progress?.Invoke(highest); };
-        yield return LoadSide(catalog, whiteSkinId, result => white = result, p => report(p * 0.5f));
-        yield return LoadSide(catalog, blackSkinId, result => black = result, p => report(0.5f + p * 0.5f));
+        yield return LoadSide(catalog, whiteSkinId, PieceTeam.White, result => white = result, p => report(p * 0.5f));
+        yield return LoadSide(catalog, blackSkinId, PieceTeam.Black, result => black = result, p => report(0.5f + p * 0.5f));
         report(1);
     }
 
-    private IEnumerator LoadSide(CosmeticCatalog catalog, string id, Action<LoadedSkin> completed, Action<float> progress)
+    private IEnumerator LoadSide(CosmeticCatalog catalog, string id, PieceTeam team, Action<LoadedSkin> completed, Action<float> progress)
     {
         string fallback = catalog ? catalog.defaultPieceSkinId : CosmeticSelection.LowPolyId;
         LoadedSkin result = null;
-        yield return LoadSkin(catalog, id, value => result = value, progress);
+        yield return LoadSkin(catalog, id, team, value => result = value, progress);
         if (result == null && !string.Equals(id, fallback, StringComparison.OrdinalIgnoreCase))
-            yield return LoadSkin(catalog, fallback, value => result = value, null);
+            yield return LoadSkin(catalog, fallback, team, value => result = value, null);
         completed(result); // null deliberately selects the existing procedural default visual.
         progress?.Invoke(1);
     }
 
-    private IEnumerator LoadSkin(CosmeticCatalog catalog, string id, Action<LoadedSkin> completed, Action<float> progress)
+    private IEnumerator LoadSkin(CosmeticCatalog catalog, string id, PieceTeam team, Action<LoadedSkin> completed, Action<float> progress)
     {
         id = id?.Trim() ?? "";
-        if (loaded.TryGetValue(id, out LoadedSkin cached)) { completed(cached); progress?.Invoke(1); yield break; }
+        string cacheKey = id + ":" + team;
+        if (loaded.TryGetValue(cacheKey, out LoadedSkin cached)) { completed(cached); progress?.Invoke(1); yield break; }
         CosmeticCatalogEntry entry = catalog ? catalog.FindPiece(id) : null;
-        if (entry == null) { loaded[id] = null; completed(null); yield break; }
+        if (entry == null) { loaded[cacheKey] = null; completed(null); yield break; }
         PieceSkinData data = null;
         yield return assets.Load<PieceSkinData>(entry.data, value => data = value, p => progress?.Invoke(p / 7));
-        if (!data) { loaded[id] = null; completed(null); yield break; }
+        if (!data) { loaded[cacheKey] = null; completed(null); yield break; }
         var skin = new LoadedSkin { data = data };
         int index = 0;
         foreach (PieceType type in Enum.GetValues(typeof(PieceType)))
         {
             GameObject prefab = null;
             int stage = ++index;
-            yield return assets.Load<GameObject>(data.GetPrefab(type), value => prefab = value, p => progress?.Invoke((stage + p) / 7f));
+            yield return assets.Load<GameObject>(data.GetPrefab(type, team), value => prefab = value, p => progress?.Invoke((stage + p) / 7f));
             if (!prefab)
             {
                 Debug.LogWarning("[Cosmetics] Incomplete piece set '" + id + "'. Entire side uses the default set.");
-                loaded[id] = null;
+                loaded[cacheKey] = null;
                 completed(null);
                 yield break;
             }
             skin.prefabs[type] = prefab;
         }
-        loaded[id] = skin;
+        loaded[cacheKey] = skin;
         completed(skin);
         progress?.Invoke(1);
     }

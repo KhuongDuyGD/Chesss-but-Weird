@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aaee2ceac7874efb98bef39abbd2e023, type: 3}
+  m_Name: TazjiMarble
+  m_EditorClassIdentifier: Assembly-CSharp::BoardSkinData
+  boardId: Boards/ClassicMarble
+  displayName: Classic Marble Board
+  preview:
+    m_AssetGUID: 1264c3bec56e271478649133367e50ba
+    m_SubObjectName:
+    m_SubObjectType:
+    m_SubObjectGUID:
+    m_EditorAssetChanged: 0
+  boardPrefab:
+    m_AssetGUID: fbd6b41aee81a5b43a630cd43cdcb8dc
+    m_SubObjectName:
+    m_SubObjectType:
+    m_SubObjectGUID:
+    m_EditorAssetChanged: 0
+  localPosition: {x: 0, y: 0, z: 0}
+  localRotation: {x: 0, y: 0, z: 0}
+  localScale: {x: 1, y: 1, z: 1}
+  prisonLayoutYaw: -90
