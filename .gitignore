@@ -17,6 +17,10 @@
 /[Bb]uild/
 /[Bb]uilds/
 /[Ll]ogs/
+# Generated UI audit captures; regenerate with the corresponding editor audit.
+/Documentation/UI/**/*.png
+/Documentation/UI/**/*.jpg
+/Documentation/UI/**/*.jpeg
 /[Uu]ser[Ss]ettings/
 Packages/com.gamelovers.mcp-unity/Server~/node_modules/
 *.log

@@ -23,6 +23,8 @@ MonoBehaviour:
       m_SubObjectType:
       m_SubObjectGUID:
       m_EditorAssetChanged: 0
+    thumbnail: {fileID: 21300000, guid: f35953e352f4d4947992fa002b0405f4, type: 3}
+    tier: COMMON
   - id: ChessSets/CrystalBlue
     displayName: Blue Crystal Chess Set
     data:
@@ -31,6 +33,8 @@ MonoBehaviour:
       m_SubObjectType:
       m_SubObjectGUID:
       m_EditorAssetChanged: 0
+    thumbnail: {fileID: 21300000, guid: e458bdfdb94246941af859d5473a8ebc, type: 3}
+    tier: COMMON
   - id: ChessSets/Woodland
     displayName: Woodland Chess Set
     data:
@@ -39,6 +43,8 @@ MonoBehaviour:
       m_SubObjectType:
       m_SubObjectGUID:
       m_EditorAssetChanged: 0
+    thumbnail: {fileID: 21300000, guid: 753af0c71b2471e44aaf4726d17a6fba, type: 3}
+    tier: COMMON
   boards:
   - id: tazji_lowpoly
     displayName: Tazji's Low Poly Arena
@@ -48,6 +54,8 @@ MonoBehaviour:
       m_SubObjectType:
       m_SubObjectGUID:
       m_EditorAssetChanged: 0
+    thumbnail: {fileID: 21300000, guid: aa2f7fee0aa51e341900ebea93ca4a95, type: 3}
+    tier: COMMON
   - id: Boards/ForestGarden
     displayName: Forest Garden Board
     data:
@@ -56,6 +64,8 @@ MonoBehaviour:
       m_SubObjectType:
       m_SubObjectGUID:
       m_EditorAssetChanged: 0
+    thumbnail: {fileID: 21300000, guid: 2536e2cb28f584e469894b1e4ed5df44, type: 3}
+    tier: COMMON
   - id: Boards/ClassicMarble
     displayName: Classic Marble Board
     data:
@@ -64,4 +74,16 @@ MonoBehaviour:
       m_SubObjectType:
       m_SubObjectGUID:
       m_EditorAssetChanged: 0
+    thumbnail: {fileID: 21300000, guid: 1264c3bec56e271478649133367e50ba, type: 3}
+    tier: COMMON
+  - id: Boards/Celestial
+    displayName: Celestial Board
+    data:
+      m_AssetGUID: 1f70748d388317645bc627a9c175fb14
+      m_SubObjectName:
+      m_SubObjectType:
+      m_SubObjectGUID:
+      m_EditorAssetChanged: 0
+    thumbnail: {fileID: 21300000, guid: 8dfc8d3dcd5e41746a902bf9364c5c57, type: 3}
+    tier: LEGENDARY
   environments: []

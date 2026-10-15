@@ -18,6 +18,7 @@ public partial class ChessLanController
         private int builtRevision = -1;
         private TextMeshProUGUI statusLabel, connectionLabel, timerLabel, acceptanceLabel, roomCodeLabel, hostLabel, guestLabel;
         private TMP_InputField joinInput;
+        private MatchLoadoutController loadoutPicker;
         private readonly List<(Button button, Func<bool> enabled)> controls = new List<(Button, Func<bool>)>();
         public bool IsCodeFocused => joinInput && joinInput.isFocused;
 
@@ -40,8 +41,10 @@ public partial class ChessLanController
         {
             if (!canvasRoot || !canvasRoot.activeSelf) return;
             if (builtRevision != owner.menuRevision) Rebuild();
-            statusLabel.text = owner.requestInFlight ? "Working...  " + owner.statusMessage : owner.statusMessage;
-            connectionLabel.text = owner.MatchConnectionState;
+            if (loadoutPicker) loadoutPicker.SetOnlineContext(() => owner.CanEditLoadout && !owner.forgetCancelledMatch,
+                owner.MatchConnectionState + "  /  " + owner.statusMessage);
+            if (statusLabel) statusLabel.text = owner.requestInFlight ? "Working...  " + owner.statusMessage : owner.statusMessage;
+            if (connectionLabel) connectionLabel.text = owner.MatchConnectionState;
             if (timerLabel) timerLabel.text = owner.menuPage == OnlineMenuPage.Searching ? owner.SearchElapsed : Mathf.CeilToInt(owner.AcceptanceSeconds).ToString("00");
             if (acceptanceLabel) acceptanceLabel.text = owner.LocalAccepted ? "Accepted! Waiting for your opponent..." : "Accept before the countdown ends.";
             if (roomCodeLabel) roomCodeLabel.text = owner.GetLobbyRoomCode();
@@ -56,8 +59,12 @@ public partial class ChessLanController
             for (int i = contentRoot.childCount - 1; i >= 0; i--)
             { var child = contentRoot.GetChild(i).gameObject; child.SetActive(false); UnityEngine.Object.Destroy(child); }
             controls.Clear(); joinInput = null;
+            loadoutPicker = null;
             timerLabel = acceptanceLabel = roomCodeLabel = hostLabel = guestLabel = null;
             builtRevision = owner.menuRevision;
+            statusLabel = connectionLabel = null;
+            if (owner.menuPage == OnlineMenuPage.Loadout)
+            { BuildLoadout(); return; }
             UI.Background(contentRoot);
             UI.Doodle(contentRoot, "Corner Star", new Rect(1480, 55, 75, 75), SketchbookDoodle.Shape.Star, UI.Yellow, 12);
             ActionButton(contentRoot, "Back", new Rect(64, 54, 155, 64), UI.White, owner.BackOnlineMenu);
@@ -200,33 +207,18 @@ public partial class ChessLanController
         }
         private void BuildLoadout()
         {
-            ModePicker(232);
-            LoadoutColumn(64, true, UI.Blue, "CHESS PIECES");
-            LoadoutColumn(868, false, UI.Green, "BOARD");
-            ActionButton(contentRoot, "Refresh Loadout", new Rect(64, 759, 322, 74), UI.White, owner.RefreshLoadout);
-            ActionButton(contentRoot, "Play", new Rect(1038, 759, 570, 74), UI.Yellow, owner.RequestFindMatch,
-                () => owner.CanEditLoadout && owner.loadoutLoaded && !owner.forgetCancelledMatch, 38);
-        }
-        private void LoadoutColumn(float x, bool chess, Color color, string title)
-        {
-            var panel = UI.Card(contentRoot, title, new Rect(x, 321, 740, 404), color).rectTransform;
-            UI.Text(panel, "Title", title, new Rect(26, 22, 680, 46), 30);
-            UI.Text(panel, "Equipped", "Equipped: " + owner.EquippedName(chess), new Rect(26, 79, 680, 47), 26, UI.Muted);
-            var content = UI.ScrollArea(panel, title + " Options", new Rect(20, 142, 700, 240), out _);
-            var items = owner.loadoutItems.Where(i => IsChessItem(i) == chess).ToList();
-            if (items.Count == 0)
-                UI.Text(content, "Empty", owner.loadoutLoading ? "Loading your items..." : owner.loadoutLoaded ? "Default loadout will be used." : "Couldn't load inventory. Press Refresh Loadout.",
-                    new Rect(18, 35, 660, 135), 25, UI.Muted, TextAlignmentOptions.Center, true);
-            content.sizeDelta = new Vector2(0, Mathf.Max(240, items.Count * 83));
-            for (int i = 0; i < items.Count; i++)
+            var screen = UI.Node(contentRoot, "Shared Match Loadout", new Rect(0, 0, 1672, 941));
+            var picker = screen.gameObject.AddComponent<MatchLoadoutController>();
+            loadoutPicker = picker;
+            picker.Initialize(screen, LoadingManager.For(owner.chessGame));
+            picker.OpenOnline(selection =>
             {
-                var item = items[i]; bool equipped = owner.LoadoutEquipped(item), available = owner.LoadoutAvailable(item);
-                var option = ActionButton(content, "", new Rect(6, i * 83 + 4, 680, 70), equipped ? UI.Yellow : UI.White,
-                    () => owner.SelectLoadoutItem(item), () => owner.CanEditLoadout && available && !equipped);
-                option.name = item.name;
-                UI.Text(option.transform, "Name", item.name, new Rect(16, 8, 420, 50), 27);
-                UI.Text(option.transform, "State", equipped ? "Equipped" : available ? "Select  >" : "Art unavailable", new Rect(450, 8, 213, 50), 22, UI.Muted, TextAlignmentOptions.Right);
-            }
+                if (!owner.CanEditLoadout) return;
+                owner.loadoutLoaded = true;
+                (owner.loadoutContinuation ?? owner.RequestFindMatch).Invoke();
+            }, owner.BackOnlineMenu, owner.loadoutActionLabel);
+            picker.ConfigureOnlineModes(IsAramGameMode(owner.requestedGameMode),
+                () => owner.ChangeOnlineMode("Classic"), () => owner.ChangeOnlineMode("Aram"));
         }
         private void BuildSearching()
         {

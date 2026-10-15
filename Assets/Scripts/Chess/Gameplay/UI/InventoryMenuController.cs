@@ -30,7 +30,6 @@ public sealed class InventoryMenuController : MonoBehaviour
     private readonly Button[] categoryButtons = new Button[4];
     private readonly Button[] ownershipButtons = new Button[3];
     private readonly Button[] sortButtons = new Button[3];
-    private readonly TextMeshProUGUI[] loadoutNames = new TextMeshProUGUI[3];
     private RectTransform root, contentRoot, itemRoot, filterOverlay, tagRoot;
     private CanvasGroup contentInput;
     private Button previousButton, nextButton, filterButton;
@@ -41,13 +40,13 @@ public sealed class InventoryMenuController : MonoBehaviour
     private Ownership ownership = Ownership.Owned;
     private SortOrder sort;
     private int page, requestVersion;
-    private bool loading, equipping;
+    private bool loading;
     private string loadedUserId;
-    private LoadingManager cosmetics;
+    private CosmeticCatalog cosmeticCatalog;
 
-    public void Initialize(RectTransform newRoot, UnityAction newCloseAction, LoadingManager newCosmetics = null)
+    public void Initialize(RectTransform newRoot, UnityAction newCloseAction, CosmeticCatalog catalog = null)
     {
-        root = newRoot; closeAction = newCloseAction; cosmetics = newCosmetics; Build();
+        root = newRoot; closeAction = newCloseAction; cosmeticCatalog = catalog; Build();
     }
 
     public void Open()
@@ -76,40 +75,23 @@ public sealed class InventoryMenuController : MonoBehaviour
         UI.Text(content, "Title", "Inventory", new Rect(72, 70, 680, 88), 65);
         UI.Button(content, "Back to Menu", "<  BACK", new Rect(1436, 80, 164, 62), UI.Pink, () => closeAction?.Invoke(), 26);
 
-        UI.Text(content, "Loadout Heading", "YOUR LOADOUT", new Rect(72, 197, 348, 48), 33);
-        UI.Text(content, "Collection Heading", "COLLECTION", new Rect(452, 188, 420, 48), 33);
+        UI.Text(content, "Collection Heading", "COLLECTION", new Rect(72, 188, 820, 48), 33);
         countLabel = UI.Text(content, "Collection Count", "", new Rect(1132, 195, 468, 38), 22, UI.Muted, TextAlignmentOptions.Right);
-        for (int i = 0; i < 3; i++)
-        {
-            Category slot = (Category)(i + 1);
-            RectTransform card = UI.Card(content, slot + " Loadout", new Rect(72, 267 + i * 176, 348, 150),
-                i == 0 ? UI.Blue : i == 1 ? UI.Green : UI.Pink, i == 1 ? 1 : -1, true, 8).rectTransform;
-            card.GetComponent<HandDrawnRoundedGraphic>().raycastTarget = true;
-            var button = card.gameObject.AddComponent<Button>();
-            button.targetGraphic = card.GetComponent<HandDrawnRoundedGraphic>();
-            button.transition = Selectable.Transition.None;
-            button.onClick.AddListener(() => ShowCategory(slot));
-            UI.Doodle(card, "Slot Icon", new Rect(18, 44, 66, 76), Icon(slot), UI.Ink);
-            UI.Text(card, "Slot Label", slot == Category.Chess ? "CHESS SKIN" : slot == Category.Board ? "BOARD SKIN" : "MOVE EFFECT",
-                new Rect(101, 15, 225, 30), 19, UI.Muted);
-            loadoutNames[i] = UI.Text(card, "Equipped Name", "Classic", new Rect(101, 48, 225, 83), 29, UI.Ink, TextAlignmentOptions.MidlineLeft, true);
-        }
-
         string[] labels = { "ALL", "CHESS", "BOARD", "EFFECTS" };
         for (int i = 0; i < labels.Length; i++)
         {
             Category value = (Category)i;
             categoryButtons[i] = UI.Button(content, labels[i] + " Category", labels[i],
-                new Rect(452 + i * 194, 252, 176, 54), UI.White, () => ShowCategory(value), 23);
+                new Rect(72 + i * 194, 252, 176, 54), UI.White, () => ShowCategory(value), 23);
         }
-        filterButton = UI.Button(content, "Filter Inventory", "FILTERS", new Rect(1256, 252, 152, 54), UI.Blue, OpenFilters, 23);
-        searchInput = BuildSearch(content, new Rect(452, 323, 600, 53));
+        filterButton = UI.Button(content, "Filter Inventory", "FILTERS", new Rect(1448, 252, 152, 54), UI.Blue, OpenFilters, 23);
+        searchInput = BuildSearch(content, new Rect(72, 323, 790, 53));
         filterSummary = UI.Text(content, "Active Filter Summary", "", new Rect(1078, 330, 522, 38), 20, UI.Muted, TextAlignmentOptions.Right);
-        itemRoot = UI.Node(content, "Inventory Items", new Rect(452, 399, 1148, 430));
-        previousButton = UI.Button(content, "Previous Page", "<", new Rect(452, 848, 60, 50), UI.White, () => ChangePage(-1), 29);
-        pageLabel = UI.Text(content, "Page", "", new Rect(524, 852, 992, 40), 23, UI.Muted, TextAlignmentOptions.Center);
+        itemRoot = UI.Node(content, "Inventory Items", new Rect(72, 399, 1528, 430));
+        previousButton = UI.Button(content, "Previous Page", "<", new Rect(72, 848, 60, 50), UI.White, () => ChangePage(-1), 29);
+        pageLabel = UI.Text(content, "Page", "", new Rect(144, 852, 1384, 40), 23, UI.Muted, TextAlignmentOptions.Center);
         nextButton = UI.Button(content, "Next Page", ">", new Rect(1540, 848, 60, 50), UI.White, () => ChangePage(1), 29);
-        statusLabel = UI.Text(content, "Inventory Status", "", new Rect(72, 817, 344, 97), 21, UI.Muted, TextAlignmentOptions.MidlineLeft, true);
+        statusLabel = UI.Text(content, "Inventory Status", "", new Rect(72, 905, 1528, 32), 21, UI.Muted, TextAlignmentOptions.MidlineLeft, true);
         foreach (Selectable control in content.GetComponentsInChildren<Selectable>())
         {
             if (control == previousButton || control == nextButton) continue;
@@ -244,6 +226,7 @@ public sealed class InventoryMenuController : MonoBehaviour
         {
             Category type = ItemCategory(item);
             if (type == Category.All || (category != Category.All && category != type)) continue;
+            if (!item.localEffect && !CosmeticThumbnailUI.HasArt(cosmeticCatalog, item.type, item.unityAssetKey)) continue;
             if (ownership == Ownership.Owned && !item.owned || ownership == Ownership.Equipped && !item.isEquipped) continue;
             if (query.Length > 0 && item.name.IndexOf(query, StringComparison.OrdinalIgnoreCase) < 0) continue;
             if (selectedTags.Count > 0)
@@ -266,21 +249,16 @@ public sealed class InventoryMenuController : MonoBehaviour
     private void RefreshView()
     {
         if (!itemRoot) return;
-        for (int i = 0; i < loadoutNames.Length; i++)
-        {
-            var equipped = items.Find(item => item.isEquipped && ItemCategory(item) == (Category)(i + 1));
-            loadoutNames[i].text = equipped != null ? equipped.name : loading ? "Loading..." : "Default";
-        }
         for (int i = 0; i < categoryButtons.Length; i++) categoryButtons[i].targetGraphic.color = (int)category == i ? UI.Yellow : UI.White;
         ClearChildren(itemRoot);
         List<InventoryEntry> visible = GetVisibleItems();
         page = Mathf.Clamp(page, 0, Mathf.Max(0, (visible.Count - 1) / PageSize));
         int first = page * PageSize;
         for (int i = first; i < Mathf.Min(first + PageSize, visible.Count); i++)
-            AddItemCard(visible[i], new Rect(((i - first) % 3) * 386, ((i - first) / 3) * 216, 374, 198));
+            AddItemCard(visible[i], new Rect(((i - first) % 3) * 516, ((i - first) / 3) * 216, 496, 198));
         if (visible.Count == 0)
             UI.Text(itemRoot, "Empty Collection", loading ? "Loading collection..." : "No items match these filters.",
-                new Rect(60, 110, 1028, 110), 32, UI.Muted, TextAlignmentOptions.Center, true);
+                new Rect(60, 110, 1408, 110), 32, UI.Muted, TextAlignmentOptions.Center, true);
         countLabel.text = visible.Count + (visible.Count == 1 ? " ITEM" : " ITEMS");
         int pages = Mathf.Max(1, (visible.Count + PageSize - 1) / PageSize);
         pageLabel.text = "PAGE " + (page + 1) + " / " + pages;
@@ -293,20 +271,15 @@ public sealed class InventoryMenuController : MonoBehaviour
     private void AddItemCard(InventoryEntry item, Rect area)
     {
         var face = UI.Card(itemRoot, "Item " + item.itemId, area, UI.White, 0, true, 8);
-        UI.Card(face.transform, "Rarity Tag", new Rect(15, 13, 165, 30), RarityColor(item.rarity), -1, false, 4);
-        UI.Text(face.transform, "Rarity", item.rarity ?? "COMMON", new Rect(24, 13, 146, 30), 18);
-        UI.Doodle(face.transform, "Cosmetic Preview", new Rect(23, 67, 73, 92), Icon(ItemCategory(item)),
-            item.localEffect && item.unityAssetKey == "confetti" ? UI.Pink : UI.Ink, -4);
-        UI.Text(face.transform, "Item Name", item.name, new Rect(116, 56, 240, 83), 29, UI.Ink, TextAlignmentOptions.MidlineLeft, true);
-        UI.Text(face.transform, "Category Tag", ItemCategory(item).ToString().ToUpperInvariant(), new Rect(116, 141, 220, 25), 18, UI.Muted);
-        UI.Text(face.transform, "Item State", item.isEquipped ? "EQUIPPED" : !item.owned ? "LOCKED" : !item.isActive ? "UNAVAILABLE" : "EQUIP",
-            new Rect(178, 170, 173, 23), 18, item.isEquipped ? new Color(.20f, .40f, .23f) : UI.Muted, TextAlignmentOptions.Right);
-        if (!item.owned || !item.isActive || item.isEquipped) return;
-        face.raycastTarget = true;
-        var button = face.gameObject.AddComponent<Button>();
-        button.transition = Selectable.Transition.None;
-        button.targetGraphic = face; button.interactable = !loading && !equipping;
-        button.onClick.AddListener(() => EquipItem(item));
+        var art = CosmeticThumbnailUI.Find(cosmeticCatalog, item.type, item.unityAssetKey);
+        CosmeticThumbnailUI.Draw(face.transform, new Rect(13, 13, 224, 172), art?.thumbnail, item.isEquipped,
+            item.localEffect ? item.unityAssetKey : null);
+        UI.Card(face.transform, "Rarity Tag", new Rect(251, 13, 220, 30), RarityColor(item.rarity), 0, false, 4);
+        UI.Text(face.transform, "Rarity", item.rarity ?? "COMMON", new Rect(261, 13, 200, 30), 18);
+        UI.Text(face.transform, "Item Name", item.name, new Rect(251, 53, area.width - 270, 85), 27, UI.Ink, TextAlignmentOptions.MidlineLeft, true);
+        UI.Text(face.transform, "Category Tag", ItemCategory(item).ToString().ToUpperInvariant(), new Rect(251, 141, 220, 25), 18, UI.Muted);
+        UI.Text(face.transform, "Item State", item.isEquipped ? "EQUIPPED" : !item.owned ? "LOCKED" : !item.isActive ? "UNAVAILABLE" : "OWNED",
+            new Rect(area.width - 195, 170, 173, 23), 18, item.isEquipped ? new Color(.20f, .40f, .23f) : UI.Muted, TextAlignmentOptions.Right);
     }
 
     private void AddLocalEffects()
@@ -335,7 +308,6 @@ public sealed class InventoryMenuController : MonoBehaviour
             await Task.WhenAll(catalogTask, ownedTask);
             if (!this || version != requestVersion || userId != PlayerAuthService.CurrentApiUser?.userId) return;
             MergeItems(catalogTask.Result, ownedTask.Result);
-            SyncEquippedVisuals();
             SetStatus("");
         }
         catch (Exception error)
@@ -365,98 +337,19 @@ public sealed class InventoryMenuController : MonoBehaviour
             if (item == null || !item.isActive || string.IsNullOrWhiteSpace(item.itemId)) continue;
             ownershipMap.TryGetValue(item.itemId, out InventoryItemResponse playerItem);
             items.Add(new InventoryEntry { itemId = item.itemId, name = DisplayName(item.name, item.code, item.itemId),
-                type = item.type, rarity = item.rarity, unityAssetKey = item.unityAssetKey, tags = item.tags,
-                owned = playerItem != null, isEquipped = playerItem != null && playerItem.isEquipped, isActive = true });
+                type = item.type, rarity = item.rarity, unityAssetKey = item.isDefault ? CosmeticSelection.LowPolyId : item.unityAssetKey, tags = item.tags,
+                owned = playerItem != null || item.isDefault, isEquipped = playerItem != null && playerItem.isEquipped, isActive = true });
             ownershipMap.Remove(item.itemId);
         }
         foreach (InventoryItemResponse item in ownershipMap.Values)
             items.Add(new InventoryEntry { itemId = item.itemId, name = DisplayName(item.name, item.code, item.itemId),
-                type = item.type, rarity = item.rarity, unityAssetKey = item.unityAssetKey, tags = item.tags,
+                type = item.type, rarity = item.rarity, unityAssetKey = item.isDefault ? CosmeticSelection.LowPolyId : item.unityAssetKey, tags = item.tags,
                 owned = true, isEquipped = item.isEquipped, isActive = false });
         AddLocalEffects();
     }
 
-    private async void EquipItem(InventoryEntry item)
-    {
-        if (equipping || loading || item == null || !item.owned || !item.isActive) return;
-        if (item.localEffect)
-        {
-            var selection = CosmeticSelection.Load(); selection.moveEffectId = item.unityAssetKey; selection.Save();
-            foreach (InventoryEntry candidate in items) if (candidate.localEffect) candidate.isEquipped = candidate == item;
-            RefreshView(); SetStatus("Equipped " + item.name + "."); return;
-        }
-        string userId = PlayerAuthService.CurrentApiUser?.userId;
-        if (string.IsNullOrWhiteSpace(userId)) return;
-        int version = requestVersion;
-        equipping = true; RefreshView(); SetStatus("Equipping " + item.name + "...");
-        try
-        {
-            EquipItemResponse response = await inventory.EquipAsync(item.itemId);
-            if (!this || userId != PlayerAuthService.CurrentApiUser?.userId) return;
-            if (response == null || !response.success || response.equipped == null)
-                throw new ApiException(response?.message ?? "The server did not confirm equipment.");
-            PlayerAuthService.CurrentApiUser.equipped = response.equipped;
-            if (version != requestVersion)
-            {
-                ApplyLocalVisual(item);
-                requestVersion++;
-                RefreshFromServer();
-                return;
-            }
-            foreach (InventoryEntry candidate in items)
-            {
-                if (candidate.localEffect) continue;
-                candidate.isEquipped = candidate.owned && string.Equals(candidate.itemId,
-                    IsChessType(candidate.type) ? response.equipped.chessSkinId : IsBoardType(candidate.type) ? response.equipped.boardSkinId : null,
-                    StringComparison.OrdinalIgnoreCase);
-            }
-            bool hasVisual = ApplyLocalVisual(item);
-            SetStatus(hasVisual ? "Equipped " + item.name + "." : "Equipped on account. Local art unavailable.");
-        }
-        catch (Exception error) { if (this && version == requestVersion) SetStatus("Could not equip: " + PlayerNotificationText.FromException(error)); }
-        finally { if (this) { equipping = false; RefreshView(); } }
-    }
-
-    private void SyncEquippedVisuals()
-    {
-        CosmeticSelection selection = CosmeticSelection.Load();
-        selection.whiteSkinId = selection.blackSkinId = selection.boardId = CosmeticSelection.LowPolyId;
-        foreach (InventoryEntry item in items)
-        {
-            if (!item.isEquipped || item.localEffect) continue;
-            if (IsChessType(item.type)) selection.whiteSkinId = selection.blackSkinId = IsKnownPieceSkin(item.unityAssetKey) ? item.unityAssetKey : CosmeticSelection.LowPolyId;
-            else if (IsBoardType(item.type)) selection.boardId = IsKnownBoardSkin(item.unityAssetKey) ? item.unityAssetKey : CosmeticSelection.LowPolyId;
-        }
-        selection.Save();
-    }
-
-    private bool ApplyLocalVisual(InventoryEntry item)
-    {
-        var selection = CosmeticSelection.Load();
-        bool supported;
-        if (IsChessType(item.type))
-        {
-            supported = IsKnownPieceSkin(item.unityAssetKey);
-            selection.whiteSkinId = selection.blackSkinId = supported ? item.unityAssetKey : CosmeticSelection.LowPolyId;
-        }
-        else
-        {
-            supported = IsKnownBoardSkin(item.unityAssetKey);
-            selection.boardId = supported ? item.unityAssetKey : CosmeticSelection.LowPolyId;
-        }
-        selection.Save(); return supported;
-    }
-
     private static bool IsChessType(string type) => !string.IsNullOrWhiteSpace(type) && type.IndexOf("CHESS", StringComparison.OrdinalIgnoreCase) >= 0;
     private static bool IsBoardType(string type) => !string.IsNullOrWhiteSpace(type) && type.IndexOf("BOARD", StringComparison.OrdinalIgnoreCase) >= 0;
-    private bool IsKnownBoardSkin(string key) => string.Equals(key, CosmeticSelection.LowPolyId, StringComparison.OrdinalIgnoreCase) ||
-        (cosmetics && cosmetics.Catalog && cosmetics.Catalog.FindBoard(key) != null);
-    private bool IsKnownPieceSkin(string key)
-    {
-        if (cosmetics && cosmetics.Catalog) return cosmetics.Catalog.FindPiece(key) != null;
-        foreach (PieceSkinDefinition skin in PieceSkinCatalog.All) if (string.Equals(skin.Id, key, StringComparison.OrdinalIgnoreCase)) return true;
-        return false;
-    }
     private static string DisplayName(string name, string code, string id) => !string.IsNullOrWhiteSpace(name) ? name : !string.IsNullOrWhiteSpace(code) ? code : id;
     private static SketchbookDoodle.Shape Icon(Category value) => value == Category.Chess ? SketchbookDoodle.Shape.Pawn : value == Category.Board ? SketchbookDoodle.Shape.Board : SketchbookDoodle.Shape.Star;
     private static int RarityRank(string rarity)

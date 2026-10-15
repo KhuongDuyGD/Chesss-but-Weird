@@ -55,11 +55,6 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 753af0c71b2471e44aaf4726d17a6fba
-    m_Address: Previews/Tazji'sWoodlandChessSet
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 84c8b1a51192ffb45b823bfd1304c425
     m_Address: PieceSkin/ChessSets/Woodland
     m_ReadOnly: 0

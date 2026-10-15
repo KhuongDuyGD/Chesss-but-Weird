@@ -15,11 +15,6 @@ MonoBehaviour:
   m_GroupName: Board_TazjiForestGarden
   m_GUID: 1f81bd2e6624978449db3a50ad0d8694
   m_SerializeEntries:
-  - m_GUID: 2536e2cb28f584e469894b1e4ed5df44
-    m_Address: Previews/Tazji'sForestGardenBoard
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 78c34fb73f05e434683ad38e3758fd1e
     m_Address: Models/Tazji'sForestGardenBoard/Forest_Garden_Board
     m_ReadOnly: 0

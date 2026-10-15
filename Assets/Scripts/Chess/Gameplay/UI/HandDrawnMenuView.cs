@@ -44,16 +44,13 @@ public class HandDrawnMenuView : MonoBehaviour
     private ModeSelectionPresentation modePresentation;
     private GachaMenuController gachaController;
     private InventoryMenuController inventoryController;
+    private MatchLoadoutController matchLoadoutController;
     private PlayerProfileMenuController profileController;
     private SettingsMenuController settingsController;
     private Coroutine screenTransitionCoroutine;
     private Coroutine profileOverlayTransitionCoroutine;
     private Coroutine settingsOverlayTransitionCoroutine;
     private readonly List<Sprite> runtimeSprites = new List<Sprite>();
-    private string selectedWhiteSkinId = PieceSkinCatalog.DefaultSkinId;
-    private string selectedBlackSkinId = PieceSkinCatalog.DefaultSkinId;
-    private bool skinSelectionVsBot;
-    private PieceTeam skinSelectionPlayerTeam = PieceTeam.White;
     private static Font uiFont;
 
     public bool IsReady => assets != null && assets.HasRequiredSprites && canvas != null;
@@ -140,15 +137,22 @@ public class HandDrawnMenuView : MonoBehaviour
     public void ShowPieceSkinSelection(bool vsBot, PieceTeam playerTeam)
     {
         if (!vsBot && !owner.RequireAccountAccess("Two-player mode")) return;
-        skinSelectionVsBot = vsBot;
-        skinSelectionPlayerTeam = playerTeam;
-        var saved = CosmeticSelection.Load();
-        selectedWhiteSkinId = saved.whiteSkinId;
-        selectedBlackSkinId = saved.blackSkinId;
-
         SetVisible(true);
         SetInputEnabled(true);
-        TransitionToScreen(skinScreen, RebuildSkinScreen);
+        TransitionToScreen(skinScreen, () => matchLoadoutController.Open(vsBot, playerTeam,
+            selection =>
+            {
+                if (vsBot) owner.StartBotGameWithLoadout(playerTeam, selection);
+                else owner.StartLocalTwoPlayerGameWithLoadout(selection);
+            }, () => { if (vsBot) ShowSideSelection(); else ShowLocalModeSelection(); }));
+    }
+
+    public void ShowAramPracticeLoadout(Action<CosmeticSelection> start)
+    {
+        SetVisible(true);
+        SetInputEnabled(true);
+        TransitionToScreen(skinScreen, () => matchLoadoutController.Open(false, PieceTeam.White,
+            start, ShowAramModeSelection));
     }
 
     public void ShowMultiplayerModeSelection()
@@ -287,7 +291,7 @@ public class HandDrawnMenuView : MonoBehaviour
     {
         inventoryScreen = CreateScreen("Inventory");
         inventoryController = inventoryScreen.gameObject.AddComponent<InventoryMenuController>();
-        inventoryController.Initialize(inventoryScreen, ShowModeSelection, chessGame ? LoadingManager.For(chessGame) : null);
+        inventoryController.Initialize(inventoryScreen, ShowModeSelection, LoadingManager.For(chessGame).Catalog);
     }
 
     private void BuildProfileOverlay()
@@ -487,59 +491,9 @@ public class HandDrawnMenuView : MonoBehaviour
 
     private void BuildSkinScreen()
     {
-        skinScreen = CreateScreen("Piece Skin Select");
-    }
-
-    private void RebuildSkinScreen()
-    {
-        ClearSkinScreen();
-
-        AddBattleDoodles(skinScreen, true);
-        AddMenuConfetti(skinScreen);
-        AddText(skinScreen, "Skin Title", "Match Appearance", new Vector2(0f, 410f), new Vector2(980f, 110f), 66, TextAnchor.MiddleCenter, new Color(0.12f, 0.1f, 0.08f, 1f));
-
-        if (skinSelectionVsBot)
-        {
-            AddTextButton(skinScreen, "Start Bot Match", "Start", new Vector2(0f, -410f), new Vector2(330f, 115f), StartSelectedSkinMatch, new Color(0.98f, 0.83f, 0.32f, 1f));
-            AddBackButton(skinScreen, new Vector2(-820f, -420f), () => ShowSideSelection());
-        }
-        else
-        {
-            AddTextButton(skinScreen, "Start Local Match", "Start", new Vector2(0f, -430f), new Vector2(330f, 105f), StartSelectedSkinMatch, new Color(0.98f, 0.83f, 0.32f, 1f));
-            AddBackButton(skinScreen, new Vector2(-820f, -430f), () => ShowLocalModeSelection());
-        }
-
-        AddText(skinScreen, "Default Board", "Board: Tazji's Low Poly Arena",
-            new Vector2(0f, 100f), new Vector2(760f, 80f), 40, TextAnchor.MiddleCenter,
-            new Color(0.12f, 0.1f, 0.08f, 1f));
-        AddText(skinScreen, "Default Chess Set", "Chess set: Tazji's Low Poly",
-            new Vector2(0f, -60f), new Vector2(760f, 80f), 40, TextAnchor.MiddleCenter,
-            new Color(0.12f, 0.1f, 0.08f, 1f));
-    }
-
-    private void ClearSkinScreen()
-    {
-        if (!skinScreen)
-            return;
-
-        for (int i = skinScreen.childCount - 1; i >= 0; i--)
-        {
-            skinScreen.GetChild(i).gameObject.SetActive(false);
-            Destroy(skinScreen.GetChild(i).gameObject);
-        }
-    }
-
-    private string GetSelectedSkinId(PieceTeam team)
-    {
-        return team == PieceTeam.White ? selectedWhiteSkinId : selectedBlackSkinId;
-    }
-
-    private void StartSelectedSkinMatch()
-    {
-        if (skinSelectionVsBot)
-            owner.StartBotGameWithSkin(skinSelectionPlayerTeam, GetSelectedSkinId(skinSelectionPlayerTeam));
-        else
-            owner.StartLocalTwoPlayerGameWithSkins(selectedWhiteSkinId, selectedBlackSkinId);
+        skinScreen = CreateScreen("Match Loadout");
+        matchLoadoutController = skinScreen.gameObject.AddComponent<MatchLoadoutController>();
+        matchLoadoutController.Initialize(skinScreen, LoadingManager.For(chessGame));
     }
 
     private System.Action refreshBotRoster;

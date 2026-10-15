@@ -25,6 +25,7 @@ public static class DefaultLowPolyCosmeticsSetup
         pieces.skinId = CatalogId;
         pieces.displayName = "Tazji's Low Poly Chess Set";
         pieces.applyTeamColor = true;
+        pieces.preview = GachaSkinAssetsSetup.Preview(settings, "Tazji'sLowPoly/Chess_Set", "Chess_Set_Preview.png", "PieceSkin_TazjiLowPoly");
         foreach (PieceType type in Enum.GetValues(typeof(PieceType)))
         {
             string modelPath = SetFolder + "/Chess_" + type + ".fbx";
@@ -44,6 +45,7 @@ public static class DefaultLowPolyCosmeticsSetup
         board.boardId = CatalogId;
         board.displayName = "Tazji's Low Poly Arena";
         board.boardPrefab = new AssetReferenceGameObject(AssetDatabase.AssetPathToGUID(ArenaPath));
+        board.preview = GachaSkinAssetsSetup.Preview(settings, "Tazji'sLowPoly/Chess_Arena", "Chess_Arena_Preview.png", "Board_TazjiLowPoly");
         board.localPosition = Vector3.zero;
         board.prisonLayoutYaw = GachaSkinAssetsSetup.DetectPrisonLayoutYaw(arena);
         board.localRotation = board.prisonLayoutYaw == 0f ? new Vector3(0f, -90f, 0f) : Vector3.zero;
@@ -99,6 +101,7 @@ public static class DefaultLowPolyCosmeticsSetup
         entry.id = id;
         entry.displayName = displayName;
         entry.data = new AssetReference(AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(data)));
+        GachaSkinAssetsSetup.UpdateMenuArt(entry, data);
     }
 
     private static void Register(AddressableAssetSettings settings, UnityEngine.Object asset,

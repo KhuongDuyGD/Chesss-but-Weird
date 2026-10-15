@@ -50,7 +50,7 @@ public static class PieceSkinCatalog
         if (!catalog || catalog.pieceSkins == null) return;
         foreach (var entry in catalog.pieceSkins)
         {
-            if (entry == null || string.IsNullOrWhiteSpace(entry.id) || IsDefault(entry.id)) continue;
+            if (entry == null || !entry.HasArt || string.IsNullOrWhiteSpace(entry.id) || IsDefault(entry.id)) continue;
             Skins.Add(new PieceSkinDefinition(entry.id, entry.displayName, new Color(.74f, .83f, .95f)));
         }
     }

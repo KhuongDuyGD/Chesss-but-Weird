@@ -82,7 +82,10 @@ public class Chessboard : MonoBehaviour
         visual.SetParent(transform, false);
         visual.position = GetBoardCenterWorld();
         visual.localRotation = Quaternion.identity;
-        visual.localScale = new Vector3(currentBoardLayout.tileWidth, 1, currentBoardLayout.tileDepth);
+        // Models are authored in board units on all three axes. Keeping Y at 1
+        // stretches their height when a scene uses tiles smaller than one unit.
+        float heightScale = Mathf.Sqrt(currentBoardLayout.tileWidth * currentBoardLayout.tileDepth);
+        visual.localScale = new Vector3(currentBoardLayout.tileWidth, heightScale, currentBoardLayout.tileDepth);
         ApplyBoardRendererVisibility();
     }
 

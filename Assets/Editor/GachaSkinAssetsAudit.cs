@@ -87,58 +87,51 @@ public static class GachaSkinAssetsAudit
         Check(catalog.pieceSkins.Count == pieceCount && catalog.boards.Count == boardCount,
             "Repeating setup does not duplicate catalog entries");
         const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
-        var host = new GameObject("Gacha inventory verification");
+        var host = new GameObject("Gacha match loadout verification");
         var loading = host.AddComponent<LoadingManager>();
         typeof(LoadingManager).GetProperty("Catalog").SetValue(loading, catalog);
-        var inventory = host.AddComponent<InventoryMenuController>();
-        typeof(InventoryMenuController).GetField("cosmetics", flags).SetValue(inventory, loading);
-        var itemType = typeof(InventoryMenuController).GetNestedType("InventoryEntry", BindingFlags.NonPublic);
-        var apply = typeof(InventoryMenuController).GetMethod("ApplyLocalVisual", flags);
+        var screen = new GameObject("Loadout verification screen", typeof(RectTransform)).GetComponent<RectTransform>();
+        var loadout = host.AddComponent<MatchLoadoutController>();
+        loadout.Initialize(screen, loading);
         var account = typeof(PlayerAuthService).GetProperty("CurrentApiUser");
         var guest = typeof(PlayerAuthService).GetProperty("IsGuestSession");
         object previousAccount = account.GetValue(null), previousGuest = guest.GetValue(null);
-        const string saveKey = "chess.cosmetics.selection.v2.__gacha_skin_audit__";
-        bool hadPreference = PlayerPrefs.HasKey(saveKey);
-        string preference = PlayerPrefs.GetString(saveKey);
         try
         {
             account.SetValue(null, new UserMeResponse { userId = "__gacha_skin_audit__" });
             guest.SetValue(null, false);
-            PlayerPrefs.DeleteKey(saveKey);
+            CallLoadout(loadout, "AddBuiltInChoices");
+            var addChoice = typeof(MatchLoadoutController).GetMethod("AddChoice", flags);
+            var isAvailable = typeof(MatchLoadoutController).GetMethod("IsLocallyAvailable", flags);
             foreach (var definition in new[] {
                 new[] { "CHESS_PIECE_SKIN", GachaSkinAssetsSetup.WoodlandKey },
                 new[] { "BOARD_SKIN", GachaSkinAssetsSetup.MarbleKey },
                 new[] { "CHESS_PIECE_SKIN", GachaSkinAssetsSetup.CrystalKey },
                 new[] { "BOARD_SKIN", GachaSkinAssetsSetup.ForestKey } })
             {
-                var before = CosmeticSelection.Load();
-                object item = Activator.CreateInstance(itemType, true);
-                itemType.GetField("type").SetValue(item, definition[0]);
-                itemType.GetField("unityAssetKey").SetValue(item, definition[1]);
-                Check((bool)apply.Invoke(inventory, new[] { item }), definition[1] + " is supported by inventory");
-                var after = CosmeticSelection.Load();
-                bool pieces = definition[0] == "CHESS_PIECE_SKIN";
-                Check(pieces ? after.whiteSkinId == definition[1] && after.blackSkinId == definition[1]
-                    : after.boardId == definition[1], definition[1] + " persists selected visual");
-                Check(pieces ? after.boardId == before.boardId : after.whiteSkinId == before.whiteSkinId && after.blackSkinId == before.blackSkinId,
-                    definition[1] + " preserves the other equipment slot");
+                object item = new ItemCatalogResponse { type = definition[0], unityAssetKey = definition[1], isActive = true };
+                Check((bool)isAvailable.Invoke(loadout, new[] { item }), definition[1] + " is locally available to the loadout picker");
+                addChoice.Invoke(loadout, new object[] { definition[1], definition[1], definition[0], true });
+                Check((string)typeof(MatchLoadoutController).GetMethod("AvailableOrDefault", flags).Invoke(loadout,
+                    new object[] { definition[1], definition[0], CosmeticSelection.LowPolyId }) == definition[1],
+                    definition[1] + " can be selected from the match loadout");
             }
-            object unknown = Activator.CreateInstance(itemType, true);
-            itemType.GetField("type").SetValue(unknown, "BOARD_SKIN");
-            itemType.GetField("unityAssetKey").SetValue(unknown, "Boards/NotInstalled");
-            Check(!(bool)apply.Invoke(inventory, new[] { unknown }) && CosmeticSelection.Load().boardId == CosmeticSelection.LowPolyId,
-                "Uninstalled board art retains the Low Poly fallback");
+            Check(typeof(InventoryMenuController).GetField("loadoutNames", flags) == null &&
+                typeof(InventoryMenuController).GetMethod("EquipItem", flags) == null,
+                "Inventory no longer exposes loadout selection or equipment actions");
         }
         finally
         {
-            if (hadPreference) PlayerPrefs.SetString(saveKey, preference); else PlayerPrefs.DeleteKey(saveKey);
-            PlayerPrefs.Save();
             account.SetValue(null, previousAccount); guest.SetValue(null, previousGuest);
             UnityEngine.Object.DestroyImmediate(host);
+            UnityEngine.Object.DestroyImmediate(screen.gameObject);
         }
-        File.WriteAllLines(Output + "/inventory-checks.txt", Checks);
-        Debug.Log("[GachaSkins] " + Checks.Count + " inventory checks; PASS (no API calls)");
+        File.WriteAllLines(Output + "/match-loadout-checks.txt", Checks);
+        Debug.Log("[GachaSkins] " + Checks.Count + " match loadout checks; PASS (no API calls)");
     }
+
+    private static void CallLoadout(MatchLoadoutController controller, string method) =>
+        typeof(MatchLoadoutController).GetMethod(method, BindingFlags.Instance | BindingFlags.NonPublic).Invoke(controller, null);
 
     private static void Tick()
     {

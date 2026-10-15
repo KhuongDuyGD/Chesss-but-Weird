@@ -16,6 +16,7 @@ public static class GachaSkinAssetsSetup
     public const string WoodlandKey = "ChessSets/Woodland";
     public const string ForestKey = "Boards/ForestGarden";
     public const string MarbleKey = "Boards/ClassicMarble";
+    public const string CelestialKey = "Boards/Celestial";
     private static readonly string[] Types = { "Pawn", "Rook", "Knight", "Bishop", "Queen", "King" };
 
     [MenuItem("Chess/Setup Gacha Skin Assets")]
@@ -40,10 +41,12 @@ public static class GachaSkinAssetsSetup
             "Tazji'sForestGardenBoard", "Forest_Garden_Board");
         Board(settings, catalog, "TazjiMarble", MarbleKey, "Classic Marble Board",
             "Tazji'sMarbleBoard", "Classic_Marble_Board");
+        Board(settings, catalog, "TazjiCelestial", CelestialKey, "Celestial Board",
+            "Tazji'sCelestialBoard", "Celestial_Legendary_Board_Animated", "Celestial_Animated_Hero.png");
         EditorUtility.SetDirty(catalog);
         EditorUtility.SetDirty(settings);
         AssetDatabase.SaveAssets();
-        Debug.Log("[GachaSkins] Registered Crystal, Woodland, Forest Garden and Marble with backend keys.");
+        Debug.Log("[GachaSkins] Registered Crystal, Woodland, Forest Garden, Marble and Celestial with backend keys.");
     }
 
     private static void ValidateModels(string folder, params string[] prefixes)
@@ -85,7 +88,7 @@ public static class GachaSkinAssetsSetup
     }
 
     private static void Board(AddressableAssetSettings settings, CosmeticCatalog catalog,
-        string assetName, string key, string displayName, string folder, string modelName)
+        string assetName, string key, string displayName, string folder, string modelName, string previewName = null)
     {
         string path = Root + "/Boards/" + assetName + ".asset";
         var data = LoadOrCreate<BoardSkinData>(path);
@@ -93,9 +96,10 @@ public static class GachaSkinAssetsSetup
         data.boardId = key;
         data.displayName = displayName;
         data.boardPrefab = new AssetReferenceGameObject(Model(settings, folder, modelName, "Board_" + assetName));
-        data.preview = Preview(settings, folder, modelName + "_Preview.png", "Board_" + assetName);
+        data.preview = Preview(settings, folder, previewName ?? modelName + "_Preview.png", "Board_" + assetName);
         data.localPosition = Vector3.zero;
         data.localScale = Vector3.one;
+        data.loopAnimation = key == CelestialKey;
         data.prisonLayoutYaw = DetectPrisonLayoutYaw(RequireModel("Assets/Skins/" + folder + "/" + modelName + ".fbx"));
         data.localRotation = data.prisonLayoutYaw == 0f ? new Vector3(0f, -90f, 0f) : Vector3.zero;
         EditorUtility.SetDirty(data);
@@ -105,6 +109,13 @@ public static class GachaSkinAssetsSetup
 
     public static float DetectPrisonLayoutYaw(GameObject model)
     {
+        var explicitPads = model.GetComponentsInChildren<Renderer>(true).Where(renderer =>
+            renderer.name.IndexOf("Prisoner_", StringComparison.OrdinalIgnoreCase) >= 0).ToArray();
+        if (explicitPads.Length >= 2)
+        {
+            Vector3 separation = explicitPads[0].bounds.center - explicitPads[1].bounds.center;
+            return Mathf.Abs(separation.z) > Mathf.Abs(separation.x) ? -90f : 0f;
+        }
         var pads = model.GetComponentsInChildren<Renderer>(true).FirstOrDefault(renderer =>
             IsPrisonPadMesh(renderer.name));
         if (!pads) throw new InvalidOperationException("Missing prisoner pad mesh in " + model.name);
@@ -135,7 +146,7 @@ public static class GachaSkinAssetsSetup
         return AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(model));
     }
 
-    private static AssetReferenceSprite Preview(AddressableAssetSettings settings, string folder, string name, string group)
+    public static AssetReferenceSprite Preview(AddressableAssetSettings settings, string folder, string name, string group)
     {
         string path = "Assets/Skins/" + folder + "/" + name;
         var importer = AssetImporter.GetAtPath(path) as TextureImporter;
@@ -146,7 +157,8 @@ public static class GachaSkinAssetsSetup
             importer.spriteImportMode = SpriteImportMode.Single;
             importer.SaveAndReimport();
         }
-        Register(settings, AssetDatabase.LoadAssetAtPath<Sprite>(path), group, "Previews/" + folder);
+        // Catalog thumbnails must not pull in the model bundles when a menu opens.
+        Register(settings, AssetDatabase.LoadAssetAtPath<Sprite>(path), "CosmeticThumbnails", "Previews/" + folder);
         return new AssetReferenceSprite(AssetDatabase.AssetPathToGUID(path));
     }
 
@@ -173,6 +185,14 @@ public static class GachaSkinAssetsSetup
         entry.id = key;
         entry.displayName = displayName;
         entry.data = new AssetReference(AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(data)));
+        UpdateMenuArt(entry, data);
+    }
+
+    public static void UpdateMenuArt(CosmeticCatalogEntry entry, UnityEngine.Object data)
+    {
+        var preview = data is PieceSkinData pieces ? pieces.preview : (data as BoardSkinData)?.preview;
+        entry.thumbnail = preview == null ? null : AssetDatabase.LoadAssetAtPath<Sprite>(AssetDatabase.GUIDToAssetPath(preview.AssetGUID));
+        if (entry.id == CelestialKey) entry.tier = "LEGENDARY";
     }
 
     private static void Register(AddressableAssetSettings settings, UnityEngine.Object asset, string groupName, string address)

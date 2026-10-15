@@ -1,14 +1,10 @@
 using System.IO;
 using UnityEditor;
-using UnityEditor.SceneManagement;
 using UnityEngine;
-using UnityEngine.SceneManagement;
-using UnityEngine.UI;
 
 public static class GachaRevealAssetBuilder
 {
     private const string GachaAssetFolder = "Assets/Materials/Gacha_menu";
-    private const string DemoScenePath = "Assets/Scenes/GachaRevealDemo.unity";
 
     [MenuItem("Chess But Weird/Gacha/Generate Reveal Assets")]
     public static void GenerateRevealAssets()
@@ -26,46 +22,6 @@ public static class GachaRevealAssetBuilder
         SaveTexture("GachaRevealGlyph6.png", CreateGlyphTexture(160, GlyphType.King));
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
-    }
-
-    [MenuItem("Chess But Weird/Gacha/Create Reveal Demo Scene")]
-    public static void CreateRevealDemoScene()
-    {
-        GenerateRevealAssets();
-
-        Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-        scene.name = "GachaRevealDemo";
-
-        GameObject canvasObject = new GameObject("Gacha Reveal Demo Canvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
-        Canvas canvas = canvasObject.GetComponent<Canvas>();
-        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-
-        CanvasScaler scaler = canvasObject.GetComponent<CanvasScaler>();
-        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(1672f, 941f);
-        scaler.matchWidthOrHeight = 0.5f;
-
-        RectTransform canvasRect = canvasObject.GetComponent<RectTransform>();
-        GameObject rootObject = new GameObject("Gacha Reveal Preview Root", typeof(RectTransform), typeof(Image));
-        RectTransform root = rootObject.GetComponent<RectTransform>();
-        root.SetParent(canvasRect, false);
-        Stretch(root);
-        Image backing = rootObject.GetComponent<Image>();
-        backing.color = new Color(0.015f, 0.013f, 0.025f, 1f);
-
-        GachaSummonRevealController reveal = rootObject.AddComponent<GachaSummonRevealController>();
-        reveal.Initialize(root);
-        GachaSummonRevealDemo demo = rootObject.AddComponent<GachaSummonRevealDemo>();
-        SerializedObject serializedDemo = new SerializedObject(demo);
-        serializedDemo.FindProperty("revealRoot").objectReferenceValue = root;
-        serializedDemo.FindProperty("previewRewardIcon").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Sprite>($"{GachaAssetFolder}/GachaRevealGlyph5.png");
-        serializedDemo.ApplyModifiedPropertiesWithoutUndo();
-        GachaSummonRevealDemo.BuildPreviewHud(root, demo);
-
-        Directory.CreateDirectory(Path.GetDirectoryName(DemoScenePath));
-        EditorSceneManager.SaveScene(scene, DemoScenePath);
-        AssetDatabase.Refresh();
-        Selection.activeObject = AssetDatabase.LoadAssetAtPath<SceneAsset>(DemoScenePath);
     }
 
     private static Texture2D CreateRingTexture(int size)
@@ -313,14 +269,6 @@ public static class GachaRevealAssetBuilder
         Color blended = (color * color.a + existing * existing.a * (1f - color.a)) / alpha;
         blended.a = alpha;
         texture.SetPixel(x, y, blended);
-    }
-
-    private static void Stretch(RectTransform rect)
-    {
-        rect.anchorMin = Vector2.zero;
-        rect.anchorMax = Vector2.one;
-        rect.offsetMin = Vector2.zero;
-        rect.offsetMax = Vector2.zero;
     }
 
     private enum GlyphType

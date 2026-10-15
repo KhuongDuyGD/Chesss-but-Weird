@@ -15,11 +15,6 @@ MonoBehaviour:
   m_GroupName: Board_TazjiMarble
   m_GUID: 414a937794835ea41a4015eb957b429c
   m_SerializeEntries:
-  - m_GUID: 1264c3bec56e271478649133367e50ba
-    m_Address: Previews/Tazji'sMarbleBoard
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 9e6e150ce4d9a8c4d8987b85ef5cc14c
     m_Address: Board/Boards/ClassicMarble
     m_ReadOnly: 0

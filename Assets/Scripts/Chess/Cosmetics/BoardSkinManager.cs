@@ -52,6 +52,14 @@ public sealed class BoardSkinManager
         GameObject instance = UnityEngine.Object.Instantiate(BoardPrefab, parent, false);
         if (Data) SetTransform(instance.transform, Data.localPosition, Data.localRotation, Data.localScale);
         ChessModelRendering.ApplySettings(instance);
+        if (Data && Data.loopAnimation)
+            foreach (var animation in instance.GetComponentsInChildren<Animation>(true))
+            {
+                animation.enabled = true;
+                animation.wrapMode = WrapMode.Loop;
+                animation.playAutomatically = true;
+                if (animation.clip) animation.Play();
+            }
         return instance;
     }
 

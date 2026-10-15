@@ -212,9 +212,18 @@ public class ChessTurnSelectionUI : MonoBehaviour
 
     public void StartBotGameWithSkin(PieceTeam playerTeam, string playerSkinId)
     {
+        var selection = CosmeticSelection.Load();
+        selection.whiteSkinId = playerTeam == PieceTeam.White ? playerSkinId : PieceSkinCatalog.DefaultSkinId;
+        selection.blackSkinId = playerTeam == PieceTeam.Black ? playerSkinId : PieceSkinCatalog.DefaultSkinId;
+        StartBotGameWithLoadout(playerTeam, selection);
+    }
+
+    public void StartBotGameWithLoadout(PieceTeam playerTeam, CosmeticSelection selectedLoadout)
+    {
+        var selection = selectedLoadout.Copy();
+        string playerSkinId = playerTeam == PieceTeam.White ? selection.whiteSkinId : selection.blackSkinId;
         if (PlayerAuthService.IsGuestSession || string.IsNullOrWhiteSpace(playerSkinId))
             playerSkinId = PieceSkinCatalog.DefaultSkinId;
-        var selection = CosmeticSelection.Load();
         selection.whiteSkinId = playerTeam == PieceTeam.White ? playerSkinId : PieceSkinCatalog.DefaultSkinId;
         selection.blackSkinId = playerTeam == PieceTeam.Black ? playerSkinId : PieceSkinCatalog.DefaultSkinId;
         selection.Save();
@@ -227,13 +236,19 @@ public class ChessTurnSelectionUI : MonoBehaviour
 
     public void StartLocalTwoPlayerGameWithSkins(string whiteSkinId, string blackSkinId)
     {
-        if (!RequireAccountAccess("Two-player mode")) return;
         var selection = CosmeticSelection.Load();
         selection.whiteSkinId = whiteSkinId; selection.blackSkinId = blackSkinId;
+        StartLocalTwoPlayerGameWithLoadout(selection);
+    }
+
+    public void StartLocalTwoPlayerGameWithLoadout(CosmeticSelection selectedLoadout)
+    {
+        if (!RequireAccountAccess("Two-player mode")) return;
+        var selection = selectedLoadout.Copy();
         selection.Save();
         LoadingManager.For(chessGame).StartMatch(selection, () =>
         {
-            chessGame.ConfigurePieceSkinsForLocalPlayers(whiteSkinId, blackSkinId);
+            chessGame.ConfigurePieceSkinsForLocalPlayers(selection.whiteSkinId, selection.blackSkinId);
             chessGame.BeginGame(PieceTeam.White);
         });
     }
@@ -241,11 +256,21 @@ public class ChessTurnSelectionUI : MonoBehaviour
     public void StartAramPracticeGame()
     {
         if (!RequireAccountAccess("ARAM mode")) return;
+        if (handDrawnMenu && handDrawnMenu.IsReady)
+        {
+            handDrawnMenu.ShowAramPracticeLoadout(StartAramPracticeWithLoadout);
+            return;
+        }
+        StartAramPracticeWithLoadout(CosmeticSelection.Load());
+    }
+
+    private void StartAramPracticeWithLoadout(CosmeticSelection selection)
+    {
         showCheckWarning = false;
         lanController?.HideLanSetup();
         analysisBoard?.SetVisible(true);
         analysisBoard?.SetInteractionEnabled(true);
-        var selection = CosmeticSelection.Load();
+        selection.Save();
         LoadingManager.For(chessGame).StartMatch(selection, () =>
         {
             chessGame.ConfigurePieceSkinsForLocalPlayers(selection.whiteSkinId, selection.blackSkinId);

@@ -65,11 +65,6 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: e458bdfdb94246941af859d5473a8ebc
-    m_Address: Previews/Tazji'sCrystalChessSet
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: f881e3321602873498d7c43b5188b917
     m_Address: Models/Tazji'sCrystalChessSet/CR_Glacier_King
     m_ReadOnly: 0

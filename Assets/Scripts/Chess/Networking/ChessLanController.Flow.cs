@@ -11,9 +11,9 @@ public partial class ChessLanController
     private OnlineMenuPage menuPage;
     private int menuRevision, roomListPage = 1;
     private Page<RoomListing> roomListing;
-    private readonly List<InventoryItemResponse> loadoutItems = new List<InventoryItemResponse>();
-    private bool loadoutLoaded, loadoutLoading, roomsLoading, forgetCancelledMatch;
-    private string loadoutUserId, roomListError;
+    private bool loadoutLoaded, roomsLoading, forgetCancelledMatch;
+    private Action loadoutContinuation;
+    private string loadoutActionLabel = "PLAY", roomListError;
     private string roomContentFingerprint;
     private bool roomListRenderPending;
     private MatchState acceptanceClockState;
@@ -29,20 +29,24 @@ public partial class ChessLanController
         lobbyUi.Show(lobbyMode);
     }
     private bool HasLobbyReservation => online?.State?.IsActive == true || online?.Ticket?.status == "Queued" || online?.Room?.status == "Open";
-    private bool CanEditLoadout => !HasLobbyReservation && !requestInFlight && !loadoutLoading;
-    private void OpenRooms() { SetMenuPage(OnlineMenuPage.Rooms); statusMessage = "Create a room or join a friend."; }
+    private bool CanEditLoadout => !HasLobbyReservation && !requestInFlight;
+    private void OpenRooms() => OpenOnlineLoadout(() =>
+    { SetMenuPage(OnlineMenuPage.Rooms); statusMessage = "Create a room or join a friend."; }, "CONTINUE");
     private void OpenRoomBrowser()
     { roomListPage = 1; SetMenuPage(OnlineMenuPage.FindRoom); RefreshRoomBrowser(); }
-    private void OpenMatchmaking()
+    private void OpenMatchmaking() => OpenOnlineLoadout(RequestFindMatch, "PLAY");
+    private void OpenOnlineLoadout(Action next, string label)
     {
+        if (!CanEditLoadout) return;
+        loadoutContinuation = next; loadoutActionLabel = label;
         SetMenuPage(OnlineMenuPage.Loadout);
-        statusMessage = "Choose your loadout, then press Play.";
-        if (!loadoutLoaded || loadoutUserId != PlayerAuthService.UserId) RefreshLoadout();
+        statusMessage = "Choose your loadout, then continue.";
     }
     private void ChangeOnlineMode(string mode)
     {
         if (!CanEditLoadout) return;
-        requestedGameMode = mode; queueRequest = roomRequest = null; menuRevision++;
+        requestedGameMode = mode; queueRequest = roomRequest = null;
+        if (menuPage != OnlineMenuPage.Loadout) menuRevision++;
         if (menuPage == OnlineMenuPage.FindRoom) { roomListPage = 1; RefreshRoomBrowser(); }
     }
     private void RefreshRoomBrowser() => Run(async () => await LoadRoomListAsync());
@@ -68,63 +72,6 @@ public partial class ChessLanController
     {
         if (requestInFlight || roomsLoading) return;
         roomListPage = Mathf.Max(1, roomListPage + offset); RefreshRoomBrowser();
-    }
-    private void RefreshLoadout() => Run(async () =>
-    {
-        loadoutLoading = true; loadoutLoaded = false; menuRevision++;
-        int epoch = lifecycle; string user = PlayerAuthService.UserId;
-        try
-        {
-            var service = new InventoryService();
-            var inventoryTask = service.GetInventoryAsync(); var catalogTask = service.GetItemsAsync();
-            await Task.WhenAll(inventoryTask, catalogTask);
-            if (!this || epoch != lifecycle || user != PlayerAuthService.UserId) return;
-            var catalog = catalogTask.Result ?? new List<ItemCatalogResponse>();
-            loadoutItems.Clear();
-            foreach (var item in inventoryTask.Result ?? new List<InventoryItemResponse>())
-            {
-                var definition = catalog.FirstOrDefault(c => c.itemId == item.itemId);
-                if (!IsLoadoutType(item.type) || definition?.isActive == false) continue;
-                if (loadoutItems.All(i => i.itemId != item.itemId)) loadoutItems.Add(item);
-            }
-            foreach (var item in catalog.Where(c => c.isDefault && c.isActive && IsLoadoutType(c.type)))
-                if (loadoutItems.All(i => i.itemId != item.itemId))
-                    loadoutItems.Add(new InventoryItemResponse { itemId = item.itemId, code = item.code, name = item.name,
-                        type = item.type, rarity = item.rarity, unityAssetKey = item.unityAssetKey, isDefault = true });
-            loadoutUserId = user; loadoutLoaded = true;
-            statusMessage = "Loadout ready. Your equipment is saved to your account.";
-        }
-        finally { if (this && epoch == lifecycle) { loadoutLoading = false; menuRevision++; } }
-    });
-    private static bool IsLoadoutType(string type) => type?.IndexOf("CHESS", StringComparison.OrdinalIgnoreCase) >= 0 || type?.IndexOf("BOARD", StringComparison.OrdinalIgnoreCase) >= 0;
-    private static bool IsChessItem(InventoryItemResponse item) => item.type?.IndexOf("CHESS", StringComparison.OrdinalIgnoreCase) >= 0;
-    private bool LoadoutAvailable(InventoryItemResponse item)
-    {
-        var catalog = LoadingManager.For(chessGame).Catalog;
-        return catalog && (IsChessItem(item) ? catalog.FindPiece(item.unityAssetKey) != null : catalog.FindBoard(item.unityAssetKey) != null);
-    }
-    private bool LoadoutEquipped(InventoryItemResponse item)
-    {
-        var equipped = PlayerAuthService.CurrentApiUser?.equipped;
-        return item.itemId == (IsChessItem(item) ? equipped?.chessSkinId : equipped?.boardSkinId);
-    }
-    private string EquippedName(bool chess)
-    {
-        var item = loadoutItems.FirstOrDefault(i => IsChessItem(i) == chess && LoadoutEquipped(i));
-        return item?.name ?? "Default";
-    }
-    private void SelectLoadoutItem(InventoryItemResponse item)
-    {
-        if (!CanEditLoadout || !LoadoutAvailable(item) || LoadoutEquipped(item)) return;
-        Run(async () =>
-        {
-            int epoch = lifecycle; string user = PlayerAuthService.UserId;
-            var response = await new InventoryService().EquipAsync(item.itemId);
-            if (!this || epoch != lifecycle || user != PlayerAuthService.UserId) return;
-            if (response?.success != true || response.equipped == null) throw new ApiException(response?.message ?? "Unable to equip this item.");
-            PlayerAuthService.CurrentApiUser.equipped = response.equipped;
-            menuRevision++; statusMessage = "Equipped " + item.name + ".";
-        });
     }
     private void BackOnlineMenu()
     {
@@ -177,16 +124,12 @@ public partial class ChessLanController
         if (!this || epoch != lifecycle) return;
         queueRequest = null; acceptanceClockState = null; verifyingAcceptanceMatchId = null; forgetCancelledMatch = false;
         SetMenuPage(OnlineMenuPage.Loadout); statusMessage = notice;
-        if (!loadoutLoaded) RefreshLoadoutAfterRequest = true;
     });
-    private bool RefreshLoadoutAfterRequest;
     private void UpdateOnlineFlow()
     {
         if (roomListRenderPending && lobbyUi?.IsCodeFocused != true)
         { roomListRenderPending = false; menuRevision++; }
         if (forgetCancelledMatch) { forgetCancelledMatch = false; online?.ForgetFinishedMatch(); }
-        if (RefreshLoadoutAfterRequest && !requestInFlight)
-        { RefreshLoadoutAfterRequest = false; RefreshLoadout(); }
         var state = online?.State;
         if (state?.acceptDeadline != null && state.status == "AwaitingReady" && AcceptanceSeconds <= 0 &&
             !requestInFlight && Time.unscaledTime >= nextDeclineAttempt)
@@ -231,13 +174,13 @@ public partial class ChessLanController
         statusMessage = state.result?.reason == "AcceptanceTimeout" ?
             "Match acceptance timed out. Matchmaking failed; press Play to try again." :
             "Match cancelled: " + state.result?.reason + ". Press Play to try again.";
-        if (!loadoutLoaded) RefreshLoadoutAfterRequest = true;
     }
     private void ResetOnlineFlow()
     {
         menuPage = OnlineMenuPage.Home; menuRevision++; roomListPage = 1; roomListing = null;
-        loadoutItems.Clear(); loadoutLoaded = loadoutLoading = roomsLoading = forgetCancelledMatch = RefreshLoadoutAfterRequest = false;
-        loadoutUserId = roomListError = roomContentFingerprint = null; roomListRenderPending = false; acceptanceClockState = null;
+        loadoutLoaded = roomsLoading = forgetCancelledMatch = false;
+        loadoutContinuation = null; loadoutActionLabel = "PLAY";
+        roomListError = roomContentFingerprint = null; roomListRenderPending = false; acceptanceClockState = null;
         searchingTicketId = null;
         verifyingAcceptanceMatchId = null;
         nextReadyAttempt = nextDeclineAttempt = 0;

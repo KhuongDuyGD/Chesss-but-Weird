@@ -15,7 +15,7 @@ MonoBehaviour:
   boardId: tazji_lowpoly
   displayName: Tazji's Low Poly Arena
   preview:
-    m_AssetGUID:
+    m_AssetGUID: aa2f7fee0aa51e341900ebea93ca4a95
     m_SubObjectName:
     m_SubObjectType:
     m_SubObjectGUID:
@@ -27,6 +27,7 @@ MonoBehaviour:
     m_SubObjectGUID:
     m_EditorAssetChanged: 0
   localPosition: {x: 0, y: 0, z: 0}
-  localRotation: {x: 0, y: -90, z: 0}
+  localRotation: {x: 0, y: 0, z: 0}
   localScale: {x: 1, y: 1, z: 1}
-  prisonLayoutYaw: 0
+  prisonLayoutYaw: -90
+  loopAnimation: 0

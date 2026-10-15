@@ -16,6 +16,8 @@ public sealed class CosmeticSelection
     public string environmentId = "";
     public string moveEffectId = "classic";
 
+    public static bool HasSavedSelection => PlayerPrefs.HasKey(CurrentSaveKey);
+
     public CosmeticSelection Copy() => new CosmeticSelection
     {
         whiteSkinId = whiteSkinId,

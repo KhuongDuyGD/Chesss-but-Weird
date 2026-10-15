@@ -33,4 +33,8 @@ public sealed class CosmeticCatalogEntry
     public string id;
     public string displayName;
     public AssetReference data;
+    // Small menu art lives with the catalog; model bundles stay unloaded until a match.
+    public Sprite thumbnail;
+    public string tier = "COMMON";
+    public bool HasArt => thumbnail && data != null && data.RuntimeKeyIsValid();
 }

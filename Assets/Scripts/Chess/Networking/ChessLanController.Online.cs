@@ -156,7 +156,7 @@ public partial class ChessLanController
     });
     public void RequestFindMatch() => Run(async () =>
     {
-        if (!loadoutLoaded || loadoutLoading || HasLobbyReservation) return;
+        if (!loadoutLoaded || HasLobbyReservation) return;
         int epoch = lifecycle;
         searchStartedAt = Time.realtimeSinceStartup; queueRequest = queueRequest ?? NewRequest();
         SetMenuPage(OnlineMenuPage.Searching); statusMessage = "Finding an opponent...";
@@ -323,7 +323,7 @@ public partial class ChessLanController
     private bool historyDirty, historyLoading;
     private CosmeticSelection FrozenSelection(MatchState state)
     {
-        var selection = new CosmeticSelection();
+        var selection = new CosmeticSelection { moveEffectId = CosmeticSelection.Load().moveEffectId };
         var catalog = LoadingManager.For(chessGame).Catalog;
         foreach (var player in state.players)
         {
