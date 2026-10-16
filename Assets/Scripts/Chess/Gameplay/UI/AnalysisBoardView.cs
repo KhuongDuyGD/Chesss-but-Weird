@@ -105,7 +105,7 @@ public sealed class AnalysisBoardView : MonoBehaviour
         MatchHudStyle.Place((RectTransform)journalButton.transform,new Vector2(0,.5f),new Vector2(198,46),new Vector2(99,0));
         focusButton=MatchHudStyle.Button(controls,"Focus","Focus",ToggleFocus);
         MatchHudStyle.Place((RectTransform)focusButton.transform,new Vector2(1,.5f),new Vector2(120,46),new Vector2(-60,0));
-        buffSummary=MatchHudStyle.Rect(root,"ARAM move and buff summary",Vector2.one,Vector2.one,new Vector2(330,70),new Vector2(-185,-91));
+        buffSummary=MatchHudStyle.Rect(root,"CHAOS move and buff summary",Vector2.one,Vector2.one,new Vector2(330,70),new Vector2(-185,-91));
         MatchHudStyle.Surface(buffSummary,false);
         whiteMoves=SummaryLabel(buffSummary,"White moves",new Vector2(-112,17),new Vector2(86,30));
         blackMoves=SummaryLabel(buffSummary,"Black moves",new Vector2(-112,-17),new Vector2(86,30));
@@ -183,7 +183,8 @@ public sealed class AnalysisBoardView : MonoBehaviour
         float jw=Mathf.Min(410,lastSize.x-40),bottom=Mathf.Max(20,game.StatisticsHudBottom+12);
         if(game.IsBotGame)bottom=Mathf.Max(bottom,BotCompanionView.BottomInset(game)+12);
         float cameraHintWidth=Mathf.Min(310,lastSize.x-40);
-        MatchHudStyle.Place(cameraHint,Vector2.zero,new Vector2(cameraHintWidth,78),new Vector2(20+cameraHintWidth/2,bottom+39));
+        // The companion and match journal reserve space on the right, not beneath this hint.
+        MatchHudStyle.Place(cameraHint,Vector2.zero,new Vector2(cameraHintWidth,78),new Vector2(12+cameraHintWidth/2,12+39));
         cameraHintState.rectTransform.sizeDelta=new Vector2(cameraHintWidth-24,28);
         cameraHintControls.rectTransform.sizeDelta=new Vector2(cameraHintWidth-24,38);
         float start=game.IsAramGame?138:58,jh=Mathf.Max(190,Mathf.Min(650,lastSize.y-start-bottom));

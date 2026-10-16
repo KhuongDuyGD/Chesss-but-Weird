@@ -27,6 +27,7 @@ public class HandDrawnMenuView : MonoBehaviour
     private GraphicRaycaster raycaster;
     private RectTransform mainScreen;
     private RectTransform modeScreen;
+    private RectTransform playScreen;
     private RectTransform localModeScreen;
     private RectTransform aramModeScreen;
     private RectTransform multiplayerModeScreen;
@@ -68,6 +69,7 @@ public class HandDrawnMenuView : MonoBehaviour
         BuildCanvas();
         BuildMainScreen();
         BuildModeScreen();
+        BuildPlaySelectionScreen();
         BuildInventoryScreen();
         BuildLocalModeScreen();
         BuildAramModeScreen();
@@ -127,7 +129,7 @@ public class HandDrawnMenuView : MonoBehaviour
 
     public void ShowAramModeSelection()
     {
-        if (!owner.RequireAccountAccess("ARAM mode")) return;
+        if (!owner.RequireAccountAccess("CHAOS mode")) return;
         GameMusicManager.PlayMainMenuHubMusic();
         SetVisible(true);
         SetInputEnabled(true);
@@ -253,16 +255,16 @@ public class HandDrawnMenuView : MonoBehaviour
 
     private void BuildAramModeScreen()
     {
-        aramModeScreen = CreateScreen("ARAM Mode");
+        aramModeScreen = CreateScreen("CHAOS Mode");
 
         AddSelectionDecorations(aramModeScreen);
-        AddText(aramModeScreen, "ARAM Mode Title", "ARAM Mode", new Vector2(0f, 340f), new Vector2(760f, 125f), 76, TextAnchor.MiddleCenter, new Color(0.12f, 0.1f, 0.08f, 1f));
-        AddTextButton(aramModeScreen, "ARAM Practice", "Practice", new Vector2(-540f, 35f), new Vector2(470f, 180f), owner.StartAramPracticeGame, new Color(0.98f, 0.78f, 0.3f, 1f));
-        AddTextButton(aramModeScreen, "ARAM LAN", "LAN", new Vector2(0f, 35f), new Vector2(470f, 180f), owner.ShowAramLanSetup, new Color(0.56f, 0.82f, 0.94f, 1f));
-        AddTextButton(aramModeScreen, "ARAM Multiplayer", "Multiplayer", new Vector2(540f, 35f), new Vector2(470f, 180f), owner.ShowAramOnlineSetup, new Color(0.74f, 0.66f, 0.96f, 1f));
-        AddText(aramModeScreen, "ARAM Practice Caption", "Practice local", new Vector2(-540f, -105f), new Vector2(470f, 48f), 30, TextAnchor.MiddleCenter, new Color(0.14f, 0.11f, 0.08f, 1f));
-        AddText(aramModeScreen, "ARAM LAN Caption", "Private LAN room", new Vector2(0f, -105f), new Vector2(430f, 48f), 28, TextAnchor.MiddleCenter, new Color(0.14f, 0.11f, 0.08f, 1f));
-        AddText(aramModeScreen, "ARAM Online Caption", "Online matchmaking", new Vector2(540f, -105f), new Vector2(430f, 48f), 28, TextAnchor.MiddleCenter, new Color(0.14f, 0.11f, 0.08f, 1f));
+        AddText(aramModeScreen, "CHAOS Mode Title", "CHAOS Mode", new Vector2(0f, 340f), new Vector2(760f, 125f), 76, TextAnchor.MiddleCenter, new Color(0.12f, 0.1f, 0.08f, 1f));
+        AddTextButton(aramModeScreen, "CHAOS Practice", "Practice", new Vector2(-540f, 35f), new Vector2(470f, 180f), owner.StartAramPracticeGame, new Color(0.98f, 0.78f, 0.3f, 1f));
+        AddTextButton(aramModeScreen, "CHAOS LAN", "LAN", new Vector2(0f, 35f), new Vector2(470f, 180f), owner.ShowAramLanSetup, new Color(0.56f, 0.82f, 0.94f, 1f));
+        AddTextButton(aramModeScreen, "CHAOS Multiplayer", "Multiplayer", new Vector2(540f, 35f), new Vector2(470f, 180f), owner.ShowAramOnlineSetup, new Color(0.74f, 0.66f, 0.96f, 1f));
+        AddText(aramModeScreen, "CHAOS Practice Caption", "Practice local", new Vector2(-540f, -105f), new Vector2(470f, 48f), 30, TextAnchor.MiddleCenter, new Color(0.14f, 0.11f, 0.08f, 1f));
+        AddText(aramModeScreen, "CHAOS LAN Caption", "Private LAN room", new Vector2(0f, -105f), new Vector2(430f, 48f), 28, TextAnchor.MiddleCenter, new Color(0.14f, 0.11f, 0.08f, 1f));
+        AddText(aramModeScreen, "CHAOS Online Caption", "Online matchmaking", new Vector2(540f, -105f), new Vector2(430f, 48f), 28, TextAnchor.MiddleCenter, new Color(0.14f, 0.11f, 0.08f, 1f));
         AddBackButton(aramModeScreen, new Vector2(-820f, -420f), () => ShowModeSelection());
     }
 
@@ -272,9 +274,10 @@ public class HandDrawnMenuView : MonoBehaviour
         modePresentation.Build(assets.mainMenuLogoOriginal,
             new ModeSelectionPresentation.Actions
             {
+                Play = owner.ShowPlaySelection,
                 Local = () => owner.ShowLocalModeSelection(),
                 Online = () => owner.ShowMultiplayerModeSelection(),
-                Aram = CreateAuthenticatedAction("ARAM", owner.ShowAramModeSelection),
+                Aram = CreateAuthenticatedAction("CHAOS", owner.ShowAramModeSelection),
                 Shop = CreateAuthenticatedAction("Shop", () => AuthNotificationView.Show("Shop coming soon",
                     "The shop is not open yet. Visit Inventory or Gacha to explore your collection.", AuthNotificationView.ResultKind.Info)),
                 Inventory = CreateAuthenticatedAction("Inventory", ShowInventoryMenu),
@@ -480,13 +483,46 @@ public class HandDrawnMenuView : MonoBehaviour
     private void BuildSideScreen()
     {
         sideScreen = CreateScreen("Choose Side");
+        UI.Background(sideScreen);
+        var content = UI.Node(sideScreen, "Side Selection Content", new Rect(0, 0, 1672, 941));
+        content.gameObject.AddComponent<InventoryContentRootFitter>().Configure(1672, 941, .94f);
+        UI.Text(content, "Mode", "PVE / BOT RUSH / CHOOSE YOUR SIDE", new Rect(64, 28, 1500, 36), 23, UI.Muted);
+        UI.Text(content, "Title", "White or black?", new Rect(64, 86, 1500, 82), 62);
+        UI.Text(content, "Hint", "Your loadout is ready. Choose a side to start the game.", new Rect(64, 184, 1500, 46), 27, UI.Muted);
+        for (int i = 0; i < 2; i++)
+        {
+            PieceTeam team = i == 0 ? PieceTeam.White : PieceTeam.Black;
+            var button = UI.Button(content, team + " Side", "", new Rect(226 + i * 640, 292, 580, 450), i == 0 ? UI.Blue : UI.Lavender,
+                () => owner.ConfirmBotSide(team));
+            UI.Doodle(button.transform, "Chess Pawn", new Rect(220, 40, 140, 190), SketchbookDoodle.Shape.Pawn, UI.Ink);
+            UI.Text(button.transform, "Side Title", team == PieceTeam.White ? "WHITE" : "BLACK", new Rect(30, 248, 520, 65), 46, UI.Ink, TextAlignmentOptions.Center);
+            UI.Text(button.transform, "Turn Hint", i == 0 ? "You make the first move." : "Your opponent moves first.", new Rect(30, 330, 520, 42), 26, UI.Muted, TextAlignmentOptions.Center);
+            UI.Text(button.transform, "Play Side", "PLAY AS " + team.ToString().ToUpperInvariant() + "  >", new Rect(30, 388, 520, 40), 25, UI.Ink, TextAlignmentOptions.Center);
+        }
+        UI.Button(content, "Back to Bots", "<  BACK", new Rect(64, 855, 235, 66), UI.Pink, ShowBotDifficultySelection, 26);
+    }
 
-        AddSelectionDecorations(sideScreen);
-        AddImage(sideScreen, "Choose Side Title", assets.chooseYourSide, new Vector2(0f, 365f), new Vector2(880f, 150f), 0f, 0f);
-        AddInteractive(sideScreen, "White Card", assets.whiteSideButton, new Vector2(-330f, -30f), new Vector2(470f, 590f), () => owner.ShowBotSkinSelection(PieceTeam.White), false, 1.035f);
-        AddInteractive(sideScreen, "Black Card", assets.blackSideButton, new Vector2(330f, -30f), new Vector2(477f, 590f), () => owner.ShowBotSkinSelection(PieceTeam.Black), false, 1.035f);
-        AddImage(sideScreen, "Game Version", assets.gameVersion, new Vector2(735f, -420f), new Vector2(330f, 145f), 0f, 0f);
-        AddBackButton(sideScreen, new Vector2(-720f, -435f), () => ShowBotDifficultySelection(), new Vector2(270f, 100f));
+    private void BuildPlaySelectionScreen()
+    {
+        playScreen = CreateScreen("Play Modes");
+        playScreen.gameObject.AddComponent<PlayModeSelectionView>().Build(owner.ShowTurnSelection, owner.ShowLoadoutLobby);
+    }
+
+    public void ShowPlaySelection()
+    {
+        GameMusicManager.PlayMainMenuHubMusic();
+        SetVisible(true); SetInputEnabled(true);
+        TransitionToScreen(playScreen, null);
+    }
+
+    public void ShowPveLoadout(Action<CosmeticSelection> ready)
+    {
+        SetVisible(true); SetInputEnabled(true);
+        TransitionToScreen(skinScreen, () =>
+        {
+            matchLoadoutController.Open(true, PieceTeam.White, ready, owner.ShowPlaySelection);
+            matchLoadoutController.ConfigureLobby("PVE / BOT RUSH", "FIND MATCH", "Prepare your loadout, then choose your bot and side.");
+        });
     }
 
     private void BuildSkinScreen()
@@ -501,7 +537,7 @@ public class HandDrawnMenuView : MonoBehaviour
     private void BuildBotDifficultyScreen()
     {
         botDifficultyScreen = CreateScreen("Bot Difficulty");
-        refreshBotRoster = BotRosterView.Build(botDifficultyScreen, owner.SelectBotMatch, () => ShowModeSelection());
+        refreshBotRoster = BotRosterView.Build(botDifficultyScreen, owner.SelectBotMatch, owner.BackFromBotSelection);
     }
 
     private Sprite CreateRuntimeSprite(Texture2D texture, Rect topLeftCrop)
@@ -905,6 +941,7 @@ public class HandDrawnMenuView : MonoBehaviour
             modeScreen.gameObject.SetActive(active);
         if (inventoryScreen)
             inventoryScreen.gameObject.SetActive(active);
+        if (playScreen) playScreen.gameObject.SetActive(active);
         if (localModeScreen)
             localModeScreen.gameObject.SetActive(active);
         if (aramModeScreen)
@@ -925,7 +962,7 @@ public class HandDrawnMenuView : MonoBehaviour
 
     private RectTransform[] GetMenuScreens()
     {
-        return new[] { mainScreen, modeScreen, inventoryScreen, localModeScreen, aramModeScreen, multiplayerModeScreen, gachaScreen, botDifficultyScreen, sideScreen, skinScreen };
+        return new[] { mainScreen, modeScreen, playScreen, inventoryScreen, localModeScreen, aramModeScreen, multiplayerModeScreen, gachaScreen, botDifficultyScreen, sideScreen, skinScreen };
     }
 
     private void ResetInactiveTransitionScreens(RectTransform previousScreen, RectTransform activeScreen)

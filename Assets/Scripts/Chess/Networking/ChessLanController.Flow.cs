@@ -9,11 +9,12 @@ public partial class ChessLanController
 {
     private enum OnlineMenuPage { Home, Rooms, FindRoom, Room, Loadout, Searching, Accept }
     private OnlineMenuPage menuPage;
-    private int menuRevision, roomListPage = 1;
+    private int menuRevision, loadoutOpenVersion, roomListPage = 1;
     private Page<RoomListing> roomListing;
-    private bool loadoutLoaded, roomsLoading, forgetCancelledMatch;
+    private bool loadoutLoaded, roomsLoading, forgetCancelledMatch, directMatchmaking, findMatchAfterRequest;
     private Action loadoutContinuation;
-    private string loadoutActionLabel = "PLAY", roomListError;
+    private PlayModeOption? customRoomEntry;
+    private string loadoutActionLabel = "FIND MATCH", roomListError;
     private string roomContentFingerprint;
     private bool roomListRenderPending;
     private MatchState acceptanceClockState;
@@ -34,10 +35,11 @@ public partial class ChessLanController
     { SetMenuPage(OnlineMenuPage.Rooms); statusMessage = "Create a room or join a friend."; }, "CONTINUE");
     private void OpenRoomBrowser()
     { roomListPage = 1; SetMenuPage(OnlineMenuPage.FindRoom); RefreshRoomBrowser(); }
-    private void OpenMatchmaking() => OpenOnlineLoadout(RequestFindMatch, "PLAY");
+    private void OpenMatchmaking() => OpenOnlineLoadout(RequestFindMatch, "FIND MATCH");
     private void OpenOnlineLoadout(Action next, string label)
     {
         if (!CanEditLoadout) return;
+        loadoutOpenVersion++;
         loadoutContinuation = next; loadoutActionLabel = label;
         SetMenuPage(OnlineMenuPage.Loadout);
         statusMessage = "Choose your loadout, then continue.";
@@ -76,16 +78,42 @@ public partial class ChessLanController
     private void BackOnlineMenu()
     {
         if (requestInFlight) return;
+        if ((directMatchmaking || customRoomEntry.HasValue) && menuPage == OnlineMenuPage.Loadout && !HasLobbyReservation)
+        {
+            findMatchAfterRequest = false;
+            HideLanSetup(); turnSelectionUI.ShowPlaySelection(); return;
+        }
+        if (customRoomEntry.HasValue && (menuPage == OnlineMenuPage.Rooms || menuPage == OnlineMenuPage.FindRoom))
+        {
+            OpenOnlineLoadout(CustomRoomDestination, "CONTINUE"); return;
+        }
         switch (menuPage)
         {
             case OnlineMenuPage.Home: RequestLeaveToModeSelection(); break;
             case OnlineMenuPage.Rooms: case OnlineMenuPage.Loadout: SetMenuPage(OnlineMenuPage.Home); break;
             case OnlineMenuPage.FindRoom: SetMenuPage(OnlineMenuPage.Rooms); break;
             case OnlineMenuPage.Room:
-                Run(async () => { int epoch = lifecycle; await online.LeaveAsync(); if (!this || epoch != lifecycle) return; roomRequest = null; SetMenuPage(OnlineMenuPage.Rooms); statusMessage = "Left the room."; }); break;
+                Run(async () =>
+                {
+                    int epoch = lifecycle; await online.LeaveAsync();
+                    if (!this || epoch != lifecycle) return;
+                    roomRequest = null;
+                    if (customRoomEntry == PlayModeOption.CustomBrowserRoom)
+                    {
+                        roomListPage = 1; SetMenuPage(OnlineMenuPage.FindRoom);
+                        await LoadRoomListAsync();
+                    }
+                    else SetMenuPage(OnlineMenuPage.Rooms);
+                    if (this && epoch == lifecycle) statusMessage = "Left the room.";
+                }); break;
             case OnlineMenuPage.Searching: RequestCancelSearch(); break;
             case OnlineMenuPage.Accept: DeclineFoundMatch("Match declined. Choose your loadout and try again."); break;
         }
+    }
+    private void CustomRoomDestination()
+    {
+        if (customRoomEntry == PlayModeOption.CustomBrowserRoom) OpenRoomBrowser();
+        else { SetMenuPage(OnlineMenuPage.Rooms); statusMessage = "Choose Classic or Chaos, then create your room."; }
     }
     private float AcceptanceSeconds
     {
@@ -127,6 +155,11 @@ public partial class ChessLanController
     });
     private void UpdateOnlineFlow()
     {
+        if (findMatchAfterRequest && !requestInFlight)
+        {
+            findMatchAfterRequest = false;
+            if (!HasLobbyReservation && menuPage == OnlineMenuPage.Loadout) RequestFindMatch();
+        }
         if (roomListRenderPending && lobbyUi?.IsCodeFocused != true)
         { roomListRenderPending = false; menuRevision++; }
         if (forgetCancelledMatch) { forgetCancelledMatch = false; online?.ForgetFinishedMatch(); }
@@ -143,6 +176,7 @@ public partial class ChessLanController
             Run(async () => await EnsureOnline().RefreshAsync());
         }
         else if (state?.status == "AwaitingReady" && state.acceptDeadline == null && presentedMatchId == state.matchId &&
+            !LoadingManager.For(chessGame).IsBusy &&
             !requestInFlight && online.Connected && !online.Recovering && !reconnecting &&
             state.players.Any(p => p.userId == PlayerAuthService.UserId && !p.ready) && Time.unscaledTime >= nextReadyAttempt)
         {
@@ -172,14 +206,16 @@ public partial class ChessLanController
         if (presentedMatchId == state.matchId) chessGame.RestartToMainMenu();
         SetMenuPage(OnlineMenuPage.Loadout);
         statusMessage = state.result?.reason == "AcceptanceTimeout" ?
-            "Match acceptance timed out. Matchmaking failed; press Play to try again." :
-            "Match cancelled: " + state.result?.reason + ". Press Play to try again.";
+            "Match acceptance timed out. Matchmaking failed; press Find Match to try again." :
+            "Match cancelled: " + state.result?.reason + ". Press Find Match to try again.";
     }
     private void ResetOnlineFlow()
     {
         menuPage = OnlineMenuPage.Home; menuRevision++; roomListPage = 1; roomListing = null;
-        loadoutLoaded = roomsLoading = forgetCancelledMatch = false;
-        loadoutContinuation = null; loadoutActionLabel = "PLAY";
+        loadoutOpenVersion++;
+        loadoutLoaded = roomsLoading = forgetCancelledMatch = directMatchmaking = findMatchAfterRequest = false;
+        customRoomEntry = null;
+        loadoutContinuation = null; loadoutActionLabel = "FIND MATCH";
         roomListError = roomContentFingerprint = null; roomListRenderPending = false; acceptanceClockState = null;
         searchingTicketId = null;
         verifyingAcceptanceMatchId = null;

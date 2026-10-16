@@ -36,13 +36,13 @@ public sealed class AramAbilityView : MonoBehaviour
     public void Initialize(AramBuffRuntime source)
     {
         runtime=source;
-        root=new GameObject("ARAM Abilities",typeof(RectTransform),typeof(Canvas),typeof(CanvasScaler),typeof(GraphicRaycaster));
+        root=new GameObject("CHAOS Abilities",typeof(RectTransform),typeof(Canvas),typeof(CanvasScaler),typeof(GraphicRaycaster));
         root.transform.SetParent(transform,false);
         root.GetComponent<Canvas>().renderMode=RenderMode.ScreenSpaceOverlay;
         root.GetComponent<Canvas>().sortingOrder=90;
         ResponsiveUi.ConfigureCanvasScaler(root.GetComponent<CanvasScaler>(),new Vector2(1280,720));
         root.AddComponent<SettingsUiScale>();
-        frame=MatchHudStyle.Rect(root.transform,"ARAM Actions",Vector2.zero,Vector2.one,Vector2.zero,Vector2.zero);
+        frame=MatchHudStyle.Rect(root.transform,"CHAOS Actions",Vector2.zero,Vector2.one,Vector2.zero,Vector2.zero);
         frame.gameObject.AddComponent<ResponsiveSafeArea>();
         // Aim follows the camera viewport centre even with asymmetric safe areas.
         crosshair=Label(root.transform,"Rifle Crosshair",38);crosshair.text="+";

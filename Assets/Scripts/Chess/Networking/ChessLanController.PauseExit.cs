@@ -46,13 +46,19 @@ public partial class ChessLanController
         presentedMatchId = refreshedResultId = preparedContentMatchId = preparedLoadoutFingerprint = trackedRoomId = null;
         queueRequest = roomRequest = null;
         historyLoading = historyDirty = false;
+        bool fromModeSelection = directMatchmaking;
+        var customEntry = customRoomEntry;
         ResetOnlineFlow();
+        directMatchmaking = fromModeSelection;
+        customRoomEntry = customEntry;
         requestInFlight = reconnecting = commandBusy = leaving = false;
         HideLanSetup();
     }
 
     public void ShowLobbyAfterPauseExit()
     {
-        ShowLobby(lobbyMode, requestedGameMode);
+        if (customRoomEntry.HasValue) ShowCustomRooms(customRoomEntry.Value);
+        else if (directMatchmaking) ShowModeMatchmaking(IsAramGameMode(requestedGameMode) ? PlayModeOption.ChaosNormal : PlayModeOption.ClassicNormal);
+        else ShowLobby(lobbyMode, requestedGameMode);
     }
 }

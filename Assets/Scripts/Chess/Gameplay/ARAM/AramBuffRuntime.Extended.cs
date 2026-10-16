@@ -538,7 +538,7 @@ public sealed partial class AramBuffRuntime
 
     private void MarkSquare(Vector2Int square,string label,Color color)
     {
-        var go=GameObject.CreatePrimitive(PrimitiveType.Cube);go.name="ARAM "+label;Destroy(go.GetComponent<Collider>());
+        var go=GameObject.CreatePrimitive(PrimitiveType.Cube);go.name="CHAOS "+label;Destroy(go.GetComponent<Collider>());
         float tile=Vector3.Distance(game.AramTile(Vector2Int.zero),game.AramTile(Vector2Int.right));
         go.transform.position=game.AramTile(square)+Vector3.up*.04f;go.transform.localScale=new Vector3(tile*.85f,.04f,tile*.85f);
         var block=new MaterialPropertyBlock();block.SetColor("_BaseColor",color);block.SetColor("_Color",color);go.GetComponent<Renderer>().SetPropertyBlock(block);

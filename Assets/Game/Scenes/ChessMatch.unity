@@ -188,6 +188,7 @@ GameObject:
   - component: {fileID: 1915251129}
   - component: {fileID: 1915251128}
   - component: {fileID: 1915251127}
+  - component: {fileID: 1915251130}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -237,7 +238,7 @@ Camera:
   near clip plane: 0.3
   far clip plane: 1000
   field of view: 60
-  orthographic: 0
+  orthographic: 1
   orthographic size: 5
   m_Depth: 0
   m_CullingMask:
@@ -269,6 +270,26 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1915251130
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1915251126}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 54f87ea45b5c97547b53e0e6d479c218, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::ChessOrbitCamera
+  boardViewPitch: 50
+  framePadding: 1.12
+  pieceHeadroomInTiles: 1.5
+  orbitSensitivity: 0.14
+  minimumZoom: 0.55
+  maximumZoom: 1.65
+  zoomStep: 0.14
+  zoomSmoothTime: 0.08
 --- !u!1 &1930400187
 GameObject:
   m_ObjectHideFlags: 0

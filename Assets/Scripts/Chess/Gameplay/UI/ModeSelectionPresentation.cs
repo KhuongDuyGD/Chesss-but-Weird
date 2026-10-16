@@ -11,13 +11,13 @@ public sealed class ModeSelectionPresentation : MonoBehaviour
 {
     public sealed class Actions
     {
-        public UnityAction Local, Online, Aram, Shop, Inventory, Gacha, Profile, Settings, Back, Logout;
+        public UnityAction Play, Local, Online, Aram, Shop, Inventory, Gacha, Profile, Settings, Back, Logout;
     }
 
     private static readonly Color Ink = new Color(.15f, .145f, .17f);
     private static readonly Color QuietInk = new Color(.40f, .375f, .37f);
     private CanvasGroup controls;
-    private Button local, online, aram, shop, inventory, gacha, profile, settings, back, logout, music;
+    private Button local, shop, inventory, gacha, profile, settings, back, logout, music;
     private Button[] navigationRing;
     private GameObject selectionBeforeOverlay;
 
@@ -36,31 +36,24 @@ public sealed class ModeSelectionPresentation : MonoBehaviour
         var edge = artwork.gameObject.AddComponent<Outline>();
         edge.effectColor = new Color(.08f, .07f, .06f, .26f);
         edge.effectDistance = new Vector2(.45f, -.45f);
-        Label(page, "Mode Hub Title", "CHOOSE YOUR CHAOS", new Rect(537, 69, 935, 114), 66, Ink).characterSpacing = 2f;
+        Label(page, "Mode Hub Title", "YOUR NEXT MOVE", new Rect(537, 69, 935, 114), 66, Ink).characterSpacing = 2f;
         Label(page, "Mode Hub Welcome", "Play a little. Get weird a lot.", new Rect(539, 186, 852, 48), 31, QuietInk);
 
-        Label(page, "Modes Section", "MAKE YOUR MOVE", new Rect(124, 278, 466, 43), 30, Ink);
-        Accent(page, "Modes Pencil Rule", new Rect(459, 292, 808, 10), MainMenuInkGraphic.Drawing.Underline, new Color(.44f, .41f, .36f, .18f), 1.7f);
-        Label(page, "Tools Section", "YOUR CORNER", new Rect(1372, 278, 402, 43), 30, Ink);
-
-        var toolsPanel = UI.Card(page, "Utility Paper Panel", new Rect(1343, 331, 464, 601), new Color(.993f, .985f, .962f, .70f), 0, true, 27);
-        toolsPanel.Configure(new Color(.993f, .985f, .962f, .70f), new Color(.54f, .50f, .46f, .18f), 27, 1.4f, 1.1f, 19);
-
+        Label(page, "Modes Section", "MAKE YOUR MOVE", new Rect(124, 278, 1500, 43), 30, Ink);
         var content = UI.Node(page, "Mode Hub Controls", new Rect(0, 0, 1920, 1080));
         controls = content.gameObject.AddComponent<CanvasGroup>();
-        local = ModeCard(content, "Local", "LOCAL", "Vs bot or two players", "No travel required.", new Rect(120, 342, 560, 274),
-            new Color(1f, .84f, .39f), ModeMenuDoodleGraphic.Drawing.Local, actions.Local);
-        online = ModeCard(content, "Online", "ONLINE", "Rooms & multiplayer", "Friends. Rivals. Rematches.", new Rect(712, 342, 560, 274),
-            new Color(.80f, .87f, .69f), ModeMenuDoodleGraphic.Drawing.Online, actions.Online);
-        aram = ModeCard(content, "Aram", "ARAM", "Buffs. Chaos. Chess-ish.", "Expect the unexpected.", new Rect(120, 648, 560, 274),
-            new Color(.85f, .80f, .93f), ModeMenuDoodleGraphic.Drawing.Aram, actions.Aram);
-        shop = ModeCard(content, "Shop", "SHOP", "Goodies in the making", "COMING SOON", new Rect(712, 648, 560, 274),
-            new Color(.78f, .865f, .965f), ModeMenuDoodleGraphic.Drawing.Shop, actions.Shop);
-
-        inventory = UtilityCard(content, "Inventory", "INVENTORY", "Your collected treasures.", 354, ModeMenuDoodleGraphic.Drawing.Inventory, actions.Inventory);
-        gacha = UtilityCard(content, "Gacha", "GACHA", "Unbox something strange.", 494, ModeMenuDoodleGraphic.Drawing.Gacha, actions.Gacha);
-        profile = UtilityCard(content, "Profile", "PROFILE", "Your very silly face.", 634, ModeMenuDoodleGraphic.Drawing.Profile, actions.Profile);
-        settings = UtilityCard(content, "Settings", "SETTINGS", "Tame the weirdness.", 774, ModeMenuDoodleGraphic.Drawing.Settings, actions.Settings);
+        local = ModeCard(content, "Play", "PLAY", "Pick your next battle", "PVE · CHAOS · CLASSIC", new Rect(120, 350, 536, 485),
+            UI.Yellow, ModeMenuDoodleGraphic.Drawing.Local, actions.Play ?? actions.Local);
+        gacha = ModeCard(content, "Gacha", "GACHA", "Unbox something strange", "Discover your next favourite.", new Rect(692, 350, 536, 485),
+            UI.Lavender, ModeMenuDoodleGraphic.Drawing.Gacha, actions.Gacha);
+        inventory = ModeCard(content, "Inventory", "INVENTORY", "Your collected treasures", "Board, chess and move effects.", new Rect(1264, 350, 536, 485),
+            UI.Blue, ModeMenuDoodleGraphic.Drawing.Inventory, actions.Inventory);
+        profile = ButtonFace(content, "Profile", new Rect(448, 872, 310, 70), UI.White, actions.Profile, false);
+        Label(profile.transform, "Profile Label", "PROFILE", new Rect(12, 8, 286, 54), 29, Ink, TextAlignmentOptions.Center);
+        settings = ButtonFace(content, "Settings", new Rect(805, 872, 310, 70), UI.White, actions.Settings, false);
+        Label(settings.transform, "Settings Label", "SETTINGS", new Rect(12, 8, 286, 54), 29, Ink, TextAlignmentOptions.Center);
+        shop = ButtonFace(content, "Shop", new Rect(1162, 872, 310, 70), UI.Paper, actions.Shop, false);
+        Label(shop.transform, "Shop Label", "SHOP · COMING SOON", new Rect(12, 8, 286, 54), 23, Ink, TextAlignmentOptions.Center);
 
         back = ButtonFace(content, "Back", new Rect(122, 976, 184, 58), new Color(.983f, .972f, .946f), actions.Back, false);
         Label(back.transform, "Back Label", "BACK", new Rect(16, 6, 152, 45), 29, Ink, TextAlignmentOptions.Center).fontStyle = FontStyles.Bold;
@@ -72,39 +65,20 @@ public sealed class ModeSelectionPresentation : MonoBehaviour
         music = page.gameObject.AddComponent<MenuMusicWidget>().Build(page, content, this);
 
         LinkNavigation();
-        navigationRing = new[] { local, online, aram, shop, inventory, gacha, profile, settings, back, logout, music };
+        navigationRing = new[] { local, gacha, inventory, profile, settings, shop, back, logout, music };
     }
 
     private static Button ModeCard(Transform parent, string name, string title, string description, string note,
         Rect area, Color fill, ModeMenuDoodleGraphic.Drawing drawing, UnityAction action)
     {
         var button = ButtonFace(parent, name, area, fill, action, true);
-        var caption = Label(button.transform, name + " Title", title, new Rect(34, 28, 319, 92), 61, Ink);
+        var caption = Label(button.transform, name + " Title", title, new Rect(28, 28, area.width - 56, 82), title.Length > 7 ? 43 : 61, Ink);
         caption.fontStyle = FontStyles.Bold;
-        caption.characterSpacing = 4f;
-        Label(button.transform, name + " Description", description, new Rect(36, 119, 332, 43), 29, Ink);
-        var footnote = Label(button.transform, name + " Note", note, new Rect(36, 216, 476, 34), 24, QuietInk);
-        if (name == "Shop") { footnote.fontStyle = FontStyles.Bold; footnote.characterSpacing = 3f; }
-        Doodle(button.transform, name + " Illustration", new Rect(372, 57, 157, 151), drawing);
+        caption.characterSpacing = 2f;
+        Label(button.transform, name + " Description", description, new Rect(30, 119, area.width - 60, 43), 27, Ink);
+        Doodle(button.transform, name + " Illustration", new Rect((area.width - 164) / 2, 206, 164, 164), drawing);
+        Label(button.transform, name + " Note", note, new Rect(30, 420, area.width - 60, 35), 23, QuietInk);
         Accent(button.transform, name + " Pencil Highlight", new Rect(28, 14, area.width - 56, 7), MainMenuInkGraphic.Drawing.Underline, new Color(1f, 1f, 1f, .40f), 1.6f);
-        return button;
-    }
-
-    private static Button UtilityCard(Transform parent, string name, string title, string description, float y,
-        ModeMenuDoodleGraphic.Drawing drawing, UnityAction action)
-    {
-        var button = ButtonFace(parent, name, new Rect(1362, y, 424, 122), new Color(.997f, .988f, .960f), action, false);
-        var caption = Label(button.transform, name + " Title", title, new Rect(116, 14, 284, 56), 35, Ink);
-        caption.fontStyle = FontStyles.Bold;
-        caption.characterSpacing = 1.5f;
-        Label(button.transform, name + " Description", description, new Rect(117, 69, 285, 33), 23, QuietInk);
-        var icon = Doodle(button.transform, name + " Upgraded Icon", new Rect(20, 19, 86, 86), drawing);
-        if (drawing == ModeMenuDoodleGraphic.Drawing.Gacha)
-        {
-            // Only this tiny icon canvas moves at idle. The remaining page stays cached.
-            icon.gameObject.AddComponent<Canvas>();
-            icon.gameObject.AddComponent<HandDrawnIdleWiggle>().Configure(.35f, .32f, .0012f, .08f);
-        }
         return button;
     }
 
@@ -159,12 +133,11 @@ public sealed class ModeSelectionPresentation : MonoBehaviour
 
     private void LinkNavigation()
     {
-        Nav(local, logout, aram, null, online); Nav(online, logout, shop, local, inventory);
-        Nav(aram, local, back, null, shop); Nav(shop, online, back, aram, profile);
-        Nav(inventory, logout, gacha, online, null); Nav(gacha, inventory, profile, online, null);
-        Nav(profile, gacha, settings, shop, null); Nav(settings, profile, back, shop, null);
-        Nav(back, aram, null, null, settings); Nav(logout, null, music, online, null);
-        Nav(music, logout, inventory, online, null);
+        Nav(local, logout, profile, null, gacha); Nav(gacha, logout, settings, local, inventory);
+        Nav(inventory, music, shop, gacha, null);
+        Nav(profile, local, back, null, settings); Nav(settings, gacha, back, profile, shop);
+        Nav(shop, inventory, back, settings, null); Nav(back, profile, null, null, settings);
+        Nav(logout, null, local, inventory, music); Nav(music, logout, inventory, gacha, null);
     }
 
     private static void Nav(Button button, Selectable up, Selectable down, Selectable left, Selectable right)

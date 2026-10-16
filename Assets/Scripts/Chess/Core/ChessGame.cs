@@ -168,6 +168,14 @@ public partial class ChessGame : MonoBehaviour
         if (gameplayCamera)
             return gameplayCamera;
 
+        // Additive match loading can coexist with other scenes. Bind framing and
+        // board input to the board scene's camera instead of an arbitrary camera.
+        if (chessboard && chessboard.gameObject.scene.IsValid())
+            foreach (var root in chessboard.gameObject.scene.GetRootGameObjects())
+                foreach (var candidate in root.GetComponentsInChildren<Camera>())
+                    if (candidate.enabled && candidate.CompareTag("MainCamera"))
+                    { gameplayCamera = candidate; return gameplayCamera; }
+
         gameplayCamera = Camera.main;
         if (!gameplayCamera)
             gameplayCamera = FindAnyObjectByType<Camera>();
@@ -286,6 +294,14 @@ public partial class ChessGame : MonoBehaviour
         contentLoading = loading;
         RefreshLocalInteractionState();
         if (wasLoading && !loading) ContentReady?.Invoke();
+    }
+
+    internal void CompleteMatchLoading()
+    {
+        // Local elapsed time begins when the player can see and interact with the board.
+        // Online clock timestamps remain authoritative server data.
+        if (gameStarted && !serverAuthoritativeMode) matchStartedAt = Time.unscaledTime;
+        SetContentLoading(false);
     }
 
     internal void ClearCosmeticPieces()
@@ -926,17 +942,18 @@ public partial class ChessGame : MonoBehaviour
         bool restartAramGame = aramMode;
         StockfishDifficulty selectedBotDifficulty = botDifficulty;
         BotGameOptions selectedBotOptions = botOptions;
-        pauseLocked = false;
-        Time.timeScale = 1f;
-        PrepareGame();
-        if (restartAramGame)
-            BeginAramGame();
-        else if (restartBotGame)
-            BeginBotGame(selectedTeam, selectedBotDifficulty, selectedBotOptions);
-        else
-            BeginGame(selectedTeam);
-        LocalGameRestarted?.Invoke();
-        return true;
+        return LoadingManager.For(this).RestartMatch(() =>
+        {
+            pauseLocked = false;
+            Time.timeScale = 1f;
+            if (restartAramGame)
+                BeginAramGame();
+            else if (restartBotGame)
+                BeginBotGame(selectedTeam, selectedBotDifficulty, selectedBotOptions);
+            else
+                BeginGame(selectedTeam);
+            LocalGameRestarted?.Invoke();
+        });
     }
 
     public void SetPauseLocked(bool locked)
@@ -1093,10 +1110,8 @@ public partial class ChessGame : MonoBehaviour
             return;
 
         orbitCamera = gameplayCamera.GetComponent<ChessOrbitCamera>();
-        if (orbitCamera != null)
-            return;
-
-        orbitCamera = gameplayCamera.gameObject.AddComponent<ChessOrbitCamera>();
+        if (!orbitCamera) orbitCamera = gameplayCamera.gameObject.AddComponent<ChessOrbitCamera>();
+        orbitCamera.Bind(this, chessboard);
     }
 
     private void EnsureAramRuntime()
@@ -2268,7 +2283,7 @@ public partial class ChessGame : MonoBehaviour
     private string GetProfileMatchMode()
     {
         if (aramMode)
-            return "ARAM";
+            return "CHAOS";
         if (botMode)
             return IsBotPractice ? "Bot Practice" : "Bot Challenge";
         if (serverAuthoritativeMode)

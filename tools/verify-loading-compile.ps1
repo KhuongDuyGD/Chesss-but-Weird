@@ -15,6 +15,7 @@ Push-Location $projectRoot
 try {
     if (-not (Test-Path -LiteralPath $compiler)) { throw "Missing Unity compiler: $compiler" }
     $runtimeResponse = Get-ChildItem Library/Bee/artifacts -Filter Assembly-CSharp.rsp -Recurse |
+        Where-Object { Test-Path -LiteralPath (Join-Path $_.DirectoryName 'Assembly-CSharp-Editor.rsp') } |
         Sort-Object LastWriteTime -Descending | Select-Object -First 1
     if (-not $runtimeResponse) { throw 'Import the project in Unity once to generate compiler response files.' }
     $editorResponse = Join-Path $runtimeResponse.DirectoryName 'Assembly-CSharp-Editor.rsp'

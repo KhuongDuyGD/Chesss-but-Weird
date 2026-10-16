@@ -193,7 +193,7 @@ public sealed class AramBuffDraftView : MonoBehaviour
             ? $"{(string.IsNullOrEmpty(headingOverride) ? string.Empty : headingOverride + " - ")}{definition.Tier.ToString().ToUpperInvariant()}"
             : (string.IsNullOrEmpty(headingOverride) ? "BUFF" : headingOverride);
         TextMeshProUGUI name = AddText(card, "Name", new Vector2(0f, 112f), new Vector2(312f, 84f), 28f, TextAlignmentOptions.Left, MatchHudStyle.Ink);
-        name.text = definition ? definition.DisplayName : "ARAM Buff";
+        name.text = definition ? definition.DisplayName : "CHAOS Buff";
         var viewport=CreateRect(card,"Description viewport",new Vector2(0,-38),new Vector2(312,208));
         viewport.gameObject.AddComponent<RectMask2D>();
         var hit=viewport.gameObject.AddComponent<Image>();hit.color=Color.clear;
@@ -241,7 +241,7 @@ public sealed class AramBuffDraftView : MonoBehaviour
 
     private void RefreshDraftCopy()
     {
-        titleLabel.text = choosingTeam == PieceTeam.White ? "WHITE ARAM ROLL" : "BLACK ARAM ROLL";
+        titleLabel.text = choosingTeam == PieceTeam.White ? "WHITE CHAOS ROLL" : "BLACK CHAOS ROLL";
         subtitleLabel.text = choosingTeam == PieceTeam.White
             ? $"Choose 1 buff from {FormatTierList(whiteOptions)} options."
             : $"White picked {FormatBuffList(whiteSelection)}. Choose 1 buff from {FormatTierList(blackOptions)} options.";
@@ -285,7 +285,7 @@ public sealed class AramBuffDraftView : MonoBehaviour
         if (canvasRoot)
             return;
 
-        GameObject rootObject = new GameObject("ARAM Buff Overlay", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
+        GameObject rootObject = new GameObject("CHAOS Buff Overlay", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
         canvasRoot = rootObject.GetComponent<RectTransform>();
         canvasRoot.SetParent(transform, false);
         Stretch(canvasRoot);
@@ -296,7 +296,7 @@ public sealed class AramBuffDraftView : MonoBehaviour
         ResponsiveUi.ConfigureCanvasScaler(rootObject.GetComponent<CanvasScaler>(), new Vector2(ReferenceWidth, ReferenceHeight));
 
         draftGroup = rootObject.AddComponent<CanvasGroup>();
-        RectTransform layout = MenuDesignFrame.Create(canvasRoot, "ARAM", new Vector2(ReferenceWidth, ReferenceHeight));
+        RectTransform layout = MenuDesignFrame.Create(canvasRoot, "CHAOS", new Vector2(ReferenceWidth, ReferenceHeight));
         draftPanel = CreateRect(layout, "Draft Panel", Vector2.zero, new Vector2(ReferenceWidth, ReferenceHeight));
         Image dim = draftPanel.gameObject.AddComponent<Image>();
         dim.color = new Color(.16f,.14f,.20f,.94f);
@@ -312,16 +312,16 @@ public sealed class AramBuffDraftView : MonoBehaviour
         cardScroll.horizontal=false;cardScroll.movementType=ScrollRect.MovementType.Clamped;cardScroll.scrollSensitivity=40;
         CreateContinueButton(draftPanel);
 
-        gameplayFrame=MatchHudStyle.Rect(canvasRoot,"ARAM Gameplay Safe Area",Vector2.zero,Vector2.one,Vector2.zero,Vector2.zero);
+        gameplayFrame=MatchHudStyle.Rect(canvasRoot,"CHAOS Gameplay Safe Area",Vector2.zero,Vector2.one,Vector2.zero,Vector2.zero);
         gameplayFrame.gameObject.AddComponent<ResponsiveSafeArea>();
-        targetPromptPanel = CreateRect(gameplayFrame, "ARAM Target Prompt", new Vector2(-140f, 197f), new Vector2(840f, 64f));
+        targetPromptPanel = CreateRect(gameplayFrame, "CHAOS Target Prompt", new Vector2(-140f, 197f), new Vector2(840f, 64f));
         MatchHudStyle.Surface(targetPromptPanel,false);
         targetPromptLabel = AddText(targetPromptPanel, "Target Prompt Label", Vector2.zero, new Vector2(800f, 58f), 20f, TextAlignmentOptions.Center, MatchHudStyle.Ink);
         targetPromptPanel.gameObject.SetActive(false);
 
-        toastPanel=CreateRect(gameplayFrame,"ARAM Toast Panel",new Vector2(-140,120),new Vector2(840,64));
+        toastPanel=CreateRect(gameplayFrame,"CHAOS Toast Panel",new Vector2(-140,120),new Vector2(840,64));
         MatchHudStyle.Surface(toastPanel,false);
-        toastLabel = AddText(toastPanel, "ARAM Toast", Vector2.zero, new Vector2(800f, 58f), 20f, TextAlignmentOptions.Center, MatchHudStyle.Ink);
+        toastLabel = AddText(toastPanel, "CHAOS Toast", Vector2.zero, new Vector2(800f, 58f), 20f, TextAlignmentOptions.Center, MatchHudStyle.Ink);
         toastPanel.gameObject.SetActive(false);
         SetContinueButtonVisible(false);
         LayoutGameplayHud();

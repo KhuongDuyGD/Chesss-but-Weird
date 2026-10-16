@@ -98,6 +98,8 @@ public static class AddressableCosmeticsSetup
                 serialized.ApplyModifiedPropertiesWithoutUndo();
                 var camera = new GameObject("Main Camera").AddComponent<Camera>();
                 camera.tag = "MainCamera";
+                camera.orthographic = true;
+                camera.gameObject.AddComponent<ChessOrbitCamera>();
                 camera.transform.position = new Vector3(4, 9, -6);
                 camera.transform.LookAt(new Vector3(4, 0, 4));
                 camera.gameObject.AddComponent<AudioListener>();

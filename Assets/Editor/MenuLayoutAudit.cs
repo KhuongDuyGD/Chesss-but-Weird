@@ -95,9 +95,7 @@ public static class MenuLayoutAudit
             result.Initialize(owner, null, null);
             foreach (ResultMenuView.ResultKind kind in Enum.GetValues(typeof(ResultMenuView.ResultKind)))
             {
-                var oldContent = Field<RectTransform>(result, "contentRoot");
-                if (oldContent) { UnityEngine.Object.DestroyImmediate(oldContent.gameObject); }
-                Invoke(result, "Rebuild", kind);
+                Invoke(result, "Present", kind, null);
                 var resultCanvas = Field<GameObject>(result, "canvasRoot").GetComponent<Canvas>();
                 resultCanvas.gameObject.SetActive(true);
                 CaptureSizes(resultCanvas, folder, "result-" + kind);

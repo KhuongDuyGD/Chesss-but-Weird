@@ -18,6 +18,91 @@ public static class CosmeticArtAudit
     private const BindingFlags Private = BindingFlags.Instance | BindingFlags.NonPublic;
     private static readonly List<string> checks = new List<string>();
 
+    // Projection math only, using the two actual scene cameras. Never starts a match
+    // or authentication, and never saves the preview scenes.
+    public static void VerifyCameraProjection()
+    {
+        var results = new List<string>();
+        foreach (string path in new[] { "Assets/Game/Scenes/ChessMatch.unity", "Assets/Scenes/ChessClassic.unity" })
+        {
+            var scene = EditorSceneManager.OpenPreviewScene(path);
+            try
+            {
+                var roots = scene.GetRootGameObjects();
+                var board = roots.SelectMany(root => root.GetComponentsInChildren<Chessboard>(true)).Single();
+                var camera = roots.SelectMany(root => root.GetComponentsInChildren<Camera>(true)).Single(c => c.CompareTag("MainCamera"));
+                if (!camera.orthographic || !camera.GetComponent<ChessOrbitCamera>())
+                    throw new InvalidOperationException(path + " must store an orthographic camera with its orbit controller.");
+                results.Add("PASS " + path + " stores parallel projection before match initialization");
+                Call(board, "Awake");
+                var owner = new GameObject("Camera projection fixture");
+                UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(owner, scene);
+                var game = owner.AddComponent<ChessGame>();
+                game.AttachBoard(board);
+                var orbit = camera.GetComponent<ChessOrbitCamera>();
+                if ((Camera)typeof(ChessGame).GetField("gameplayCamera", Private).GetValue(game) != camera)
+                    throw new InvalidOperationException("Match binding selected a camera outside its board scene.");
+                results.Add("PASS " + path + " binds the owner to its board scene camera");
+                typeof(ChessGame).GetField("gameStarted", Private).SetValue(game, true);
+                foreach (bool chaos in new[] { false, true })
+                foreach (float aspect in new[] { 16f / 9f, 4f / 3f, 9f / 16f })
+                foreach (PieceTeam team in new[] { PieceTeam.White, PieceTeam.Black })
+                {
+                    typeof(ChessGame).GetField("aramMode", Private).SetValue(game, chaos);
+                    camera.aspect = aspect;
+                    orbit.ConfigureForPlayerSide(team, true);
+                    foreach (float yaw in new[] { 0f, 32f, 122f })
+                    foreach (float pitch in new[] { -15f, 0f, 12f })
+                    foreach (float zoom in new[] { .55f, 1f, 1.65f })
+                    {
+                        typeof(ChessOrbitCamera).GetField("orbitYaw", Private).SetValue(orbit, yaw);
+                        typeof(ChessOrbitCamera).GetField("orbitPitch", Private).SetValue(orbit, pitch);
+                        typeof(ChessOrbitCamera).GetField("currentZoom", Private).SetValue(orbit, zoom);
+                        Call(orbit, "FrameBoard");
+                        AssertParallelGrid(camera, board);
+                        results.Add($"PASS {path} {(chaos ? "Chaos" : "Classic/PVE")} {team} aspect={aspect:F3} yaw={yaw} pitch={pitch} zoom={zoom}: equal rows and parallel columns");
+                    }
+                }
+                // Repair a stale perspective matrix at the rendering boundary as well.
+                camera.orthographic = false;
+                camera.projectionMatrix = Matrix4x4.Perspective(60, camera.aspect, .3f, 1000);
+                Call(orbit, "BeforeCameraRendering", default(UnityEngine.Rendering.ScriptableRenderContext), camera);
+                AssertParallelGrid(camera, board);
+                results.Add("PASS " + path + " restores parallel projection before rendering after a perspective override");
+                orbit.enabled = false;
+                camera.orthographic = false; camera.ResetProjectionMatrix();
+                if (Mathf.Abs(camera.projectionMatrix.m32) < .5f)
+                    throw new InvalidOperationException("Disabled orbit must allow the separate rifle perspective view.");
+                orbit.enabled = true; orbit.Bind(game, board);
+                AssertParallelGrid(camera, board);
+                results.Add("PASS " + path + " returns from rifle perspective to a parallel board view");
+            }
+            finally { EditorSceneManager.ClosePreviewScene(scene); }
+        }
+        Directory.CreateDirectory("Logs/camera-projection");
+        File.WriteAllLines("Logs/camera-projection/checks.txt", results);
+        Debug.Log("[CameraProjectionAudit] PASS " + results.Count + " scene/projection checks. No API calls, rendered frames or live matches.");
+    }
+
+    private static void AssertParallelGrid(Camera camera, Chessboard board)
+    {
+        if (!camera.orthographic || Mathf.Abs(camera.projectionMatrix.m32) > .00001f ||
+            Mathf.Abs(camera.projectionMatrix.m33 - 1) > .00001f ||
+            Mathf.Abs(camera.nonJitteredProjectionMatrix.m33 - 1) > .00001f)
+            throw new InvalidOperationException("Camera is using perspective projection.");
+        Vector2 a = camera.WorldToViewportPoint(board.GetTileCenterWorld(Vector2Int.zero));
+        Vector2 dx = (Vector2)camera.WorldToViewportPoint(board.GetTileCenterWorld(Vector2Int.right)) - a;
+        Vector2 dz = (Vector2)camera.WorldToViewportPoint(board.GetTileCenterWorld(Vector2Int.up)) - a;
+        if (dx.sqrMagnitude < .0000001f || dz.sqrMagnitude < .0000001f)
+            throw new InvalidOperationException("Projection collapsed a board axis.");
+        for (int x = 0; x < 8; x++) for (int z = 0; z < 8; z++)
+        {
+            Vector2 actual = camera.WorldToViewportPoint(board.GetTileCenterWorld(new Vector2Int(x, z)));
+            if (Vector2.Distance(actual, a + dx * x + dz * z) > .0001f)
+                throw new InvalidOperationException("Board rows converge or change size with depth.");
+        }
+    }
+
     public static void SetupAndVerify()
     {
         CosmeticArtSetup.Setup();

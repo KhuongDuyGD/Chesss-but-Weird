@@ -4,7 +4,7 @@ using UnityEngine;
 public sealed class AramBuffPieceMarker : MonoBehaviour
 {
     private const int RingSegments = 48;
-    private const string MarkerRootName = "ARAM Buff Marker";
+    private const string MarkerRootName = "CHAOS Buff Marker";
 
     private Transform markerRoot;
     private LineRenderer ring;

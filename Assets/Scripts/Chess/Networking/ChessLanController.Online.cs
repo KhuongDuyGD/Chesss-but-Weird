@@ -108,6 +108,31 @@ public partial class ChessLanController
         }
         online?.Dispose(); aramPresenter?.Dispose(); lobbyUi?.Destroy(); matchHud?.Destroy();
     }
+    public void ShowModeMatchmaking(PlayModeOption mode)
+        => ShowPlayLobby(mode);
+
+    public void ShowCustomRooms(PlayModeOption mode)
+    {
+        if (!PlayModeNames.IsCustom(mode)) throw new ArgumentException("A custom room choice is required.", nameof(mode));
+        ShowPlayLobby(mode);
+    }
+
+    private void ShowPlayLobby(PlayModeOption mode)
+    {
+        if (!PlayerAuthService.CanUseOnlineFeatures) { turnSelectionUI?.RequestAuthentication("Sign in to play online."); return; }
+        customRoomEntry = PlayModeNames.IsCustom(mode) ? mode : (PlayModeOption?)null;
+        directMatchmaking = !customRoomEntry.HasValue;
+        loadoutOpenVersion++;
+        requestedGameMode = PlayModeNames.Backend(mode);
+        lobbyMode = NetworkLobbyUiMode.Multiplayer;
+        loadoutContinuation = customRoomEntry.HasValue ? CustomRoomDestination : (Action)RequestFindMatch;
+        loadoutActionLabel = customRoomEntry.HasValue ? "CONTINUE" : "FIND MATCH";
+        menuPage = OnlineMenuPage.Loadout; menuRevision++; showLanPanel = true;
+        if (lobbyUi == null) lobbyUi = new NetworkLobbyUiController(this);
+        lobbyUi.Show(lobbyMode);
+        EnsureOnline(); RequestRefreshLobby();
+    }
+
     public void ShowLanSetup() => ShowLobby(NetworkLobbyUiMode.Lan, "Classic");
     public void ShowMultiplayerSetup() => ShowLobby(NetworkLobbyUiMode.Multiplayer, "Classic");
     public void ShowAramLanSetup() => ShowLobby(NetworkLobbyUiMode.Lan, "Aram");
@@ -115,6 +140,8 @@ public partial class ChessLanController
     private void ShowLobby(NetworkLobbyUiMode mode, string gameMode)
     {
         if (!PlayerAuthService.CanUseOnlineFeatures) { turnSelectionUI?.RequestAuthentication("Sign in to play online."); return; }
+        directMatchmaking = false;
+        customRoomEntry = null;
         requestedGameMode = gameMode; lobbyMode = mode; menuPage = OnlineMenuPage.Home; menuRevision++; showLanPanel = true;
         if (lobbyUi == null) lobbyUi = new NetworkLobbyUiController(this);
         lobbyUi.Show(mode);
@@ -195,6 +222,7 @@ public partial class ChessLanController
     public void RequestRematch() => Run(async () => { await EnsureOnline().RematchAsync(); statusMessage = "Rematch requested. Both players must agree within 2 minutes."; });
     public void RequestReady() => Run(async () =>
     {
+        if (LoadingManager.For(chessGame).IsBusy) return;
         if (EnsureOnline().State == null) throw new ApiException("Start the room first. Ready confirms match loading.");
         await online.ReadyAsync(); statusMessage = "Ready. Waiting for the other player and setup.";
     });
@@ -256,7 +284,7 @@ public partial class ChessLanController
         finally { if (this && epoch == lifecycle) commandBusy = false; }
     }
     private bool HandleOnlineBoardClick(Vector2Int square, int? pieceId) => aramPresenter?.HandleClick(square, pieceId) == true;
-    internal bool CanSendOnlineCommand => PlayerAuthService.CanUseOnlineFeatures && online?.Connected == true && !online.Recovering && !requestInFlight && !commandBusy && !online.HasPendingCommand && !reconnecting && !leaving;
+    internal bool CanSendOnlineCommand => PlayerAuthService.CanUseOnlineFeatures && online?.Connected == true && !online.Recovering && !requestInFlight && !commandBusy && !online.HasPendingCommand && !reconnecting && !leaving && chessGame && !LoadingManager.For(chessGame).IsBusy;
     internal void SetOnlineNotice(string message) { statusMessage = message; }
     internal bool BlocksOnlineBoardPointer(Vector2 screen)
     {
@@ -372,7 +400,7 @@ public partial class ChessLanController
             (menuPage == OnlineMenuPage.Searching || (menuPage == OnlineMenuPage.Loadout && queueRequest != null)))
         {
             SetMenuPage(OnlineMenuPage.Loadout);
-            statusMessage = online.Ticket.status == "Expired" ? "Search expired. Press Play to try again." : "Search cancelled. Check your loadout and try again.";
+            statusMessage = online.Ticket.status == "Expired" ? "Search expired. Press Find Match to try again." : "Search cancelled. Check your loadout and try again.";
         }
         if (online?.Ticket != null && online.Ticket.status != "Queued" && online.Ticket.status != "Matched") queueRequest = null;
         string roomFingerprint = online?.Room == null ? "" : online.Room.roomId + ":" + online.Room.status + ":" +
@@ -412,7 +440,7 @@ public partial class ChessLanController
     private string GetRecentMatchLine(int index)
     {
         var m = recentMatches.ElementAtOrDefault(index);
-        return m == null ? "No recent match" : m.settings.mode + " - " + (m.result?.outcome ?? m.status);
+        return m == null ? "No recent match" : PlayModeNames.DisplayBackend(m.settings.mode) + " - " + (m.result?.outcome ?? m.status);
     }
     private static string Name(Player p) => p == null ? "Opponent" : string.IsNullOrWhiteSpace(p.displayName) ? p.username : p.displayName;
     private static bool IsAramGameMode(string mode) => string.Equals(mode, "Aram", StringComparison.OrdinalIgnoreCase);

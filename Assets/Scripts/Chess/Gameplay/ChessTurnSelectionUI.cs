@@ -23,7 +23,6 @@ public class ChessTurnSelectionUI : MonoBehaviour
     private PieceTeam winningTeam;
     private PieceTeam playerTeam;
     private PieceTeam checkedTeam;
-    private PieceTeam promotionTeam;
     private bool resultIsDraw;
     private bool logoutInFlight;
     private string drawReason;
@@ -42,9 +41,11 @@ public class ChessTurnSelectionUI : MonoBehaviour
     private ChessPauseMenu pauseMenu;
     private AnalysisBoardView analysisBoard;
     private ResultMenuView resultMenu;
+    private PromotionMenuView promotionMenu;
     private StockfishBotController botController;
     private StockfishDifficulty selectedBotDifficulty = StockfishDifficulty.Medium;
     private BotGameOptions selectedBotOptions = BotGameOptions.Challenge;
+    private CosmeticSelection pendingPveLoadout;
     private string whitePlayerName;
     private string blackPlayerName;
     private float uiWidth = UiReferenceWidth;
@@ -61,6 +62,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
         ui.TryCreatePauseMenu();
         ui.TryCreateAnalysisBoard();
         ui.TryCreateResultMenu();
+        ui.TryCreatePromotionMenu();
         ui.TryCreateBotController();
         GameMusicManager.PlayMainMenuPrimaryMusic();
         return ui;
@@ -70,6 +72,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
     {
         currentTurn = newCurrentTurn;
         promotionCallback = null;
+        promotionMenu?.Hide();
         resultIsDraw = false;
         drawReason = string.Empty;
         showCheckWarning = false;
@@ -94,16 +97,29 @@ public class ChessTurnSelectionUI : MonoBehaviour
 
     public void ShowPromotionChoice(PieceTeam newPromotionTeam, Action<PieceType> onPromotionSelected)
     {
-        promotionTeam = newPromotionTeam;
         promotionCallback = onPromotionSelected;
         showCheckWarning = false;
         state = ScreenState.Promotion;
+        if (!promotionMenu) TryCreatePromotionMenu();
+        promotionMenu.Show(newPromotionTeam, CompletePromotionSelection);
+    }
+
+    private void CompletePromotionSelection(PieceType pieceType)
+    {
+        if (state != ScreenState.Promotion || promotionCallback == null) return;
+        var callback = promotionCallback;
+        promotionCallback = null;
+        promotionMenu?.Hide();
+        state = ScreenState.Playing;
+        callback(pieceType);
     }
 
     public void ShowMainMenu()
     {
+        pendingPveLoadout = null;
         GameMusicManager.PlayMainMenuPrimaryMusic();
         promotionCallback = null;
+        promotionMenu?.Hide();
         resultIsDraw = false;
         drawReason = string.Empty;
         showCheckWarning = false;
@@ -119,6 +135,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
 
     public void ShowTurnSelection()
     {
+        pendingPveLoadout = null;
         GameMusicManager.PlayMainMenuHubMusic();
         showCheckWarning = false;
         lanController?.HideLanSetup();
@@ -132,6 +149,62 @@ public class ChessTurnSelectionUI : MonoBehaviour
         state = ScreenState.TransitionToTurnSelection;
         analysisBoard?.SetVisible(false);
         transitionStartTime = Time.realtimeSinceStartup;
+    }
+
+    public void ShowPlaySelection()
+    {
+        showCheckWarning = false;
+        lanController?.HideLanSetup();
+        state = ScreenState.TurnSelection;
+        analysisBoard?.SetVisible(false);
+        handDrawnMenu?.ShowPlaySelection();
+    }
+
+    public void ShowLoadoutLobby(PlayModeOption mode)
+    {
+        if (mode == PlayModeOption.PveBotRush) { ShowPveLoadout(); return; }
+        if (!RequireOnlineAccess(PlayModeNames.Label(mode))) return;
+        showCheckWarning = false;
+        state = ScreenState.TurnSelection;
+        analysisBoard?.SetVisible(false);
+        handDrawnMenu?.HideForPlaying();
+        if (PlayModeNames.IsCustom(mode)) lanController?.ShowCustomRooms(mode);
+        else lanController?.ShowModeMatchmaking(mode);
+    }
+
+    public void ShowPveLoadout()
+    {
+        showCheckWarning = false;
+        lanController?.HideLanSetup();
+        state = ScreenState.TurnSelection;
+        analysisBoard?.SetVisible(false);
+        handDrawnMenu?.ShowPveLoadout(selection =>
+        {
+            pendingPveLoadout = selection.Copy();
+            ShowBotDifficultySelection();
+        });
+    }
+
+    public void BackFromBotSelection()
+    {
+        if (pendingPveLoadout != null) ShowPveLoadout();
+        else ShowPlaySelection();
+    }
+
+    public void ConfirmBotSide(PieceTeam team)
+    {
+        if (pendingPveLoadout == null) { ShowBotSkinSelection(team); return; }
+        StartBotGameWithLoadout(team, PreparePveLoadout(team));
+    }
+
+    private CosmeticSelection PreparePveLoadout(PieceTeam team)
+    {
+        var selection = pendingPveLoadout.Copy();
+        // The PVE lobby chooses one player set before the player chooses a color.
+        string skin = selection.whiteSkinId;
+        selection.whiteSkinId = team == PieceTeam.White ? skin : PieceSkinCatalog.DefaultSkinId;
+        selection.blackSkinId = team == PieceTeam.Black ? skin : PieceSkinCatalog.DefaultSkinId;
+        return selection;
     }
 
     public void ShowSideSelection()
@@ -165,7 +238,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
 
     public void ShowAramModeSelection()
     {
-        if (!RequireAccountAccess("ARAM mode")) return;
+        if (!RequireAccountAccess("CHAOS mode")) return;
         showCheckWarning = false;
         lanController?.HideLanSetup();
         state = ScreenState.TurnSelection;
@@ -255,7 +328,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
 
     public void StartAramPracticeGame()
     {
-        if (!RequireAccountAccess("ARAM mode")) return;
+        if (!RequireAccountAccess("CHAOS mode")) return;
         if (handDrawnMenu && handDrawnMenu.IsReady)
         {
             handDrawnMenu.ShowAramPracticeLoadout(StartAramPracticeWithLoadout);
@@ -280,7 +353,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
 
     public void ShowAramLanSetup()
     {
-        if (!RequireOnlineAccess("ARAM mode")) return;
+        if (!RequireOnlineAccess("CHAOS mode")) return;
         if (PrepareNetworkContent(ShowAramLanSetup)) return;
         GameMusicManager.PlayMainMenuHubMusic();
         showCheckWarning = false;
@@ -292,7 +365,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
 
     public void ShowAramOnlineSetup()
     {
-        if (!RequireOnlineAccess("ARAM online play")) return;
+        if (!RequireOnlineAccess("CHAOS online play")) return;
 
         if (PrepareNetworkContent(ShowAramOnlineSetup)) return;
         GameMusicManager.PlayMainMenuHubMusic();
@@ -416,6 +489,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
     public void ShowGameOver(PieceTeam winner, PieceTeam selectedPlayerTeam)
     {
         promotionCallback = null;
+        promotionMenu?.Hide();
         showCheckWarning = false;
         resultIsDraw = false;
         drawReason = string.Empty;
@@ -434,6 +508,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
     public void ShowDraw(PieceTeam selectedPlayerTeam, string reason)
     {
         promotionCallback = null;
+        promotionMenu?.Hide();
         showCheckWarning = false;
         resultIsDraw = true;
         drawReason = string.IsNullOrWhiteSpace(reason) ? "Draw" : reason;
@@ -523,6 +598,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
 
     private void DrawResponsiveGui()
     {
+        if (state == ScreenState.Promotion && promotionMenu && promotionMenu.IsReady) return;
 
         if (resultMenu && resultMenu.IsReady && (state == ScreenState.GameOver || state == ScreenState.Spectating))
             return;
@@ -553,7 +629,6 @@ public class ChessTurnSelectionUI : MonoBehaviour
                 DrawTurnSelection();
                 break;
             case ScreenState.Promotion:
-                DrawPromotion();
                 break;
             case ScreenState.GameOver:
                 DrawGameOver();
@@ -620,40 +695,6 @@ public class ChessTurnSelectionUI : MonoBehaviour
 
         if (GUI.Button(blackButton, "Black", buttonStyle))
             StartBotGame(PieceTeam.Black);
-    }
-
-    private void DrawPromotion()
-    {
-        DrawDimBackground(0.48f);
-
-        float panelWidth = Mathf.Clamp(uiWidth * 0.56f, 820f, 1160f);
-        float panelHeight = Mathf.Clamp(uiHeight * 0.34f, 380f, 500f);
-        Rect panelRect = GetCenteredRect(panelWidth, panelHeight);
-
-        GUI.Box(panelRect, string.Empty);
-        GUI.Label(new Rect(panelRect.x, panelRect.y + 48f, panelRect.width, 76f), $"{promotionTeam} pawn promotion", titleStyle);
-
-        float buttonWidth = Mathf.Clamp(panelWidth * 0.19f, 150f, 210f);
-        float buttonHeight = Mathf.Clamp(panelHeight * 0.22f, 82f, 108f);
-        float gap = Mathf.Clamp(panelWidth * 0.035f, 26f, 42f);
-        float totalWidth = buttonWidth * 4f + gap * 3f;
-        float buttonX = panelRect.x + (panelRect.width - totalWidth) * 0.5f;
-        float buttonY = panelRect.y + panelRect.height * 0.56f;
-
-        DrawPromotionButton(new Rect(buttonX, buttonY, buttonWidth, buttonHeight), "Queen", PieceType.Queen);
-        DrawPromotionButton(new Rect(buttonX + (buttonWidth + gap), buttonY, buttonWidth, buttonHeight), "Rook", PieceType.Rook);
-        DrawPromotionButton(new Rect(buttonX + (buttonWidth + gap) * 2f, buttonY, buttonWidth, buttonHeight), "Bishop", PieceType.Bishop);
-        DrawPromotionButton(new Rect(buttonX + (buttonWidth + gap) * 3f, buttonY, buttonWidth, buttonHeight), "Knight", PieceType.Knight);
-    }
-
-    private void DrawPromotionButton(Rect rect, string label, PieceType pieceType)
-    {
-        if (!GUI.Button(rect, label, buttonStyle))
-            return;
-
-        Action<PieceType> callback = promotionCallback;
-        promotionCallback = null;
-        callback?.Invoke(pieceType);
     }
 
     private void DrawGameOver()
@@ -803,6 +844,12 @@ public class ChessTurnSelectionUI : MonoBehaviour
     {
         resultMenu = gameObject.AddComponent<ResultMenuView>();
         resultMenu.Initialize(this, pauseMenu, chessGame);
+    }
+
+    private void TryCreatePromotionMenu()
+    {
+        promotionMenu = gameObject.AddComponent<PromotionMenuView>();
+        promotionMenu.Initialize(chessGame);
     }
 
     private void TryCreateBotController()

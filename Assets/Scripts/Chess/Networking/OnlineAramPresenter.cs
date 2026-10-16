@@ -49,7 +49,7 @@ internal sealed class OnlineAramPresenter : IDisposable
         "Substitute Ninjutsu: first check teleports king to safety and leaves a decoy.",
         "High-Tech Era: original rooks capture across exactly one blocker.",
         "Queen's Betrayal: extra queen; 10% chance to switch sides each owner turn.",
-        "Definition of ARAM: outer file pairs collapse at rounds 10/15.",
+        "Definition of CHAOS: outer file pairs collapse at rounds 10/15.",
         "RNG Fiesta: randomizes starting pieces except king/queen.",
         "I-Frame Roll: Escape a checkmate within the king's 5x5 region, at most 3 uses.",
         "Ghost Army: move through allies, but cannot use phasing to check the enemy king.",
@@ -79,7 +79,7 @@ internal sealed class OnlineAramPresenter : IDisposable
         if (state?.aram == null || state.status == "Finished" || state.status == "Cancelled") return;
         GUILayout.BeginArea(Panel, GUI.skin.box);
         scroll = GUILayout.BeginScrollView(scroll);
-        GUILayout.Label("ARAM - " + (string)state.aram["phase"]);
+        GUILayout.Label("CHAOS - " + (string)state.aram["phase"]);
         if (state.aram["forcedPawn"]?.Type == JTokenType.Integer) GUILayout.Label("Extra move: pawn #" + (int)state.aram["forcedPawn"]);
         foreach (var s in state.aram["sides"] ?? new JArray())
         {
@@ -275,7 +275,7 @@ internal sealed class OnlineAramPresenter : IDisposable
         if (key == markerFingerprint) return;
         markerFingerprint = key; if (markers) { markers.SetActive(false); UnityEngine.Object.Destroy(markers); }
         if (!game.Board) return;
-        markers = new GameObject("Online ARAM markers");
+        markers = new GameObject("Online CHAOS markers");
         foreach (var mine in state.aram?["mines"] ?? new JArray()) CreateMarker((string)mine["square"], Color.red, .4f, "Mine");
         foreach (var crate in state.aram?["crates"] ?? new JArray()) CreateMarker((string)crate["square"], Color.yellow, .5f, "Crate " + (string)crate["kind"]);
         int collapsed = (int?)state.aram?["collapsedFiles"] ?? 0;

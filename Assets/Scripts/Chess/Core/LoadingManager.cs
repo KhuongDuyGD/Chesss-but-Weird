@@ -17,6 +17,7 @@ public sealed class LoadingManager : MonoBehaviour
     private GameObject environmentVisual;
     private Action lastStart;
     private CosmeticSelection lastSelection;
+    private bool lastReplaceCurrentMatch;
     private Action returned;
     public CosmeticCatalog Catalog { get; private set; }
     public SkinManager Skins { get; private set; }
@@ -49,6 +50,7 @@ public sealed class LoadingManager : MonoBehaviour
         selection = selection.Copy();
         lastSelection = selection;
         lastStart = startGameplay;
+        lastReplaceCurrentMatch = replaceCurrentMatch;
         IsBusy = true;
         game.SetContentLoading(true);
         ui = LoadingUI.Create(transform);
@@ -96,7 +98,7 @@ public sealed class LoadingManager : MonoBehaviour
         yield return Board.Load(Catalog, selection.boardId, selection.environmentId,
             p => ui.Report(.3f + p * .2f, "Loading board and environment..."));
         yield return Skins.Load(Catalog, selection.whiteSkinId, selection.blackSkinId,
-            p => ui.Report(.5f + p * .4f, "Loading selected pieces..."));
+            p => ui.Report(.5f + p * .35f, "Loading selected pieces..."));
         LogMemory("selected assets loaded");
         if (!Skins.TryGetPrefab(PieceTeam.White, PieceType.Pawn, out _) ||
             !Skins.TryGetPrefab(PieceTeam.Black, PieceType.Pawn, out _))
@@ -117,18 +119,79 @@ public sealed class LoadingManager : MonoBehaviour
         }
         game.PrepareAuthenticatedBoard();
         LogMemory("pieces created");
-        ui.Report(.96f, "Setting up the pieces...");
+        ui.Report(.87f, "Setting up the pieces...");
         yield return null;
         startGameplay();
         // Input and bot updates remain locked even though existing BeginGame methods ran.
         Canvas.ForceUpdateCanvases();
         LogMemory("gameplay initialized");
+        // Render the actual board, animated environment and pieces behind the opaque
+        // blocker before allowing input, bot turns or online Ready acknowledgements.
+        yield return PreparePresentation();
         ui.Report(1, "Ready");
         yield return ui.Finish();
         ui = null;
-        game.SetContentLoading(false);
         IsBusy = false;
+        game.CompleteMatchLoading();
         operation = null;
+    }
+
+    public bool RestartMatch(Action startGameplay)
+    {
+        if (IsBusy) return false;
+        StartMatch(lastSelection ?? CosmeticSelection.Load(), startGameplay, true);
+        return true;
+    }
+
+    private IEnumerator PreparePresentation()
+    {
+        ui.Report(.9f, "Preparing materials and textures...");
+        // Two player frames allow the newly enabled renderers, camera and shader
+        // passes to render before the loading canvas fades. No EndOfFrame yield:
+        // that stalls when running Unity in batch mode or without a visible Game view.
+        yield return null;
+        yield return null;
+        if (SystemInfo.graphicsDeviceType == UnityEngine.Rendering.GraphicsDeviceType.Null) yield break;
+
+        var materials = new HashSet<Material>();
+        var textures = new HashSet<Texture2D>();
+        CollectMaterials(game.transform, materials);
+        if (game.Board) CollectMaterials(game.Board.transform, materials);
+        if (boardVisual) CollectMaterials(boardVisual.transform, materials);
+        if (environmentVisual) CollectMaterials(environmentVisual.transform, materials);
+        foreach (var material in materials)
+            foreach (int property in material.GetTexturePropertyNameIDs())
+                if (material.GetTexture(property) is Texture2D texture && texture.streamingMipmaps) textures.Add(texture);
+
+        try
+        {
+            // Request only the mips needed by the match camera. Keep ordinary
+            // streaming in control again as soon as this loading boundary completes.
+            foreach (var texture in textures) texture.requestedMipmapLevel = texture.desiredMipmapLevel;
+            float deadline = Time.realtimeSinceStartup + 20f;
+            while (true)
+            {
+                int ready = 0;
+                foreach (var texture in textures) if (!texture || texture.IsRequestedMipmapLevelLoaded()) ready++;
+                ui.Report(.92f + .06f * (textures.Count == 0 ? 1 : (float)ready / textures.Count), "Preparing materials and textures...");
+                if (ready == textures.Count) break;
+                if (Time.realtimeSinceStartup >= deadline)
+                    throw new InvalidOperationException("Match textures did not finish streaming. Retry loading the match.");
+                yield return null;
+            }
+            yield return null;
+        }
+        finally
+        {
+            foreach (var texture in textures) if (texture) texture.ClearRequestedMipmapLevel();
+        }
+        LogMemory("match presentation prepared");
+    }
+
+    private static void CollectMaterials(Transform root, HashSet<Material> materials)
+    {
+        foreach (var renderer in root.GetComponentsInChildren<Renderer>(true))
+            foreach (var material in renderer.sharedMaterials) if (material) materials.Add(material);
     }
 
     [System.Diagnostics.Conditional("UNITY_EDITOR")]
@@ -216,7 +279,7 @@ public sealed class LoadingManager : MonoBehaviour
                 Debug.LogError("[Loading] " + failure.Message);
                 operation = null;
                 ui.Error("Content could not be prepared.",
-                    () => { Destroy(ui.gameObject); IsBusy = false; StartMatch(lastSelection, lastStart); },
+                    () => { Destroy(ui.gameObject); IsBusy = false; StartMatch(lastSelection, lastStart, lastReplaceCurrentMatch || game.GameStarted); },
                     () => { Destroy(ui.gameObject); IsBusy = false; ReturnToMenu(); });
                 yield break;
             }

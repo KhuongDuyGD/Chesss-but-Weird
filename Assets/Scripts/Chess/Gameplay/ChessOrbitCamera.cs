@@ -37,6 +37,15 @@ public sealed class ChessOrbitCamera : MonoBehaviour
     public bool IsOrbitUnlocked => orbitUnlocked;
     public bool IsBoardViewActive => isActiveAndEnabled && viewCamera && viewCamera.enabled;
 
+    public void Bind(ChessGame owner, Chessboard board)
+    {
+        chessGame = owner;
+        chessboard = board;
+        viewCamera = GetComponent<Camera>();
+        ApplyParallelProjection();
+        FrameBoard();
+    }
+
     private void OnEnable()
     {
         viewCamera = GetComponent<Camera>();
@@ -62,9 +71,11 @@ public sealed class ChessOrbitCamera : MonoBehaviour
     private void ApplyParallelProjection()
     {
         if (!viewCamera) return;
-        viewCamera.orthographic = true;
         viewCamera.usePhysicalProperties = false;
         viewCamera.lensShift = Vector2.zero;
+        // Set the native projection mode last as well as the explicit matrix:
+        // URP uses Camera.orthographic when preparing its rendering data.
+        viewCamera.orthographic = true;
         float halfHeight = Mathf.Max(.01f, viewCamera.orthographicSize);
         float halfWidth = halfHeight * Mathf.Max(.1f, viewCamera.aspect);
         // The homogeneous W stays 1: depth cannot shrink distant rows or converge parallels.

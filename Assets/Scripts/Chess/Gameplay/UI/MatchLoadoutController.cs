@@ -24,10 +24,12 @@ public sealed class MatchLoadoutController : MonoBehaviour
     private RectTransform root, content, choiceRoot, overlay, summaryRoot;
     private CanvasGroup contentInput;
     private ScrollRect choiceScroll;
-    private TextMeshProUGUI status, sideLabel;
-    private Button whiteButton, blackButton, startButton, effectButton;
+    private TextMeshProUGUI status, sideLabel, modeLabel;
+    private Button whiteButton, blackButton, startButton, effectButton, backButton, refreshButton;
+    private bool lobbyLocked, queueSearching, queueBusy;
+    private string actionLabel = "START MATCH";
+    private UnityAction cancelSearch;
     private readonly Button[] categoryButtons = new Button[3];
-    private readonly List<Button> modeButtons = new List<Button>();
     private Func<bool> canContinue;
     private TextMeshProUGUI networkNotice;
     private Slot slot;
@@ -49,20 +51,35 @@ public sealed class MatchLoadoutController : MonoBehaviour
     public void OpenOnline(Action<CosmeticSelection> onStart, UnityAction onBack, string actionLabel)
     {
         OpenPicker(false, true, PieceTeam.White, onStart, onBack);
+        this.actionLabel = actionLabel;
         startButton.GetComponentInChildren<TextMeshProUGUI>().text = actionLabel;
     }
 
-    public void ConfigureOnlineModes(bool aram, UnityAction classicAction, UnityAction aramAction)
+    public void ConfigureLobby(string mode, string action, string description = null)
     {
-        modeButtons.Add(UI.Button(content, "Classic Mode", "CLASSIC", new Rect(1090, 216, 240, 54), aram ? UI.White : UI.Yellow,
-            () => { if (submitting || canContinue?.Invoke() == false) return; classicAction(); SetModeColors(false); }, 23));
-        modeButtons.Add(UI.Button(content, "Aram Mode", "ARAM", new Rect(1350, 216, 258, 54), aram ? UI.Yellow : UI.White,
-            () => { if (submitting || canContinue?.Invoke() == false) return; aramAction(); SetModeColors(true); }, 23));
-        sideLabel.rectTransform.sizeDelta = new Vector2(980, 44);
-        sideLabel.rectTransform.anchoredPosition = new Vector2(554, -241);
-        networkNotice = UI.Text(content, "Network Notice", "", new Rect(64, 811, 1544, 32), 20, UI.Muted);
-        status.rectTransform.sizeDelta = new Vector2(1544, 28);
-        status.rectTransform.anchoredPosition = new Vector2(836, -853);
+        modeLabel.text = "CHESS BUT WEIRD / " + mode;
+        actionLabel = action;
+        startButton.name = "Find Match";
+        startButton.GetComponentInChildren<TextMeshProUGUI>().text = action;
+        sideLabel.text = description ?? "Choose your loadout. Your equipment is saved before matchmaking.";
+        if (onlineMode && !networkNotice)
+        {
+            networkNotice = UI.Text(content, "Network Notice", "", new Rect(64, 811, 1544, 32), 20, UI.Muted);
+            status.rectTransform.sizeDelta = new Vector2(1544, 28);
+            status.rectTransform.anchoredPosition = new Vector2(836, -853);
+        }
+    }
+
+    public void SetMatchmakingState(bool locked, bool searching, string elapsed, bool busy, UnityAction cancel)
+    {
+        bool changed = lobbyLocked != locked;
+        lobbyLocked = locked; queueSearching = searching; queueBusy = busy; cancelSearch = cancel;
+        startButton.GetComponentInChildren<TextMeshProUGUI>().text = searching ? elapsed + "   X" : locked ? "PLEASE WAIT" : actionLabel;
+        backButton.interactable = refreshButton.interactable = !locked && !submitting;
+        effectButton.interactable = !locked && !submitting;
+        if (locked && overlay.gameObject.activeSelf) ClosePopup();
+        if (changed) RenderSummary();
+        RefreshStartButton();
     }
 
     public void SetOnlineContext(Func<bool> available, string message)
@@ -70,19 +87,14 @@ public sealed class MatchLoadoutController : MonoBehaviour
         canContinue = available;
         if (networkNotice) networkNotice.text = message;
         RefreshStartButton();
-        foreach (var button in modeButtons) if (button) button.interactable = !submitting && available();
-    }
-
-    private void SetModeColors(bool aram)
-    {
-        modeButtons[0].targetGraphic.color = aram ? UI.White : UI.Yellow;
-        modeButtons[1].targetGraphic.color = aram ? UI.Yellow : UI.White;
     }
 
     private void OpenPicker(bool bothSides, bool online, PieceTeam team, Action<CosmeticSelection> onStart, UnityAction onBack)
     {
         requestVersion++; sessionUser = PlayerAuthService.CurrentApiUser?.userId;
         playerTeam = team; canChooseBlack = bothSides; onlineMode = online;
+        lobbyLocked = queueSearching = queueBusy = false; cancelSearch = null; canContinue = null;
+        actionLabel = "START MATCH";
         startAction = onStart; backAction = onBack;
         hasSavedSelection = !online && CosmeticSelection.HasSavedSelection;
         selection = CosmeticSelection.Load(); slot = Slot.Chess;
@@ -97,7 +109,7 @@ public sealed class MatchLoadoutController : MonoBehaviour
         content = UI.Node(root, "Match Loadout Content", new Rect(0, 0, 1672, 941));
         content.gameObject.AddComponent<InventoryContentRootFitter>().Configure(1672, 941, .94f);
         contentInput = content.gameObject.AddComponent<CanvasGroup>();
-        UI.Text(content, "Eyebrow", "CHESS BUT WEIRD  /  BEFORE THE MATCH", new Rect(64, 25, 1200, 32), 21, UI.Muted);
+        modeLabel = UI.Text(content, "Eyebrow", "CHESS BUT WEIRD  /  BEFORE THE MATCH", new Rect(64, 25, 1500, 32), 24, UI.Muted);
         UI.Text(content, "Title", "Choose your loadout", new Rect(64, 62, 1400, 82), 62);
         UI.Text(content, "Hint", "Pick a board and chess set. Click a thumbnail to open your collection.", new Rect(64, 153, 1500, 45), 26, UI.Muted);
         whiteButton = UI.Button(content, "White Loadout", "WHITE SIDE", new Rect(64, 216, 225, 54), UI.Blue, () => ChangeSide(PieceTeam.White), 23);
@@ -106,8 +118,8 @@ public sealed class MatchLoadoutController : MonoBehaviour
         summaryRoot = UI.Node(content, "Selected Cosmetics", new Rect(226, 300, 1220, 425));
         effectButton = UI.Button(content, "Move Effect", "", new Rect(546, 752, 580, 56), UI.White, () => OpenPopup(Slot.Effect), 23);
         status = UI.Text(content, "Loadout Status", "", new Rect(64, 821, 1544, 40), 21, UI.Muted, TextAlignmentOptions.MidlineLeft, true);
-        UI.Button(content, "Back", "<  BACK", new Rect(64, 875, 235, 62), UI.Pink, () => { if (!submitting) backAction?.Invoke(); }, 25);
-        UI.Button(content, "Refresh Collection", "REFRESH", new Rect(1150, 875, 190, 62), UI.White, () => { if (!loading && !submitting) LoadOwnedChoices(); }, 22);
+        backButton = UI.Button(content, "Back", "<  BACK", new Rect(64, 875, 235, 62), UI.Pink, () => { if (!submitting && !lobbyLocked) backAction?.Invoke(); }, 25);
+        refreshButton = UI.Button(content, "Refresh Collection", "REFRESH", new Rect(1150, 875, 190, 62), UI.White, () => { if (!loading && !submitting && !lobbyLocked) LoadOwnedChoices(); }, 22);
         startButton = UI.Button(content, "Start Match", "START MATCH", new Rect(1360, 867, 248, 70), UI.Yellow, Submit, 25);
 
         overlay = UI.Node(root, "Skin Collection Popup", new Rect(0, 0, 1672, 941));
@@ -133,7 +145,7 @@ public sealed class MatchLoadoutController : MonoBehaviour
 
     private void ChangeSide(PieceTeam team)
     {
-        if (!canChooseBlack || submitting) return;
+        if (!canChooseBlack || submitting || lobbyLocked) return;
         playerTeam = team; RefreshSideButtons(); RenderSummary();
     }
     private void RefreshSideButtons()
@@ -147,7 +159,7 @@ public sealed class MatchLoadoutController : MonoBehaviour
     }
     private void OpenPopup(Slot category)
     {
-        if (submitting) return;
+        if (submitting || lobbyLocked) return;
         slot = category; overlay.gameObject.SetActive(true);
         contentInput.interactable = contentInput.blocksRaycasts = false;
         choiceScroll.verticalNormalizedPosition = 1; RenderChoices();
@@ -160,7 +172,10 @@ public sealed class MatchLoadoutController : MonoBehaviour
         if (EventSystem.current) EventSystem.current.SetSelectedGameObject(null);
     }
     private void RefreshStartButton()
-    { if (startButton) startButton.interactable = accountReady && !loading && !submitting && canContinue?.Invoke() != false; }
+    {
+        if (startButton) startButton.interactable = queueSearching ? !queueBusy && !submitting :
+            !lobbyLocked && accountReady && !loading && !submitting && canContinue?.Invoke() != false;
+    }
 
     private async void LoadOwnedChoices()
     {
@@ -258,7 +273,7 @@ public sealed class MatchLoadoutController : MonoBehaviour
         playerTeam == PieceTeam.White ? selection.whiteSkinId : selection.blackSkinId;
     private void Select(Choice choice)
     {
-        if (!choice.owned || loading || !accountReady || submitting) return;
+        if (!choice.owned || loading || !accountReady || submitting || lobbyLocked) return;
         if (slot == Slot.Board) selection.boardId = choice.id;
         else if (slot == Slot.Effect) selection.moveEffectId = choice.id;
         else if (playerTeam == PieceTeam.White) selection.whiteSkinId = choice.id;
@@ -290,7 +305,7 @@ public sealed class MatchLoadoutController : MonoBehaviour
         UI.Text(button.transform, "Slot Label", title, new Rect(22, 12, 536, 43), 29);
         CosmeticThumbnailUI.Draw(button.transform, new Rect(22, 66, 536, 278), choice?.thumbnail, true);
         UI.Text(button.transform, "Selected Name", choice?.name ?? "Default", new Rect(22, 357, 536, 47), 27, UI.Ink, TextAlignmentOptions.Center);
-        button.interactable = !submitting;
+        button.interactable = !submitting && !lobbyLocked;
     }
     private void RenderChoices()
     {
@@ -315,7 +330,7 @@ public sealed class MatchLoadoutController : MonoBehaviour
                 UI.Text(button.transform, "Name", choice.name, new Rect(13, 185, 388, 34), 23, UI.Ink, TextAlignmentOptions.Center);
                 UI.Text(button.transform, "Ownership", choice.owned ? active ? "Selected for this match" : "Owned" : "Locked",
                     new Rect(13, 221, 388, 24), 18, UI.Muted, TextAlignmentOptions.Center);
-                button.interactable = choice.owned && accountReady && !loading && !submitting; i++;
+                button.interactable = choice.owned && accountReady && !loading && !submitting && !lobbyLocked; i++;
             }
             y += Mathf.CeilToInt(group.Count() / 3f) * 274 + 15;
         }
@@ -324,7 +339,8 @@ public sealed class MatchLoadoutController : MonoBehaviour
 
     private async void Submit()
     {
-        if (loading || !accountReady || submitting || canContinue?.Invoke() == false) return;
+        if (queueSearching) { if (!queueBusy && !submitting) cancelSearch?.Invoke(); return; }
+        if (loading || !accountReady || submitting || lobbyLocked || canContinue?.Invoke() == false) return;
         int version = requestVersion; string user = sessionUser;
         submitting = true; ClosePopup(); RefreshStartButton(); RenderSummary();
         try

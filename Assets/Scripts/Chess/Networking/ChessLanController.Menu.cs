@@ -16,9 +16,12 @@ public partial class ChessLanController
         private RectTransform contentRoot;
         private NetworkLobbyUiMode currentMode;
         private int builtRevision = -1;
-        private TextMeshProUGUI statusLabel, connectionLabel, timerLabel, acceptanceLabel, roomCodeLabel, hostLabel, guestLabel;
+        private TextMeshProUGUI statusLabel, connectionLabel, roomCodeLabel, hostLabel, guestLabel;
         private TMP_InputField joinInput;
         private MatchLoadoutController loadoutPicker;
+        private MatchFoundConfirmationView confirmation;
+        private string builtLoadoutMode;
+        private int builtLoadoutVersion = -1, builtLifecycle = -1;
         private readonly List<(Button button, Func<bool> enabled)> controls = new List<(Button, Func<bool>)>();
         public bool IsCodeFocused => joinInput && joinInput.isFocused;
 
@@ -40,13 +43,25 @@ public partial class ChessLanController
         public void Refresh()
         {
             if (!canvasRoot || !canvasRoot.activeSelf) return;
-            if (builtRevision != owner.menuRevision) Rebuild();
-            if (loadoutPicker) loadoutPicker.SetOnlineContext(() => owner.CanEditLoadout && !owner.forgetCancelledMatch,
-                owner.MatchConnectionState + "  /  " + owner.statusMessage);
+            if (builtRevision != owner.menuRevision)
+            {
+                if (loadoutPicker && IsLoadoutPage && builtLoadoutMode == owner.requestedGameMode &&
+                    builtLoadoutVersion == owner.loadoutOpenVersion && builtLifecycle == owner.lifecycle) builtRevision = owner.menuRevision;
+                else Rebuild();
+            }
+            if (loadoutPicker)
+            {
+                loadoutPicker.SetOnlineContext(() => owner.CanEditLoadout && !owner.forgetCancelledMatch && !owner.findMatchAfterRequest && owner.online?.Connected == true && owner.online?.Recovering != true,
+                    owner.MatchConnectionState + "  /  " + PlayModeNames.DisplayText(owner.statusMessage));
+                bool searching = owner.menuPage == OnlineMenuPage.Searching;
+                loadoutPicker.SetMatchmakingState(owner.HasLobbyReservation || searching || owner.menuPage == OnlineMenuPage.Accept || owner.findMatchAfterRequest,
+                    searching, owner.SearchElapsed, owner.requestInFlight || owner.online?.Connected != true || owner.online?.Recovering == true,
+                    owner.RequestCancelSearch);
+            }
+            if (confirmation) confirmation.SetState(owner.menuPage == OnlineMenuPage.Accept, owner.FoundOpponent,
+                owner.AcceptanceSeconds, owner.LocalAccepted, owner.requestInFlight, owner.online?.Connected == true);
             if (statusLabel) statusLabel.text = owner.requestInFlight ? "Working...  " + owner.statusMessage : owner.statusMessage;
             if (connectionLabel) connectionLabel.text = owner.MatchConnectionState;
-            if (timerLabel) timerLabel.text = owner.menuPage == OnlineMenuPage.Searching ? owner.SearchElapsed : Mathf.CeilToInt(owner.AcceptanceSeconds).ToString("00");
-            if (acceptanceLabel) acceptanceLabel.text = owner.LocalAccepted ? "Accepted! Waiting for your opponent..." : "Accept before the countdown ends.";
             if (roomCodeLabel) roomCodeLabel.text = owner.GetLobbyRoomCode();
             if (hostLabel) hostLabel.text = owner.GetHostPlayerLine();
             if (guestLabel) guestLabel.text = owner.GetGuestPlayerLine();
@@ -57,14 +72,17 @@ public partial class ChessLanController
         {
             // Disable before deferred destruction so old controls cannot take a click.
             for (int i = contentRoot.childCount - 1; i >= 0; i--)
-            { var child = contentRoot.GetChild(i).gameObject; child.SetActive(false); UnityEngine.Object.Destroy(child); }
+            {
+                var child = contentRoot.GetChild(i).gameObject; child.SetActive(false);
+                if (Application.isPlaying) UnityEngine.Object.Destroy(child); else UnityEngine.Object.DestroyImmediate(child);
+            }
             controls.Clear(); joinInput = null;
-            loadoutPicker = null;
-            timerLabel = acceptanceLabel = roomCodeLabel = hostLabel = guestLabel = null;
+            loadoutPicker = null; confirmation = null;
+            roomCodeLabel = hostLabel = guestLabel = null;
             builtRevision = owner.menuRevision;
             statusLabel = connectionLabel = null;
-            if (owner.menuPage == OnlineMenuPage.Loadout)
-            { BuildLoadout(); return; }
+            if (IsLoadoutPage)
+            { BuildLoadout(); BuildAcceptancePopup(); return; }
             UI.Background(contentRoot);
             UI.Doodle(contentRoot, "Corner Star", new Rect(1480, 55, 75, 75), SketchbookDoodle.Shape.Star, UI.Yellow, 12);
             ActionButton(contentRoot, "Back", new Rect(64, 54, 155, 64), UI.White, owner.BackOnlineMenu);
@@ -76,9 +94,6 @@ public partial class ChessLanController
                 case OnlineMenuPage.Rooms: BuildRooms(); break;
                 case OnlineMenuPage.FindRoom: BuildRoomBrowser(); break;
                 case OnlineMenuPage.Room: BuildRoom(); break;
-                case OnlineMenuPage.Loadout: BuildLoadout(); break;
-                case OnlineMenuPage.Searching: BuildSearching(); break;
-                case OnlineMenuPage.Accept: BuildAcceptance(); break;
             }
             statusLabel = UI.Text(contentRoot, "Status", "", new Rect(64, 860, 1544, 57), 23, UI.Muted, TextAlignmentOptions.MidlineLeft, true);
         }
@@ -87,8 +102,8 @@ public partial class ChessLanController
             switch (owner.menuPage)
             {
                 case OnlineMenuPage.Home: return "ONLINE";
-                case OnlineMenuPage.Rooms: return "PLAY WITH FRIENDS";
-                case OnlineMenuPage.FindRoom: return "FIND ROOM";
+                case OnlineMenuPage.Rooms: return owner.customRoomEntry.HasValue ? "CUSTOM / CREATE ROOM" : "PLAY WITH FRIENDS";
+                case OnlineMenuPage.FindRoom: return "CUSTOM / BROWSER ROOM";
                 case OnlineMenuPage.Room: return "YOUR ROOM";
                 case OnlineMenuPage.Loadout: return "CHOOSE YOUR LOADOUT";
                 case OnlineMenuPage.Searching: return "FINDING OPPONENT";
@@ -123,32 +138,38 @@ public partial class ChessLanController
             UI.Text(contentRoot, "Mode", "GAME MODE", new Rect(64, y, 188, 54), 24, UI.Muted);
             ActionButton(contentRoot, "Classic", new Rect(270, y, 174, 54), IsAramGameMode(owner.requestedGameMode) ? UI.White : UI.Yellow,
                 () => owner.ChangeOnlineMode("Classic"), () => owner.CanEditLoadout);
-            ActionButton(contentRoot, "ARAM", new Rect(466, y, 174, 54), IsAramGameMode(owner.requestedGameMode) ? UI.Yellow : UI.White,
+            ActionButton(contentRoot, "CHAOS", new Rect(466, y, 174, 54), IsAramGameMode(owner.requestedGameMode) ? UI.Yellow : UI.White,
                 () => owner.ChangeOnlineMode("Aram"), () => owner.CanEditLoadout);
             UI.Text(contentRoot, "Settings", $"{owner.onlineRegion}  /  {owner.onlineInitialSeconds / 60} min + {owner.onlineIncrementSeconds} sec", new Rect(985, y, 615, 54), 26, UI.Muted, TextAlignmentOptions.Right);
         }
         private void BuildRooms()
         {
             ModePicker(235);
+            if (owner.customRoomEntry.HasValue)
+            {
+                ChoiceCard(466, "CREATE ROOM", "Make a room for two players. Share its code with your friend once it is created.", "Create Room", UI.Green, SketchbookDoodle.Shape.Board, owner.RequestCreateRoom);
+                return;
+            }
             ChoiceCard(64, "CREATE ROOM", "Make a room for two players. Your room code appears as soon as it is created.", "Create Room", UI.Green, SketchbookDoodle.Shape.Board, owner.RequestCreateRoom);
             ChoiceCard(868, "FIND ROOM", "Browse open rooms or enter a room code to join your friend.", "Browse Rooms", UI.Blue, SketchbookDoodle.Shape.Ticket, owner.OpenRoomBrowser);
         }
         private void BuildRoomBrowser()
         {
-            var card = UI.Card(contentRoot, "Join By Code", new Rect(64, 242, 1544, 92), UI.Blue).rectTransform;
+            ModePicker(235);
+            var card = UI.Card(contentRoot, "Join By Code", new Rect(64, 310, 1544, 92), UI.Blue).rectTransform;
             UI.Text(card, "Code Caption", "ROOM CODE", new Rect(24, 16, 225, 60), 26);
             joinInput = CodeInput(card, new Rect(264, 14, 690, 64));
             ActionButton(card, "Join", new Rect(982, 14, 230, 64), UI.Yellow, () => owner.RequestJoinRoom(joinInput.text),
                 () => !owner.requestInFlight && !string.IsNullOrWhiteSpace(owner.roomCodeInput));
             ActionButton(card, "Refresh", new Rect(1232, 14, 283, 64), UI.White, owner.RefreshRoomBrowser);
-            var content = UI.ScrollArea(contentRoot, "Open Rooms", new Rect(64, 361, 1544, 355), out _);
+            var content = UI.ScrollArea(contentRoot, "Open Rooms", new Rect(64, 421, 1544, 295), out _);
             var rooms = owner.roomListing?.items;
             if (rooms == null || rooms.Count == 0)
                 UI.Text(content, "Empty Rooms", owner.roomListError != null ? "Couldn't load rooms. Press Refresh to try again." : owner.roomsLoading ? "Loading rooms..." : "No rooms yet. Create a room, or join using a code.",
                     new Rect(35, 75, 1465, 145), 32, UI.Muted, TextAlignmentOptions.Center, true);
             else
             {
-                content.sizeDelta = new Vector2(0, Mathf.Max(355, rooms.Count * 91));
+                content.sizeDelta = new Vector2(0, Mathf.Max(295, rooms.Count * 91));
                 for (int i = 0; i < rooms.Count; i++)
                 {
                     var room = rooms[i]; bool full = room.memberCount >= room.capacity;
@@ -156,7 +177,7 @@ public partial class ChessLanController
                         () => owner.RequestJoinRoom(room.code), () => !owner.requestInFlight && !full && !owner.HasLobbyReservation);
                     row.name = "Room " + room.code;
                     UI.Text(row.transform, "Code", room.code, new Rect(25, 10, 255, 56), 33);
-                    UI.Text(row.transform, "Details", $"{room.settings.mode}   /   {room.settings.initialSeconds / 60} min + {room.settings.incrementSeconds} sec   /   {room.settings.region}", new Rect(295, 10, 835, 56), 27, UI.Muted);
+                    UI.Text(row.transform, "Details", $"{PlayModeNames.DisplayBackend(room.settings.mode)}   /   {room.settings.initialSeconds / 60} min + {room.settings.incrementSeconds} sec   /   {room.settings.region}", new Rect(295, 10, 835, 56), 27, UI.Muted);
                     UI.Text(row.transform, "Capacity", $"{room.memberCount}/{room.capacity}", new Rect(1160, 10, 115, 56), 28);
                     UI.Text(row.transform, "Join", full ? "Full" : "Join  >", new Rect(1300, 10, 204, 56), 29);
                 }
@@ -205,45 +226,32 @@ public partial class ChessLanController
             ActionButton(contentRoot, "Start Game", new Rect(1038, 756, 570, 76), UI.Yellow, owner.RequestStartGame,
                 () => !owner.requestInFlight && owner.online?.Room?.ownerId == PlayerAuthService.UserId && owner.online.Room.members.Count == 2);
         }
+        private bool IsLoadoutPage => owner.menuPage == OnlineMenuPage.Loadout || owner.menuPage == OnlineMenuPage.Searching || owner.menuPage == OnlineMenuPage.Accept;
         private void BuildLoadout()
         {
+            builtLoadoutMode = owner.requestedGameMode;
+            builtLoadoutVersion = owner.loadoutOpenVersion; builtLifecycle = owner.lifecycle;
             var screen = UI.Node(contentRoot, "Shared Match Loadout", new Rect(0, 0, 1672, 941));
             var picker = screen.gameObject.AddComponent<MatchLoadoutController>();
             loadoutPicker = picker;
             picker.Initialize(screen, LoadingManager.For(owner.chessGame));
             picker.OpenOnline(selection =>
             {
-                if (!owner.CanEditLoadout) return;
+                if (owner.HasLobbyReservation) return;
                 owner.loadoutLoaded = true;
-                (owner.loadoutContinuation ?? owner.RequestFindMatch).Invoke();
+                var next = owner.loadoutContinuation ?? owner.RequestFindMatch;
+                if (next == (Action)owner.RequestFindMatch && owner.requestInFlight) owner.findMatchAfterRequest = true;
+                else next.Invoke();
             }, owner.BackOnlineMenu, owner.loadoutActionLabel);
-            picker.ConfigureOnlineModes(IsAramGameMode(owner.requestedGameMode),
-                () => owner.ChangeOnlineMode("Classic"), () => owner.ChangeOnlineMode("Aram"));
+            picker.ConfigureLobby(owner.customRoomEntry.HasValue ? PlayModeNames.Label(owner.customRoomEntry.Value) :
+                PlayModeNames.DisplayBackend(owner.requestedGameMode).ToUpperInvariant() + " / NORMAL", owner.loadoutActionLabel);
         }
-        private void BuildSearching()
+        private void BuildAcceptancePopup()
         {
-            var panel = UI.Card(contentRoot, "Finding Opponent", new Rect(316, 276, 1040, 475), UI.Blue).rectTransform;
-            UI.Tape(panel, 458, -14);
-            UI.Doodle(panel, "Waiting Pawn", new Rect(440, 34, 160, 160), SketchbookDoodle.Shape.Pawn, UI.Ink);
-            UI.Text(panel, "Search Caption", "Finding opponent...", new Rect(40, 210, 960, 66), 43, UI.Ink, TextAlignmentOptions.Center);
-            timerLabel = UI.Text(panel, "Search Timer", "00:00", new Rect(40, 294, 960, 77), 58, UI.Ink, TextAlignmentOptions.Center);
-            UI.Text(panel, "Search Hint", owner.requestedGameMode + "  /  Accept within 30 seconds when a match is found.", new Rect(30, 396, 980, 47), 25, UI.Muted, TextAlignmentOptions.Center);
-            ActionButton(contentRoot, "Cancel Search", new Rect(586, 783, 500, 66), UI.Pink, owner.RequestCancelSearch);
-        }
-        private void BuildAcceptance()
-        {
-            var panel = UI.Card(contentRoot, "Match Acceptance", new Rect(316, 265, 1040, 474), UI.Yellow).rectTransform;
-            UI.Tape(panel, 458, -14);
-            UI.Text(panel, "Opponent", "Opponent: " + owner.FoundOpponent, new Rect(34, 34, 972, 67), 37, UI.Ink, TextAlignmentOptions.Center);
-            UI.Card(panel, "Countdown Card", new Rect(410, 122, 220, 175), UI.White, 0, false);
-            timerLabel = UI.Text(panel, "Accept Timer", "30", new Rect(410, 126, 220, 112), 82, UI.Ink, TextAlignmentOptions.Center);
-            UI.Text(panel, "Seconds", "SECONDS", new Rect(410, 243, 220, 41), 22, UI.Muted, TextAlignmentOptions.Center);
-            acceptanceLabel = UI.Text(panel, "Acceptance Status", "", new Rect(34, 325, 972, 70), 29, UI.Ink, TextAlignmentOptions.Center, true);
-            UI.Text(panel, "Both Players", "The match begins once both players accept and finish loading.", new Rect(34, 416, 972, 39), 24, UI.Muted, TextAlignmentOptions.Center);
-            ActionButton(contentRoot, "Decline", new Rect(316, 775, 312, 74), UI.Pink,
-                () => owner.DeclineFoundMatch("Match declined. Choose your loadout and try again."));
-            ActionButton(contentRoot, "Accept", new Rect(668, 775, 688, 74), UI.Green, owner.AcceptFoundMatch,
-                () => !owner.requestInFlight && !owner.LocalAccepted && owner.AcceptanceSeconds > 0 && owner.online?.Connected == true, 40);
+            var overlay = UI.Node(contentRoot, "Match Found Popup", new Rect(0, 0, 1672, 941));
+            confirmation = overlay.gameObject.AddComponent<MatchFoundConfirmationView>();
+            confirmation.Build(owner.AcceptFoundMatch,
+                () => owner.DeclineFoundMatch("Match declined. Check your loadout and try again."));
         }
     }
 }

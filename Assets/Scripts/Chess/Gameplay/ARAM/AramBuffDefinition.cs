@@ -28,7 +28,7 @@ public enum AramBuffId
     KingIsPoorPiece = 32, DoubleEdgedTrap = 33, Paratrooper = 34
 }
 
-[CreateAssetMenu(fileName = "AramBuffDefinition", menuName = "Chess/ARAM/Buff Definition")]
+[CreateAssetMenu(fileName = "AramBuffDefinition", menuName = "Chess/CHAOS/Buff Definition")]
 public sealed class AramBuffDefinition : ScriptableObject
 {
     [SerializeField] private AramBuffId id;
@@ -40,9 +40,9 @@ public sealed class AramBuffDefinition : ScriptableObject
 
     public AramBuffId Id => id;
     public AramBuffTier Tier => tier;
-    public string DisplayName => string.IsNullOrWhiteSpace(displayName) ? id.ToString() : displayName;
+    public string DisplayName => PlayModeNames.DisplayText(string.IsNullOrWhiteSpace(displayName) ? id.ToString() : displayName);
     public string ShortName => string.IsNullOrWhiteSpace(shortName) ? DisplayName : shortName;
-    public string Description => description ?? string.Empty;
+    public string Description => PlayModeNames.DisplayText(description);
     public Color AccentColor => accentColor;
 
     public void Configure(AramBuffId newId, AramBuffTier newTier, string newDisplayName, string newShortName, string newDescription, Color newAccentColor)
@@ -98,7 +98,7 @@ public static class AramBuffLibrary
                 "Your two initial Rooks keep normal movement and can capture over exactly one piece. Each cannon expires after 10 combined moves without firing."),
             Entry(AramBuffId.QueensBetrayal, AramBuffTier.Diamond, "The Queen's Betrayal", "Betrayal",
                 "Gain an extra Queen on your third rank. After each combined move, her betrayal chance starts at 10% and rises by 5 percentage points. On betrayal, the opponent places her in their first three ranks."),
-            Entry(AramBuffId.DefinitionOfAram, AramBuffTier.Diamond, "The Definition of ARAM", "Collapse",
+            Entry(AramBuffId.DefinitionOfAram, AramBuffTier.Diamond, "The Definition of CHAOS", "Collapse",
                 "After your 10th turn, the outermost files collapse and destroy their pieces without capture points. Five combined moves later the next pair collapses, leaving a 4x8 board."),
             Entry(AramBuffId.RngFiesta, AramBuffTier.Diamond, "RNG Fiesta", "RNG Fiesta",
                 "At the start, transform all your pieces except Kings and Queens randomly into Pawns, Knights, Bishops or Rooks."),
@@ -166,7 +166,7 @@ public static class AramBuffLibrary
     private static AramBuffDefinition Create(AramBuffId id, AramBuffTier tier, string displayName, string shortName, string description, Color accentColor)
     {
         AramBuffDefinition definition = ScriptableObject.CreateInstance<AramBuffDefinition>();
-        definition.name = $"ARAM {id}";
+        definition.name = $"CHAOS {id}";
         definition.Configure(id, tier, displayName, shortName, description, accentColor);
         return definition;
     }
