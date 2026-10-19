@@ -154,7 +154,7 @@ public static class PlayFlowAudit
             play.onClick.Invoke();
             Require(launched == PlayModeOption.ChaosNormal, "Chaos Normal dispatches through Play");
             var ranked = modesRoot.GetComponentsInChildren<Toggle>(true).Where(t => t.name.EndsWith("Ranked")).ToArray();
-            Require(ranked.Length == 2 && ranked.All(t => !t.interactable && !t.isOn), "Both Ranked choices are disabled with Coming soon labels");
+            Require(ranked.Length == 2 && ranked.All(t => t.interactable && !t.isOn), "Both Ranked choices are available without selecting a row automatically");
             Button(modesRoot, "CLASSIC Card").onClick.Invoke();
             modesRoot.GetComponentsInChildren<Toggle>(true).Single(t => t.name == "CLASSIC Normal").isOn = true;
             play.onClick.Invoke();
@@ -182,7 +182,7 @@ public static class PlayFlowAudit
                 selected.isOn = false;
                 Require(tick.canvasRenderer.GetAlpha() == 0, selected.name + " hides its check when unselected");
             }
-            Require(PlayModeNames.Backend(PlayModeOption.ChaosNormal) == "Aram" && PlayModeNames.DisplayBackend("Aram") == "Chaos", "Chaos display preserves the existing server ruleset key");
+            Require(PlayModeNames.Backend(PlayModeOption.ChaosNormal) == "Chaos" && PlayModeNames.DisplayBackend("Aram") == "Chaos", "Chaos uses the canonical server ruleset key and displays legacy history");
 
             var loading = host.AddComponent<LoadingManager>();
             var catalog = AssetDatabase.LoadAssetAtPath<CosmeticCatalog>("Assets/Game/Data/CosmeticCatalog.asset");
@@ -241,7 +241,7 @@ public static class PlayFlowAudit
 
             var game = host.AddComponent<ChessGame>();
             network = host.AddComponent<ChessLanController>(); Set(network, "chessGame", game);
-            SetPage(network, "Loadout"); Set(network, "requestedGameMode", "Aram");
+            SetPage(network, "Loadout"); Set(network, "requestedGameMode", "Chaos");
             var type = typeof(ChessLanController).GetNestedType("NetworkLobbyUiController", BindingFlags.NonPublic);
             lobby = Activator.CreateInstance(type, Fields, null, new object[] { network }, null);
             Set(network, "lobbyUi", lobby);

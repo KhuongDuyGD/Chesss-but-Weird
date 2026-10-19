@@ -1,6 +1,8 @@
 using System;
 using System.Globalization;
 using System.IO;
+using System.Threading.Tasks;
+using ChessButWeird.Online;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
@@ -19,6 +21,7 @@ public sealed class PlayerProfileMenuController : MonoBehaviour
     private bool loadingProfile;
     private Texture2D avatarTexture;
     private Sprite avatarSprite;
+    private RankCardView classicRank, chaosRank;
 
     public void Initialize(RectTransform newRoot, UnityAction newCloseAction)
     {
@@ -35,17 +38,26 @@ public sealed class PlayerProfileMenuController : MonoBehaviour
         refreshButton.interactable = false;
         Refresh(PlayerAuthService.CurrentApiUser);
         SetStatus("Opening your notebook...");
+        string requestedUser = PlayerAuthService.UserId;
         try
         {
-            UserMeResponse user = await new UserService().GetMeAsync();
-            if (!this || !root) return;
-            PlayerAuthService.ApplyApiUser(user);
-            Refresh(user);
+            var rankService = new RankService();
+            var configTask = Task.WhenAll(rankService.ConfigAsync("Classic"), rankService.ConfigAsync("Chaos"));
+            try
+            {
+                UserMeResponse user = await new UserService().GetMeAsync();
+                if (!this || !root || requestedUser != PlayerAuthService.UserId || user?.userId != requestedUser || !PlayerAuthService.CanUseOnlineFeatures) return;
+                PlayerAuthService.ApplyApiUser(user);
+                Refresh(user);
+            }
+            finally { await configTask; }
+            if (!this || !root || requestedUser != PlayerAuthService.UserId || !PlayerAuthService.CanUseOnlineFeatures) return;
+            Refresh(PlayerAuthService.CurrentApiUser);
             SetStatus("All caught up. Ready for your next move!");
         }
         catch (Exception error)
         {
-            if (this) SetStatus("Couldn't update your profile. " + PlayerNotificationText.FromException(error));
+            if (this && requestedUser == PlayerAuthService.UserId) SetStatus("Couldn't update your profile. " + PlayerNotificationText.FromException(error));
         }
         finally
         {
@@ -81,30 +93,32 @@ public sealed class PlayerProfileMenuController : MonoBehaviour
         UI.Text(identity, "Id Caption", "PLAYER ID", new Rect(32, 520, 110, 23), 18, UI.Muted);
         idLabel = UI.Text(identity, "Player ID", "--", new Rect(141, 520, 253, 28), 19);
 
-        var score = UI.Card(page, "Scorecard", new Rect(555, 217, 1024, 219), UI.White).rectTransform;
+        var score = UI.Card(page, "Scorecard", new Rect(555, 217, 1024, 180), UI.White).rectTransform;
         UI.Text(score, "Scorecard Heading", "My scorecard", new Rect(30, 18, 600, 40), 31);
         UI.Text(score, "Scorecard Note", "every move tells a story", new Rect(637, 25, 354, 30), 21, UI.Muted, TextAlignmentOptions.Right);
-        string[] captions = { "ELO", "WINS", "LOSSES", "DRAWS", "MATCHES" };
+        string[] captions = { "CLASSIC ELO", "WINS", "LOSSES", "DRAWS", "MATCHES" };
         Color[] colors = { UI.Blue, UI.Green, UI.Pink, UI.Lavender, UI.Yellow };
         for (int i = 0; i < stats.Length; i++)
         {
             float x = 23 + i * 196;
-            UI.Doodle(score, captions[i] + " Highlight", new Rect(x + 31, 132, 128, 20), SketchbookDoodle.Shape.Scribble, colors[i]);
-            stats[i] = UI.Text(score, captions[i] + " Value", "--", new Rect(x, 73, 192, 72), 52, UI.Ink, TextAlignmentOptions.Center);
-            UI.Text(score, captions[i] + " Caption", captions[i], new Rect(x, 159, 192, 30), 22, UI.Muted, TextAlignmentOptions.Center);
+            UI.Doodle(score, captions[i] + " Highlight", new Rect(x + 31, 113, 128, 16), SketchbookDoodle.Shape.Scribble, colors[i]);
+            stats[i] = UI.Text(score, captions[i] + " Value", "--", new Rect(x, 65, 192, 61), 46, UI.Ink, TextAlignmentOptions.Center);
+            UI.Text(score, captions[i] + " Caption", captions[i], new Rect(x, 139, 192, 28), 20, UI.Muted, TextAlignmentOptions.Center);
         }
-        wallet[0] = UI.Wallet(page, "Gold", new Rect(555, 472, 324, 126), UI.Yellow, SketchbookDoodle.Shape.Coin);
-        wallet[1] = UI.Wallet(page, "Diamonds", new Rect(905, 472, 324, 126), UI.Blue, SketchbookDoodle.Shape.Diamond);
-        wallet[2] = UI.Wallet(page, "Tickets", new Rect(1255, 472, 324, 126), UI.Pink, SketchbookDoodle.Shape.Ticket);
+        classicRank = new RankCardView(page, "Classic Rank", new Rect(555, 423, 496, 140));
+        chaosRank = new RankCardView(page, "Chaos Rank", new Rect(1083, 423, 496, 140));
+        wallet[0] = UI.Wallet(page, "Gold", new Rect(555, 589, 324, 94), UI.Yellow, SketchbookDoodle.Shape.Coin, true);
+        wallet[1] = UI.Wallet(page, "Diamonds", new Rect(905, 589, 324, 94), UI.Blue, SketchbookDoodle.Shape.Diamond, true);
+        wallet[2] = UI.Wallet(page, "Tickets", new Rect(1255, 589, 324, 94), UI.Pink, SketchbookDoodle.Shape.Ticket, true);
 
-        var equipment = UI.Card(page, "Equipped Items", new Rect(555, 638, 1024, 163), UI.White).rectTransform;
-        UI.Text(equipment, "Equipment Heading", "Ready for the next match", new Rect(28, 14, 800, 42), 30);
-        UI.Doodle(equipment, "Chess Piece", new Rect(33, 67, 66, 74), SketchbookDoodle.Shape.Pawn, UI.Ink, -5);
-        UI.Text(equipment, "Chess Set Caption", "CHESS SET", new Rect(115, 72, 360, 25), 18, UI.Muted);
-        chessLabel = UI.Text(equipment, "Chess Set", "--", new Rect(115, 100, 370, 39), 27);
-        UI.Doodle(equipment, "Chess Board", new Rect(544, 75, 62, 62), SketchbookDoodle.Shape.Board, UI.Ink, 4);
-        UI.Text(equipment, "Board Caption", "ARENA", new Rect(626, 72, 365, 25), 18, UI.Muted);
-        boardLabel = UI.Text(equipment, "Board", "--", new Rect(626, 100, 365, 39), 27);
+        var equipment = UI.Card(page, "Equipped Items", new Rect(555, 709, 1024, 118), UI.White).rectTransform;
+        UI.Text(equipment, "Equipment Heading", "Ready for the next match", new Rect(28, 8, 800, 34), 27);
+        UI.Doodle(equipment, "Chess Piece", new Rect(33, 48, 50, 57), SketchbookDoodle.Shape.Pawn, UI.Ink, -5);
+        UI.Text(equipment, "Chess Set Caption", "CHESS SET", new Rect(105, 44, 370, 23), 17, UI.Muted);
+        chessLabel = UI.Text(equipment, "Chess Set", "--", new Rect(105, 72, 380, 34), 24);
+        UI.Doodle(equipment, "Chess Board", new Rect(544, 53, 50, 50), SketchbookDoodle.Shape.Board, UI.Ink, 4);
+        UI.Text(equipment, "Board Caption", "ARENA", new Rect(614, 44, 377, 23), 17, UI.Muted);
+        boardLabel = UI.Text(equipment, "Board", "--", new Rect(614, 72, 377, 34), 24);
 
         UI.Button(page, "Back", "<  BACK TO MENU", new Rect(92, 841, 425, 65), UI.White, () => closeAction?.Invoke(), 26);
         statusLabel = UI.Text(page, "Profile Status", "", new Rect(572, 853, 998, 41), 23, UI.Muted, TextAlignmentOptions.Center);
@@ -126,6 +140,8 @@ public sealed class PlayerProfileMenuController : MonoBehaviour
         wallet[2].text = user?.wallet?.tickets.ToString("N0", CultureInfo.InvariantCulture) ?? "--";
         chessLabel.text = user?.equipped?.chessSkinId == "6aacc041e50e17c25a690158" ? "Tazji's Low Poly" : user?.equipped?.chessSkinId ?? "--";
         boardLabel.text = user?.equipped?.boardSkinId == "6aacc04be50e17c25a69015a" ? "Tazji's Low Poly Arena" : user?.equipped?.boardSkinId ?? "--";
+        classicRank.Bind("Classic", user?.ranks?.classic, loadingProfile);
+        chaosRank.Bind("Chaos", user?.ranks?.chaos, loadingProfile);
     }
 
     private void SetStatus(string message) { if (statusLabel) statusLabel.text = message ?? string.Empty; }

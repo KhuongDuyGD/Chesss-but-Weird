@@ -6,18 +6,20 @@ using UnityEngine.Events;
 using UnityEngine.UI;
 using UI = SketchbookUI;
 
-public enum PlayModeOption { PveBotRush, ChaosNormal, ClassicNormal, CustomCreateRoom, CustomBrowserRoom }
+public enum PlayModeOption { PveBotRush, ChaosNormal, ClassicNormal, CustomCreateRoom, CustomBrowserRoom, ChaosRanked, ClassicRanked }
 
 public static class PlayModeNames
 {
     public static string Label(PlayModeOption mode) => mode == PlayModeOption.PveBotRush ? "PVE / BOT RUSH" :
+        mode == PlayModeOption.ChaosRanked ? "CHAOS / RANKED" : mode == PlayModeOption.ClassicRanked ? "CLASSIC / RANKED" :
         mode == PlayModeOption.ChaosNormal ? "CHAOS / NORMAL" : mode == PlayModeOption.ClassicNormal ? "CLASSIC / NORMAL" :
         mode == PlayModeOption.CustomCreateRoom ? "CUSTOM / CREATE ROOM" : "CUSTOM / BROWSER ROOM";
     public static bool IsCustom(PlayModeOption mode) => mode == PlayModeOption.CustomCreateRoom || mode == PlayModeOption.CustomBrowserRoom;
-    // The server contract still calls the ruleset Aram.
-    public static string Backend(PlayModeOption mode) => mode == PlayModeOption.ChaosNormal ? "Aram" : "Classic";
+    public static bool IsRanked(PlayModeOption mode) => mode == PlayModeOption.ChaosRanked || mode == PlayModeOption.ClassicRanked;
+    public static bool IsChaos(string mode) => string.Equals(mode, "Chaos", StringComparison.OrdinalIgnoreCase) || string.Equals(mode, "Aram", StringComparison.OrdinalIgnoreCase);
+    public static string Backend(PlayModeOption mode) => mode == PlayModeOption.ChaosNormal || mode == PlayModeOption.ChaosRanked ? "Chaos" : "Classic";
     public static string DisplayText(string value) => (value ?? "").Replace("ARAM", "CHAOS").Replace("Aram", "Chaos");
-    public static string DisplayBackend(string mode) => string.Equals(mode, "Aram", StringComparison.OrdinalIgnoreCase) ? "Chaos" : mode ?? "Classic";
+    public static string DisplayBackend(string mode) => IsChaos(mode) ? "Chaos" : mode ?? "Classic";
 }
 
 /// <summary>Expanding mode cards; a category and an available row must both be selected.</summary>
@@ -62,7 +64,7 @@ public sealed class PlayModeSelectionView : MonoBehaviour
             string caption = i == 0 ? "Bot Rush" : i == 3 ? "Create room" : "Normal";
             AddOption(list, titles[i] + " " + caption, caption, 0, option, group);
             if (i == 3) AddOption(list, "CUSTOM Browser room", "Browser room", 91, PlayModeOption.CustomBrowserRoom, group);
-            else if (i != 0) ModeRow(list, titles[i] + " Ranked", "Ranked  Coming soon", new Rect(0, 91, 331, 72), false, group, null);
+            else if (i != 0) AddOption(list, titles[i] + " Ranked", "Ranked", 91, i == 1 ? PlayModeOption.ChaosRanked : PlayModeOption.ClassicRanked, group);
         }
         chosen = UI.Text(content, "Selected Mode", "Choose a mode to continue", new Rect(64, 789, 1050, 50), 28, UI.Muted);
         UI.Button(content, "Back", "<  BACK", new Rect(64, 865, 235, 66), UI.Pink, back, 26);

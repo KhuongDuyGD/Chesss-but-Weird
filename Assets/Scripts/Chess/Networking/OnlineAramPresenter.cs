@@ -63,11 +63,11 @@ internal sealed class OnlineAramPresenter : IDisposable
 
     public void Apply(MatchState next)
     {
-        if (state != null && (state.matchId != next.matchId || (string)state.aram?["phase"] != (string)next.aram?["phase"])) CancelTargeting();
+        if (state != null && (state.matchId != next.matchId || (string)state.chaos?["phase"] != (string)next.chaos?["phase"])) CancelTargeting();
         int? previousBuff = (int?)side?["buffId"];
         state = next;
         team = next.players.First(p => p.userId == PlayerAuthService.UserId).color;
-        side = next.aram?["sides"]?.FirstOrDefault(s => (string)s["team"] == team);
+        side = next.chaos?["sides"]?.FirstOrDefault(s => (string)s["team"] == team);
         if (previousBuff != (int?)side?["buffId"]) CancelTargeting();
         RefreshMarkers();
         UpdateRifle();
@@ -76,12 +76,12 @@ internal sealed class OnlineAramPresenter : IDisposable
     public bool ContainsPointer(Vector2 point) => Panel.Contains(point);
     public void Draw()
     {
-        if (state?.aram == null || state.status == "Finished" || state.status == "Cancelled") return;
+        if (state?.chaos == null || state.status == "Finished" || state.status == "Cancelled") return;
         GUILayout.BeginArea(Panel, GUI.skin.box);
         scroll = GUILayout.BeginScrollView(scroll);
-        GUILayout.Label("CHAOS - " + (string)state.aram["phase"]);
-        if (state.aram["forcedPawn"]?.Type == JTokenType.Integer) GUILayout.Label("Extra move: pawn #" + (int)state.aram["forcedPawn"]);
-        foreach (var s in state.aram["sides"] ?? new JArray())
+        GUILayout.Label("CHAOS - " + (string)state.chaos["phase"]);
+        if (state.chaos["forcedPawn"]?.Type == JTokenType.Integer) GUILayout.Label("Extra move: pawn #" + (int)state.chaos["forcedPawn"]);
+        foreach (var s in state.chaos["sides"] ?? new JArray())
         {
             int? id = (int?)s["buffId"];
             GUILayout.Label((string)s["team"] + ": " + (id.HasValue ? BuffText(id.Value) : "Choosing a buff..."));
@@ -122,10 +122,10 @@ internal sealed class OnlineAramPresenter : IDisposable
                 }
                 if (state.status == "InProgress")
                 {
-                    var deployment = state.aram["deployments"]?.FirstOrDefault();
+                    var deployment = state.chaos["deployments"]?.FirstOrDefault();
                     if (deployment != null) { if ((string)deployment["team"] == team) Button("Deploy " + (string)deployment["kind"], "Deploy"); }
-                    else if ((string)state.aram["escapeTeam"] == team) Button("Escape - choose a safe square", "Escape");
-                    else if (state.turn == team && state.aram["rifle"]?.Type != JTokenType.Object)
+                    else if ((string)state.chaos["escapeTeam"] == team) Button("Escape - choose a safe square", "Escape");
+                    else if (state.turn == team && state.chaos["rifle"]?.Type != JTokenType.Object)
                     {
                         if (buff == 3 && GUILayout.Button("Toggle knight/bishop swap")) Send(new AbilityCommand { kind = "ToggleSwap" });
                         if (buff == 7) Button("Snipe: bishop, then enemy piece", "Snipe");
@@ -221,7 +221,7 @@ internal sealed class OnlineAramPresenter : IDisposable
     private void Fire() => Send(new AbilityCommand { kind = "FireRifle", yaw = yaw, pitch = pitch });
     private void UpdateRifle()
     {
-        bool shouldAim = state.IsActive && state.aram?["rifle"] is JObject rifle && (string)rifle["team"] == team;
+        bool shouldAim = state.IsActive && state.chaos?["rifle"] is JObject rifle && (string)rifle["team"] == team;
         if (shouldAim && !aiming)
         {
             camera = Camera.main; if (!camera) camera = UnityEngine.Object.FindAnyObjectByType<Camera>();
@@ -246,7 +246,7 @@ internal sealed class OnlineAramPresenter : IDisposable
     }
     private void PlaceRifleCamera()
     {
-        var rifle = state.aram?["rifle"]; if (rifle == null || !game.Board || !camera) return;
+        var rifle = state.chaos?["rifle"]; if (rifle == null || !game.Board || !camera) return;
         Vector3 origin = game.Board.GetTileCenterWorld(Vector2Int.zero);
         Vector3 x = game.Board.GetTileCenterWorld(Vector2Int.right) - origin;
         Vector3 z = game.Board.GetTileCenterWorld(Vector2Int.up) - origin;
@@ -271,14 +271,14 @@ internal sealed class OnlineAramPresenter : IDisposable
     }
     private void RefreshMarkers()
     {
-        string key = string.Join("|", new[] { state.aram?["mines"]?.ToString(), state.aram?["crates"]?.ToString(), state.aram?["collapsedFiles"]?.ToString() });
+        string key = string.Join("|", new[] { state.chaos?["mines"]?.ToString(), state.chaos?["crates"]?.ToString(), state.chaos?["collapsedFiles"]?.ToString() });
         if (key == markerFingerprint) return;
         markerFingerprint = key; if (markers) { markers.SetActive(false); UnityEngine.Object.Destroy(markers); }
         if (!game.Board) return;
         markers = new GameObject("Online CHAOS markers");
-        foreach (var mine in state.aram?["mines"] ?? new JArray()) CreateMarker((string)mine["square"], Color.red, .4f, "Mine");
-        foreach (var crate in state.aram?["crates"] ?? new JArray()) CreateMarker((string)crate["square"], Color.yellow, .5f, "Crate " + (string)crate["kind"]);
-        int collapsed = (int?)state.aram?["collapsedFiles"] ?? 0;
+        foreach (var mine in state.chaos?["mines"] ?? new JArray()) CreateMarker((string)mine["square"], Color.red, .4f, "Mine");
+        foreach (var crate in state.chaos?["crates"] ?? new JArray()) CreateMarker((string)crate["square"], Color.yellow, .5f, "Crate " + (string)crate["kind"]);
+        int collapsed = (int?)state.chaos?["collapsedFiles"] ?? 0;
         for (int file = 0; file < 8; file++)
             if (file < collapsed || file >= 8 - collapsed)
                 for (int rank = 1; rank <= 8; rank++) CreateMarker(((char)('a' + file)).ToString() + rank, new Color(.15f, .03f, .03f), .95f, "Collapsed tile");

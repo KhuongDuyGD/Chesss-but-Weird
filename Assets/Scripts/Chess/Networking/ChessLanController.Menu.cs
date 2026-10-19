@@ -139,7 +139,7 @@ public partial class ChessLanController
             ActionButton(contentRoot, "Classic", new Rect(270, y, 174, 54), IsAramGameMode(owner.requestedGameMode) ? UI.White : UI.Yellow,
                 () => owner.ChangeOnlineMode("Classic"), () => owner.CanEditLoadout);
             ActionButton(contentRoot, "CHAOS", new Rect(466, y, 174, 54), IsAramGameMode(owner.requestedGameMode) ? UI.Yellow : UI.White,
-                () => owner.ChangeOnlineMode("Aram"), () => owner.CanEditLoadout);
+                () => owner.ChangeOnlineMode("Chaos"), () => owner.CanEditLoadout);
             UI.Text(contentRoot, "Settings", $"{owner.onlineRegion}  /  {owner.onlineInitialSeconds / 60} min + {owner.onlineIncrementSeconds} sec", new Rect(985, y, 615, 54), 26, UI.Muted, TextAlignmentOptions.Right);
         }
         private void BuildRooms()
@@ -244,7 +244,11 @@ public partial class ChessLanController
                 else next.Invoke();
             }, owner.BackOnlineMenu, owner.loadoutActionLabel);
             picker.ConfigureLobby(owner.customRoomEntry.HasValue ? PlayModeNames.Label(owner.customRoomEntry.Value) :
-                PlayModeNames.DisplayBackend(owner.requestedGameMode).ToUpperInvariant() + " / NORMAL", owner.loadoutActionLabel);
+                owner.directMatchmaking ? PlayModeNames.Label(owner.selectedOnlineMode) :
+                PlayModeNames.DisplayBackend(owner.requestedGameMode).ToUpperInvariant() + " / NORMAL", owner.loadoutActionLabel,
+                owner.customRoomEntry.HasValue ? null : "Choose your loadout. Online matchmaking affects your rating.");
+            picker.ConfigureRankedLobby(owner.requestedGameMode, owner.directMatchmaking && PlayModeNames.IsRanked(owner.selectedOnlineMode),
+                () => { _ = owner.RefreshRanksAsync(owner.lifecycle); });
         }
         private void BuildAcceptancePopup()
         {

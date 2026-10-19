@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using ChessButWeird.Online;
 
 // Owns match content handles. Gameplay keeps its existing controllers and rules.
 public sealed class LoadingManager : MonoBehaviour
@@ -18,6 +19,8 @@ public sealed class LoadingManager : MonoBehaviour
     private Action lastStart;
     private CosmeticSelection lastSelection;
     private bool lastReplaceCurrentMatch;
+    private MatchLoadingContext lastMatchup;
+    private bool cancelMatchLoad;
     private Action returned;
     public CosmeticCatalog Catalog { get; private set; }
     public SkinManager Skins { get; private set; }
@@ -43,7 +46,7 @@ public sealed class LoadingManager : MonoBehaviour
         PieceSkinCatalog.UseCatalog(Catalog);
     }
 
-    public void StartMatch(CosmeticSelection selection, Action startGameplay, bool replaceCurrentMatch = false)
+    public void StartMatch(CosmeticSelection selection, Action startGameplay, bool replaceCurrentMatch = false, MatchLoadingContext matchup = null)
     {
         if (IsBusy || game.GameStarted && !replaceCurrentMatch) return;
         if (selection == null || startGameplay == null) throw new ArgumentNullException("Match selection and start callback are required.");
@@ -51,9 +54,12 @@ public sealed class LoadingManager : MonoBehaviour
         lastSelection = selection;
         lastStart = startGameplay;
         lastReplaceCurrentMatch = replaceCurrentMatch;
+        lastMatchup = matchup;
+        cancelMatchLoad = false;
         IsBusy = true;
         game.SetContentLoading(true);
         ui = LoadingUI.Create(transform);
+        ui.ShowMatchup(matchup);
         operation = StartCoroutine(Guard(LoadMatch(selection, startGameplay)));
     }
 
@@ -62,6 +68,8 @@ public sealed class LoadingManager : MonoBehaviour
         LogMemory("start; white=" + selection.whiteSkinId + "; black=" + selection.blackSkinId);
         yield return null;
         yield return Initialize(p => ui.Report(p * .08f, "Preparing content..."));
+        ui.SetCatalog(Catalog);
+        if (cancelMatchLoad) { yield return Return(); yield break; }
         yield return ReleaseMatch();
         // Only reclaim at a loading boundary, after old instances and handles are gone.
         yield return Resources.UnloadUnusedAssets();
@@ -92,11 +100,13 @@ public sealed class LoadingManager : MonoBehaviour
             if (!game.Board) throw new InvalidOperationException("Match scene has no Chessboard component.");
         }
         ui.Report(.3f, "Loading selected board...");
+        if (cancelMatchLoad) { yield return Return(); yield break; }
         matchAssets = new AssetLoader();
         Board = new BoardSkinManager(matchAssets);
         Skins = new SkinManager(matchAssets);
         yield return Board.Load(Catalog, selection.boardId, selection.environmentId,
             p => ui.Report(.3f + p * .2f, "Loading board and environment..."));
+        if (cancelMatchLoad) { yield return Return(); yield break; }
         yield return Skins.Load(Catalog, selection.whiteSkinId, selection.blackSkinId,
             p => ui.Report(.5f + p * .35f, "Loading selected pieces..."));
         LogMemory("selected assets loaded");
@@ -121,6 +131,7 @@ public sealed class LoadingManager : MonoBehaviour
         LogMemory("pieces created");
         ui.Report(.87f, "Setting up the pieces...");
         yield return null;
+        if (cancelMatchLoad) { yield return Return(); yield break; }
         startGameplay();
         // Input and bot updates remain locked even though existing BeginGame methods ran.
         Canvas.ForceUpdateCanvases();
@@ -128,8 +139,16 @@ public sealed class LoadingManager : MonoBehaviour
         // Render the actual board, animated environment and pieces behind the opaque
         // blocker before allowing input, bot turns or online Ready acknowledgements.
         yield return PreparePresentation();
+        if (cancelMatchLoad) { yield return Return(); yield break; }
         ui.Report(1, "Ready");
         yield return ui.Finish();
+        if (cancelMatchLoad)
+        {
+            // A cancellation can arrive during the final fade. Return still owns
+            // the loaded handles and releases them before reopening the lobby.
+            ui = LoadingUI.Create(transform);
+            yield return Return(); yield break;
+        }
         ui = null;
         IsBusy = false;
         game.CompleteMatchLoading();
@@ -140,6 +159,23 @@ public sealed class LoadingManager : MonoBehaviour
     {
         if (IsBusy) return false;
         StartMatch(lastSelection ?? CosmeticSelection.Load(), startGameplay, true);
+        return true;
+    }
+
+    public bool CancelOnlineMatch(string matchId, Action onReturned)
+    {
+        if (!IsBusy || lastMatchup?.MatchId != matchId) return false;
+        cancelMatchLoad = true; returned = onReturned;
+        if (operation == null)
+        {
+            // An asset failure may already have left the loader on Retry/Back.
+            // A terminal server event must also be able to leave that screen.
+            if (ui) Destroy(ui.gameObject);
+            ui = LoadingUI.Create(transform);
+            operation = StartCoroutine(Guard(Return()));
+        }
+        // Finish the outstanding asset operation before releasing its handles.
+        // The checkpoints above prevent gameplay/Ready after cancellation.
         return true;
     }
 
@@ -279,7 +315,7 @@ public sealed class LoadingManager : MonoBehaviour
                 Debug.LogError("[Loading] " + failure.Message);
                 operation = null;
                 ui.Error("Content could not be prepared.",
-                    () => { Destroy(ui.gameObject); IsBusy = false; StartMatch(lastSelection, lastStart, lastReplaceCurrentMatch || game.GameStarted); },
+                    () => { Destroy(ui.gameObject); IsBusy = false; StartMatch(lastSelection, lastStart, lastReplaceCurrentMatch || game.GameStarted, lastMatchup); },
                     () => { Destroy(ui.gameObject); IsBusy = false; ReturnToMenu(); });
                 yield break;
             }

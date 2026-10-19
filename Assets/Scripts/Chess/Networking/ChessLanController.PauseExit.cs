@@ -48,9 +48,11 @@ public partial class ChessLanController
         historyLoading = historyDirty = false;
         bool fromModeSelection = directMatchmaking;
         var customEntry = customRoomEntry;
+        var previousMode = selectedOnlineMode;
         ResetOnlineFlow();
         directMatchmaking = fromModeSelection;
         customRoomEntry = customEntry;
+        selectedOnlineMode = previousMode;
         requestInFlight = reconnecting = commandBusy = leaving = false;
         HideLanSetup();
     }
@@ -58,7 +60,7 @@ public partial class ChessLanController
     public void ShowLobbyAfterPauseExit()
     {
         if (customRoomEntry.HasValue) ShowCustomRooms(customRoomEntry.Value);
-        else if (directMatchmaking) ShowModeMatchmaking(IsAramGameMode(requestedGameMode) ? PlayModeOption.ChaosNormal : PlayModeOption.ClassicNormal);
+        else if (directMatchmaking) ShowModeMatchmaking(selectedOnlineMode);
         else ShowLobby(lobbyMode, requestedGameMode);
     }
 }

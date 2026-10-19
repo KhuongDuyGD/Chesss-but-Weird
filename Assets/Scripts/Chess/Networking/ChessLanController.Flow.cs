@@ -201,6 +201,8 @@ public partial class ChessLanController
     }
     private void ShowMatchCancellation(MatchState state)
     {
+        if (LoadingManager.For(chessGame).CancelOnlineMatch(state.matchId, () => ShowMatchCancellation(state)))
+        { statusMessage = "Match cancelled. Returning to your lobby..."; return; }
         queueRequest = null; acceptanceClockState = null; verifyingAcceptanceMatchId = null; forgetCancelledMatch = true;
         aramPresenter?.Dispose(); aramPresenter = null;
         if (presentedMatchId == state.matchId) chessGame.RestartToMainMenu();
@@ -215,6 +217,8 @@ public partial class ChessLanController
         loadoutOpenVersion++;
         loadoutLoaded = roomsLoading = forgetCancelledMatch = directMatchmaking = findMatchAfterRequest = false;
         customRoomEntry = null;
+        selectedOnlineMode = PlayModeOption.ClassicNormal;
+        loadingMatchup = null;
         loadoutContinuation = null; loadoutActionLabel = "FIND MATCH";
         roomListError = roomContentFingerprint = null; roomListRenderPending = false; acceptanceClockState = null;
         searchingTicketId = null;

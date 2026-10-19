@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using ChessButWeird.Online;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
@@ -32,6 +33,12 @@ public sealed class MatchLoadoutController : MonoBehaviour
     private readonly Button[] categoryButtons = new Button[3];
     private Func<bool> canContinue;
     private TextMeshProUGUI networkNotice;
+    private RankCardView rankCard;
+    private bool rankedLobby;
+    private string rankMode;
+    private UserMeResponse shownRankUser;
+    private RankConfig shownRankConfig;
+    private Action refreshRank;
     private Slot slot;
     private bool loading, canChooseBlack, accountReady, onlineMode, submitting, hasSavedSelection;
     private int requestVersion;
@@ -87,6 +94,30 @@ public sealed class MatchLoadoutController : MonoBehaviour
         canContinue = available;
         if (networkNotice) networkNotice.text = message;
         RefreshStartButton();
+        RefreshRankCard();
+    }
+
+    public void ConfigureRankedLobby(string mode, bool ranked, Action onRefresh = null)
+    {
+        rankedLobby = ranked; rankMode = mode; refreshRank = onRefresh;
+        if (!ranked) return;
+        // Keep the two cosmetic cards centered; rank occupies the unused header corner.
+        var title = content.Find("Title") as RectTransform;
+        var hint = content.Find("Hint") as RectTransform;
+        if (title) { title.sizeDelta = new Vector2(900, 82); title.anchoredPosition = new Vector2(514, -103); }
+        if (hint) { hint.sizeDelta = new Vector2(890, 45); hint.anchoredPosition = new Vector2(509, -175.5f); }
+        rankCard = new RankCardView(content, "Current Ranked Standing", new Rect(1030, 62, 578, 140));
+        RefreshRankCard(true);
+    }
+
+    private void RefreshRankCard(bool force = false)
+    {
+        if (!rankedLobby || rankCard == null) return;
+        var user = PlayerAuthService.CurrentApiUser;
+        var config = RankService.CachedConfig(rankMode);
+        if (!force && ReferenceEquals(shownRankUser, user) && ReferenceEquals(shownRankConfig, config)) return;
+        shownRankUser = user; shownRankConfig = config;
+        rankCard.Bind(rankMode, user?.ranks?.For(rankMode));
     }
 
     private void OpenPicker(bool bothSides, bool online, PieceTeam team, Action<CosmeticSelection> onStart, UnityAction onBack)
@@ -119,7 +150,8 @@ public sealed class MatchLoadoutController : MonoBehaviour
         effectButton = UI.Button(content, "Move Effect", "", new Rect(546, 752, 580, 56), UI.White, () => OpenPopup(Slot.Effect), 23);
         status = UI.Text(content, "Loadout Status", "", new Rect(64, 821, 1544, 40), 21, UI.Muted, TextAlignmentOptions.MidlineLeft, true);
         backButton = UI.Button(content, "Back", "<  BACK", new Rect(64, 875, 235, 62), UI.Pink, () => { if (!submitting && !lobbyLocked) backAction?.Invoke(); }, 25);
-        refreshButton = UI.Button(content, "Refresh Collection", "REFRESH", new Rect(1150, 875, 190, 62), UI.White, () => { if (!loading && !submitting && !lobbyLocked) LoadOwnedChoices(); }, 22);
+        refreshButton = UI.Button(content, "Refresh Collection", "REFRESH", new Rect(1150, 875, 190, 62), UI.White,
+            () => { if (!loading && !submitting && !lobbyLocked) { LoadOwnedChoices(); refreshRank?.Invoke(); } }, 22);
         startButton = UI.Button(content, "Start Match", "START MATCH", new Rect(1360, 867, 248, 70), UI.Yellow, Submit, 25);
 
         overlay = UI.Node(root, "Skin Collection Popup", new Rect(0, 0, 1672, 941));

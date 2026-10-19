@@ -37,7 +37,7 @@ public partial class ChessGame
         ResetDotNetPresentation();
         aramCoordinator?.EndMatch();
         var local = state.players.Single(p => p.userId == PlayerAuthService.UserId);
-        serverAuthoritativeMode = true; botMode = false; aramMode = state.aram != null;
+        serverAuthoritativeMode = true; botMode = false; aramMode = state.chaos != null;
         GameMusicManager.PlayInGameMusic(false, StockfishDifficulty.Medium);
         BeginGameInternal(PieceTeam.White, ParseOnlineTeam(local.color), true, PieceTeam.White);
         SetActiveMatchIdentity(state.matchId);
@@ -82,7 +82,7 @@ public partial class ChessGame
                 view.Initialize(team, square, p.forward); if (p.hasMoved) view.MarkMoved();
                 dotNetPieces[p.id] = view; pieces[square.x, square.y] = view;
                 view.gameObject.name = $"Online {p.id} {team} {kind}";
-                bool decoy = state.aram?["sides"]?.SelectMany(s => s["effects"] ?? new Newtonsoft.Json.Linq.JArray())
+                bool decoy = state.chaos?["sides"]?.SelectMany(s => s["effects"] ?? new Newtonsoft.Json.Linq.JArray())
                     .Any(e => (int?)e["pieceId"] == p.id && (bool?)e["decoy"] == true) == true;
                 var tag = view.GetComponent<AramDecoyTag>();
                 if (decoy && !tag) view.gameObject.AddComponent<AramDecoyTag>();
@@ -92,7 +92,7 @@ public partial class ChessGame
                 if (!animateChanges || relocated || !Animator.IsAnimating(view))
                 {
                     MovePieceToTile(view, square, 0);
-                    if (state.aram != null) ConfigureOnlineHitbox(view, p.kind, state);
+                    if (state.chaos != null) ConfigureOnlineHitbox(view, p.kind, state);
                     if (animate)
                     {
                         Vector3 target = view.transform.position;
@@ -110,7 +110,7 @@ public partial class ChessGame
         SetRuntimePiecesVisible(true); chessboard?.SetPresentationVisible(true);
         if (!gameOver && turnChanged && !onlinePromotionPending) turnSelectionUI?.SetTurn(currentTurn);
         RefreshLocalInteractionState();
-        if (!gameOver && state.aram == null && !string.IsNullOrEmpty(state.fen))
+        if (!gameOver && state.chaos == null && !string.IsNullOrEmpty(state.fen))
         {
             if (ChessButWeird.Domain.ClassicRules.IsInCheck(ChessButWeird.Domain.FenCodec.Parse(state.fen).Board, (ChessButWeird.Domain.Team)currentTurn)) ShowCheckWarning(currentTurn);
             else StopCheckWarning();
@@ -131,8 +131,8 @@ public partial class ChessGame
     public bool TryGetOnlineBuffSummary(PieceTeam team, out string name, out string details)
     {
         name = details = null;
-        if (dotNetState?.aram == null) return false;
-        var side = dotNetState.aram["sides"]?.FirstOrDefault(s => (string)s["team"] == team.ToString());
+        if (dotNetState?.chaos == null) return false;
+        var side = dotNetState.chaos["sides"]?.FirstOrDefault(s => (string)s["team"] == team.ToString());
         int? id = (int?)side?["buffId"];
         details = id.HasValue ? OnlineAramPresenter.BuffText(id.Value) : "The player is choosing a buff.";
         name = id.HasValue ? details.Split(':')[0] : "Choosing...";
@@ -159,7 +159,7 @@ public partial class ChessGame
         if (inputLocked || currentTurn != localControlledTeam) return;
         if (selectedPiece && clicked != selectedPiece)
         {
-            bool sacrifice = dotNetState.aram?["sides"]?.Any(s => (string)s["team"] == localControlledTeam.ToString() && (int?)s["buffId"] == 6) == true;
+            bool sacrifice = dotNetState.chaos?["sides"]?.Any(s => (string)s["team"] == localControlledTeam.ToString() && (int?)s["buffId"] == 6) == true;
             if (!clicked || clicked.Team != currentTurn || sacrifice && clicked.Type == PieceType.Pawn && selectedPiece.Type == PieceType.Pawn)
             { TryMoveSelectedPiece(square); return; }
         }
@@ -209,7 +209,7 @@ public partial class ChessGame
         // Hints never adjudicate a server command. Classic hints use the shared
         // domain engine; ARAM highlights geometric candidates from v2 effects.
         safeMoveBuffer.Clear();
-        if (dotNetState.aram == null && !string.IsNullOrEmpty(dotNetState.fen))
+        if (dotNetState.chaos == null && !string.IsNullOrEmpty(dotNetState.fen))
         {
             var state = ChessButWeird.Domain.FenCodec.Parse(dotNetState.fen);
             foreach (var move in ChessButWeird.Domain.ClassicRules.LegalMovesFrom(state,
@@ -219,7 +219,7 @@ public partial class ChessGame
         else
         {
             var board = new UnityBoardAdapter(pieces);
-            var side = dotNetState.aram?["sides"]?.FirstOrDefault(s => (string)s["team"] == piece.Team.ToString());
+            var side = dotNetState.chaos?["sides"]?.FirstOrDefault(s => (string)s["team"] == piece.Team.ToString());
             var effect = side?["effects"]?.FirstOrDefault(e => (int?)e["pieceId"] == OnlinePieceId(piece));
             int? buff = (int?)side?["buffId"];
             var id = OnlinePieceId(piece);
@@ -243,7 +243,7 @@ public partial class ChessGame
     }
     private void ConfigureOnlineHitbox(ChessPiece view, string kind, MatchState state)
     {
-        var spec = state.aram?["hitboxes"]?.FirstOrDefault(b => (string)b["kind"] == kind);
+        var spec = state.chaos?["hitboxes"]?.FirstOrDefault(b => (string)b["kind"] == kind);
         if (spec == null) return;
         foreach (var collider in view.GetComponentsInChildren<Collider>()) collider.enabled = false;
         var child = view.transform.Find("Online Canonical Hitbox");
@@ -263,7 +263,7 @@ public partial class ChessGame
     {
         if (snapshot == null || snapshot.matchId != dotNetState?.matchId) return;
         var entries = new List<ChessButWeird.Application.MatchStatistics.Entry>();
-        int number = 0; bool capturesKnown = snapshot.aram == null;
+        int number = 0; bool capturesKnown = snapshot.chaos == null;
         var classic = ChessButWeird.Domain.FenCodec.Parse(ChessButWeird.Domain.FenCodec.InitialPosition);
         foreach (var record in records.OrderBy(r => r.sequence))
         {

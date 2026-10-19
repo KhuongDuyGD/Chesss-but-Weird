@@ -27,6 +27,9 @@ public partial class ChessLanController
     private NetworkLobbyUiMode lobbyMode;
     private readonly List<MatchSummary> recentMatches = new List<MatchSummary>();
     private LobbyRequest queueRequest, roomRequest;
+    private PlayModeOption selectedOnlineMode = PlayModeOption.ClassicNormal;
+    private MatchLoadingContext loadingMatchup;
+    private int rankRefreshVersion;
     [SerializeField] private string onlineRegion = "VN";
     [SerializeField] private int onlineInitialSeconds = 600;
     [SerializeField] private int onlineIncrementSeconds = 5;
@@ -122,6 +125,7 @@ public partial class ChessLanController
         if (!PlayerAuthService.CanUseOnlineFeatures) { turnSelectionUI?.RequestAuthentication("Sign in to play online."); return; }
         customRoomEntry = PlayModeNames.IsCustom(mode) ? mode : (PlayModeOption?)null;
         directMatchmaking = !customRoomEntry.HasValue;
+        selectedOnlineMode = mode;
         loadoutOpenVersion++;
         requestedGameMode = PlayModeNames.Backend(mode);
         lobbyMode = NetworkLobbyUiMode.Multiplayer;
@@ -131,12 +135,13 @@ public partial class ChessLanController
         if (lobbyUi == null) lobbyUi = new NetworkLobbyUiController(this);
         lobbyUi.Show(lobbyMode);
         EnsureOnline(); RequestRefreshLobby();
+        _ = RefreshRanksAsync(lifecycle);
     }
 
     public void ShowLanSetup() => ShowLobby(NetworkLobbyUiMode.Lan, "Classic");
     public void ShowMultiplayerSetup() => ShowLobby(NetworkLobbyUiMode.Multiplayer, "Classic");
-    public void ShowAramLanSetup() => ShowLobby(NetworkLobbyUiMode.Lan, "Aram");
-    public void ShowAramMultiplayerSetup() => ShowLobby(NetworkLobbyUiMode.Multiplayer, "Aram");
+    public void ShowAramLanSetup() => ShowLobby(NetworkLobbyUiMode.Lan, "Chaos");
+    public void ShowAramMultiplayerSetup() => ShowLobby(NetworkLobbyUiMode.Multiplayer, "Chaos");
     private void ShowLobby(NetworkLobbyUiMode mode, string gameMode)
     {
         if (!PlayerAuthService.CanUseOnlineFeatures) { turnSelectionUI?.RequestAuthentication("Sign in to play online."); return; }
@@ -151,6 +156,7 @@ public partial class ChessLanController
     public void HideLanSetup() { showLanPanel = false; lobbyUi?.Hide(); }
     public void ResetForAuthenticationChange(bool authenticated = false)
     {
+        if (loadingMatchup != null) LoadingManager.For(chessGame).CancelOnlineMatch(loadingMatchup.MatchId, null);
         lifecycle++; online?.Dispose(); online = null; aramPresenter?.Dispose(); aramPresenter = null;
         presentedMatchId = refreshedResultId = null; queueRequest = roomRequest = null;
         preparedContentMatchId = null; historyLoading = historyDirty = false;
@@ -295,6 +301,7 @@ public partial class ChessLanController
     private void HandleState(MatchState state)
     {
         if (!this || leaving || state == null) return;
+        if (loadingMatchup?.MatchId == state.matchId) loadingMatchup.Update(state);
         lastStateReceivedAt = DateTime.UtcNow;
         requestedGameMode = state.settings.mode;
         if (state.status == "Cancelled") { ShowMatchCancellation(state); return; }
@@ -307,12 +314,15 @@ public partial class ChessLanController
             var loader = LoadingManager.For(chessGame);
             if (loader.IsBusy) return;
             int epoch = lifecycle; string matchId = state.matchId;
+            loadingMatchup = new MatchLoadingContext(state, PlayerAuthService.CurrentApiUser,
+                directMatchmaking ? PlayModeNames.Label(selectedOnlineMode) : PlayModeNames.DisplayBackend(state.settings.mode).ToUpperInvariant() +
+                (customRoomEntry.HasValue || online?.Room != null ? " / CUSTOM" : state.rated ? " / RANKED" : " / ONLINE"));
             presentedMatchId = null; aramPresenter?.Dispose(); aramPresenter = null;
             loader.StartMatch(FrozenSelection(state), () =>
             {
                 if (!this || epoch != lifecycle || online?.State?.matchId != matchId) return;
                 preparedContentMatchId = matchId; preparedLoadoutFingerprint = loadoutFingerprint; HandleState(online.State);
-            }, true); return;
+            }, true, loadingMatchup); return;
         }
         if (presentedMatchId != state.matchId)
         {
@@ -325,13 +335,13 @@ public partial class ChessLanController
         HideLanSetup();
         if (matchHud == null) matchHud = new OnlineMatchHud(this);
         matchHud.Refresh();
-        if (state.aram != null)
+        if (state.chaos != null)
         {
             if (aramPresenter == null) aramPresenter = new OnlineAramPresenter(this, chessGame);
             aramPresenter.Apply(state);
         }
         if (state.status == "Finished" && refreshedResultId != state.matchId)
-        { refreshedResultId = state.matchId; _ = RefreshAccountAsync(lifecycle); }
+        { refreshedResultId = state.matchId; rankRefreshVersion++; _ = RefreshAccountAsync(lifecycle); }
     }
     private async Task RestoreMovesAsync(string matchId)
     {
@@ -370,6 +380,31 @@ public partial class ChessLanController
     {
         try { var user = await new UserService().GetMeAsync(); if (this && epoch == lifecycle) PlayerAuthService.ApplyApiUser(user); }
         catch (Exception e) { if (this && epoch == lifecycle) statusMessage = "Match saved. Profile refresh pending: " + e.Message; }
+    }
+    private async Task RefreshRanksAsync(int epoch)
+    {
+        string userId = PlayerAuthService.UserId;
+        int version = ++rankRefreshVersion;
+        try
+        {
+            var service = new RankService();
+            var userTask = new UserService().GetMeAsync();
+            var classicTask = service.ConfigAsync("Classic");
+            var chaosTask = service.ConfigAsync("Chaos");
+            // Apply the account independently: config availability must not hide a valid rank.
+            try
+            {
+                var user = await userTask;
+                if (this && epoch == lifecycle && version == rankRefreshVersion && PlayerAuthService.UserId == userId && user?.userId == userId && PlayerAuthService.CanUseOnlineFeatures)
+                    PlayerAuthService.ApplyApiUser(user);
+            }
+            finally { await Task.WhenAll(classicTask, chaosTask); }
+        }
+        catch (Exception e)
+        {
+            if (this && epoch == lifecycle && version == rankRefreshVersion && PlayerAuthService.UserId == userId)
+                statusMessage = "Rank refresh pending: " + PlayerNotificationText.FromException(e);
+        }
     }
     private void HandleLobby()
     {
@@ -443,13 +478,13 @@ public partial class ChessLanController
         return m == null ? "No recent match" : PlayModeNames.DisplayBackend(m.settings.mode) + " - " + (m.result?.outcome ?? m.status);
     }
     private static string Name(Player p) => p == null ? "Opponent" : string.IsNullOrWhiteSpace(p.displayName) ? p.username : p.displayName;
-    private static bool IsAramGameMode(string mode) => string.Equals(mode, "Aram", StringComparison.OrdinalIgnoreCase);
+    private static bool IsAramGameMode(string mode) => PlayModeNames.IsChaos(mode);
     private static string NormalizeRoomCode(string value) => new string((value ?? "").Trim().ToUpperInvariant().Where(char.IsLetterOrDigit).Take(8).ToArray());
     private static string ToSquare(Vector2Int square) => ((char)('a' + square.x)).ToString() + (square.y + 1);
     // ARAM targeting remains in its presenter; match actions use the paper UGUI HUD.
     private void OnGUI()
     {
-        if (aramPresenter == null || online?.State?.aram == null || presentedMatchId != online.State.matchId || chessGame.PauseLocked) return;
+        if (aramPresenter == null || online?.State?.chaos == null || presentedMatchId != online.State.matchId || chessGame.PauseLocked) return;
         var before = GUI.matrix; GUI.matrix = Matrix4x4.Scale(Vector3.one * GetGuiScale());
         try { aramPresenter.Draw(); }
         finally { GUI.enabled = true; GUI.matrix = before; }

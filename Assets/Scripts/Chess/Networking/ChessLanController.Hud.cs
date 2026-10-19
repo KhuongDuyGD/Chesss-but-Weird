@@ -77,7 +77,7 @@ public partial class ChessLanController
             bool incomingDraw = drawing && state.drawOffer.userId != PlayerAuthService.UserId;
             var local = state.players.FirstOrDefault(p => p.userId == PlayerAuthService.UserId);
             Show(offer, active && !incomingDraw && !pending, canSend && !drawing);
-            Show(claim, active && state.aram == null && !incomingDraw && !pending, canSend && state.turn == local?.color);
+            Show(claim, active && state.chaos == null && !incomingDraw && !pending, canSend && state.turn == local?.color);
             Show(resign, active, canSend);
             Show(acceptDraw, incomingDraw && !pending, canSend);
             Show(declineDraw, incomingDraw && !pending, canSend);

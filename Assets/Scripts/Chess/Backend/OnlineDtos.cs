@@ -32,6 +32,9 @@ namespace ChessButWeird.Online
     [Serializable, Preserve] public sealed class Player
     {
         public string userId, username, displayName, color;
+        // Optional public fields: current BE snapshots only guarantee rating/name/loadout.
+        public string avatarId;
+        public RankOverview rank;
         public int rating; public bool ready, connected, accepted; public DateTime? reconnectDeadline;
         public List<Loadout> loadout = new List<Loadout>();
     }
@@ -42,9 +45,19 @@ namespace ChessButWeird.Online
     [Serializable, Preserve] public sealed class DrawOffer
     { public string id, userId; public DateTime expiresAt; }
     [Serializable, Preserve] public sealed class PlayerResult
-    { public string userId; public int ratingBefore, ratingAfter, ratingChange; public long golds, diamonds, tickets; }
+    {
+        public string userId, tierBefore, tierAfter, rankChangeType, rankConfigVersion, ratingDecision;
+        public int ratingBefore, ratingAfter, ratingChange;
+        public bool? provisionalBefore, provisionalAfter, ratingApplied;
+        public int? ratedGamesAfter;
+        public long golds, diamonds, tickets;
+    }
     [Serializable, Preserve] public sealed class Result
-    { public string outcome, winnerId, reason; public DateTime finishedAt; public List<PlayerResult> players = new List<PlayerResult>(); }
+    {
+        public string outcome, winnerId, reason, ratingMode, ratingPolicy, ratingDecision, rewardDecision;
+        public bool? ratingApplied, rewardsApplied;
+        public DateTime finishedAt; public List<PlayerResult> players = new List<PlayerResult>();
+    }
     [Serializable, Preserve] public sealed class MatchState
     {
         public string matchId, status, turn, fen, castlingRights, enPassantTarget, rematchId;
@@ -57,7 +70,8 @@ namespace ChessButWeird.Online
         public List<Player> players = new List<Player>();
         // Null means an older server; never infer ARAM captures from missing models.
         public List<CapturedPiece> captures;
-        public Clocks clocks; public DrawOffer drawOffer; public JObject aram; public Result result;
+        public Clocks clocks; public DrawOffer drawOffer; public JObject chaos; public Result result;
+        public bool rated;
         public bool IsActive => status == "AwaitingReady" || status == "InProgress";
     }
     [Serializable, Preserve] public sealed class CapturedPiece

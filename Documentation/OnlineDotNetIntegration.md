@@ -31,7 +31,7 @@ is a source compilation check; live integration and gameplay remain manual.
 
 - Set the backend base URL in `Assets/Scripts/Network/ApiConfig.cs`. Both HTTP
   and the `/hubs/game` WebSocket derive from this one URL. Its existing default
-  is `https://chessgame-api-fn6r.onrender.com`.
+  is `https://p1--chess-backend--bmqgrh9xv5f7.code.run`.
 - Sign in using the existing .NET auth UI. Guest accounts cannot play online.
 - **Online** opens two choices: **Rooms** and **Matchmaking**.
 - **Rooms** opens **Create Room** or **Find Room**. Create Room immediately

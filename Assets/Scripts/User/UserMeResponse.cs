@@ -7,6 +7,7 @@ public sealed class UserMeResponse
     public UserWalletResponse wallet;
     public UserStatsResponse stats;
     public UserEquippedResponse equipped;
+    public ChessButWeird.Online.PlayerRanks ranks;
     public string createdAt;
 }
 
