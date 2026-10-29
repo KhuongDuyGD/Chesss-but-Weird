@@ -15,13 +15,13 @@ MonoBehaviour:
   boardId: Boards/ClassicMarble
   displayName: Classic Marble Board
   preview:
-    m_AssetGUID: 1264c3bec56e271478649133367e50ba
+    m_AssetGUID: b83fbe7da58ca0f43b914b07823d5c50
     m_SubObjectName:
     m_SubObjectType:
     m_SubObjectGUID:
     m_EditorAssetChanged: 0
   boardPrefab:
-    m_AssetGUID: fbd6b41aee81a5b43a630cd43cdcb8dc
+    m_AssetGUID: ffaf06eba04419045a47e4d8b88ae51f
     m_SubObjectName:
     m_SubObjectType:
     m_SubObjectGUID:

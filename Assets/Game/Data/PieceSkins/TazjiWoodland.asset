@@ -15,79 +15,79 @@ MonoBehaviour:
   skinId: ChessSets/Woodland
   displayName: Woodland Chess Set
   preview:
-    m_AssetGUID: 753af0c71b2471e44aaf4726d17a6fba
+    m_AssetGUID: cf07ff9cc3181744ab9dda46bd71cb19
     m_SubObjectName:
     m_SubObjectType:
     m_SubObjectGUID:
     m_EditorAssetChanged: 0
   pawn:
-    m_AssetGUID: 251b0a7c38e21d84a8057bfbeafeb6ca
+    m_AssetGUID: 9ab0f35063b13bb4db3ab3a8a84a8089
     m_SubObjectName:
     m_SubObjectType:
     m_SubObjectGUID:
     m_EditorAssetChanged: 0
   rook:
-    m_AssetGUID: 2a088153805fe674da894e4e9f446352
+    m_AssetGUID: fd5bac621464eec44bf56caf59428eb7
     m_SubObjectName:
     m_SubObjectType:
     m_SubObjectGUID:
     m_EditorAssetChanged: 0
   knight:
-    m_AssetGUID: 69df289153d11464d91106c36bb557c9
+    m_AssetGUID: 643bc2c6ec428574eaf0f478e1455f1a
     m_SubObjectName:
     m_SubObjectType:
     m_SubObjectGUID:
     m_EditorAssetChanged: 0
   bishop:
-    m_AssetGUID: 383e08682888a754ab47b3b864bbcf25
+    m_AssetGUID: e18f622f36f12fd4196c784ff41a8dfd
     m_SubObjectName:
     m_SubObjectType:
     m_SubObjectGUID:
     m_EditorAssetChanged: 0
   queen:
-    m_AssetGUID: 3a7b93239bcb3c345a62be6ef9ea4528
+    m_AssetGUID: 6fefc681e78cbb543a7c7862d39a988b
     m_SubObjectName:
     m_SubObjectType:
     m_SubObjectGUID:
     m_EditorAssetChanged: 0
   king:
-    m_AssetGUID: 3cf8097c8aad85345a3ac9506648b324
+    m_AssetGUID: 31ba99e90a7778d479e200b869eb8dec
     m_SubObjectName:
     m_SubObjectType:
     m_SubObjectGUID:
     m_EditorAssetChanged: 0
   blackPawn:
-    m_AssetGUID: d5231763919d0d2449582266f02c2590
+    m_AssetGUID: fa950a0ed2bdf88469e329f310849afc
     m_SubObjectName:
     m_SubObjectType:
     m_SubObjectGUID:
     m_EditorAssetChanged: 0
   blackRook:
-    m_AssetGUID: 04590c676dd153342b9d11d7f7e0951f
+    m_AssetGUID: 58fb73910dc91f04180b692d29486468
     m_SubObjectName:
     m_SubObjectType:
     m_SubObjectGUID:
     m_EditorAssetChanged: 0
   blackKnight:
-    m_AssetGUID: ab12e98c3cc681f4391199a37906c2ec
+    m_AssetGUID: acbc56e5c83847742817d788e6bd6685
     m_SubObjectName:
     m_SubObjectType:
     m_SubObjectGUID:
     m_EditorAssetChanged: 0
   blackBishop:
-    m_AssetGUID: cd7b1f235c7b46845840c4df19f53700
+    m_AssetGUID: 7bbcf2e3196ad87449bfc450a3819123
     m_SubObjectName:
     m_SubObjectType:
     m_SubObjectGUID:
     m_EditorAssetChanged: 0
   blackQueen:
-    m_AssetGUID: 296665b94e0117f4b99480ccb88b1fed
+    m_AssetGUID: ecfa4999d9453ca4986fd07132e91065
     m_SubObjectName:
     m_SubObjectType:
     m_SubObjectGUID:
     m_EditorAssetChanged: 0
   blackKing:
-    m_AssetGUID: b55b72d4de54df44ea7ac436761af0e2
+    m_AssetGUID: c0613648917cba4489cc1ac3efdc3ca6
     m_SubObjectName:
     m_SubObjectType:
     m_SubObjectGUID:

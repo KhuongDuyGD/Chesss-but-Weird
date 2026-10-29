@@ -15,13 +15,13 @@ MonoBehaviour:
   boardId: Boards/ForestGarden
   displayName: Forest Garden Board
   preview:
-    m_AssetGUID: 2536e2cb28f584e469894b1e4ed5df44
+    m_AssetGUID: eb9fbd1b8a79fd544bb81c65f0e34369
     m_SubObjectName:
     m_SubObjectType:
     m_SubObjectGUID:
     m_EditorAssetChanged: 0
   boardPrefab:
-    m_AssetGUID: 78c34fb73f05e434683ad38e3758fd1e
+    m_AssetGUID: a839550e321ab0b458144b5c04c8024b
     m_SubObjectName:
     m_SubObjectType:
     m_SubObjectGUID:

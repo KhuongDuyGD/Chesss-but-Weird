@@ -15,13 +15,13 @@ MonoBehaviour:
   boardId: Boards/Celestial
   displayName: Celestial Board
   preview:
-    m_AssetGUID: 8dfc8d3dcd5e41746a902bf9364c5c57
+    m_AssetGUID: 226e4e65f16bdba4898da3b9894f1481
     m_SubObjectName:
     m_SubObjectType:
     m_SubObjectGUID:
     m_EditorAssetChanged: 0
   boardPrefab:
-    m_AssetGUID: 05bbe4e622d2d094a8b1e255f092cfda
+    m_AssetGUID: 03f5a95fc42ad4d4584160fe66b37ede
     m_SubObjectName:
     m_SubObjectType:
     m_SubObjectGUID:

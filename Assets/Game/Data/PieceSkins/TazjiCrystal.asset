@@ -15,79 +15,79 @@ MonoBehaviour:
   skinId: ChessSets/CrystalBlue
   displayName: Blue Crystal Chess Set
   preview:
-    m_AssetGUID: e458bdfdb94246941af859d5473a8ebc
+    m_AssetGUID: cbaf84fc77132964faa869850e7229ba
     m_SubObjectName:
     m_SubObjectType:
     m_SubObjectGUID:
     m_EditorAssetChanged: 0
   pawn:
-    m_AssetGUID: f889331a0933be541bc76ac8475bf28d
+    m_AssetGUID: 9f8bf434763ce024da8c4e3307ee970c
     m_SubObjectName:
     m_SubObjectType:
     m_SubObjectGUID:
     m_EditorAssetChanged: 0
   rook:
-    m_AssetGUID: 251f5c00eef5f1e4699682a1ba5af497
+    m_AssetGUID: 8b0ee6a2d342b214188f9794a24ec17e
     m_SubObjectName:
     m_SubObjectType:
     m_SubObjectGUID:
     m_EditorAssetChanged: 0
   knight:
-    m_AssetGUID: 93ab023df34794542909e9fbcf02b556
+    m_AssetGUID: 22e796d4438f107409f7f9a9562ee0fc
     m_SubObjectName:
     m_SubObjectType:
     m_SubObjectGUID:
     m_EditorAssetChanged: 0
   bishop:
-    m_AssetGUID: ffd2dd22b1518ce44b529cefbb0338fb
+    m_AssetGUID: 4c710a8c44253364eba86b7383bd0720
     m_SubObjectName:
     m_SubObjectType:
     m_SubObjectGUID:
     m_EditorAssetChanged: 0
   queen:
-    m_AssetGUID: 2eafcda0f53786545b23b1fea308ca9f
+    m_AssetGUID: 575cc1a3e3829dc4b93dfcf9df669e29
     m_SubObjectName:
     m_SubObjectType:
     m_SubObjectGUID:
     m_EditorAssetChanged: 0
   king:
-    m_AssetGUID: f881e3321602873498d7c43b5188b917
+    m_AssetGUID: 74e254814b2a6854c9c492bc2f52a866
     m_SubObjectName:
     m_SubObjectType:
     m_SubObjectGUID:
     m_EditorAssetChanged: 0
   blackPawn:
-    m_AssetGUID: ce4d5081e8ddb494e9e8bd73075122af
+    m_AssetGUID: 1b8b081c34684094499ae8bbdd0d985f
     m_SubObjectName:
     m_SubObjectType:
     m_SubObjectGUID:
     m_EditorAssetChanged: 0
   blackRook:
-    m_AssetGUID: 00d431e3a46433042a7aab0ee9596021
+    m_AssetGUID: 26b869f067d4c5147aa68d49452d07be
     m_SubObjectName:
     m_SubObjectType:
     m_SubObjectGUID:
     m_EditorAssetChanged: 0
   blackKnight:
-    m_AssetGUID: 69c04a5e70d15e94bb6c468ee55d522c
+    m_AssetGUID: f82cc8af68d4e164db0a98187a59d45f
     m_SubObjectName:
     m_SubObjectType:
     m_SubObjectGUID:
     m_EditorAssetChanged: 0
   blackBishop:
-    m_AssetGUID: 64a6e379ee38c1e4f9511ef0e121d45b
+    m_AssetGUID: 0acc31d087a78b54c8c09ac2e29f8cda
     m_SubObjectName:
     m_SubObjectType:
     m_SubObjectGUID:
     m_EditorAssetChanged: 0
   blackQueen:
-    m_AssetGUID: c24222b67e986b9468e4151af1ed1711
+    m_AssetGUID: 4cd198388bcdddb40bd91987fd030d4e
     m_SubObjectName:
     m_SubObjectType:
     m_SubObjectGUID:
     m_EditorAssetChanged: 0
   blackKing:
-    m_AssetGUID: 949ecd7b6b4eb6c469b5aa83eadd03a4
+    m_AssetGUID: ad82d47764720264ca95a636c01dbd09
     m_SubObjectName:
     m_SubObjectType:
     m_SubObjectGUID:

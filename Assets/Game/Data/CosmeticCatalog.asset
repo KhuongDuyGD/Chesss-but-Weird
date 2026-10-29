@@ -33,7 +33,7 @@ MonoBehaviour:
       m_SubObjectType:
       m_SubObjectGUID:
       m_EditorAssetChanged: 0
-    thumbnail: {fileID: 21300000, guid: e458bdfdb94246941af859d5473a8ebc, type: 3}
+    thumbnail: {fileID: 21300000, guid: cbaf84fc77132964faa869850e7229ba, type: 3}
     tier: COMMON
   - id: ChessSets/Woodland
     displayName: Woodland Chess Set
@@ -43,7 +43,7 @@ MonoBehaviour:
       m_SubObjectType:
       m_SubObjectGUID:
       m_EditorAssetChanged: 0
-    thumbnail: {fileID: 21300000, guid: 753af0c71b2471e44aaf4726d17a6fba, type: 3}
+    thumbnail: {fileID: 21300000, guid: cf07ff9cc3181744ab9dda46bd71cb19, type: 3}
     tier: COMMON
   boards:
   - id: tazji_lowpoly
@@ -64,7 +64,7 @@ MonoBehaviour:
       m_SubObjectType:
       m_SubObjectGUID:
       m_EditorAssetChanged: 0
-    thumbnail: {fileID: 21300000, guid: 2536e2cb28f584e469894b1e4ed5df44, type: 3}
+    thumbnail: {fileID: 21300000, guid: eb9fbd1b8a79fd544bb81c65f0e34369, type: 3}
     tier: COMMON
   - id: Boards/ClassicMarble
     displayName: Classic Marble Board
@@ -74,7 +74,7 @@ MonoBehaviour:
       m_SubObjectType:
       m_SubObjectGUID:
       m_EditorAssetChanged: 0
-    thumbnail: {fileID: 21300000, guid: 1264c3bec56e271478649133367e50ba, type: 3}
+    thumbnail: {fileID: 21300000, guid: b83fbe7da58ca0f43b914b07823d5c50, type: 3}
     tier: COMMON
   - id: Boards/Celestial
     displayName: Celestial Board
@@ -84,6 +84,6 @@ MonoBehaviour:
       m_SubObjectType:
       m_SubObjectGUID:
       m_EditorAssetChanged: 0
-    thumbnail: {fileID: 21300000, guid: 8dfc8d3dcd5e41746a902bf9364c5c57, type: 3}
+    thumbnail: {fileID: 21300000, guid: 226e4e65f16bdba4898da3b9894f1481, type: 3}
     tier: LEGENDARY
   environments: []
