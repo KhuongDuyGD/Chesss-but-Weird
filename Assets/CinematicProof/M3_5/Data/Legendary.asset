@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5454c8dc1e7ba3942bbf2b216fa6daa6, type: 3}
+  m_Name: Legendary
+  m_EditorClassIdentifier: Assembly-CSharp::ChessButWeird.CinematicProof.M35.M35RarityProfile
+  rarity: 3
+  accent: {r: 1, g: 0.69, b: 0.28, a: 1}
+  duration: 7
+  cameraMotion: 1
+  heroScale: 1
+  lightPeak: 2.75
+  motesPerSecond: 16
+  burstCount: 40
+  orbitSymbols: 1
+  coronationHalo: 1
+  revealCue: {fileID: 8300000, guid: d190082385582c246a14108621b0ebef, type: 3}

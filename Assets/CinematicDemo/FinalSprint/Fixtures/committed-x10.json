@@ -1,0 +1,77 @@
+{
+  "requestId": "df102900-0000-4000-8000-000000000010",
+  "bannerCode": "DEMO_COMMITTED_FIXTURE_ONLY",
+  "count": 10,
+  "results": [
+    {
+      "itemId": "fd0000000000000000000001",
+      "itemCode": "DEMO_CHESS_DEFAULT",
+      "itemName": "[DEMO] CHESS_DEFAULT",
+      "rarity": "COMMON",
+      "isDuplicate": false
+    },
+    {
+      "itemId": "fd0000000000000000000002",
+      "itemCode": "DEMO_BOARD_DEFAULT",
+      "itemName": "[DEMO] BOARD_DEFAULT",
+      "rarity": "COMMON",
+      "isDuplicate": false
+    },
+    {
+      "itemId": "fd0000000000000000000003",
+      "itemCode": "DEMO_CHESS_WOODLAND",
+      "itemName": "[DEMO] CHESS_WOODLAND",
+      "rarity": "COMMON",
+      "isDuplicate": true
+    },
+    {
+      "itemId": "fd0000000000000000000004",
+      "itemCode": "DEMO_BOARD_CLASSIC_MARBLE",
+      "itemName": "[DEMO] BOARD_CLASSIC_MARBLE",
+      "rarity": "COMMON",
+      "isDuplicate": false
+    },
+    {
+      "itemId": "fd0000000000000000000005",
+      "itemCode": "DEMO_CHESS_CRYSTAL_BLUE",
+      "itemName": "[DEMO] CHESS_CRYSTAL_BLUE",
+      "rarity": "RARE",
+      "isDuplicate": true
+    },
+    {
+      "itemId": "fd0000000000000000000006",
+      "itemCode": "DEMO_BOARD_FOREST_GARDEN",
+      "itemName": "[DEMO] BOARD_FOREST_GARDEN",
+      "rarity": "RARE",
+      "isDuplicate": false
+    },
+    {
+      "itemId": "fd0000000000000000000007",
+      "itemCode": "DEMO_CHESS_SHADOW_KNIGHT",
+      "itemName": "[DEMO] CHESS_SHADOW_KNIGHT",
+      "rarity": "EPIC",
+      "isDuplicate": false
+    },
+    {
+      "itemId": "fd0000000000000000000008",
+      "itemCode": "DEMO_BOARD_VOLCANO",
+      "itemName": "[DEMO] BOARD_VOLCANO",
+      "rarity": "EPIC",
+      "isDuplicate": true
+    },
+    {
+      "itemId": "fd0000000000000000000009",
+      "itemCode": "DEMO_CHESS_DRAGON_RED",
+      "itemName": "[DEMO] CHESS_DRAGON_RED",
+      "rarity": "LEGENDARY",
+      "isDuplicate": false
+    },
+    {
+      "itemId": "fd0000000000000000000010",
+      "itemCode": "DEMO_BOARD_CELESTIAL",
+      "itemName": "[DEMO] BOARD_CELESTIAL",
+      "rarity": "LEGENDARY",
+      "isDuplicate": true
+    }
+  ]
+}

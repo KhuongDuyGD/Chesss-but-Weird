@@ -119,3 +119,7 @@ ProjectSettings/McpUnitySettings.json
 !/Tests/Chess.Domain.Tests/Chess.Domain.Tests.csproj
 !/Tests/Chess.Notifications.Tests/Chess.Notifications.Tests.csproj
 !/Tests/Chess.Settings.Tests/Chess.Settings.Tests.csproj
+
+# Local historical cinematic evidence (runtime assets live under Assets/)
+/CinematicProof/
+*.slnx

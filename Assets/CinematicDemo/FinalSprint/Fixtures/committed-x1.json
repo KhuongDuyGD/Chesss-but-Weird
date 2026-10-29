@@ -1,0 +1,14 @@
+{
+  "requestId": "df102900-0000-4000-8000-000000000001",
+  "bannerCode": "DEMO_COMMITTED_FIXTURE_ONLY",
+  "count": 1,
+  "results": [
+    {
+      "itemId": "fd0000000000000000000010",
+      "itemCode": "DEMO_BOARD_CELESTIAL",
+      "itemName": "[DEMO] BOARD_CELESTIAL",
+      "rarity": "LEGENDARY",
+      "isDuplicate": false
+    }
+  ]
+}
