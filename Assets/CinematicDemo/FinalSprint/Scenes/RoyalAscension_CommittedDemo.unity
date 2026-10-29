@@ -1,0 +1,284 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!29 &1
+OcclusionCullingSettings:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_OcclusionBakeSettings:
+    smallestOccluder: 5
+    smallestHole: 0.25
+    backfaceThreshold: 100
+  m_SceneGUID: 00000000000000000000000000000000
+  m_OcclusionCullingData: {fileID: 0}
+--- !u!104 &2
+RenderSettings:
+  m_ObjectHideFlags: 0
+  serializedVersion: 10
+  m_Fog: 0
+  m_FogColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  m_FogMode: 3
+  m_FogDensity: 0.01
+  m_LinearFogStart: 0
+  m_LinearFogEnd: 300
+  m_AmbientSkyColor: {r: 0.212, g: 0.227, b: 0.259, a: 1}
+  m_AmbientEquatorColor: {r: 0.114, g: 0.125, b: 0.133, a: 1}
+  m_AmbientGroundColor: {r: 0.047, g: 0.043, b: 0.035, a: 1}
+  m_AmbientIntensity: 1
+  m_AmbientMode: 0
+  m_SubtractiveShadowColor: {r: 0.42, g: 0.478, b: 0.627, a: 1}
+  m_SkyboxMaterial: {fileID: 10304, guid: 0000000000000000f000000000000000, type: 0}
+  m_HaloStrength: 0.5
+  m_FlareStrength: 1
+  m_FlareFadeSpeed: 3
+  m_HaloTexture: {fileID: 0}
+  m_SpotCookie: {fileID: 10001, guid: 0000000000000000e000000000000000, type: 0}
+  m_DefaultReflectionMode: 0
+  m_DefaultReflectionResolution: 128
+  m_ReflectionBounces: 1
+  m_ReflectionIntensity: 1
+  m_CustomReflection: {fileID: 0}
+  m_Sun: {fileID: 0}
+  m_UseRadianceAmbientProbe: 0
+--- !u!157 &3
+LightmapSettings:
+  m_ObjectHideFlags: 0
+  serializedVersion: 13
+  m_BakeOnSceneLoad: 0
+  m_GISettings:
+    serializedVersion: 2
+    m_BounceScale: 1
+    m_IndirectOutputScale: 1
+    m_AlbedoBoost: 1
+    m_EnvironmentLightingMode: 0
+    m_EnableBakedLightmaps: 1
+    m_EnableRealtimeLightmaps: 0
+  m_LightmapEditorSettings:
+    serializedVersion: 12
+    m_Resolution: 2
+    m_BakeResolution: 40
+    m_AtlasSize: 1024
+    m_AO: 0
+    m_AOMaxDistance: 1
+    m_CompAOExponent: 1
+    m_CompAOExponentDirect: 0
+    m_ExtractAmbientOcclusion: 0
+    m_Padding: 2
+    m_LightmapParameters: {fileID: 0}
+    m_LightmapsBakeMode: 1
+    m_TextureCompression: 1
+    m_ReflectionCompression: 2
+    m_MixedBakeMode: 2
+    m_BakeBackend: 2
+    m_PVRSampling: 1
+    m_PVRDirectSampleCount: 32
+    m_PVRSampleCount: 512
+    m_PVRBounces: 2
+    m_PVREnvironmentSampleCount: 256
+    m_PVREnvironmentReferencePointCount: 2048
+    m_PVRFilteringMode: 1
+    m_PVRDenoiserTypeDirect: 1
+    m_PVRDenoiserTypeIndirect: 1
+    m_PVRDenoiserTypeAO: 1
+    m_PVRFilterTypeDirect: 0
+    m_PVRFilterTypeIndirect: 0
+    m_PVRFilterTypeAO: 0
+    m_PVREnvironmentMIS: 1
+    m_PVRCulling: 1
+    m_PVRFilteringGaussRadiusDirect: 1
+    m_PVRFilteringGaussRadiusIndirect: 1
+    m_PVRFilteringGaussRadiusAO: 1
+    m_PVRFilteringAtrousPositionSigmaDirect: 0.5
+    m_PVRFilteringAtrousPositionSigmaIndirect: 2
+    m_PVRFilteringAtrousPositionSigmaAO: 1
+    m_ExportTrainingData: 0
+    m_TrainingDataDestination: TrainingData
+    m_LightProbeSampleCountMultiplier: 4
+  m_LightingDataAsset: {fileID: 20201, guid: 0000000000000000f000000000000000, type: 0}
+  m_LightingSettings: {fileID: 0}
+--- !u!196 &4
+NavMeshSettings:
+  serializedVersion: 2
+  m_ObjectHideFlags: 0
+  m_BuildSettings:
+    serializedVersion: 3
+    agentTypeID: 0
+    agentRadius: 0.5
+    agentHeight: 2
+    agentSlope: 45
+    agentClimb: 0.4
+    ledgeDropHeight: 0
+    maxJumpAcrossDistance: 0
+    minRegionArea: 2
+    manualCellSize: 0
+    cellSize: 0.16666667
+    manualTileSize: 0
+    tileSize: 256
+    buildHeightMesh: 0
+    maxJobWorkers: 0
+    preserveTilesOutsideBounds: 0
+    debug:
+      m_Flags: 0
+  m_NavMeshData: {fileID: 0}
+--- !u!1 &1117407211
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1117407213}
+  - component: {fileID: 1117407212}
+  m_Layer: 0
+  m_Name: "Royal Ascension \u2014 explicit offline development demo"
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1117407212
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1117407211}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cf982cc3c2b694943a5ec9c05a700a78, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::ChessButWeird.CinematicDemo.FinalSprint.FinalDemoRoot
+  ritualPrefab: {fileID: 7260471423837933250, guid: 9b532a1786afad4468e9a11e61deefea, type: 3}
+  one: {fileID: 4900000, guid: c6259727776e5dad9934ec31112c3ff0, type: 3}
+  ten: {fileID: 4900000, guid: d0279bd58cf25bab8b72c01e678b09f3, type: 3}
+  bindings:
+  - alias: A01
+    itemId: fd0000000000000000000001
+    itemCode: DEMO_CHESS_DEFAULT
+    rawType: CHESS_PIECE_SKIN
+    localId: tazji_lowpoly
+    category: PieceSkin
+    dataGuid: 020eb3b37c3d396409e57486fce5029b
+    dataPath: Assets/Game/Data/PieceSkins/TazjiLowPoly.asset
+    previewGuid: f35953e352f4d4947992fa002b0405f4
+    previewPath: Assets/Skins/Tazji'sLowPoly/Chess_Set/Chess_Set_Preview.png
+    previewAddress: Previews/Tazji'sLowPoly/Chess_Set
+  - alias: A02
+    itemId: fd0000000000000000000002
+    itemCode: DEMO_BOARD_DEFAULT
+    rawType: BOARD_SKIN
+    localId: tazji_lowpoly
+    category: Board
+    dataGuid: a05a0c4b4edbf9f47a136dd34f7058c7
+    dataPath: Assets/Game/Data/Boards/TazjiLowPoly.asset
+    previewGuid: aa2f7fee0aa51e341900ebea93ca4a95
+    previewPath: Assets/Skins/Tazji'sLowPoly/Chess_Arena/Chess_Arena_Preview.png
+    previewAddress: Previews/Tazji'sLowPoly/Chess_Arena
+  - alias: A03
+    itemId: fd0000000000000000000003
+    itemCode: DEMO_CHESS_WOODLAND
+    rawType: CHESS_PIECE_SKIN
+    localId: ChessSets/Woodland
+    category: PieceSkin
+    dataGuid: 84c8b1a51192ffb45b823bfd1304c425
+    dataPath: Assets/Game/Data/PieceSkins/TazjiWoodland.asset
+    previewGuid: cf07ff9cc3181744ab9dda46bd71cb19
+    previewPath: Assets/Skins/Tazji'sWoodlandChessSet/Woodland_Chess_Set_Preview.png
+    previewAddress: Previews/Tazji'sWoodlandChessSet
+  - alias: A04
+    itemId: fd0000000000000000000004
+    itemCode: DEMO_BOARD_CLASSIC_MARBLE
+    rawType: BOARD_SKIN
+    localId: Boards/ClassicMarble
+    category: Board
+    dataGuid: 9e6e150ce4d9a8c4d8987b85ef5cc14c
+    dataPath: Assets/Game/Data/Boards/TazjiMarble.asset
+    previewGuid: b83fbe7da58ca0f43b914b07823d5c50
+    previewPath: Assets/Skins/Tazji'sMarbleBoard/Classic_Marble_Board_Preview.png
+    previewAddress: Previews/Tazji'sMarbleBoard
+  - alias: A05
+    itemId: fd0000000000000000000005
+    itemCode: DEMO_CHESS_CRYSTAL_BLUE
+    rawType: CHESS_PIECE_SKIN
+    localId: ChessSets/CrystalBlue
+    category: PieceSkin
+    dataGuid: 881c96052d985454dbaa483050423d6b
+    dataPath: Assets/Game/Data/PieceSkins/TazjiCrystal.asset
+    previewGuid: cbaf84fc77132964faa869850e7229ba
+    previewPath: Assets/Skins/Tazji'sCrystalChessSet/Crystal_Chess_Set_Preview.png
+    previewAddress: Previews/Tazji'sCrystalChessSet
+  - alias: A06
+    itemId: fd0000000000000000000006
+    itemCode: DEMO_BOARD_FOREST_GARDEN
+    rawType: BOARD_SKIN
+    localId: Boards/ForestGarden
+    category: Board
+    dataGuid: a7aaab4fc93ab024bb455f480b75703b
+    dataPath: Assets/Game/Data/Boards/TazjiForestGarden.asset
+    previewGuid: eb9fbd1b8a79fd544bb81c65f0e34369
+    previewPath: Assets/Skins/Tazji'sForestGardenBoard/Forest_Garden_Board_Preview.png
+    previewAddress: Previews/Tazji'sForestGardenBoard
+  - alias: A07
+    itemId: fd0000000000000000000007
+    itemCode: DEMO_CHESS_SHADOW_KNIGHT
+    rawType: CHESS_PIECE_SKIN
+    localId:
+    category:
+    dataGuid:
+    dataPath:
+    previewGuid:
+    previewPath:
+    previewAddress:
+  - alias: A08
+    itemId: fd0000000000000000000008
+    itemCode: DEMO_BOARD_VOLCANO
+    rawType: BOARD_SKIN
+    localId:
+    category:
+    dataGuid:
+    dataPath:
+    previewGuid:
+    previewPath:
+    previewAddress:
+  - alias: A09
+    itemId: fd0000000000000000000009
+    itemCode: DEMO_CHESS_DRAGON_RED
+    rawType: CHESS_PIECE_SKIN
+    localId:
+    category:
+    dataGuid:
+    dataPath:
+    previewGuid:
+    previewPath:
+    previewAddress:
+  - alias: A10
+    itemId: fd0000000000000000000010
+    itemCode: DEMO_BOARD_CELESTIAL
+    rawType: BOARD_SKIN
+    localId: Boards/Celestial
+    category: Board
+    dataGuid: 1f70748d388317645bc627a9c175fb14
+    dataPath: Assets/Game/Data/Boards/TazjiCelestial.asset
+    previewGuid: 226e4e65f16bdba4898da3b9894f1481
+    previewPath: Assets/Skins/Tazji'sCelestialBoard/Celestial_Animated_Hero.png
+    previewAddress: Previews/Tazji'sCelestialBoard
+--- !u!4 &1117407213
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1117407211}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1660057539 &9223372036854775807
+SceneRoots:
+  m_ObjectHideFlags: 0
+  m_Roots:
+  - {fileID: 1117407213}
