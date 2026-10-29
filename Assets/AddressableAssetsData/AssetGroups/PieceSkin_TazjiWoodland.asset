@@ -15,67 +15,67 @@ MonoBehaviour:
   m_GroupName: PieceSkin_TazjiWoodland
   m_GUID: ec08151f2c06d0f49bb5a6676f383594
   m_SerializeEntries:
-  - m_GUID: 04590c676dd153342b9d11d7f7e0951f
-    m_Address: Models/Tazji'sWoodlandChessSet/WL_Nightgrove_Rook
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 251b0a7c38e21d84a8057bfbeafeb6ca
-    m_Address: Models/Tazji'sWoodlandChessSet/WL_Oak_Pawn
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 296665b94e0117f4b99480ccb88b1fed
-    m_Address: Models/Tazji'sWoodlandChessSet/WL_Nightgrove_Queen
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 2a088153805fe674da894e4e9f446352
-    m_Address: Models/Tazji'sWoodlandChessSet/WL_Oak_Rook
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 383e08682888a754ab47b3b864bbcf25
-    m_Address: Models/Tazji'sWoodlandChessSet/WL_Oak_Bishop
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 3a7b93239bcb3c345a62be6ef9ea4528
-    m_Address: Models/Tazji'sWoodlandChessSet/WL_Oak_Queen
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 3cf8097c8aad85345a3ac9506648b324
-    m_Address: Models/Tazji'sWoodlandChessSet/WL_Oak_King
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 69df289153d11464d91106c36bb557c9
-    m_Address: Models/Tazji'sWoodlandChessSet/WL_Oak_Knight
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 84c8b1a51192ffb45b823bfd1304c425
     m_Address: PieceSkin/ChessSets/Woodland
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: ab12e98c3cc681f4391199a37906c2ec
+  - m_GUID: 58fb73910dc91f04180b692d29486468
+    m_Address: Models/Tazji'sWoodlandChessSet/WL_Nightgrove_Rook
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 9ab0f35063b13bb4db3ab3a8a84a8089
+    m_Address: Models/Tazji'sWoodlandChessSet/WL_Oak_Pawn
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ecfa4999d9453ca4986fd07132e91065
+    m_Address: Models/Tazji'sWoodlandChessSet/WL_Nightgrove_Queen
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: fd5bac621464eec44bf56caf59428eb7
+    m_Address: Models/Tazji'sWoodlandChessSet/WL_Oak_Rook
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e18f622f36f12fd4196c784ff41a8dfd
+    m_Address: Models/Tazji'sWoodlandChessSet/WL_Oak_Bishop
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 6fefc681e78cbb543a7c7862d39a988b
+    m_Address: Models/Tazji'sWoodlandChessSet/WL_Oak_Queen
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 31ba99e90a7778d479e200b869eb8dec
+    m_Address: Models/Tazji'sWoodlandChessSet/WL_Oak_King
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 643bc2c6ec428574eaf0f478e1455f1a
+    m_Address: Models/Tazji'sWoodlandChessSet/WL_Oak_Knight
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: acbc56e5c83847742817d788e6bd6685
     m_Address: Models/Tazji'sWoodlandChessSet/WL_Nightgrove_Knight
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: b55b72d4de54df44ea7ac436761af0e2
+  - m_GUID: c0613648917cba4489cc1ac3efdc3ca6
     m_Address: Models/Tazji'sWoodlandChessSet/WL_Nightgrove_King
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: cd7b1f235c7b46845840c4df19f53700
+  - m_GUID: 7bbcf2e3196ad87449bfc450a3819123
     m_Address: Models/Tazji'sWoodlandChessSet/WL_Nightgrove_Bishop
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: d5231763919d0d2449582266f02c2590
+  - m_GUID: fa950a0ed2bdf88469e329f310849afc
     m_Address: Models/Tazji'sWoodlandChessSet/WL_Nightgrove_Pawn
     m_ReadOnly: 0
     m_SerializedLabels: []
