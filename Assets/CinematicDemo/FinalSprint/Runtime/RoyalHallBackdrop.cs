@@ -25,12 +25,17 @@ namespace ChessButWeird.CinematicDemo.FinalSprint
         void OnEnable() { RenderPipelineManager.beginCameraRendering += BeforeCamera; }
         void LateUpdate()
         {
-            if (!backdrop || !backdropShader || !root || !root.Canvas || !root.View || !root.View.ritual) return;
+            if (!backdrop || !backdropShader || !root || !root.Canvas || !root.View || !root.View.ritual)
+            {
+                ReleaseDecoration();
+                return;
+            }
             if (!Applied)
             {
                 var go = new GameObject("Royal hall external backdrop", typeof(RectTransform), typeof(RawImage), typeof(AspectRatioFitter));
                 go.transform.SetParent(root.Canvas.transform, false);
-                go.transform.SetAsFirstSibling();
+                // A null-texture RawImage draws opaque white. Cover only that state, below all labels/buttons.
+                go.transform.SetSiblingIndex(root.View.ritual.transform.GetSiblingIndex() + 1);
                 Image = go.GetComponent<RawImage>(); Image.texture = backdrop;
                 Image.raycastTarget = false;
                 var fitter = go.GetComponent<AspectRatioFitter>();
@@ -38,6 +43,7 @@ namespace ChessButWeird.CinematicDemo.FinalSprint
                 fitter.aspectRatio = (float)backdrop.width / backdrop.height;
                 Applied = true;
             }
+            Image.enabled = !root.View.ritual.texture;
             var camera = root.Host?.Factory.Current?.Ritual ? root.Host.Factory.Current.Ritual.cinematicCamera : null;
             if (camera != DecoratedCamera || (DecoratedCamera && !surface))
             {
