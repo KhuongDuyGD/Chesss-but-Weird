@@ -28,8 +28,10 @@ public sealed class GachaSummonRevealController : MonoBehaviour
     private Image topTierFlash;
     private Image cardFrame;
     private Image rewardIcon;
+    private CosmeticModelPreview modelPreview;
     private TextMeshProUGUI titleLabel;
     private TextMeshProUGUI detailLabel;
+    private TextMeshProUGUI artworkLabel;
     private TextMeshProUGUI rarityLabel;
     private TextMeshProUGUI sequenceLabel;
     private TextMeshProUGUI skipButtonLabel;
@@ -59,16 +61,17 @@ public sealed class GachaSummonRevealController : MonoBehaviour
 
     public void PlaySequence(List<GachaReward> rewards, Func<GachaReward, Sprite> iconResolver, Action onFinished)
     {
+        FinishSequence();
         finishedCallback = onFinished;
         if (!overlay)
         {
-            onFinished?.Invoke();
+            FinishSequence();
             return;
         }
 
         if (rewards == null || rewards.Count == 0)
         {
-            onFinished?.Invoke();
+            FinishSequence();
             return;
         }
 
@@ -78,6 +81,17 @@ public sealed class GachaSummonRevealController : MonoBehaviour
         skipRequested = false;
         revealRoutine = StartCoroutine(PlaySequenceRoutine(new List<GachaReward>(rewards), iconResolver));
     }
+
+    private void FinishSequence()
+    {
+        if (revealRoutine != null) StopCoroutine(revealRoutine);
+        revealRoutine = null; skipRequested = false;
+        modelPreview?.Clear();
+        if (overlay) overlay.gameObject.SetActive(false);
+        Action callback = finishedCallback; finishedCallback = null;
+        callback?.Invoke();
+    }
+    private void OnDisable() => FinishSequence();
 
     public void RequestSkip()
     {
@@ -131,6 +145,9 @@ public sealed class GachaSummonRevealController : MonoBehaviour
 
         rewardIcon = AddImage(card, "Reward Icon", null, new Vector2(0f, 42f), new Vector2(180f, 180f));
         rewardIcon.color = new Color(1f, 1f, 1f, 0f);
+        modelPreview = card.gameObject.AddComponent<CosmeticModelPreview>();
+        modelPreview.Initialize(card);
+        artworkLabel = AddText(card, "Artwork Status", new Vector2(0, -66), new Vector2(280, 38), 15, new Color(.15f, .1f, .03f, 1));
 
         rarityLabel = AddText(card, "Reward Rarity", new Vector2(0f, -106f), new Vector2(250f, 42f), 34f, new Color(0.15f, 0.1f, 0.03f, 0f));
         detailLabel = AddText(card, "Reward Detail", new Vector2(0f, -152f), new Vector2(250f, 54f), 32f, new Color(0.15f, 0.1f, 0.03f, 0f));
@@ -167,6 +184,7 @@ public sealed class GachaSummonRevealController : MonoBehaviour
         rewardIcon.enabled = icon;
         rarityLabel.text = new string('*', Mathf.Clamp(reward.rarity, 1, 5));
         detailLabel.text = reward.AmountText;
+        modelPreview?.Show(reward);
         sequenceLabel.text = total > 1 ? $"{index + 1}/{total}" : string.Empty;
         titleLabel.text = currentTopTier ? "TOP TIER SUMMON" : reward.rarity >= 4 ? "RARE SUMMON" : "SUMMON";
 
@@ -194,6 +212,15 @@ public sealed class GachaSummonRevealController : MonoBehaviour
             Sprite icon = iconResolver != null ? iconResolver(reward) : null;
             ConfigureReward(reward, icon, i, rewards.Count);
             ResetVisuals(i > 0);
+            float loadingDeadline = Time.realtimeSinceStartup + 4f;
+            while (!skipRequested && modelPreview && modelPreview.Status == "Loading reward model" && Time.realtimeSinceStartup < loadingDeadline)
+            {
+                if (Input.GetKeyDown(KeyCode.Escape)) RequestSkip();
+                yield return null;
+            }
+            if (modelPreview && modelPreview.Status == "Loading reward model") modelPreview.Clear();
+            artworkLabel.text = !string.IsNullOrWhiteSpace(reward.itemId) && !modelPreview.HasModel && !icon
+                ? "Artwork unavailable\n" + reward.itemId : "";
             yield return PlayRewardRoutine(reward, i, rewards.Count);
 
             if (!skipRequested && i < rewards.Count - 1)
@@ -266,6 +293,8 @@ public sealed class GachaSummonRevealController : MonoBehaviour
         SetGraphicAlpha(summonRing, 0f);
         SetGraphicAlpha(cardFrame, 0f);
         SetGraphicAlpha(rewardIcon, 0f);
+        modelPreview?.SetAlpha(0);
+        SetGraphicAlpha(artworkLabel, 0);
         SetGraphicAlpha(titleLabel, 0f);
         SetGraphicAlpha(sequenceLabel, 0f);
         SetGraphicAlpha(detailLabel, 0f);
@@ -326,6 +355,8 @@ public sealed class GachaSummonRevealController : MonoBehaviour
         float alpha = Mathf.Clamp01(reveal * 1.5f) * (1f - exit);
         SetGraphicAlpha(cardFrame, alpha);
         SetGraphicAlpha(rewardIcon, alpha);
+        modelPreview?.SetAlpha(alpha);
+        SetGraphicAlpha(artworkLabel, alpha);
     }
 
     private void AnimateLabels(float reveal, float exit)
@@ -450,6 +481,11 @@ public sealed class GachaSummonRevealController : MonoBehaviour
 
     private void OnDestroy()
     {
+        if (overlay)
+        {
+            if (Application.isPlaying) Destroy(overlay.gameObject); else DestroyImmediate(overlay.gameObject);
+            overlay = null;
+        }
         for (int i = 0; i < runtimeSprites.Count; i++)
             if (runtimeSprites[i])
             {

@@ -18,7 +18,7 @@ public sealed class InventoryMenuController : MonoBehaviour
     private enum SortOrder { Equipped, Name, Rarity }
     private sealed class InventoryEntry
     {
-        public string itemId, name, type, rarity, unityAssetKey;
+        public string itemId, code, name, type, rarity, unityAssetKey;
         public string[] tags;
         public bool owned, isEquipped, isActive, localEffect;
     }
@@ -225,6 +225,7 @@ public sealed class InventoryMenuController : MonoBehaviour
         foreach (InventoryEntry item in items)
         {
             Category type = ItemCategory(item);
+            if (CosmeticItemKinds.KnownMissingCode(item.code)) continue;
             if (type == Category.All || (category != Category.All && category != type)) continue;
             if (!item.localEffect && !CosmeticThumbnailUI.HasArt(cosmeticCatalog, item.type, item.unityAssetKey)) continue;
             if (ownership == Ownership.Owned && !item.owned || ownership == Ownership.Equipped && !item.isEquipped) continue;
@@ -336,20 +337,20 @@ public sealed class InventoryMenuController : MonoBehaviour
         {
             if (item == null || !item.isActive || string.IsNullOrWhiteSpace(item.itemId)) continue;
             ownershipMap.TryGetValue(item.itemId, out InventoryItemResponse playerItem);
-            items.Add(new InventoryEntry { itemId = item.itemId, name = DisplayName(item.name, item.code, item.itemId),
+            items.Add(new InventoryEntry { itemId = item.itemId, code = item.code, name = DisplayName(item.name, item.code, item.itemId),
                 type = item.type, rarity = item.rarity, unityAssetKey = item.isDefault ? CosmeticSelection.LowPolyId : item.unityAssetKey, tags = item.tags,
                 owned = playerItem != null || item.isDefault, isEquipped = playerItem != null && playerItem.isEquipped, isActive = true });
             ownershipMap.Remove(item.itemId);
         }
         foreach (InventoryItemResponse item in ownershipMap.Values)
-            items.Add(new InventoryEntry { itemId = item.itemId, name = DisplayName(item.name, item.code, item.itemId),
+            items.Add(new InventoryEntry { itemId = item.itemId, code = item.code, name = DisplayName(item.name, item.code, item.itemId),
                 type = item.type, rarity = item.rarity, unityAssetKey = item.isDefault ? CosmeticSelection.LowPolyId : item.unityAssetKey, tags = item.tags,
                 owned = true, isEquipped = item.isEquipped, isActive = false });
         AddLocalEffects();
     }
 
-    private static bool IsChessType(string type) => !string.IsNullOrWhiteSpace(type) && type.IndexOf("CHESS", StringComparison.OrdinalIgnoreCase) >= 0;
-    private static bool IsBoardType(string type) => !string.IsNullOrWhiteSpace(type) && type.IndexOf("BOARD", StringComparison.OrdinalIgnoreCase) >= 0;
+    private static bool IsChessType(string type) => CosmeticItemKinds.IsPiece(type);
+    private static bool IsBoardType(string type) => type == CosmeticItemKinds.Board;
     private static string DisplayName(string name, string code, string id) => !string.IsNullOrWhiteSpace(name) ? name : !string.IsNullOrWhiteSpace(code) ? code : id;
     private static SketchbookDoodle.Shape Icon(Category value) => value == Category.Chess ? SketchbookDoodle.Shape.Pawn : value == Category.Board ? SketchbookDoodle.Shape.Board : SketchbookDoodle.Shape.Star;
     private static int RarityRank(string rarity)

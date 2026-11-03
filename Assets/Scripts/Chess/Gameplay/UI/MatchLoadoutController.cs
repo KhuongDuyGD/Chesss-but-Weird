@@ -17,7 +17,7 @@ public sealed class MatchLoadoutController : MonoBehaviour
     private enum Slot { Chess, Board, Effect }
     private sealed class Choice
     {
-        public string id, name, type, tier, itemId;
+        public string id, name, type, tier, itemId, assetKey;
         public Sprite thumbnail;
         public bool owned;
     }
@@ -40,6 +40,8 @@ public sealed class MatchLoadoutController : MonoBehaviour
     private RankConfig shownRankConfig;
     private Action refreshRank;
     private Slot slot;
+    private PieceType? editingPiece;
+    private Button pieceModeButton;
     private bool loading, canChooseBlack, accountReady, onlineMode, submitting, hasSavedSelection;
     private int requestVersion;
     private string sessionUser;
@@ -123,12 +125,12 @@ public sealed class MatchLoadoutController : MonoBehaviour
     private void OpenPicker(bool bothSides, bool online, PieceTeam team, Action<CosmeticSelection> onStart, UnityAction onBack)
     {
         requestVersion++; sessionUser = PlayerAuthService.CurrentApiUser?.userId;
-        playerTeam = team; canChooseBlack = bothSides; onlineMode = online;
+        playerTeam = team; canChooseBlack = bothSides || online; onlineMode = online;
         lobbyLocked = queueSearching = queueBusy = false; cancelSearch = null; canContinue = null;
         actionLabel = "START MATCH";
         startAction = onStart; backAction = onBack;
         hasSavedSelection = !online && CosmeticSelection.HasSavedSelection;
-        selection = CosmeticSelection.Load(); slot = Slot.Chess;
+        selection = CosmeticSelection.Load(); slot = Slot.Chess; editingPiece = null;
         ClosePopup(); RefreshSideButtons();
         startButton.GetComponentInChildren<TextMeshProUGUI>().text = "START MATCH";
         LoadOwnedChoices();
@@ -142,10 +144,14 @@ public sealed class MatchLoadoutController : MonoBehaviour
         contentInput = content.gameObject.AddComponent<CanvasGroup>();
         modeLabel = UI.Text(content, "Eyebrow", "CHESS BUT WEIRD  /  BEFORE THE MATCH", new Rect(64, 25, 1500, 32), 24, UI.Muted);
         UI.Text(content, "Title", "Choose your loadout", new Rect(64, 62, 1400, 82), 62);
-        UI.Text(content, "Hint", "Pick a board and chess set. Click a thumbnail to open your collection.", new Rect(64, 153, 1500, 45), 26, UI.Muted);
+        UI.Text(content, "Hint", "Pick a full set or customize each piece. Board skins are independent.", new Rect(64, 153, 1500, 45), 26, UI.Muted);
         whiteButton = UI.Button(content, "White Loadout", "WHITE SIDE", new Rect(64, 216, 225, 54), UI.Blue, () => ChangeSide(PieceTeam.White), 23);
         blackButton = UI.Button(content, "Black Loadout", "BLACK SIDE", new Rect(307, 216, 225, 54), UI.Pink, () => ChangeSide(PieceTeam.Black), 23);
-        sideLabel = UI.Text(content, "Side", "", new Rect(64, 219, 1500, 44), 24, UI.Muted);
+        sideLabel = UI.Text(content, "Side", "", new Rect(64, 219, 920, 44), 24, UI.Muted);
+        pieceModeButton = UI.Button(content, "Piece Mode", "", new Rect(1050, 216, 558, 54), UI.Yellow, () => {
+            if (submitting || lobbyLocked || loading || onlineMode && PlayerAuthService.CurrentApiUser?.equipped?.loadoutVersion != 1) return;
+            selection.customPieces = !selection.customPieces; editingPiece = null; RenderChoices();
+        }, 23);
         summaryRoot = UI.Node(content, "Selected Cosmetics", new Rect(226, 300, 1220, 425));
         effectButton = UI.Button(content, "Move Effect", "", new Rect(546, 752, 580, 56), UI.White, () => OpenPopup(Slot.Effect), 23);
         status = UI.Text(content, "Loadout Status", "", new Rect(64, 821, 1544, 40), 21, UI.Muted, TextAlignmentOptions.MidlineLeft, true);
@@ -168,7 +174,7 @@ public sealed class MatchLoadoutController : MonoBehaviour
         {
             Slot category = (Slot)i;
             categoryButtons[i] = UI.Button(popup, "Category " + category, categories[i], new Rect(34 + i * 350, 102, 328, 56),
-                UI.White, () => { slot = category; choiceScroll.verticalNormalizedPosition = 1; RenderChoices(); }, 24);
+                UI.White, () => { editingPiece = null; slot = category; choiceScroll.verticalNormalizedPosition = 1; RenderChoices(); }, 24);
         }
         choiceRoot = UI.ScrollArea(popup, "Loadout Choices", new Rect(34, 186, 1302, 574), out choiceScroll);
         UI.Text(popup, "Scroll Hint", "Scroll to browse tiers", new Rect(34, 765, 1302, 26), 18, UI.Muted, TextAlignmentOptions.Center);
@@ -236,8 +242,9 @@ public sealed class MatchLoadoutController : MonoBehaviour
             {
                 if (item == null || !item.isActive || !IsLoadoutType(item.type) || !IsLocallyAvailable(item)) continue;
                 string key = LocalKey(item);
-                AddChoice(key, string.IsNullOrWhiteSpace(item.name) ? item.code : item.name, item.type, item.isDefault || ownedIds.Contains(item.itemId));
-                var choice = FindChoice(item.type, key);
+                string choiceId = CosmeticItemKinds.TryPiece(item.type, out _, out _) ? item.itemId : key;
+                AddChoice(choiceId, string.IsNullOrWhiteSpace(item.name) ? item.code : item.name, item.type, ownedIds.Contains(item.itemId), key);
+                var choice = FindChoice(item.type, choiceId);
                 if (choice == null) continue;
                 choice.itemId = item.itemId;
                 choice.tier = string.IsNullOrWhiteSpace(item.rarity) ? choice.tier : item.rarity.ToUpperInvariant();
@@ -250,8 +257,20 @@ public sealed class MatchLoadoutController : MonoBehaviour
                     bool active = ownedItems.Any(owned => owned != null && owned.itemId == item.itemId && owned.isEquipped) ||
                         item.itemId == (IsChess(item.type) ? equipped?.chessSkinId : equipped?.boardSkinId);
                     if (!active) continue;
-                    if (IsChess(item.type)) selection.whiteSkinId = selection.blackSkinId = LocalKey(item);
+                    if (item.type == CosmeticItemKinds.Set) selection.whiteSkinId = selection.blackSkinId = LocalKey(item);
                     else if (IsBoard(item.type)) selection.boardId = LocalKey(item);
+                }
+            }
+            if (!hasSavedSelection)
+            {
+                var equipped = PlayerAuthService.CurrentApiUser?.equipped;
+                selection.customPieces = equipped?.pieceMode == "CUSTOM";
+                selection.pieces.Clear();
+                foreach (var binding in equipped?.pieces ?? new List<EquipPieceRequest>())
+                {
+                    var choice = choices.FirstOrDefault(c => c.itemId == binding.itemId && c.owned);
+                    if (choice != null && CosmeticItemKinds.TrySlot(binding.slot, out var team, out var kind) && FitsPiece(choice, team, kind))
+                        selection.SetPiece(team, kind, choice.assetKey, choice.itemId);
                 }
             }
             accountReady = true; status.text = "Choose your cosmetics, then continue."; NormalizeSelection();
@@ -283,24 +302,26 @@ public sealed class MatchLoadoutController : MonoBehaviour
         if (!PlayerAuthService.IsGuestSession)
         { AddChoice("ink_sparks", "Ink sparks", "MOVE_EFFECT", true); AddChoice("confetti", "Confetti", "MOVE_EFFECT", true); }
     }
-    private bool IsLocallyAvailable(ItemCatalogResponse item) => item != null &&
+    private bool IsLocallyAvailable(ItemCatalogResponse item) => item != null && !CosmeticItemKinds.KnownMissingCode(item.code) &&
         CosmeticThumbnailUI.HasArt(cosmetics ? cosmetics.Catalog : null, item.type, LocalKey(item));
     private static bool IsLoadoutType(string type) => IsChess(type) || IsBoard(type);
     private static bool IsChess(string type) => CosmeticThumbnailUI.IsChess(type);
     private static bool IsBoard(string type) => CosmeticThumbnailUI.IsBoard(type);
     private Choice FindChoice(string type, string id) => choices.FirstOrDefault(item =>
         string.Equals(item.id, id, StringComparison.OrdinalIgnoreCase) &&
-        (IsChess(type) ? IsChess(item.type) : IsBoard(type) ? IsBoard(item.type) : item.type == type));
-    private void AddChoice(string id, string name, string type, bool owned)
+        item.type == type);
+    private void AddChoice(string id, string name, string type, bool owned, string assetKey = null)
     {
         if (string.IsNullOrWhiteSpace(id)) return;
         var existing = FindChoice(type, id);
         if (existing != null) { existing.owned |= owned; if (!string.IsNullOrWhiteSpace(name)) existing.name = name; return; }
-        var art = CosmeticThumbnailUI.Find(cosmetics ? cosmetics.Catalog : null, type, id);
+        var art = CosmeticThumbnailUI.Find(cosmetics ? cosmetics.Catalog : null, type, assetKey ?? id);
         if (IsLoadoutType(type) && art?.HasArt != true) return;
         choices.Add(new Choice { id = id, name = string.IsNullOrWhiteSpace(name) ? id : name, type = type, owned = owned,
-            thumbnail = art?.thumbnail, tier = art?.tier ?? "COMMON" });
+            assetKey = assetKey ?? id, thumbnail = art?.thumbnail, tier = art?.tier ?? "COMMON" });
     }
+    private static bool FitsPiece(Choice choice, PieceTeam team, PieceType kind) =>
+        choice.type == CosmeticItemKinds.Set || choice.type == CosmeticItemKinds.ItemType(team, kind);
     private string SelectedId() => slot == Slot.Board ? selection.boardId : slot == Slot.Effect ? selection.moveEffectId :
         playerTeam == PieceTeam.White ? selection.whiteSkinId : selection.blackSkinId;
     private void Select(Choice choice)
@@ -308,6 +329,12 @@ public sealed class MatchLoadoutController : MonoBehaviour
         if (!choice.owned || loading || !accountReady || submitting || lobbyLocked) return;
         if (slot == Slot.Board) selection.boardId = choice.id;
         else if (slot == Slot.Effect) selection.moveEffectId = choice.id;
+        else if (editingPiece.HasValue)
+        {
+            if (!FitsPiece(choice, playerTeam, editingPiece.Value)) return;
+            selection.SetPiece(playerTeam, editingPiece.Value, choice.assetKey, choice.itemId);
+        }
+        else if (onlineMode) selection.whiteSkinId = selection.blackSkinId = choice.id;
         else if (playerTeam == PieceTeam.White) selection.whiteSkinId = choice.id;
         else selection.blackSkinId = choice.id;
         RenderChoices();
@@ -316,6 +343,8 @@ public sealed class MatchLoadoutController : MonoBehaviour
     {
         selection.whiteSkinId = AvailableOrDefault(selection.whiteSkinId, "CHESS_PIECE_SKIN", CosmeticSelection.LowPolyId);
         selection.blackSkinId = AvailableOrDefault(selection.blackSkinId, "CHESS_PIECE_SKIN", CosmeticSelection.LowPolyId);
+        selection.pieces.RemoveAll(p => !CosmeticItemKinds.TrySlot(p.slot, out var team, out var kind) ||
+            !choices.Any(c => c.owned && c.itemId == p.itemId && c.assetKey == p.skinId && FitsPiece(c, team, kind)));
         selection.boardId = AvailableOrDefault(selection.boardId, "BOARD_SKIN", CosmeticSelection.LowPolyId);
         if (!choices.Any(item => item.type == "MOVE_EFFECT" && item.owned && item.id == selection.moveEffectId)) selection.moveEffectId = "classic";
     }
@@ -326,7 +355,28 @@ public sealed class MatchLoadoutController : MonoBehaviour
         if (!summaryRoot || selection == null) return;
         ClearChildren(summaryRoot);
         SummaryCard(Slot.Board, "BOARD", selection.boardId, "BOARD_SKIN", 0);
-        SummaryCard(Slot.Chess, "CHESS", playerTeam == PieceTeam.White ? selection.whiteSkinId : selection.blackSkinId, "CHESS_PIECE_SKIN", 640);
+        pieceModeButton.GetComponentInChildren<TextMeshProUGUI>().text = selection.customPieces ? "CUSTOM PIECES  /  SWITCH TO SET" : "FULL SET  /  CUSTOMIZE PIECES";
+        bool supportsCustom = !onlineMode || PlayerAuthService.CurrentApiUser?.equipped?.loadoutVersion == 1;
+        pieceModeButton.interactable = !loading && !submitting && !lobbyLocked && supportsCustom;
+        if (!supportsCustom) pieceModeButton.GetComponentInChildren<TextMeshProUGUI>().text = "CUSTOM ONLINE REQUIRES UPDATED SERVER";
+        if (!selection.customPieces)
+            SummaryCard(Slot.Chess, "CHESS SET", playerTeam == PieceTeam.White ? selection.whiteSkinId : selection.blackSkinId, CosmeticItemKinds.Set, 640);
+        else
+        {
+            int i = 0;
+            foreach (PieceType kind in Enum.GetValues(typeof(PieceType)))
+            {
+                var piece = kind;
+                var binding = selection.GetPiece(playerTeam, piece);
+                var choice = binding == null ? FindChoice(CosmeticItemKinds.Set, playerTeam == PieceTeam.White ? selection.whiteSkinId : selection.blackSkinId) :
+                    choices.FirstOrDefault(c => c.itemId == binding.itemId && FitsPiece(c, playerTeam, piece));
+                var button = UI.Button(summaryRoot, playerTeam + " " + kind + " Skin", "", new Rect(640 + i % 2 * 294, i / 2 * 142, 286, 132), UI.White,
+                    () => { editingPiece = piece; OpenPopup(Slot.Chess); });
+                UI.Text(button.transform, "Slot", playerTeam + " " + kind, new Rect(10, 9, 266, 34), 24);
+                UI.Text(button.transform, "Skin", choice?.name ?? "Base set", new Rect(10, 48, 266, 70), 23, UI.Muted, TextAlignmentOptions.Center, true);
+                button.interactable = !loading && !submitting && !lobbyLocked; i++;
+            }
+        }
         var effect = FindChoice("MOVE_EFFECT", selection.moveEffectId);
         effectButton.GetComponentInChildren<TextMeshProUGUI>().text = "MOVE EFFECT  /  " + (effect?.name ?? "Classic") + "  >";
     }
@@ -345,7 +395,8 @@ public sealed class MatchLoadoutController : MonoBehaviour
         if (!choiceRoot || selection == null) return;
         for (int i = 0; i < categoryButtons.Length; i++) categoryButtons[i].targetGraphic.color = (int)slot == i ? UI.Yellow : UI.White;
         ClearChildren(choiceRoot);
-        var visible = choices.Where(item => slot == Slot.Effect ? item.type == "MOVE_EFFECT" : slot == Slot.Board ? IsBoard(item.type) : IsChess(item.type));
+        var visible = choices.Where(item => slot == Slot.Effect ? item.type == "MOVE_EFFECT" : slot == Slot.Board ? IsBoard(item.type) :
+            editingPiece.HasValue ? FitsPiece(item, playerTeam, editingPiece.Value) : item.type == CosmeticItemKinds.Set);
         if (PlayerAuthService.IsGuestSession) visible = visible.Where(item => item.owned);
         float y = 4;
         foreach (var group in visible.GroupBy(item => item.tier).OrderByDescending(group => CosmeticThumbnailUI.TierRank(group.Key)))
@@ -355,7 +406,8 @@ public sealed class MatchLoadoutController : MonoBehaviour
             y += 58; int i = 0;
             foreach (Choice choice in group.OrderByDescending(item => item.owned).ThenBy(item => item.name, StringComparer.OrdinalIgnoreCase))
             {
-                bool active = choice.owned && string.Equals(choice.id, SelectedId(), StringComparison.OrdinalIgnoreCase);
+                bool active = choice.owned && (slot == Slot.Chess && editingPiece.HasValue ?
+                    selection.GetPiece(playerTeam, editingPiece.Value)?.itemId == choice.itemId : string.Equals(choice.id, SelectedId(), StringComparison.OrdinalIgnoreCase));
                 var button = UI.Button(choiceRoot, "Choice " + choice.type + " " + choice.id, "",
                     new Rect(6 + (i % 3) * 432, y + (i / 3) * 274, 414, 254), UI.White, () => Select(choice));
                 CosmeticThumbnailUI.Draw(button.transform, new Rect(12, 12, 390, 168), choice.thumbnail, active, choice.type == "MOVE_EFFECT" ? choice.id : null);
@@ -381,13 +433,23 @@ public sealed class MatchLoadoutController : MonoBehaviour
             if (onlineMode)
             {
                 status.text = "Saving equipment...";
-                foreach (var choice in new[] { FindChoice("CHESS_PIECE_SKIN", selection.whiteSkinId), FindChoice("BOARD_SKIN", selection.boardId) })
+                var set = FindChoice(CosmeticItemKinds.Set, selection.whiteSkinId);
+                var board = FindChoice(CosmeticItemKinds.Board, selection.boardId);
+                if (string.IsNullOrWhiteSpace(set?.itemId) || string.IsNullOrWhiteSpace(board?.itemId))
+                    throw new InvalidOperationException("Equipment unavailable. Refresh your collection.");
+                if (selection.customPieces)
                 {
+                    var response = await new InventoryService().EquipLoadoutAsync(new EquipLoadoutRequest {
+                        pieceMode = "CUSTOM", chessSkinId = set.itemId, boardSkinId = board.itemId,
+                        pieces = selection.pieces.Select(p => new EquipPieceRequest { slot = p.slot, itemId = p.itemId }).ToList()
+                    });
                     if (!IsCurrent(version, user)) return;
-                    if (choice == null || !choice.owned || string.IsNullOrWhiteSpace(choice.itemId))
-                        throw new InvalidOperationException("Equipment isn't available. Refresh your collection.");
-                    var equipped = PlayerAuthService.CurrentApiUser?.equipped;
-                    if (choice.itemId == (IsChess(choice.type) ? equipped?.chessSkinId : equipped?.boardSkinId)) continue;
+                    if (response?.success != true || response.equipped == null) throw new InvalidOperationException(response?.message ?? "Unable to save loadout.");
+                    PlayerAuthService.CurrentApiUser.equipped = response.equipped;
+                }
+                else foreach (var choice in new[] { set, board })
+                {
+                    // Keep the existing endpoint compatible with backend versions that predate custom slots.
                     var response = await new InventoryService().EquipAsync(choice.itemId);
                     if (!IsCurrent(version, user)) return;
                     if (response?.success != true || response.equipped == null) throw new InvalidOperationException(response?.message ?? "Unable to save equipment.");

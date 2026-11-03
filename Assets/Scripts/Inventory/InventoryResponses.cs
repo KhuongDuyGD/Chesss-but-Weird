@@ -38,6 +38,15 @@ public sealed class EquipItemRequest
 }
 
 [Serializable]
+public sealed class EquipPieceRequest { public string slot, itemId; }
+[Serializable]
+public sealed class EquipLoadoutRequest
+{
+    public string pieceMode = "SET", chessSkinId, boardSkinId;
+    public System.Collections.Generic.List<EquipPieceRequest> pieces = new System.Collections.Generic.List<EquipPieceRequest>();
+}
+
+[Serializable]
 public sealed class EquipItemResponse
 {
     public bool success;

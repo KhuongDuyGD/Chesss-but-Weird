@@ -6,8 +6,8 @@ using UI = SketchbookUI;
 
 public static class CosmeticThumbnailUI
 {
-    public static bool IsChess(string type) => type?.IndexOf("CHESS", StringComparison.OrdinalIgnoreCase) >= 0;
-    public static bool IsBoard(string type) => type?.IndexOf("BOARD", StringComparison.OrdinalIgnoreCase) >= 0;
+    public static bool IsChess(string type) => CosmeticItemKinds.IsPiece(type);
+    public static bool IsBoard(string type) => type == CosmeticItemKinds.Board;
     public static CosmeticCatalogEntry Find(CosmeticCatalog catalog, string type, string key) => !catalog ? null :
         IsChess(type) ? catalog.FindPiece(key) : IsBoard(type) ? catalog.FindBoard(key) : null;
     public static bool HasArt(CosmeticCatalog catalog, string type, string key) => Find(catalog, type, key)?.HasArt == true;
