@@ -270,8 +270,8 @@ public sealed partial class GachaMenuController : MonoBehaviour
             wallet = roll.wallet;
             pity = roll.pity;
             pendingResults = new List<GachaReward>(roll.results.Count);
-            foreach (GachaRewardResponse result in roll.results)
-                pendingResults.Add(ToVisualReward(result));
+            for (int slot = 0; slot < roll.results.Count; slot++)
+                pendingResults.Add(ToVisualReward(roll.results[slot], CommittedCosmeticMetadata.ForSlot(roll, slot)));
             if (pendingResults.Count != count)
                 throw new ApiException("The server returned the wrong number of rewards.");
             pendingRequestId = Guid.Empty;
@@ -302,13 +302,14 @@ public sealed partial class GachaMenuController : MonoBehaviour
     private static int ToLocalAmount(long amount) =>
         amount < 0 ? 0 : amount > int.MaxValue ? int.MaxValue : (int)amount;
 
-    private static GachaReward ToVisualReward(GachaRewardResponse item)
+    private static GachaReward ToVisualReward(GachaRewardResponse item, GachaRewardMetadataResponse metadata = null)
     {
         int rarity = RarityLevel(item?.rarity);
         return new GachaReward(GachaRewardType.Skin, 1, rarity, rarity >= 5,
             item?.itemName ?? item?.itemCode ?? "Unknown item", item?.isDuplicate ?? false,
             item?.duplicateReward == null ? "" :
-                "+" + item.duplicateReward.amount.ToString("N0") + " " + item.duplicateReward.currency);
+                "+" + item.duplicateReward.amount.ToString("N0") + " " + item.duplicateReward.currency,
+            item?.itemId, item?.itemCode, metadata?.rawItemType, metadata?.unityAssetKey);
     }
 
     private static int RarityLevel(string rarity)
@@ -580,6 +581,8 @@ public sealed partial class GachaMenuController : MonoBehaviour
 
     private Sprite GetRewardSprite(GachaReward reward)
     {
+        if (CosmeticItemKinds.KnownMissingCode(reward.itemCode) || reward.rawItemType == CosmeticItemKinds.Board ||
+            CosmeticItemKinds.TryPiece(reward.rawItemType, out _, out _)) return null;
         GachaRewardType type = reward.type;
         if (type == GachaRewardType.Gold)
             return GetSprite("GoldPR.png");
@@ -743,6 +746,7 @@ public readonly struct GachaReward
     public readonly string itemName;
     public readonly bool isDuplicate;
     public readonly string duplicateText;
+    public readonly string itemId, itemCode, rawItemType, unityAssetKey;
 
     public string displayName => string.IsNullOrWhiteSpace(itemName) ? type.ToString() : itemName;
     public string AmountText => type == GachaRewardType.Skin
@@ -750,7 +754,8 @@ public readonly struct GachaReward
         : $"+{amount:N0}";
 
     public GachaReward(GachaRewardType type, int amount, int rarity, bool isTopReward,
-        string itemName = null, bool isDuplicate = false, string duplicateText = null)
+        string itemName = null, bool isDuplicate = false, string duplicateText = null,
+        string itemId = null, string itemCode = null, string rawItemType = null, string unityAssetKey = null)
     {
         this.type = type;
         this.amount = amount;
@@ -759,5 +764,6 @@ public readonly struct GachaReward
         this.itemName = itemName;
         this.isDuplicate = isDuplicate;
         this.duplicateText = duplicateText;
+        this.itemId = itemId; this.itemCode = itemCode; this.rawItemType = rawItemType; this.unityAssetKey = unityAssetKey;
     }
 }

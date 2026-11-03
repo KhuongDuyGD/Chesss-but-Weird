@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 [Serializable]
@@ -15,6 +17,17 @@ public sealed class CosmeticSelection
     public string boardId = LowPolyId;
     public string environmentId = "";
     public string moveEffectId = "classic";
+    public bool customPieces;
+    public List<PieceCosmeticChoice> pieces = new List<PieceCosmeticChoice>();
+    public PieceCosmeticChoice GetPiece(PieceTeam team, PieceType type) =>
+        pieces?.FirstOrDefault(p => p != null && p.slot == CosmeticItemKinds.Slot(team, type));
+    public void SetPiece(PieceTeam team, PieceType type, string skinId, string itemId)
+    {
+        pieces = pieces ?? new List<PieceCosmeticChoice>();
+        string slot = CosmeticItemKinds.Slot(team, type);
+        pieces.RemoveAll(p => p == null || p.slot == slot);
+        if (!string.IsNullOrWhiteSpace(skinId)) pieces.Add(new PieceCosmeticChoice { slot = slot, skinId = skinId, itemId = itemId });
+    }
 
     public static bool HasSavedSelection => PlayerPrefs.HasKey(CurrentSaveKey);
 
@@ -24,7 +37,9 @@ public sealed class CosmeticSelection
         blackSkinId = blackSkinId,
         boardId = boardId,
         environmentId = environmentId,
-        moveEffectId = moveEffectId
+        moveEffectId = moveEffectId,
+        customPieces = customPieces,
+        pieces = pieces?.Where(p => p != null).Select(p => p.Copy()).ToList() ?? new List<PieceCosmeticChoice>()
     };
 
     public void Save()
@@ -60,10 +75,14 @@ public sealed class CosmeticSelection
             whiteSkinId = blackSkinId = boardId = LowPolyId;
             environmentId = "";
             moveEffectId = "classic";
+            customPieces = false;
+            pieces = new List<PieceCosmeticChoice>();
             return;
         }
 
         whiteSkinId = ReplaceRemovedPieceId(whiteSkinId);
+        pieces = (pieces ?? new List<PieceCosmeticChoice>()).Where(p => p != null && CosmeticItemKinds.TrySlot(p.slot, out _, out _))
+            .GroupBy(p => p.slot).Select(g => g.Last()).ToList();
         blackSkinId = ReplaceRemovedPieceId(blackSkinId);
         if (string.IsNullOrWhiteSpace(boardId) ||
             string.Equals(boardId, "default", StringComparison.OrdinalIgnoreCase))

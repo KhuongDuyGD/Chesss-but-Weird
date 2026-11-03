@@ -14,13 +14,44 @@ public sealed class SkinManager
     private readonly Dictionary<string, LoadedSkin> loaded = new Dictionary<string, LoadedSkin>(StringComparer.OrdinalIgnoreCase);
     private LoadedSkin white;
     private LoadedSkin black;
+    private readonly Dictionary<string, LoadedSkin> overrides = new Dictionary<string, LoadedSkin>();
     private static readonly int BaseColor = Shader.PropertyToID("_BaseColor");
     private static readonly int ColorProperty = Shader.PropertyToID("_Color");
     public SkinManager(AssetLoader assets) { this.assets = assets ?? throw new ArgumentNullException(nameof(assets)); }
     public PieceSkinData GetData(PieceTeam team) => (team == PieceTeam.White ? white : black)?.data;
+    public PieceSkinData GetData(PieceTeam team, PieceType type) =>
+        overrides.TryGetValue(CosmeticItemKinds.Slot(team, type), out var skin) ? skin.data : GetData(team);
+
+    public IEnumerator Load(CosmeticCatalog catalog, CosmeticSelection selection, Action<float> progress = null)
+    {
+        overrides.Clear();
+        yield return Load(catalog, selection.whiteSkinId, selection.blackSkinId, p => progress?.Invoke(p * .6f));
+        if (selection.customPieces && selection.pieces != null)
+        {
+            int index = 0;
+            foreach (var choice in selection.pieces)
+            {
+                if (choice == null || !CosmeticItemKinds.TrySlot(choice.slot, out var team, out var type)) continue;
+                var entry = catalog ? catalog.FindPiece(choice.skinId) : null;
+                PieceSkinData data = null;
+                GameObject prefab = null;
+                if (entry != null) yield return assets.Load<PieceSkinData>(entry.data, value => data = value);
+                if (data) yield return assets.Load<GameObject>(data.GetPrefab(type, team), value => prefab = value);
+                if (prefab)
+                {
+                    var skin = new LoadedSkin { data = data }; skin.prefabs[type] = prefab;
+                    overrides[choice.slot] = skin;
+                }
+                else Debug.LogWarning("[Cosmetics] Custom match visual unavailable for " + choice.slot + "; retaining base set visual.");
+                progress?.Invoke(.6f + .4f * ++index / selection.pieces.Count);
+            }
+        }
+        progress?.Invoke(1);
+    }
 
     public IEnumerator Load(CosmeticCatalog catalog, string whiteSkinId, string blackSkinId, Action<float> progress = null)
     {
+        overrides.Clear();
         float highest = 0;
         Action<float> report = value => { highest = Mathf.Max(highest, value); progress?.Invoke(highest); };
         yield return LoadSide(catalog, whiteSkinId, PieceTeam.White, result => white = result, p => report(p * 0.5f));
@@ -73,7 +104,7 @@ public sealed class SkinManager
     public bool TryGetPrefab(PieceTeam team, PieceType type, out GameObject prefab)
     {
         prefab = null;
-        LoadedSkin skin = team == PieceTeam.White ? white : black;
+        LoadedSkin skin = overrides.TryGetValue(CosmeticItemKinds.Slot(team, type), out var custom) ? custom : team == PieceTeam.White ? white : black;
         return !assets.IsDisposed && skin != null && skin.prefabs.TryGetValue(type, out prefab) && prefab;
     }
 
@@ -81,13 +112,17 @@ public sealed class SkinManager
     {
         if (!TryGetPrefab(team, type, out GameObject prefab)) return null;
         GameObject instance = UnityEngine.Object.Instantiate(prefab, parent, false);
-        ApplyColor(instance, team);
+        ApplyColor(instance, team, type);
         return instance;
     }
 
     public void ApplyColor(GameObject instance, PieceTeam team)
     {
-        PieceSkinData data = GetData(team);
+        ApplyColorData(instance, team, GetData(team));
+    }
+    public void ApplyColor(GameObject instance, PieceTeam team, PieceType type) => ApplyColorData(instance, team, GetData(team, type));
+    private static void ApplyColorData(GameObject instance, PieceTeam team, PieceSkinData data)
+    {
         if (!instance || !data || !data.applyTeamColor) return;
         Color color = team == PieceTeam.White ? data.whiteColor : data.blackColor;
         var block = new MaterialPropertyBlock();

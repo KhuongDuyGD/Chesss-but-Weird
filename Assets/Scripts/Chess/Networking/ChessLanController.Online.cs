@@ -365,12 +365,21 @@ public partial class ChessLanController
         var catalog = LoadingManager.For(chessGame).Catalog;
         foreach (var player in state.players)
         {
-            var piece = player.loadout.FirstOrDefault(l => l.type?.IndexOf("CHESS", StringComparison.OrdinalIgnoreCase) >= 0);
+            var piece = player.loadout.FirstOrDefault(l => l.type == CosmeticItemKinds.Set && (l.slot == null || l.slot == "SET"));
             string skin = catalog && catalog.FindPiece(piece?.unityAssetKey) != null ? piece.unityAssetKey : CosmeticSelection.LowPolyId;
             if (player.color == "White") selection.whiteSkinId = skin; else selection.blackSkinId = skin;
+            var side = player.color == "White" ? PieceTeam.White : PieceTeam.Black;
+            foreach (var item in player.loadout)
+                if (CosmeticItemKinds.TrySlot(item.slot, out var slotTeam, out var kind) && slotTeam == side &&
+                    (item.type == CosmeticItemKinds.Set || item.type == CosmeticItemKinds.ItemType(slotTeam, kind)) &&
+                    catalog && catalog.FindPiece(item.unityAssetKey) != null)
+                {
+                    selection.customPieces = true;
+                    selection.SetPiece(slotTeam, kind, item.unityAssetKey, item.itemId);
+                }
             if (player.userId == PlayerAuthService.UserId)
             {
-                var board = player.loadout.FirstOrDefault(l => l.type?.IndexOf("BOARD", StringComparison.OrdinalIgnoreCase) >= 0);
+                var board = player.loadout.FirstOrDefault(l => l.type == CosmeticItemKinds.Board);
                 if (catalog && catalog.FindBoard(board?.unityAssetKey) != null) selection.boardId = board.unityAssetKey;
             }
         }

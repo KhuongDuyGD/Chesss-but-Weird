@@ -97,6 +97,7 @@ public sealed class GachaRollResponse
     public long totalCost;
     public GachaWalletResponse wallet;
     public List<GachaRewardResponse> results;
+    public GachaPresentationSnapshotResponse presentationSnapshot;
     public GachaPityResponse pity;
     public string createdAt;
 }
@@ -107,6 +108,20 @@ public sealed class GachaWalletResponse
     public long golds;
     public long diamonds;
     public long tickets;
+}
+
+[Serializable]
+public sealed class GachaPresentationSnapshotResponse
+{
+    public int schemaVersion;
+    public string metadataSource, catalogVersion;
+    public List<GachaRewardMetadataResponse> rewards;
+}
+[Serializable]
+public sealed class GachaRewardMetadataResponse
+{
+    public int slotIndex;
+    public string itemId, itemCode, rawItemType, unityAssetKey;
 }
 
 [Serializable]

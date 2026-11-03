@@ -21,4 +21,6 @@ public sealed class InventoryService
         return client.PutAsync<EquipItemResponse>("/api/inventory/equip",
             new EquipItemRequest { itemId = itemId.Trim() }, true);
     }
+    public Task<EquipItemResponse> EquipLoadoutAsync(EquipLoadoutRequest loadout) =>
+        client.PutAsync<EquipItemResponse>("/api/inventory/loadout", loadout, true);
 }

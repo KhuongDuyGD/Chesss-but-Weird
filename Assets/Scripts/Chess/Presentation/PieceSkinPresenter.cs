@@ -22,10 +22,10 @@ internal static class PieceSkinPresenter
             return;
         }
 
-        var data = manager.GetData(piece.Team);
+        var data = manager.GetData(piece.Team, piece.Type);
         skinState.ApplyPrefabSkin(prefab, data ? data.skinId : skinId, piece.Type,
             data ? data.GetTuning(piece.Type) : PieceSkinPieceTuning.Default, piece.transform);
-        manager.ApplyColor(skinState.ActiveVisual, piece.Team);
+        manager.ApplyColor(skinState.ActiveVisual, piece.Team, piece.Type);
         ChessModelRendering.ApplySettings(piece.gameObject);
         PieceViewGeometry.UpdatePieceRootColliderFromVisibleRenderers(piece.gameObject);
     }

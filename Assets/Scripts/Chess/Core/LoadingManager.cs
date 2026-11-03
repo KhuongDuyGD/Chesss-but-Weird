@@ -107,7 +107,7 @@ public sealed class LoadingManager : MonoBehaviour
         yield return Board.Load(Catalog, selection.boardId, selection.environmentId,
             p => ui.Report(.3f + p * .2f, "Loading board and environment..."));
         if (cancelMatchLoad) { yield return Return(); yield break; }
-        yield return Skins.Load(Catalog, selection.whiteSkinId, selection.blackSkinId,
+        yield return Skins.Load(Catalog, selection,
             p => ui.Report(.5f + p * .35f, "Loading selected pieces..."));
         LogMemory("selected assets loaded");
         if (!Skins.TryGetPrefab(PieceTeam.White, PieceType.Pawn, out _) ||

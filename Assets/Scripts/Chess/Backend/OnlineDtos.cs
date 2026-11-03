@@ -23,7 +23,7 @@ namespace ChessButWeird.Online
         public DateTime expiresAt;
     }
     [Serializable, Preserve] public sealed class Loadout
-    { public string itemId, code, unityAssetKey, type; }
+    { public string itemId, code, unityAssetKey, type, slot; }
     [Serializable, Preserve] public sealed class RoomListing
     {
         public string roomId, code; public GameSettings settings;

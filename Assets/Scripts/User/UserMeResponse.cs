@@ -35,6 +35,9 @@ public sealed class UserStatsResponse
 
 public sealed class UserEquippedResponse
 {
+    public int loadoutVersion;
+    public string pieceMode;
+    public System.Collections.Generic.List<EquipPieceRequest> pieces;
     public string chessSkinId;
     public string boardSkinId;
 }
