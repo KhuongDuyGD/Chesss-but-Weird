@@ -33,6 +33,9 @@ public class HandDrawnMenuView : MonoBehaviour
     private RectTransform multiplayerModeScreen;
     private RectTransform gachaScreen;
     private RectTransform inventoryScreen;
+    private RectTransform shopScreen;
+    private ShopMenuController shopController;
+    private bool gachaReturnsToShop;
     private RectTransform profileOverlay;
     private RectTransform settingsOverlay;
     private RectTransform botDifficultyScreen;
@@ -71,6 +74,7 @@ public class HandDrawnMenuView : MonoBehaviour
         BuildModeScreen();
         BuildPlaySelectionScreen();
         BuildInventoryScreen();
+        BuildShopScreen();
         BuildLocalModeScreen();
         BuildAramModeScreen();
         BuildMultiplayerModeScreen();
@@ -174,6 +178,7 @@ public class HandDrawnMenuView : MonoBehaviour
 
     public void ShowGachaMenu()
     {
+        gachaReturnsToShop = false;
         if (!owner.RequireAccountAccess("Gacha")) return;
         GameMusicManager.PlayGachaMusic();
         SetVisible(true);
@@ -278,8 +283,7 @@ public class HandDrawnMenuView : MonoBehaviour
                 Local = () => owner.ShowLocalModeSelection(),
                 Online = () => owner.ShowMultiplayerModeSelection(),
                 Aram = CreateAuthenticatedAction("CHAOS", owner.ShowAramModeSelection),
-                Shop = CreateAuthenticatedAction("Shop", () => AuthNotificationView.Show("Shop coming soon",
-                    "The shop is not open yet. Visit Inventory or Gacha to explore your collection.", AuthNotificationView.ResultKind.Info)),
+                Shop = CreateAuthenticatedAction("Shop", () => ShowShopMenu()),
                 Inventory = CreateAuthenticatedAction("Inventory", ShowInventoryMenu),
                 Gacha = CreateAuthenticatedAction("Gacha", ShowGachaMenu),
                 Profile = CreateAuthenticatedAction("Player Profile", ShowProfileMenu),
@@ -295,6 +299,25 @@ public class HandDrawnMenuView : MonoBehaviour
         inventoryScreen = CreateScreen("Inventory");
         inventoryController = inventoryScreen.gameObject.AddComponent<InventoryMenuController>();
         inventoryController.Initialize(inventoryScreen, ShowModeSelection, LoadingManager.For(chessGame).Catalog);
+    }
+
+    private void BuildShopScreen()
+    {
+        shopScreen = CreateScreen("Shop");
+        var prefab = Resources.Load<GameObject>("Shop/ShopScreen");
+        if (!prefab) { Debug.LogError("[Shop] ShopScreen prefab is missing. Run Chess/Shop/Build Shop Assets."); return; }
+        var screen = Instantiate(prefab, shopScreen, false);
+        Stretch((RectTransform)screen.transform);
+        shopController = screen.GetComponent<ShopMenuController>();
+        shopController.Initialize(ShowModeSelection, () => { ShowGachaMenu(); gachaReturnsToShop = true; });
+    }
+
+    public void ShowShopMenu(bool preserveCategory = false)
+    {
+        if (!owner.RequireAccountAccess("Shop") || !shopController) return;
+        GameMusicManager.PlayMainMenuHubMusic();
+        SetVisible(true); SetInputEnabled(true);
+        TransitionToScreen(shopScreen, () => shopController.Open(preserveCategory));
     }
 
     private void BuildProfileOverlay()
@@ -477,7 +500,7 @@ public class HandDrawnMenuView : MonoBehaviour
     {
         gachaScreen = CreateScreen("Gacha Menu");
         gachaController = gachaScreen.gameObject.AddComponent<GachaMenuController>();
-        gachaController.Initialize(gachaScreen, ShowModeSelection);
+        gachaController.Initialize(gachaScreen, () => { if (gachaReturnsToShop) ShowShopMenu(true); else ShowModeSelection(); });
     }
 
     private void BuildSideScreen()
@@ -941,6 +964,7 @@ public class HandDrawnMenuView : MonoBehaviour
             modeScreen.gameObject.SetActive(active);
         if (inventoryScreen)
             inventoryScreen.gameObject.SetActive(active);
+        if (shopScreen) shopScreen.gameObject.SetActive(active);
         if (playScreen) playScreen.gameObject.SetActive(active);
         if (localModeScreen)
             localModeScreen.gameObject.SetActive(active);
@@ -962,7 +986,7 @@ public class HandDrawnMenuView : MonoBehaviour
 
     private RectTransform[] GetMenuScreens()
     {
-        return new[] { mainScreen, modeScreen, playScreen, inventoryScreen, localModeScreen, aramModeScreen, multiplayerModeScreen, gachaScreen, botDifficultyScreen, sideScreen, skinScreen };
+        return new[] { mainScreen, modeScreen, playScreen, inventoryScreen, shopScreen, localModeScreen, aramModeScreen, multiplayerModeScreen, gachaScreen, botDifficultyScreen, sideScreen, skinScreen };
     }
 
     private void ResetInactiveTransitionScreens(RectTransform previousScreen, RectTransform activeScreen)

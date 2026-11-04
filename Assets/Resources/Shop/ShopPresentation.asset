@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5918e8ddc93e1ba4d974e5b4f2dc2d25, type: 3}
+  m_Name: ShopPresentation
+  m_EditorClassIdentifier: Assembly-CSharp::ShopPresentationCatalog
+  cosmetics: {fileID: 11400000, guid: d8c3154e758c4af4993b15960f8f7ac9, type: 2}
+  productCard: {fileID: 3689340940868537100, guid: e7c6d753bcbde02499103b2c34954c3e, type: 3}
+  title: The weird little shop
+  subtitle: A new look. The same wonderfully weird chess.

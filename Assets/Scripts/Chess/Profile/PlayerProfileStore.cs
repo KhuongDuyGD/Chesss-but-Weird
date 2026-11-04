@@ -29,6 +29,8 @@ public sealed class PlayerProfileSaveData
     public int practiceRewardsClaimed;
     // Unspent, locally earned bot gold is preserved when a server wallet refreshes.
     public int localBotGold;
+    // Only an unresolved request is stored locally. Wallet and ownership remain server-authoritative.
+    public ShopPurchaseRequest pendingShopPurchase;
 
     public static PlayerProfileSaveData Create(PlayerProfile profile)
     {
