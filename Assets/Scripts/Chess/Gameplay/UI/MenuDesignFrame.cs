@@ -6,7 +6,7 @@ using UnityEngine;
 public sealed class MenuDesignFrame : MonoBehaviour
 {
     private RectTransform rect;
-    private Vector2 designSize = new Vector2(1920f, 1080f);
+    [SerializeField] private Vector2 designSize = new Vector2(1920f, 1080f);
 
     public void Configure(Vector2 size)
     {

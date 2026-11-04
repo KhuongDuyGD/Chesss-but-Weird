@@ -80,7 +80,7 @@ public static class SketchbookUI
         colors.pressedColor = new Color(.83f, .85f, .88f);
         colors.disabledColor = new Color(.68f, .68f, .68f, .65f);
         button.colors = colors;
-        button.onClick.AddListener(action);
+        if (action != null) button.onClick.AddListener(action);
         Text(graphic.transform, "Label", label, new Rect(14, 5, area.width - 28, area.height - 10),
             size, Ink, TextAlignmentOptions.Center);
         return button;

@@ -6,7 +6,7 @@ using UnityEngine.UI;
 public sealed class SketchbookDoodle : AntialiasedUIGraphic
 {
     public enum Shape { Star, Pawn, Board, Coin, Diamond, Ticket, Scribble, Paper, Check, Queen, Rook, Bishop, Knight, Trophy }
-    private Shape shape;
+    [SerializeField] private Shape shape;
 
     public void Configure(Shape value, Color ink) { shape = value; color = ink; SetVerticesDirty(); }
 

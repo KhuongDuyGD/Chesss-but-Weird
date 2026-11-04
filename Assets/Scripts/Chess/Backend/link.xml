@@ -2,5 +2,10 @@
   <!-- Newtonsoft materializes the online contract by reflection in IL2CPP. -->
   <assembly fullname="Assembly-CSharp">
     <type fullname="ChessButWeird.Online.*" preserve="all" />
+    <type fullname="ShopCatalogResponse" preserve="all" />
+    <type fullname="ShopOfferResponse" preserve="all" />
+    <type fullname="ShopProductResponse" preserve="all" />
+    <type fullname="ShopPurchaseRequest" preserve="all" />
+    <type fullname="ShopPurchaseResponse" preserve="all" />
   </assembly>
 </linker>

@@ -53,7 +53,7 @@ public sealed class ModeSelectionPresentation : MonoBehaviour
         settings = ButtonFace(content, "Settings", new Rect(805, 872, 310, 70), UI.White, actions.Settings, false);
         Label(settings.transform, "Settings Label", "SETTINGS", new Rect(12, 8, 286, 54), 29, Ink, TextAlignmentOptions.Center);
         shop = ButtonFace(content, "Shop", new Rect(1162, 872, 310, 70), UI.Paper, actions.Shop, false);
-        Label(shop.transform, "Shop Label", "SHOP · COMING SOON", new Rect(12, 8, 286, 54), 23, Ink, TextAlignmentOptions.Center);
+        Label(shop.transform, "Shop Label", "SHOP", new Rect(12, 8, 286, 54), 29, Ink, TextAlignmentOptions.Center);
 
         back = ButtonFace(content, "Back", new Rect(122, 976, 184, 58), new Color(.983f, .972f, .946f), actions.Back, false);
         Label(back.transform, "Back Label", "BACK", new Rect(16, 6, 152, 45), 29, Ink, TextAlignmentOptions.Center).fontStyle = FontStyles.Bold;
