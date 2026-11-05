@@ -10,7 +10,7 @@ using UnityEngine.InputSystem;
 using UnityEngine.UI;
 using UI = SketchbookUI;
 
-public enum ShopCategory { Featured, PieceSkins, Boards, Effects, Bundles, Collection, Summon }
+public enum ShopCategory { Featured, PieceSkins, Boards, Effects, Bundles, Collection, Summon, TopUp }
 
 public sealed partial class ShopMenuController : MonoBehaviour
 {
@@ -19,8 +19,9 @@ public sealed partial class ShopMenuController : MonoBehaviour
         public string id, name, description, itemId, type, key, rarity;
         public Sprite art;
         public ShopOfferResponse offer;
-        public bool owned, equipped, builtIn, isDefault;
-        public ShopCategory Category => offer?.isBundle == true ? ShopCategory.Bundles :
+        public bool owned, equipped, builtIn, isDefault, previewOnly;
+        public bool IncludedOrLocked => builtIn || isDefault || previewOnly;
+        public ShopCategory Category => previewOnly ? ShopCategory.TopUp : offer?.isBundle == true ? ShopCategory.Bundles :
             type == "MOVE_EFFECT" ? ShopCategory.Effects : type == CosmeticItemKinds.Board ? ShopCategory.Boards : ShopCategory.PieceSkins;
     }
     private readonly List<Product> products = new List<Product>();
@@ -31,9 +32,11 @@ public sealed partial class ShopMenuController : MonoBehaviour
     private Product selected;
     private ShopCategory category;
     private ShopPurchaseRequest quote;
+    private bool recovering;
     private bool loading, busy, initialized, onlyEquipped;
     private int page, version, collectionKind;
     private string sessionUser;
+    private long sessionGeneration;
     // Tests use an injected gateway and ephemeral pending state, never the player's wallet/save.
     private bool previewSession;
     private ShopPurchaseRequest previewPending;
@@ -44,6 +47,7 @@ public sealed partial class ShopMenuController : MonoBehaviour
     public void Initialize(UnityAction onClose, UnityAction onSummon, IShopGateway service = null, bool isolatedPreview = false)
     {
         if (initialized) return;
+        EnsureAdditionalControls();
         initialized = true; gateway = service ?? new ShopService(); close = onClose; summon = onSummon; previewSession = isolatedPreview;
         backButton.onClick.AddListener(Back);
         refreshButton.onClick.AddListener(() => { if (!busy) _ = RefreshAsync(); });
@@ -53,7 +57,8 @@ public sealed partial class ShopMenuController : MonoBehaviour
         search.onValueChanged.AddListener(_ => { page = 0; Render(); });
         goldButton.onClick.AddListener(() => Confirm("GOLDS"));
         diamondButton.onClick.AddListener(() => Confirm("DIAMONDS"));
-        equipButton.onClick.AddListener(() => { if (Pending != null) RecoverPending(); else _ = EquipAsync(); });
+        equipButton.onClick.AddListener(() => { if (SelectedPending) RecoverPending(); else _ = EquipAsync(); });
+        recoveryButton.onClick.AddListener(RecoverPending);
         cancelButton.onClick.AddListener(DismissConfirmation);
         confirmButton.onClick.AddListener(() => _ = PurchaseAsync());
         collectionFilter.onClick.AddListener(() => { collectionKind = (collectionKind + 1) % 4; page = 0; Render(); });
@@ -77,8 +82,10 @@ public sealed partial class ShopMenuController : MonoBehaviour
     {
         if (busy || !initialized) return;
         int epoch = ++version;
-        if (sessionUser != PlayerAuthService.UserId) { snapshot = null; selected = null; }
+        if (sessionUser != PlayerAuthService.UserId || sessionGeneration != AuthStorage.SessionVersion)
+        { snapshot = null; selected = null; DismissConfirmation(); }
         sessionUser = PlayerAuthService.UserId;
+        sessionGeneration = AuthStorage.SessionVersion;
         loading = true;
         if (snapshot == null) RebuildProducts();
         Render(); SetStatus("Loading your shop and collection...");
@@ -90,7 +97,7 @@ public sealed partial class ShopMenuController : MonoBehaviour
             snapshot = result;
             if (!previewSession) PlayerAuthService.ApplyApiUser(result.user);
             RebuildProducts();
-            SetStatus(Pending != null ? "A purchase is awaiting confirmation. Select RETRY PURCHASE to recover it." : result.catalogError ?? "Cosmetics only. Make your next match your own.");
+            SetStatus(Pending != null ? "One purchase needs checking. Use REVIEW PENDING PURCHASE above." : result.catalogError ?? "Cosmetics only. Make your next match your own.");
         }
         catch (Exception error)
         {
@@ -107,7 +114,9 @@ public sealed partial class ShopMenuController : MonoBehaviour
         var artCatalog = presentation.cosmetics;
         foreach (var offer in snapshot?.catalog?.offers ?? new List<ShopOfferResponse>())
         {
-            if (!ValidOffer(offer, artCatalog)) continue;
+            if (!ValidOffer(offer, artCatalog) || offer.items.Any(i =>
+                snapshot.items.Any(item => item != null && item.itemId == i.itemId && item.isDefault) ||
+                i.unityAssetKey == CosmeticSelection.LowPolyId || i.unityAssetKey == "ChessSets/Default" || i.unityAssetKey == "Boards/Default")) continue;
             var item = offer.items[0];
             var product = FromItem(item.itemId, item.name, item.type, item.unityAssetKey, item.rarity);
             product.id = "offer:" + offer.offerId; product.name = offer.name; product.description = offer.description; product.offer = offer;
@@ -136,13 +145,17 @@ public sealed partial class ShopMenuController : MonoBehaviour
             type = "MOVE_EFFECT", rarity = "BUILT-IN", builtIn = true, owned = true, equipped = effect == effects[i], isDefault = i == 0,
             description = i == 0 ? "The original move effect. Quiet, clean, and always yours." :
                 i == 1 ? "A small burst of ink marks each move. Already included in your collection." : "A playful sprinkle of confetti after every move. Already included in your collection." });
+        foreach (var pack in new[] { ("gold_pack", "Gold Pack"), ("diamond_pack", "Diamond Pack"), ("mixed_pack", "Gold + Diamonds Pack") })
+            products.Add(new Product { id = "topup:" + pack.Item1, key = pack.Item1, name = pack.Item2,
+                previewOnly = true, rarity = "COMING SOON", description = "Currency packs are on their way. This is a preview only; purchases are not available yet." });
         selected = products.FirstOrDefault(p => p.id == selectedId);
     }
     private Product FromItem(string itemId, string name, string type, string key, string tier) => new Product
     {
         id = "item:" + type + ":" + (itemId ?? key), itemId = itemId, name = name, type = type, key = key, rarity = tier,
         art = CosmeticThumbnailUI.Find(presentation.cosmetics, type, key)?.thumbnail,
-        owned = itemId != null && owned.Contains(itemId), equipped = IsEquipped(itemId, type, key),
+        owned = key == CosmeticSelection.LowPolyId || itemId != null && owned.Contains(itemId),
+        isDefault = key == CosmeticSelection.LowPolyId, equipped = IsEquipped(itemId, type, key),
         description = type == CosmeticItemKinds.Board ? "A fresh place to play. Changes the board's appearance in your matches." : "Dress up your next match. A cosmetic look with the same familiar moves."
     };
     private bool IsEquipped(string id, string type, string key)
@@ -157,7 +170,7 @@ public sealed partial class ShopMenuController : MonoBehaviour
     {
         if (offer == null || string.IsNullOrWhiteSpace(offer.offerId) || offer.items == null || offer.items.Count == 0 || offer.items.Count > 12 ||
             offer.isBundle != (offer.items.Count > 1) || offer.discountPercent < 0 || offer.discountPercent > 90) return false;
-        return offer.items.All(i => i != null && !string.IsNullOrWhiteSpace(i.itemId) && i.golds > 0 && i.diamonds > 0 &&
+        return offer.items.All(i => i != null && i.type != "MOVE_EFFECT" && !string.IsNullOrWhiteSpace(i.itemId) && i.golds > 0 && i.diamonds > 0 &&
             i.golds <= 1000000000 && i.diamonds <= 1000000000 && CosmeticThumbnailUI.HasArt(catalog, i.type, i.unityAssetKey)) &&
             offer.items.Select(i => i.itemId).Distinct().Count() == offer.items.Count;
     }
@@ -170,7 +183,7 @@ public sealed partial class ShopMenuController : MonoBehaviour
     private List<Product> VisibleProducts()
     {
         string query = search ? search.text.Trim() : "";
-        return products.Where(p => (category == ShopCategory.Featured ? p.offer?.featured == true || snapshot?.catalog == null && !p.builtIn :
+        return products.Where(p => (category == ShopCategory.Featured ? p.offer?.featured == true || snapshot?.catalog == null && !p.builtIn && !p.previewOnly :
             category == ShopCategory.Collection ? p.owned && p.Category != ShopCategory.Bundles && (!onlyEquipped || p.equipped) &&
                 (collectionKind == 0 || collectionKind == 1 && p.Category == ShopCategory.PieceSkins || collectionKind == 2 && p.Category == ShopCategory.Boards || collectionKind == 3 && p.Category == ShopCategory.Effects) : p.Category == category) &&
             (query.Length == 0 || p.name.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0))
@@ -179,6 +192,8 @@ public sealed partial class ShopMenuController : MonoBehaviour
     private void Render()
     {
         if (!initialized) return;
+        SetButtonVisible(recoveryButton, Pending != null);
+        recoveryButton.interactable = !busy && !loading;
         for (int i = 0; i < tabs.Length; i++) { tabs[i].targetGraphic.color = (int)category == i ? UI.Yellow : i == 6 ? UI.Lavender : UI.White; tabs[i].interactable = !busy; }
         SetButtonVisible(collectionFilter, category == ShopCategory.Collection); SetButtonVisible(equippedFilter, category == ShopCategory.Collection);
         header.gameObject.SetActive(category != ShopCategory.Collection);
@@ -187,21 +202,22 @@ public sealed partial class ShopMenuController : MonoBehaviour
         equippedFilter.targetGraphic.color = onlyEquipped ? UI.Yellow : UI.White;
         collectionFilter.interactable = equippedFilter.interactable = !busy;
         var visible = VisibleProducts(); page = Mathf.Clamp(page, 0, Mathf.Max(0, (visible.Count - 1) / 6));
-        if (selected == null || !products.Contains(selected)) selected = visible.FirstOrDefault();
+        if (selected == null || !visible.Contains(selected)) selected = visible.FirstOrDefault();
         for (int i = 0; i < cards.Length; i++)
         {
             var product = visible.Skip(page * 6 + i).FirstOrDefault(); cards[i].gameObject.SetActive(product != null);
             if (product == null) continue;
             cards[i].Bind(product.name, product.Category == ShopCategory.Bundles ? "BUNDLE / " + product.offer.items.Count + " ITEMS" :
                 CategoryLabel(product.Category).ToUpperInvariant() + " / " + product.rarity, PriceText(product),
-                product.equipped ? "EQUIPPED" : product.owned ? "OWNED" : product.offer?.discountPercent > 0 ? "SAVE " + product.offer.discountPercent + "%" : "",
-                product.art, product.builtIn ? product.key : null, product.equipped ? UI.Yellow : UI.Green, product == selected,
+                product.previewOnly ? "LOCKED" : product.equipped ? "EQUIPPED" : product.owned ? "OWNED" : product.offer?.discountPercent > 0 ? "SAVE " + product.offer.discountPercent + "%" : "",
+                product.art, product.key, product.previewOnly ? UI.Lavender : product.equipped ? UI.Yellow : UI.Green, product == selected,
                 () => { selected = product; Render(); });
             cards[i].Button.interactable = !busy;
         }
         previousButton.interactable = page > 0 && !busy; nextButton.interactable = (page + 1) * 6 < visible.Count && !busy;
         pageLabel.text = (page + 1) + " / " + Mathf.Max(1, (visible.Count + 5) / 6);
-        count.text = visible.Count == 0 ? "No items match. Try another category or search." : visible.Count + " looks  /  Cosmetics only. No gameplay advantage.";
+        count.text = category == ShopCategory.TopUp ? "Preview only  /  Currency packs are not available yet." :
+            visible.Count == 0 ? "No items match. Try another category or search." : visible.Count + " looks  /  Cosmetics only. No gameplay advantage.";
         refreshButton.interactable = !busy && !loading; backButton.interactable = !busy; search.interactable = !busy;
         goldBalance.text = snapshot?.user?.wallet?.golds.ToString("N0") ?? "--";
         diamondBalance.text = snapshot?.user?.wallet?.diamonds.ToString("N0") ?? "--";
@@ -211,7 +227,7 @@ public sealed partial class ShopMenuController : MonoBehaviour
         heroButton.interactable = hero != null && !busy;
         RenderDetail();
     }
-    private string PriceText(Product product) => product.owned ? product.builtIn ? "Included in your collection" : "In your collection" : product.offer != null ?
+    private string PriceText(Product product) => product.previewOnly ? "Coming soon" : product.owned ? product.builtIn ? "Included in your collection" : "In your collection" : product.offer != null ?
         ShopPurchasePolicy.Price(product.offer, owned, "GOLDS").ToString("N0") + " Gold  /  " + ShopPurchasePolicy.Price(product.offer, owned, "DIAMONDS").ToString("N0") + " Diamonds" : "Available through Summon";
     private void RenderDetail()
     {
@@ -219,29 +235,32 @@ public sealed partial class ShopMenuController : MonoBehaviour
         detailTitle.text = p?.name ?? "A little room for something new";
         detailType.text = p == null ? "YOUR COLLECTION" : p.Category == ShopCategory.Bundles ? "BUNDLE / " + p.offer.items.Count + " ITEMS" : CategoryLabel(p.Category).ToUpperInvariant() + " / " + p.rarity;
         detailArt.sprite = p?.art; detailArt.enabled = detailArt.sprite;
-        detailEffect.gameObject.SetActive(p?.builtIn == true);
-        detailEffect.Configure(SketchbookDoodle.Shape.Star, p?.key == "confetti" ? UI.Pink : UI.Ink);
+        detailEffect.gameObject.SetActive(p?.builtIn == true || p?.previewOnly == true);
+        detailEffect.Configure(ShopProductCard.IconFor(p?.key), p?.key == "confetti" ? UI.Pink : UI.Ink);
         detailDescription.text = p?.description ?? "Select a category to find your next favourite look.";
         detailContents.text = p?.offer?.isBundle == true ? string.Join("\n", p.offer.items.Select(i => (owned.Contains(i.itemId) ? "Owned: " : "Includes: ") + i.name)) :
             p?.isDefault == true ? "The original look. Always included." : "";
         detailState.text = p == null ? "" : p.equipped ? "Equipped for your next match" : p.owned ? "Yours to keep" : p.offer?.isBundle == true ?
             (p.offer.items.Count - ShopPurchasePolicy.Missing(p.offer, owned).Count) + " / " + p.offer.items.Count + " already owned. Price adjusted below." : "Choose Gold or Diamonds";
-        bool pending = Pending != null;
-        bool sale = p?.offer != null && !p.owned && !pending;
+        bool pending = SelectedPending;
+        bool sale = p?.offer != null && !p.IncludedOrLocked && !p.owned && !pending;
         SetButtonVisible(goldButton, sale); SetButtonVisible(diamondButton, sale);
         SetButtonVisible(equipButton, !sale);
         if (sale)
         {
             long gold = ShopPurchasePolicy.Price(p.offer, owned, "GOLDS"), diamonds = ShopPurchasePolicy.Price(p.offer, owned, "DIAMONDS");
             goldPrice.text = gold.ToString("N0") + " Gold"; diamondPrice.text = diamonds.ToString("N0") + " Diamonds";
-            goldButton.interactable = !busy && !loading && (snapshot?.user?.wallet?.golds ?? 0) >= gold;
-            diamondButton.interactable = !busy && !loading && (snapshot?.user?.wallet?.diamonds ?? 0) >= diamonds;
-            if (!goldButton.interactable && !diamondButton.interactable && !busy && !loading) detailState.text = "Not enough Gold or Diamonds yet";
+            goldButton.interactable = diamondButton.interactable = !busy && !loading;
+            if ((snapshot?.user?.wallet?.golds ?? 0) < gold && (snapshot?.user?.wallet?.diamonds ?? 0) < diamonds)
+                detailState.text = "Not enough Gold or Diamonds yet";
         }
-        equipLabel.text = pending ? "RETRY PURCHASE" : p == null ? "EXPLORE THE SHOP" : p.Category == ShopCategory.Bundles ? "BUNDLE OWNED" :
+        if (pending) detailState.text = "Check the purchase you already confirmed";
+        if (p?.previewOnly == true) detailState.text = "Locked - coming soon";
+        equipLabel.text = p?.previewOnly == true ? "COMING SOON" : pending ? "RETRY PURCHASE" : p == null ? "EXPLORE THE SHOP" : p.Category == ShopCategory.Bundles ? "BUNDLE OWNED" :
             !p.owned ? "OPEN SUMMON" : p.equipped ? p.isDefault ? "DEFAULT EQUIPPED" : "USE DEFAULT" : "EQUIP";
-        equipButton.interactable = !busy && !loading && (pending || p != null &&
+        equipButton.interactable = !busy && !loading && p?.previewOnly != true && (pending || p != null &&
             (p.owned && p.Category != ShopCategory.Bundles && !(p.equipped && p.isDefault) || !p.owned));
+        if (p?.isDefault == true && p.itemId == null) equipButton.interactable = false;
     }
     private static void SetButtonVisible(Button button, bool visible)
     {
@@ -252,8 +271,15 @@ public sealed partial class ShopMenuController : MonoBehaviour
     }
     private void Confirm(string currency)
     {
-        if (busy || loading || selected?.offer == null || selected.owned || Pending != null) return;
+        if (busy || loading || !CurrentAccount() || selected?.offer == null || selected.owned || selected.IncludedOrLocked) return;
+        if (Pending != null)
+        {
+            Notify("Purchase needs checking", "Use REVIEW PENDING PURCHASE to finish checking your earlier purchase before starting another.");
+            return;
+        }
         quote = ShopPurchasePolicy.Create(selected.offer, owned, currency);
+        if (!CheckBalance(quote)) { quote = null; return; }
+        recovering = false;
         confirmationTitle.text = "Make it yours?";
         confirmationText.text = selected.name + "\n\n" + quote.expectedPrice.ToString("N0") + (currency == "GOLDS" ? " Gold" : " Diamonds") +
             "\n" + quote.expectedItemIds.Count + " new item" + (quote.expectedItemIds.Count == 1 ? "" : "s") + " for your collection.";
@@ -262,8 +288,9 @@ public sealed partial class ShopMenuController : MonoBehaviour
     private void RecoverPending()
     {
         if (busy || loading || Pending == null) return;
-        quote = Pending; confirmationTitle.text = "Finish your purchase";
-        confirmationText.text = "Check the purchase you already confirmed.\n\n" + quote.expectedPrice.ToString("N0") +
+        quote = Pending; recovering = true; confirmationTitle.text = "Finish your purchase";
+        var offerName = products.FirstOrDefault(p => p.offer?.offerId == quote.offerId)?.name ?? quote.offerId;
+        confirmationText.text = offerName + "\nCheck the purchase you already confirmed.\n\n" + quote.expectedPrice.ToString("N0") +
             (quote.currency == "GOLDS" ? " Gold" : " Diamonds") + "\nYou will only be charged once.";
         ShowConfirmation("RETRY PURCHASE");
     }
@@ -276,27 +303,33 @@ public sealed partial class ShopMenuController : MonoBehaviour
     private void DismissConfirmation()
     {
         if (busy) return;
-        confirmation.gameObject.SetActive(false); controls.interactable = controls.blocksRaycasts = true; quote = null;
+        confirmation.gameObject.SetActive(false); controls.interactable = controls.blocksRaycasts = true; quote = null; recovering = false;
         if (EventSystem.current) EventSystem.current.SetSelectedGameObject(backButton.gameObject);
     }
     public async Task PurchaseAsync()
     {
-        if (busy || quote == null || !confirmation.gameObject.activeSelf || !Current(version)) return;
+        if (busy || loading || !ShopPurchaseState.IsValid(quote) || !confirmation.gameObject.activeSelf || !Current(version)) return;
+        var pending = Pending;
+        if (recovering ? pending == null || pending.requestId != quote.requestId : pending != null) return;
+        if (!recovering && !CheckBalance(quote)) { DismissConfirmation(); return; }
+        string purchasingUser = sessionUser;
         busy = true; var request = quote; int epoch = version;
         confirmButton.interactable = cancelButton.interactable = false; confirmLabel.text = "CONFIRMING...";
         string message;
+        bool succeeded = false;
         try
         {
             Pending = request; // Durable before sending, so an interrupted response can be recovered.
             var receipt = await gateway.PurchaseAsync(request);
-            if (!CurrentAccount()) return;
+            if (!SameAccount(purchasingUser)) return;
             if (!ShopPurchasePolicy.Matches(request, receipt)) throw new InvalidOperationException("The purchase response could not be confirmed.");
             Pending = null;
+            succeeded = true;
             message = "Purchased! Your new look is in your collection.";
         }
         catch (Exception error)
         {
-            if (!CurrentAccount()) return;
+            if (!SameAccount(purchasingUser)) return;
             if (ShopPurchasePolicy.DefinitiveFailure(error)) { Pending = null; message = ShopPurchasePolicy.ErrorMessage(error); }
             else message = "Purchase not confirmed yet. Select RETRY PURCHASE to check it safely.";
         }
@@ -304,11 +337,14 @@ public sealed partial class ShopMenuController : MonoBehaviour
         if (!Current(epoch)) return;
         DismissConfirmation();
         await RefreshAsync();
+        if (!SameAccount(purchasingUser)) return;
         SetStatus(message);
+        Notify(succeeded ? "Purchase complete" : "Purchase update", message,
+            succeeded ? AuthNotificationView.ResultKind.Success : AuthNotificationView.ResultKind.Info);
     }
     private async Task EquipAsync()
     {
-        if (busy || loading || selected == null || !CurrentAccount()) return;
+        if (busy || loading || selected == null || selected.previewOnly || !CurrentAccount()) return;
         var p = selected;
         if (!p.owned) { summon?.Invoke(); return; }
         if (p.Category == ShopCategory.Bundles) return;
@@ -347,12 +383,46 @@ public sealed partial class ShopMenuController : MonoBehaviour
     }
     private ShopPurchaseRequest Pending
     {
-        get => previewSession ? previewPending : CurrentAccount() ? PlayerProfileStore.Data.pendingShopPurchase : null;
-        set { if (previewSession) previewPending = value; else if (CurrentAccount()) { PlayerProfileStore.Data.pendingShopPurchase = value; PlayerProfileStore.Save(); } }
+        get
+        {
+            if (previewSession) return ShopPurchaseState.IsValid(previewPending) ? previewPending : null;
+            if (!CurrentAccount()) return null;
+            var data = PlayerProfileStore.Data;
+            return ShopPurchaseState.BelongsToAccount(data.pendingShopPurchase, data.pendingShopPurchaseUserId, data.playerId, sessionUser)
+                ? data.pendingShopPurchase : null;
+        }
+        set
+        {
+            if (previewSession) previewPending = value;
+            else if (CurrentAccount())
+            {
+                var data = PlayerProfileStore.Data;
+                data.pendingShopPurchase = value;
+                data.pendingShopPurchaseUserId = value == null ? null : sessionUser;
+                PlayerProfileStore.Save();
+            }
+        }
     }
-    private bool CurrentAccount() => previewSession || sessionUser == PlayerAuthService.UserId && !PlayerAuthService.IsGuestSession;
+    private bool SelectedPending => selected != null && ShopPurchaseState.IsRetryFor(Pending, selected.offer?.offerId, selected.IncludedOrLocked);
+    private bool CurrentAccount() => previewSession || sessionGeneration == AuthStorage.SessionVersion &&
+        !string.IsNullOrWhiteSpace(sessionUser) && sessionUser == PlayerAuthService.UserId && !PlayerAuthService.IsGuestSession;
+    private bool SameAccount(string expected) => previewSession || expected == sessionUser && CurrentAccount();
     private bool Current(int epoch) => this && epoch == version && CurrentAccount();
-    private static string CategoryLabel(ShopCategory value) => value == ShopCategory.PieceSkins ? "Piece skins" : value.ToString();
+    private static string CategoryLabel(ShopCategory value) => value == ShopCategory.PieceSkins ? "Piece skins" : value == ShopCategory.TopUp ? "Top up" : value.ToString();
+    private bool CheckBalance(ShopPurchaseRequest request)
+    {
+        if (ShopPurchaseState.CanAfford(request, snapshot?.user?.wallet?.golds ?? 0, snapshot?.user?.wallet?.diamonds ?? 0)) return true;
+        var currency = request.currency == "GOLDS" ? "Gold" : "Diamonds";
+        long balance = request.currency == "GOLDS" ? snapshot?.user?.wallet?.golds ?? 0 : snapshot?.user?.wallet?.diamonds ?? 0;
+        Notify("Not enough " + currency, "This purchase costs " + request.expectedPrice.ToString("N0") + " " + currency +
+            ". You have " + balance.ToString("N0") + ". Nothing was charged.", AuthNotificationView.ResultKind.Error);
+        return false;
+    }
+    private void Notify(string title, string message, AuthNotificationView.ResultKind kind = AuthNotificationView.ResultKind.Info)
+    {
+        SetStatus(message);
+        if (!previewSession) AuthNotificationView.Show(title, message, kind);
+    }
     private void SetStatus(string text) { if (status) status.text = text; }
     private void Back() { if (!busy) { if (confirmation.gameObject.activeSelf) DismissConfirmation(); else close?.Invoke(); } }
     private void Update()

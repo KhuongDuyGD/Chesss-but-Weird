@@ -31,6 +31,7 @@ public sealed class PlayerProfileSaveData
     public int localBotGold;
     // Only an unresolved request is stored locally. Wallet and ownership remain server-authoritative.
     public ShopPurchaseRequest pendingShopPurchase;
+    public string pendingShopPurchaseUserId;
 
     public static PlayerProfileSaveData Create(PlayerProfile profile)
     {
@@ -155,11 +156,11 @@ public static class PlayerProfileStore
     }
     public static void Save()
     {
-        if (data == null)
+        if (data == null || !string.Equals(loadedKey, CurrentSaveKey, StringComparison.Ordinal))
             return;
 
         Normalize();
-        PlayerPrefs.SetString(CurrentSaveKey, JsonUtility.ToJson(data));
+        PlayerPrefs.SetString(loadedKey, JsonUtility.ToJson(data));
         PlayerPrefs.Save();
         ApplyToSessionProfile();
     }
@@ -370,6 +371,14 @@ public static class PlayerProfileStore
     {
         if (data == null)
             return;
+
+        if (!ShopPurchaseState.BelongsToAccount(data.pendingShopPurchase, data.pendingShopPurchaseUserId,
+            data.playerId, PlayerAuthService.UserId))
+        {
+            data.pendingShopPurchase = null;
+            data.pendingShopPurchaseUserId = null;
+        }
+        else data.pendingShopPurchaseUserId = PlayerAuthService.UserId;
 
         PlayerProfile profile = PlayerAuthService.CurrentProfile;
         if (string.IsNullOrWhiteSpace(data.playerId))

@@ -13,6 +13,8 @@ public sealed class ShopProductCard : MonoBehaviour
     [SerializeField] private TextMeshProUGUI title, category, price, state;
     [SerializeField] private HandDrawnRoundedGraphic badge;
     public Button Button => button;
+    public static SketchbookDoodle.Shape IconFor(string key) => key == "diamond_pack" ? SketchbookDoodle.Shape.Diamond :
+        key == "gold_pack" || key == "mixed_pack" ? SketchbookDoodle.Shape.Coin : SketchbookDoodle.Shape.Star;
     private void Awake() { var motion = GetComponent<MainMenuButtonMotion>(); if (motion) motion.Configure(); }
 
     public void Build()
@@ -38,7 +40,7 @@ public sealed class ShopProductCard : MonoBehaviour
     {
         title.text = name; category.text = type; price.text = priceText; state.text = stateText;
         thumbnail.sprite = art; thumbnail.enabled = art;
-        effectIcon.gameObject.SetActive(!art); effectIcon.Configure(SketchbookDoodle.Shape.Star, effect == "confetti" ? UI.Pink : UI.Ink);
+        effectIcon.gameObject.SetActive(!art); effectIcon.Configure(IconFor(effect), effect == "confetti" ? UI.Pink : UI.Ink);
         badge.gameObject.SetActive(!string.IsNullOrWhiteSpace(stateText)); badge.color = tierColor;
         face.color = selected ? UI.Blue : UI.White;
         button.onClick.RemoveAllListeners(); button.onClick.AddListener(() => select());

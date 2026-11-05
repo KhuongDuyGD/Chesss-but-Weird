@@ -18,7 +18,37 @@ public sealed partial class ShopMenuController
     [SerializeField] private SketchbookDoodle detailEffect;
     [SerializeField] private TMP_InputField search;
     [SerializeField] private Button heroButton;
+    [SerializeField] private Button recoveryButton;
     [SerializeField] private ShopProductCard[] cards;
+
+    // Upgrade existing serialized screens without requiring an Editor rebuild.
+    // The asset builder also calls this so newly generated prefabs contain the same controls.
+    private void EnsureAdditionalControls()
+    {
+        if (tabs.Length == 7)
+        {
+            System.Array.Resize(ref tabs, 8);
+            tabs[7] = UI.Button(controls.transform, "Shop Tab TopUp", "TOP UP", new Rect(48 + 7 * 198, 169, 190, 53), UI.Lavender, null, 23);
+        }
+        for (int i = 0; i < tabs.Length; i++)
+        {
+            var rect = (RectTransform)tabs[i].transform;
+            rect.sizeDelta = new Vector2(190, 53);
+            rect.anchoredPosition = new Vector2(48 + i * 198 + 95, -195.5f);
+            var shadow = rect.parent.Find(tabs[i].name + " Pencil Shadow") as RectTransform;
+            if (shadow) { shadow.sizeDelta = rect.sizeDelta; shadow.anchoredPosition = rect.anchoredPosition + new Vector2(5, -7); }
+            var label = tabs[i].GetComponentInChildren<TextMeshProUGUI>();
+            label.rectTransform.sizeDelta = new Vector2(162, 43);
+            label.rectTransform.anchoredPosition = new Vector2(95, -26.5f);
+            label.fontSizeMax = 23;
+        }
+        if (!recoveryButton) recoveryButton = UI.Button(controls.transform, "Review Pending Purchase", "REVIEW PENDING PURCHASE",
+            new Rect(48, 133, 400, 32), UI.Yellow, null, 18);
+        var recoveryLabel = recoveryButton.GetComponentInChildren<TextMeshProUGUI>().rectTransform;
+        recoveryLabel.sizeDelta = new Vector2(372, 32);
+        recoveryLabel.anchoredPosition = new Vector2(200, -16);
+        SetButtonVisible(recoveryButton, false);
+    }
 
     // The editor builder serializes this complete layout into the shipped screen prefab.
     public void BuildLayout(ShopPresentationCatalog assets)
@@ -100,6 +130,7 @@ public sealed partial class ShopMenuController
         confirmButton = UI.Button(dialog, "Confirm Purchase", "CONFIRM", new Rect(332, 365, 404, 57), UI.Yellow, null, 27);
         confirmLabel = confirmButton.GetComponentInChildren<TextMeshProUGUI>();
         confirmation.gameObject.SetActive(false);
+        EnsureAdditionalControls();
     }
     private static TMP_InputField BuildSearch(Transform parent, Rect area)
     {

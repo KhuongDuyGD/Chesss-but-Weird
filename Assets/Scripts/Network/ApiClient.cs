@@ -13,6 +13,7 @@ public sealed class ApiClient
 
     public Task<T> GetAsync<T>(string path, bool authorized = false) => SendAsync<T>("GET", path, null, authorized);
     public Task<T> PostAsync<T>(string path, object body, bool authorized = false) => SendAsync<T>("POST", path, body, authorized);
+    public Task<T> PostForSessionAsync<T>(string path, object body, long sessionVersion) => SendAsync<T>("POST", path, body, true, sessionVersion);
     public Task<T> PutAsync<T>(string path, object body, bool authorized = false) => SendAsync<T>("PUT", path, body, authorized);
     public Task<T> PatchAsync<T>(string path, object body, bool authorized = false) => SendAsync<T>("PATCH", path, body, authorized);
     public Task<T> DeleteAsync<T>(string path, bool authorized = false) => SendAsync<T>("DELETE", path, null, authorized);
@@ -42,17 +43,25 @@ public sealed class ApiClient
         return response.Body;
     }
 
-    public async Task<T> SendAsync<T>(string method, string path, object body, bool authorized = false)
+    public async Task<T> SendAsync<T>(string method, string path, object body, bool authorized = false, long? sessionVersion = null)
     {
+        void CheckSession()
+        {
+            if (sessionVersion.HasValue && sessionVersion.Value != AuthStorage.SessionVersion)
+                throw new OperationCanceledException("The account session changed. Reopen the shop.");
+        }
+        CheckSession();
         string json = body == null ? null : JsonConvert.SerializeObject(body);
         string token = authorized ? AuthStorage.GetAccessToken() : null;
         var response = await SendOnceAsync(method, path, json, token);
+        CheckSession();
 
         if (authorized && response.StatusCode == 401 && AuthStorage.HasSession())
         {
             await refreshGate.WaitAsync();
             try
             {
+                CheckSession();
                 // A parallel request may already have refreshed this session.
                 if (token == AuthStorage.GetAccessToken())
                     await RefreshForRetryAsync();
@@ -64,9 +73,11 @@ public sealed class ApiClient
             }
 
             // Retry the original request once, with the exact same method and body.
+            CheckSession();
             response = await SendOnceAsync(method, path, json, token);
         }
 
+        CheckSession();
         EnsureSuccess(response, string.Equals(path, "/api/auth/login", StringComparison.Ordinal));
         if (string.IsNullOrWhiteSpace(response.Body))
             return default;
@@ -111,7 +122,7 @@ public sealed class ApiClient
         if (tokens == null || string.IsNullOrWhiteSpace(tokens.accessToken) || string.IsNullOrWhiteSpace(tokens.refreshToken))
             throw new ApiException("Refresh response did not contain both tokens.", response.StatusCode, response.Body);
 
-        AuthStorage.SaveTokens(tokens.accessToken, tokens.refreshToken, tokens.expiresAt, tokens.refreshTokenExpiresAt);
+        AuthStorage.SaveTokens(tokens.accessToken, tokens.refreshToken, tokens.expiresAt, tokens.refreshTokenExpiresAt, isRefresh: true);
     }
 
     private static async Task<HttpResponse> SendOnceAsync(string method, string path, string json, string accessToken)

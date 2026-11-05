@@ -9,11 +9,14 @@ public static class AuthStorage
     private const string RefreshKey = "api.auth.refreshToken";
     private const string AccessExpiryKey = "api.auth.accessExpiresAt";
     private const string RefreshExpiryKey = "api.auth.refreshExpiresAt";
+    public static long SessionVersion { get; private set; }
 
-    public static void SaveTokens(string accessToken, string refreshToken, string accessTokenExpiresAt, string refreshTokenExpiresAt)
+    public static void SaveTokens(string accessToken, string refreshToken, string accessTokenExpiresAt, string refreshTokenExpiresAt, bool isRefresh = false)
     {
         if (string.IsNullOrWhiteSpace(accessToken) || string.IsNullOrWhiteSpace(refreshToken))
             throw new ArgumentException("The server returned incomplete tokens.");
+
+        if (!isRefresh) SessionVersion++;
 
         PlayerPrefs.SetString(AccessKey, accessToken);
         PlayerPrefs.SetString(RefreshKey, refreshToken);
@@ -30,6 +33,7 @@ public static class AuthStorage
 
     public static void Clear()
     {
+        SessionVersion++;
         PlayerPrefs.DeleteKey(AccessKey);
         PlayerPrefs.DeleteKey(RefreshKey);
         PlayerPrefs.DeleteKey(AccessExpiryKey);
