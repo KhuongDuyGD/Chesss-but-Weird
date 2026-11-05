@@ -41,11 +41,12 @@ public sealed class MenuMusicWidget : MonoBehaviour
         dismiss.targetGraphic = blocker;
         dismiss.transition = Selectable.Transition.None;
         dismiss.onClick.AddListener(Close);
-        var panel = UI.Card(popup, "Music Pack Picker", new Rect(1264, 112, 548, 636), UI.White, 0, true, 8).rectTransform;
+        var packs = (GameMusicPack[])Enum.GetValues(typeof(GameMusicPack));
+        float panelHeight = 106 + packs.Length * 98 + 40;
+        var panel = UI.Card(popup, "Music Pack Picker", new Rect(1264, 112, 548, panelHeight), UI.White, 0, true, 8).rectTransform;
         panel.GetComponent<HandDrawnRoundedGraphic>().raycastTarget = true;
         UI.Text(panel, "Music Heading", "SOUNDTRACK", new Rect(28, 24, 400, 50), 37);
         var close = UI.Button(panel, "Close Music Picker", "x", new Rect(458, 24, 60, 50), UI.Pink, Close, 29);
-        var packs = (GameMusicPack[])Enum.GetValues(typeof(GameMusicPack));
         options = new Button[packs.Length];
         optionLabels = new TextMeshProUGUI[packs.Length];
         for (int i = 0; i < packs.Length; i++)
@@ -66,6 +67,9 @@ public sealed class MenuMusicWidget : MonoBehaviour
             }
         }
         close.navigation = new Navigation { mode = Navigation.Mode.Explicit, selectOnDown = options[0], selectOnUp = options[options.Length - 1] };
+        Navigation lastNavigation = options[options.Length - 1].navigation;
+        lastNavigation.selectOnDown = close;
+        options[options.Length - 1].navigation = lastNavigation;
         popup.gameObject.SetActive(false);
         return trigger;
     }

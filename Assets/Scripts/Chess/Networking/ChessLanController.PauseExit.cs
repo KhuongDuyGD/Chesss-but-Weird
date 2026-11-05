@@ -53,7 +53,7 @@ public partial class ChessLanController
         directMatchmaking = fromModeSelection;
         customRoomEntry = customEntry;
         selectedOnlineMode = previousMode;
-        requestInFlight = reconnecting = commandBusy = leaving = false;
+        requestInFlight = reconnecting = commandBusy = leaving = lobbyReadInFlight = false;
         HideLanSetup();
     }
 

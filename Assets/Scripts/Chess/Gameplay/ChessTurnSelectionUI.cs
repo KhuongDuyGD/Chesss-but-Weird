@@ -118,14 +118,19 @@ public class ChessTurnSelectionUI : MonoBehaviour
     {
         pendingPveLoadout = null;
         GameMusicManager.PlayMainMenuPrimaryMusic();
+        ResetMatchPresentationForMenu();
+        state = ScreenState.MainMenu;
+        handDrawnMenu?.ShowMainMenu();
+    }
+
+    internal void ResetMatchPresentationForMenu()
+    {
         promotionCallback = null;
         promotionMenu?.Hide();
         resultIsDraw = false;
         drawReason = string.Empty;
         showCheckWarning = false;
-        state = ScreenState.MainMenu;
         lanController?.HideLanSetup();
-        handDrawnMenu?.ShowMainMenu();
         resultMenu?.Hide();
         pauseMenu?.SetResultSpectating(false);
         analysisBoard?.SetVisible(false);
@@ -542,7 +547,6 @@ public class ChessTurnSelectionUI : MonoBehaviour
             lanController?.RequestRematch();
             return;
         }
-        GameMusicManager.PlayInGameMusic(chessGame && chessGame.IsBotGame, selectedBotDifficulty);
         resultMenu?.Hide();
         pauseMenu?.SetResultSpectating(false);
         if (!chessGame.RestartCurrentLocalGame())

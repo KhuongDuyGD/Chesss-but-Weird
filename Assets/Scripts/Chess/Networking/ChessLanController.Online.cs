@@ -15,7 +15,7 @@ public partial class ChessLanController
     private NetworkLobbyUiController lobbyUi;
     private OnlineSession online;
     private OnlineAramPresenter aramPresenter;
-    private bool showLanPanel, requestInFlight, reconnecting, leaving, commandBusy;
+    private bool showLanPanel, requestInFlight, reconnecting, leaving, commandBusy, lobbyReadInFlight;
     private int lifecycle;
     private string presentedMatchId, refreshedResultId;
     private string preparedContentMatchId;
@@ -77,7 +77,7 @@ public partial class ChessLanController
         if ((!online.Connected || expired) && !reconnecting && Time.unscaledTime >= nextReconnectAt && PlayerAuthService.CanUseOnlineFeatures)
             _ = ReconnectAsync(expired);
         if ((showLanPanel || online.State?.status == "AwaitingReady") && online.Connected && !requestInFlight && !reconnecting && Time.unscaledTime >= nextPollAt)
-        { nextPollAt = Time.unscaledTime + 8; Run(async () => { await online.RefreshAsync(); if (menuPage == OnlineMenuPage.FindRoom && lobbyUi?.IsCodeFocused != true) await LoadRoomListAsync(); }); }
+        { nextPollAt = Time.unscaledTime + 8; Run(async () => { await online.RefreshAsync(); if (showLanPanel && menuPage == OnlineMenuPage.FindRoom && lobbyUi?.IsCodeFocused != true) await LoadRoomListAsync(); }, backgroundRead: true); }
         chessGame?.SetOnlineInputAvailable(CanSendOnlineCommand);
     }
     private async Task ReconnectAsync(bool renew)
@@ -162,7 +162,7 @@ public partial class ChessLanController
         preparedContentMatchId = null; historyLoading = historyDirty = false;
         preparedLoadoutFingerprint = null;
         trackedRoomId = null; ResetOnlineFlow();
-        requestInFlight = reconnecting = leaving = commandBusy = false;
+        requestInFlight = reconnecting = leaving = commandBusy = lobbyReadInFlight = false;
         OpponentPauseChanged?.Invoke(false, string.Empty);
         recentMatches.Clear(); roomCodeInput = ""; HideLanSetup();
         matchHud?.Hide();
@@ -237,11 +237,12 @@ public partial class ChessLanController
     {
         int epoch = lifecycle;
         var current = EnsureOnline(); await current.RefreshAsync();
+        if (!this || epoch != lifecycle || current != online) return;
         var history = await current.Rest.HistoryAsync(1, 3);
-        if (!this || epoch != lifecycle) return;
+        if (!this || epoch != lifecycle || current != online) return;
         recentMatches.Clear(); recentMatches.AddRange(history.items);
         serverHealthStatus = "Online";
-    });
+    }, backgroundRead: true);
     public void RequestCopyRoomCode() { GUIUtility.systemCopyBuffer = online?.Room?.code ?? ""; statusMessage = "Room code copied."; }
     public void RequestBackToMultiplayerChoice() => LeaveLobby(false);
     public void RequestLeaveToModeSelection() => LeaveLobby(true);
@@ -453,14 +454,15 @@ public partial class ChessLanController
         { roomContentFingerprint = roomFingerprint; if (menuPage == OnlineMenuPage.Room) menuRevision++; }
         lobbyUi?.Refresh();
     }
-    private async void Run(Func<Task> action)
+    private async void Run(Func<Task> action, bool backgroundRead = false)
     {
         if (requestInFlight || !PlayerAuthService.CanUseOnlineFeatures) return;
         int epoch = lifecycle; requestInFlight = true;
+        lobbyReadInFlight = backgroundRead;
         try { await action(); }
         catch (OperationCanceledException) { }
         catch (Exception e) { if (this && epoch == lifecycle) ShowError(e); }
-        finally { if (this && epoch == lifecycle) requestInFlight = false; }
+        finally { if (this && epoch == lifecycle) requestInFlight = lobbyReadInFlight = false; }
     }
     private void ShowError(Exception e)
     {

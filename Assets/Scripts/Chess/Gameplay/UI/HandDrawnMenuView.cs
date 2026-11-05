@@ -315,7 +315,7 @@ public class HandDrawnMenuView : MonoBehaviour
     public void ShowShopMenu(bool preserveCategory = false)
     {
         if (!owner.RequireAccountAccess("Shop") || !shopController) return;
-        GameMusicManager.PlayMainMenuHubMusic();
+        GameMusicManager.PlayShopMusic();
         SetVisible(true); SetInputEnabled(true);
         TransitionToScreen(shopScreen, () => shopController.Open(preserveCategory));
     }

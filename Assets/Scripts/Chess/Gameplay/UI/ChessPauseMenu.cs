@@ -219,6 +219,9 @@ public sealed class ChessPauseMenu : MonoBehaviour
             {
                 if (!this) return;
                 ResetPauseState();
+            }, () =>
+            {
+                if (!this) return;
                 if (action == PendingAction.MainMenu) turnSelection?.ShowTurnSelection();
                 else if (onlineMatch) lanController.ShowLobbyAfterPauseExit();
                 else turnSelection?.ShowBotDifficultySelection();

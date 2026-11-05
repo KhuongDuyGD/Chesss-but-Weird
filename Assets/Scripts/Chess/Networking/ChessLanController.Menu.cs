@@ -85,7 +85,7 @@ public partial class ChessLanController
             { BuildLoadout(); BuildAcceptancePopup(); return; }
             UI.Background(contentRoot);
             UI.Doodle(contentRoot, "Corner Star", new Rect(1480, 55, 75, 75), SketchbookDoodle.Shape.Star, UI.Yellow, 12);
-            ActionButton(contentRoot, "Back", new Rect(64, 54, 155, 64), UI.White, owner.BackOnlineMenu);
+            ActionButton(contentRoot, "Back", new Rect(64, 54, 155, 64), UI.White, owner.BackOnlineMenu, () => owner.CanNavigateOnlineBack);
             connectionLabel = UI.Text(contentRoot, "Connection", "", new Rect(1210, 62, 250, 44), 23, UI.Muted, TextAlignmentOptions.Right);
             UI.Text(contentRoot, "Page Title", Title(), new Rect(64, 144, 1430, 80), 57);
             switch (owner.menuPage)
