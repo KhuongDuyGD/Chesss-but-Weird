@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 28b48602380a45a3a99630c1c14c09eb, type: 3}
+  m_Name: KingdomRushMusicAlbum
+  m_EditorClassIdentifier:
+  clips:
+  - {fileID: 8300000, guid: 98170afbb64b43bf82f98d3cd953a9a5, type: 3}
+  - {fileID: 8300000, guid: f79a251e6ce645c0af4b9e2d089283fd, type: 3}
+  - {fileID: 8300000, guid: ba3c66cc4d674e958bad197eba5a2e80, type: 3}
+  - {fileID: 8300000, guid: d13dcf9d1a8a4026bffe196b84175839, type: 3}
+  - {fileID: 8300000, guid: 60a9b7f6a7024de2bec841d16ef432a5, type: 3}
+  - {fileID: 8300000, guid: 9c21d65dc58d48f19fb6b0ae72bee700, type: 3}
+  - {fileID: 8300000, guid: e6505d73aba24e5b9dbca8f18c08149e, type: 3}
+  - {fileID: 8300000, guid: 523786afc12a42cf99e8f4de702e96f3, type: 3}
+  - {fileID: 8300000, guid: 64d2be5fb5c352c4e8806eeae09e6d7a, type: 3}
+  - {fileID: 8300000, guid: 05e659fcb56e7574e8fc8b03b793690e, type: 3}
+  - {fileID: 8300000, guid: da0c43549174af14cace083099e51648, type: 3}
+  - {fileID: 8300000, guid: 5d06c3950ff896e41875e94adb2c6d5b, type: 3}
+  - {fileID: 8300000, guid: 23df3c526e91b6f48be5572529a6c429, type: 3}
+  - {fileID: 8300000, guid: 596c517377a5a514a90f53610b7175f8, type: 3}
+  - {fileID: 8300000, guid: 9698d83c91470bc45a78adf9b84c2ca2, type: 3}

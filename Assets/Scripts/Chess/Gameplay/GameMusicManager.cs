@@ -14,7 +14,8 @@ public enum GameMusicPack
     AngryBirdsEpic,
     EpicSeven,
     CounterStrikeGO,
-    EyeOfTheDragon
+    EyeOfTheDragon,
+    KingdomRush
 }
 
 public enum GameMusicContext
@@ -24,7 +25,8 @@ public enum GameMusicContext
     MainMenuHub,
     Gacha,
     InGame,
-    Result
+    Result,
+    Shop
 }
 
 public sealed class GameMusicManager : MonoBehaviour
@@ -39,6 +41,7 @@ public sealed class GameMusicManager : MonoBehaviour
     private const string AngryBirdsFolder = "AngryBirdsCollab";
     private const string EpicSevenFolder = "EpicSevenCollab";
     private const string CsgoFolder = "CSGOcollab";
+    private const string KingdomRushFolder = "KingdomRushCollab";
 
     private static GameMusicManager instance;
 
@@ -49,12 +52,19 @@ public sealed class GameMusicManager : MonoBehaviour
     private Coroutine transitionCoroutine;
     private Coroutine playbackCoroutine;
     private MusicRequest currentRequest;
+    private MusicRequest lastRequestedRequest;
+    private MusicRequest volumeRequest;
     private GameMusicPack activePack = GameMusicPack.Default;
+    private float playbackEnvelope;
+    private bool playbackCompleted;
+    private bool initialized;
 
     public static GameMusicPack ActivePack => Ensure().activePack;
 
     public static void SetActivePack(GameMusicPack pack)
     {
+        if (!Enum.IsDefined(typeof(GameMusicPack), pack))
+            return;
         GameMusicManager manager = Ensure();
         if (manager.activePack == pack)
             return;
@@ -103,6 +113,14 @@ public sealed class GameMusicManager : MonoBehaviour
             return true;
         }
 
+        if (string.Equals(packId, "kingdom_rush", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(packId, "kingdomrush", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(packId, "kingdomrushcollab", StringComparison.OrdinalIgnoreCase))
+        {
+            pack = GameMusicPack.KingdomRush;
+            return true;
+        }
+
         pack = GameMusicPack.Default;
         return false;
     }
@@ -119,6 +137,8 @@ public sealed class GameMusicManager : MonoBehaviour
                 return "CSGO Main Theme";
             case GameMusicPack.EyeOfTheDragon:
                 return "Eye of the Dragon";
+            case GameMusicPack.KingdomRush:
+                return "Kingdom Rush";
             default:
                 return "CBW Official";
         }
@@ -144,9 +164,14 @@ public sealed class GameMusicManager : MonoBehaviour
         Ensure().Play(MusicRequest.For(GameMusicContext.Gacha));
     }
 
-    public static void PlayInGameMusic(bool isBotGame, StockfishDifficulty difficulty)
+    public static void PlayShopMusic()
     {
-        Ensure().Play(MusicRequest.ForInGame(isBotGame, difficulty));
+        Ensure().Play(MusicRequest.For(GameMusicContext.Shop));
+    }
+
+    public static void PlayInGameMusic(bool isBotGame, StockfishDifficulty difficulty, bool isOnline = false, bool isAram = false)
+    {
+        Ensure().Play(MusicRequest.ForInGame(isBotGame, difficulty, isOnline, isAram));
     }
 
     public static void PlayResultMusic(ResultMenuView.ResultKind resultKind)
@@ -160,7 +185,7 @@ public sealed class GameMusicManager : MonoBehaviour
         if (!manager.source)
             return;
 
-        manager.source.volume = GetTargetVolume(manager.currentRequest);
+        manager.ApplySourceVolume();
     }
 
     private static GameMusicManager Ensure()
@@ -185,6 +210,9 @@ public sealed class GameMusicManager : MonoBehaviour
 
     private void Initialize()
     {
+        if (initialized)
+            return;
+        initialized = true;
         if (!source)
         {
             source = gameObject.AddComponent<AudioSource>();
@@ -200,25 +228,42 @@ public sealed class GameMusicManager : MonoBehaviour
     private GameMusicPack LoadSavedPack()
     {
         string saved = PlayerPrefs.GetString(SaveKey, GameMusicPack.Default.ToString());
-        if (Enum.TryParse(saved, true, out GameMusicPack pack))
+        if (Enum.TryParse(saved, true, out GameMusicPack pack) && Enum.IsDefined(typeof(GameMusicPack), pack))
             return pack;
         return GameMusicPack.Default;
     }
 
     private void ReplayCurrentContext()
     {
-        if (currentRequest.context == 0 && string.IsNullOrEmpty(currentRequest.key))
+        if (string.IsNullOrEmpty(lastRequestedRequest.key))
             return;
 
-        Play(currentRequest, true);
+        Play(lastRequestedRequest, true);
     }
 
     private void Play(MusicRequest request, bool forceRestart = false)
     {
         Initialize();
+        if (!forceRestart)
+            lastRequestedRequest = request;
+        // Screens sharing a soundtrack also share playback, including an in-progress fade.
+        if (activePack == GameMusicPack.KingdomRush)
+        {
+            if (request.context == GameMusicContext.MainMenuPrimary)
+                request = MusicRequest.For(GameMusicContext.MainMenuHub);
+            else if (request.context == GameMusicContext.Shop)
+                request = MusicRequest.For(GameMusicContext.Gacha);
+        }
+        else if (request.context == GameMusicContext.MainMenuPrimary)
+            request = MusicRequest.For(GameMusicContext.Auth);
+        else if (request.context == GameMusicContext.Shop)
+            request = MusicRequest.For(GameMusicContext.MainMenuHub);
+
         if (!forceRestart && request.Equals(currentRequest))
         {
             currentRequest = request;
+            if (playbackCompleted)
+                return;
             if (IsPlaybackBusy)
             {
                 ResumeCurrentClipIfNeeded(request);
@@ -234,9 +279,13 @@ public sealed class GameMusicManager : MonoBehaviour
         }
 
         currentRequest = request;
+        playbackCompleted = false;
 
         if (transitionCoroutine != null)
+        {
             StopCoroutine(transitionCoroutine);
+            transitionCoroutine = null;
+        }
         if (playbackCoroutine != null)
         {
             StopCoroutine(playbackCoroutine);
@@ -248,9 +297,12 @@ public sealed class GameMusicManager : MonoBehaviour
 
     private IEnumerator SwitchToRequest(MusicRequest request)
     {
-        float targetVolume = GetTargetVolume(request);
         if (source && source.isPlaying)
-            yield return FadeSource(source.volume, 0f, TransitionFadeSeconds);
+            yield return FadeSource(playbackEnvelope, 0f, TransitionFadeSeconds);
+
+        source.Stop();
+        playbackEnvelope = 0f;
+        ApplySourceVolume();
 
         MusicTrack track = PickTrack(request);
         AudioClip clip = null;
@@ -268,6 +320,7 @@ public sealed class GameMusicManager : MonoBehaviour
 
             if (!clip)
             {
+                source.clip = null;
                 transitionCoroutine = null;
                 yield break;
             }
@@ -275,19 +328,19 @@ public sealed class GameMusicManager : MonoBehaviour
 
         source.Stop();
         source.clip = clip;
+        volumeRequest = request;
         source.loop = false;
         source.volume = 0f;
         source.Play();
         Debug.Log($"[GameMusic] Playing pack={activePack}, context={request.context}, clip=\"{track.fileName}\"");
 
-        yield return FadeSource(0f, targetVolume, TransitionFadeSeconds);
+        yield return FadeSource(0f, 1f, TransitionFadeSeconds);
         transitionCoroutine = null;
         playbackCoroutine = StartCoroutine(WatchClipEnd(request));
     }
 
     private IEnumerator WatchClipEnd(MusicRequest request)
     {
-        float targetVolume = GetTargetVolume(request);
         while (request.Equals(currentRequest))
         {
             if (!source || !source.clip)
@@ -296,11 +349,15 @@ public sealed class GameMusicManager : MonoBehaviour
                 yield break;
             }
 
-            if (!source.isPlaying)
+            if (AudioListener.pause)
             {
                 yield return null;
                 continue;
             }
+
+            // A short clip or a stalled frame can pass its end before the fade starts.
+            if (!source.isPlaying)
+                break;
 
             if (source.clip.length <= EndFadeSeconds)
                 break;
@@ -309,8 +366,7 @@ public sealed class GameMusicManager : MonoBehaviour
             if (remaining <= EndFadeSeconds)
                 break;
 
-            if (Mathf.Abs(source.volume - targetVolume) > 0.01f)
-                source.volume = Mathf.MoveTowards(source.volume, targetVolume, Time.unscaledDeltaTime);
+            ApplySourceVolume();
             yield return null;
         }
 
@@ -320,7 +376,8 @@ public sealed class GameMusicManager : MonoBehaviour
             yield break;
         }
 
-        yield return FadeSource(source.volume, 0f, EndFadeSeconds);
+        if (source.isPlaying)
+            yield return FadeSource(playbackEnvelope, 0f, Mathf.Min(EndFadeSeconds, source.clip.length - source.time));
         if (!request.Equals(currentRequest))
         {
             playbackCoroutine = null;
@@ -330,6 +387,7 @@ public sealed class GameMusicManager : MonoBehaviour
         playbackCoroutine = null;
         if (ShouldStopAfterClip(request))
         {
+            playbackCompleted = true;
             source.Stop();
             source.clip = null;
             yield break;
@@ -354,12 +412,19 @@ public sealed class GameMusicManager : MonoBehaviour
 
     private void ResumeCurrentClipIfNeeded(MusicRequest request)
     {
-        if (!source || !source.clip || string.IsNullOrEmpty(request.key))
+        if (!source || !source.clip || string.IsNullOrEmpty(request.key) || playbackCompleted ||
+            transitionCoroutine != null || playbackCoroutine != null)
             return;
 
-        source.volume = GetTargetVolume(request);
+        ApplySourceVolume();
         if (!source.isPlaying)
-            source.Play();
+            source.UnPause();
+    }
+
+    private void ApplySourceVolume()
+    {
+        if (source)
+            source.volume = playbackEnvelope * GetTargetVolume(volumeRequest);
     }
 
     private static float GetTargetVolume(MusicRequest request)
@@ -382,7 +447,8 @@ public sealed class GameMusicManager : MonoBehaviour
 
         if (duration <= 0f)
         {
-            source.volume = to;
+            playbackEnvelope = to;
+            ApplySourceVolume();
             yield break;
         }
 
@@ -390,11 +456,13 @@ public sealed class GameMusicManager : MonoBehaviour
         while (Time.unscaledTime - startedAt < duration)
         {
             float t = Mathf.Clamp01((Time.unscaledTime - startedAt) / duration);
-            source.volume = Mathf.Lerp(from, to, t);
+            playbackEnvelope = Mathf.Lerp(from, to, t);
+            ApplySourceVolume();
             yield return null;
         }
 
-        source.volume = to;
+        playbackEnvelope = to;
+        ApplySourceVolume();
     }
 
     private MusicTrack PickTrack(MusicRequest request)
@@ -406,9 +474,9 @@ public sealed class GameMusicManager : MonoBehaviour
         if (playlist.Length == 1)
             return playlist[0];
 
-        if (request.sequential)
+        if (request.sequential || activePack == GameMusicPack.KingdomRush)
         {
-            string key = $"{activePack}:{request.key}";
+            string key = activePack == GameMusicPack.KingdomRush ? "KingdomRush:Forest" : $"{activePack}:{request.key}";
             if (!playlistIndices.TryGetValue(key, out int index))
                 index = 0;
             MusicTrack track = playlist[index % playlist.Length];
@@ -449,6 +517,9 @@ public sealed class GameMusicManager : MonoBehaviour
 
     private MusicTrack[] GetPlaylist(MusicRequest request)
     {
+        // Existing albums keep their original shop (hub menu) soundtrack.
+        if (request.context == GameMusicContext.Shop && activePack != GameMusicPack.KingdomRush)
+            request = MusicRequest.For(GameMusicContext.MainMenuHub);
         switch (activePack)
         {
             case GameMusicPack.AngryBirdsEpic:
@@ -459,6 +530,8 @@ public sealed class GameMusicManager : MonoBehaviour
                 return GetCounterStrikePlaylist(request);
             case GameMusicPack.EyeOfTheDragon:
                 return GetEyeOfTheDragonPlaylist(request);
+            case GameMusicPack.KingdomRush:
+                return GetKingdomRushPlaylist(request);
             default:
                 return GetDefaultPlaylist(request);
         }
@@ -634,6 +707,44 @@ public sealed class GameMusicManager : MonoBehaviour
         return new[] { track };
     }
 
+    private MusicTrack[] GetKingdomRushPlaylist(MusicRequest request)
+    {
+        switch (request.context)
+        {
+            case GameMusicContext.Auth:
+                return One(MusicTrack.KingdomRush("Kingdom Rush OST - Main Menu Theme.mp3"));
+            case GameMusicContext.MainMenuPrimary:
+            case GameMusicContext.MainMenuHub:
+                return One(MusicTrack.KingdomRush("Kingdom Rush OST - Map Theme.mp3"));
+            case GameMusicContext.Shop:
+            case GameMusicContext.Gacha:
+                return One(MusicTrack.KingdomRush("Kingdom Rush UNUSED OST - Theme of Linirea.mp3"));
+            case GameMusicContext.InGame:
+                if (request.isAram)
+                    return One(MusicTrack.KingdomRush("Kingdom Rush OST - The Dark Tower.mp3"));
+                if (request.isOnline)
+                    return One(MusicTrack.KingdomRush("Kingdom Rush OST - Wasteland Battle.mp3"));
+                if (request.isBotGame)
+                {
+                    int level = StockfishDifficultyProfiles.Get(request.difficulty).Level;
+                    int highestLevel = 0;
+                    foreach (var profile in StockfishDifficultyProfiles.All)
+                        highestLevel = Math.Max(highestLevel, profile.Level);
+                    if (level == highestLevel)
+                        return One(MusicTrack.KingdomRush("Kingdom Rush OST - Boss Battle.mp3"));
+                    if (level > 8)
+                        return One(MusicTrack.KingdomRush("Kingdom Rush OST - Wasteland Battle.mp3"));
+                }
+                return new[]
+                {
+                    MusicTrack.KingdomRush("Kingdom Rush OST - Forest BattleI.mp3"),
+                    MusicTrack.KingdomRush("Kingdom Rush OST - Forest BattleII.mp3")
+                };
+            default:
+                return GetDefaultPlaylist(request);
+        }
+    }
+
     private IEnumerator LoadClip(MusicTrack track, Action<AudioClip> callback)
     {
         string assetPath = track.AssetPath;
@@ -652,6 +763,19 @@ public sealed class GameMusicManager : MonoBehaviour
             yield break;
         }
 #endif
+
+        // Serialized references keep the new album available in standalone builds.
+        if (track.folder == KingdomRushFolder || track.folder == DefaultFolder)
+        {
+            GameMusicAlbum album = Resources.Load<GameMusicAlbum>("Chess/KingdomRushMusicAlbum");
+            AudioClip bundledClip = album ? album.FindClip(track.fileName) : null;
+            if (bundledClip)
+            {
+                clipCache[assetPath] = bundledClip;
+                callback(bundledClip);
+                yield break;
+            }
+        }
 
         string fullPath = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), assetPath));
         if (!File.Exists(fullPath))
@@ -746,12 +870,19 @@ public sealed class GameMusicManager : MonoBehaviour
         {
             return new MusicTrack(CsgoFolder, fileName);
         }
+
+        public static MusicTrack KingdomRush(string fileName)
+        {
+            return new MusicTrack(KingdomRushFolder, fileName);
+        }
     }
 
     private struct MusicRequest : IEquatable<MusicRequest>
     {
         public GameMusicContext context;
         public bool isBotGame;
+        public bool isOnline;
+        public bool isAram;
         public StockfishDifficulty difficulty;
         public ResultMenuView.ResultKind resultKind;
         public bool sequential;
@@ -759,27 +890,28 @@ public sealed class GameMusicManager : MonoBehaviour
 
         public static MusicRequest For(GameMusicContext context)
         {
-            bool isMainMenuHub = context == GameMusicContext.MainMenuHub;
-            bool isAuthOrPrimaryMenu = context == GameMusicContext.Auth || context == GameMusicContext.MainMenuPrimary;
+            bool isMainMenuHub = context == GameMusicContext.MainMenuHub || context == GameMusicContext.Shop;
             return new MusicRequest
             {
                 context = context,
                 difficulty = StockfishDifficulty.Medium,
                 resultKind = ResultMenuView.ResultKind.Draw,
                 sequential = isMainMenuHub,
-                key = isAuthOrPrimaryMenu ? "AuthMainMenuPrimary" : context.ToString()
+                key = context.ToString()
             };
         }
 
-        public static MusicRequest ForInGame(bool isBotGame, StockfishDifficulty difficulty)
+        public static MusicRequest ForInGame(bool isBotGame, StockfishDifficulty difficulty, bool isOnline = false, bool isAram = false)
         {
             return new MusicRequest
             {
                 context = GameMusicContext.InGame,
                 isBotGame = isBotGame,
+                isOnline = isOnline,
+                isAram = isAram,
                 difficulty = difficulty,
                 resultKind = ResultMenuView.ResultKind.Draw,
-                key = $"{GameMusicContext.InGame}:{isBotGame}:{difficulty}"
+                key = $"{GameMusicContext.InGame}:{isBotGame}:{difficulty}:{isOnline}:{isAram}"
             };
         }
 
@@ -796,7 +928,10 @@ public sealed class GameMusicManager : MonoBehaviour
 
         public bool Equals(MusicRequest other)
         {
-            return isBotGame == other.isBotGame &&
+            return context == other.context &&
+                   isOnline == other.isOnline &&
+                   isAram == other.isAram &&
+                   isBotGame == other.isBotGame &&
                    difficulty == other.difficulty &&
                    resultKind == other.resultKind &&
                    string.Equals(key, other.key, StringComparison.Ordinal);

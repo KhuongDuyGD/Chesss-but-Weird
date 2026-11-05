@@ -37,7 +37,7 @@ The independent canvas is retained at sorting order 2500. The new responsive pap
 - After acknowledged multiplayer leave, the old transport/session, match presenters and transient exit state are disposed. Existing `ShowLobby` reopens the preserved LAN/Online and Classic/ARAM destination, with its normal refresh behavior.
 - Main Menu releases match content and opens Main Menu 2 through `ShowTurnSelection`, not the first main menu.
 - Quit Desktop calls `Application.Quit` in a player, or stops Play Mode in the Editor. Multiplayer first attempts the existing leave path. After five seconds without acknowledgement, or a failed acknowledgement, local transport cleanup still occurs and desktop exit proceeds. Server-side disconnect/surrender policies are unchanged.
-- Navigation waits for the existing `LoadingManager` success callback after asset release and additive scene unload. A busy content owner is reported without swallowing the exit or leaving controls permanently disabled.
+- Navigation selects the destination after asset release and additive scene unload, before the loading overlay fades out. It opens Bot Selection, Main Menu 2 or the originating online lobby directly, without presenting Main Menu 1 first. The success callback runs after the overlay closes. A busy content owner is reported without swallowing the exit or leaving controls permanently disabled.
 
 ## Verification
 

@@ -38,7 +38,7 @@ public partial class ChessGame
         aramCoordinator?.EndMatch();
         var local = state.players.Single(p => p.userId == PlayerAuthService.UserId);
         serverAuthoritativeMode = true; botMode = false; aramMode = state.chaos != null;
-        GameMusicManager.PlayInGameMusic(false, StockfishDifficulty.Medium);
+        GameMusicManager.PlayInGameMusic(false, StockfishDifficulty.Medium, isOnline: true, isAram: aramMode);
         BeginGameInternal(PieceTeam.White, ParseOnlineTeam(local.color), true, PieceTeam.White);
         SetActiveMatchIdentity(state.matchId);
         // The old ARAM runtime is not started: online mechanics come from the

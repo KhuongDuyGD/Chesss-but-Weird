@@ -417,7 +417,7 @@ public partial class ChessGame : MonoBehaviour
         aramMode = true;
         botDifficulty = StockfishDifficulty.Medium;
         EnsureAramRuntime();
-        GameMusicManager.PlayInGameMusic(false, StockfishDifficulty.Medium);
+        GameMusicManager.PlayInGameMusic(false, StockfishDifficulty.Medium, isAram: true);
         BeginGameInternal(PieceTeam.White, PieceTeam.White, false, PieceTeam.White);
         aramCoordinator.BeginMatch(this);
     }
@@ -438,6 +438,7 @@ public partial class ChessGame : MonoBehaviour
         aramMode = false;
         botDifficulty = selectedDifficulty;
         botOptions = options ?? BotGameOptions.Challenge;
+        GameMusicManager.PlayInGameMusic(true, selectedDifficulty);
         BeginGameInternal(PieceTeam.White, localPlayerTeam, true, PieceTeam.White);
     }
 
@@ -915,21 +916,24 @@ public partial class ChessGame : MonoBehaviour
         RestartToMainMenu(null);
     }
 
-    public void RestartToMainMenu(Action onReturned)
+    public void RestartToMainMenu(Action onReturned, Action showDestination = null)
     {
         var loading = GetComponent<LoadingManager>();
-        if (loading && loading.HasMatchContent) { loading.ReturnToMenu(onReturned); return; }
-        FinishReturnToMainMenu();
+        if (loading && loading.HasMatchContent) { loading.ReturnToMenu(onReturned, showDestination); return; }
+        FinishReturnToMainMenu(showDestination);
         onReturned?.Invoke();
     }
 
-    internal void FinishReturnToMainMenu()
+    internal void FinishReturnToMainMenu(Action showDestination = null)
     {
         pauseLocked = false;
         Time.timeScale = 1f;
         if (chessboard) PrepareGame();
-        turnSelectionUI?.ShowMainMenu();
+        turnSelectionUI?.ResetMatchPresentationForMenu();
         ReturnedToMainMenu?.Invoke();
+        // Subscribers release match presenters before the destination opens its UI.
+        if (showDestination != null) showDestination();
+        else turnSelectionUI?.ShowMainMenu();
     }
 
     public bool RestartCurrentLocalGame()

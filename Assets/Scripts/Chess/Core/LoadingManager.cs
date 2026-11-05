@@ -22,6 +22,7 @@ public sealed class LoadingManager : MonoBehaviour
     private MatchLoadingContext lastMatchup;
     private bool cancelMatchLoad;
     private Action returned;
+    private Action returnDestination;
     public CosmeticCatalog Catalog { get; private set; }
     public SkinManager Skins { get; private set; }
     public BoardSkinManager Board { get; private set; }
@@ -251,10 +252,11 @@ public sealed class LoadingManager : MonoBehaviour
         finally { IsBusy = false; }
     }
 
-    public void ReturnToMenu(Action onReturned = null)
+    public void ReturnToMenu(Action onReturned = null, Action showDestination = null)
     {
         if (IsBusy) return;
         returned = onReturned;
+        returnDestination = showDestination;
         IsBusy = true;
         game.SetContentLoading(true);
         ui = LoadingUI.Create(transform);
@@ -272,7 +274,9 @@ public sealed class LoadingManager : MonoBehaviour
             yield return SceneManager.UnloadSceneAsync(ownedScene);
         }
         ownedScene = default;
-        game.FinishReturnToMainMenu();
+        var destination = returnDestination;
+        returnDestination = null;
+        game.FinishReturnToMainMenu(destination);
         yield return ui.Finish();
         ui = null;
         game.SetContentLoading(false);

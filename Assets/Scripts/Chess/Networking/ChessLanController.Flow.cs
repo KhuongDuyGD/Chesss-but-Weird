@@ -31,6 +31,7 @@ public partial class ChessLanController
     }
     private bool HasLobbyReservation => online?.State?.IsActive == true || online?.Ticket?.status == "Queued" || online?.Room?.status == "Open";
     private bool CanEditLoadout => !HasLobbyReservation && !requestInFlight;
+    private bool CanNavigateOnlineBack => !requestInFlight || lobbyReadInFlight && !HasLobbyReservation;
     private void OpenRooms() => OpenOnlineLoadout(() =>
     { SetMenuPage(OnlineMenuPage.Rooms); statusMessage = "Create a room or join a friend."; }, "CONTINUE");
     private void OpenRoomBrowser()
@@ -38,7 +39,7 @@ public partial class ChessLanController
     private void OpenMatchmaking() => OpenOnlineLoadout(RequestFindMatch, "FIND MATCH");
     private void OpenOnlineLoadout(Action next, string label)
     {
-        if (!CanEditLoadout) return;
+        if (HasLobbyReservation || !CanNavigateOnlineBack) return;
         loadoutOpenVersion++;
         loadoutContinuation = next; loadoutActionLabel = label;
         SetMenuPage(OnlineMenuPage.Loadout);
@@ -51,7 +52,7 @@ public partial class ChessLanController
         if (menuPage != OnlineMenuPage.Loadout) menuRevision++;
         if (menuPage == OnlineMenuPage.FindRoom) { roomListPage = 1; RefreshRoomBrowser(); }
     }
-    private void RefreshRoomBrowser() => Run(async () => await LoadRoomListAsync());
+    private void RefreshRoomBrowser() => Run(async () => await LoadRoomListAsync(), backgroundRead: true);
     private async Task LoadRoomListAsync()
     {
         roomsLoading = true; roomListError = null; int epoch = lifecycle;
@@ -77,7 +78,7 @@ public partial class ChessLanController
     }
     private void BackOnlineMenu()
     {
-        if (requestInFlight) return;
+        if (!CanNavigateOnlineBack) return;
         if ((directMatchmaking || customRoomEntry.HasValue) && menuPage == OnlineMenuPage.Loadout && !HasLobbyReservation)
         {
             findMatchAfterRequest = false;
@@ -89,7 +90,11 @@ public partial class ChessLanController
         }
         switch (menuPage)
         {
-            case OnlineMenuPage.Home: RequestLeaveToModeSelection(); break;
+            case OnlineMenuPage.Home:
+                if (lobbyReadInFlight && !HasLobbyReservation)
+                { HideLanSetup(); turnSelectionUI.ShowTurnSelection(); }
+                else RequestLeaveToModeSelection();
+                break;
             case OnlineMenuPage.Rooms: case OnlineMenuPage.Loadout: SetMenuPage(OnlineMenuPage.Home); break;
             case OnlineMenuPage.FindRoom: SetMenuPage(OnlineMenuPage.Rooms); break;
             case OnlineMenuPage.Room:
