@@ -1,0 +1,93 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
+  m_Name: PieceSkin_KR_Denas
+  m_EditorClassIdentifier: Unity.Addressables.Editor::UnityEditor.AddressableAssets.Settings.AddressableAssetGroup
+  m_GroupName: PieceSkin_KR_Denas
+  m_GUID: e6d1e149c17de6c498de050043463154
+  m_SerializeEntries:
+  - m_GUID: 01dcacd150aa2674ba39c1f4a032c783
+    m_Address: Pieces/kingdom_rush_denas/05_Quan_hau_Denas_White
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 098c038bfe49f4b419017b94a4edee4b
+    m_Address: Pieces/kingdom_rush_denas/06_Quan_vua_Denas_Black
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 1ddb0a9363e988241b18ad3eaf4dfdfa
+    m_Address: Pieces/kingdom_rush_denas/04_Quan_tuong_Denas_White
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 3d75c1dfb093ab34c9f5a3198d3f9e51
+    m_Address: Pieces/kingdom_rush_denas/02_Quan_xe_Denas_Black
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 406c0ce57a4b0b94d9ed89167bf89829
+    m_Address: Pieces/kingdom_rush_denas/03_Quan_ngua_Denas_White
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 4962c244bd2997a4893c22984169cd15
+    m_Address: Pieces/kingdom_rush_denas/01_Quan_tot_Denas_Black
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 77d5d71569c5c4a46bc3c3beccccdf33
+    m_Address: Pieces/kingdom_rush_denas/03_Quan_ngua_Denas_Black
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 813633b37df7d4a4d9ac3d000ee14e0a
+    m_Address: Pieces/kingdom_rush_denas/05_Quan_hau_Denas_Black
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 8ae34ae568812ec44a98db54f1d2771a
+    m_Address: Pieces/kingdom_rush_denas/02_Quan_xe_Denas_White
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 96aeb6ae3c582e54e9866c7084b9f79c
+    m_Address: Pieces/kingdom_rush_denas/06_Quan_vua_Denas_White
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: afadfbccb4440274484cf020852c50da
+    m_Address: PieceSkin/kingdom_rush_denas
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b3b8255033b0b2f40888a121379cbe4d
+    m_Address: Pieces/kingdom_rush_denas/04_Quan_tuong_Denas_Black
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b796abda75530ee4c9c70eb742070533
+    m_Address: Pieces/kingdom_rush_denas/01_Quan_tot_Denas_White
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  m_ReadOnly: 0
+  m_Settings: {fileID: 11400000, guid: 8194c9a80f156474bbbfc1ccbf68345e, type: 2}
+  m_SchemaSet:
+    m_Schemas:
+    - {fileID: 11400000, guid: 64c736981f6aff443a9469eec1c48dfc, type: 2}
+    - {fileID: 11400000, guid: 5d57d455a629e21488ff42e8a5741058, type: 2}
+    m_SchemaDisplayOrder:
+    - PieceSkin_KR_Denas_BundledAssetGroupSchema
+    - PieceSkin_KR_Denas_ContentUpdateGroupSchema
+  m_IncludeInBuild: 1
+  m_IncludeInBuildMigrated: 1

@@ -1,0 +1,312 @@
+{
+  "authoring": "Full reconstructed volumetric sculptures, repaired outer surfaces, rounded 3D magic, unique UVs and coherent multiview surface paint",
+  "polish_revision": "2026-11-06",
+  "status": "Multiangle 3D polish completed; Blender/FBX/Unity technical verification passed",
+  "exact_likeness_certified": false,
+  "pieces": [
+    {
+      "name": "01_Quan_tot_Denas",
+      "dimensions_m": [
+        0.38472965359687805,
+        0.38831236958503723,
+        0.5513057708740234
+      ],
+      "triangles": 89928,
+      "material": "KR_Art_01_Quan_tot_Denas",
+      "texture": "Assets/Skins/KingdomRushCollab/Textures/01_Quan_tot_Denas_Albedo.png",
+      "metallic_smoothness_texture": "Assets/Skins/KingdomRushCollab/Textures/01_Quan_tot_Denas_MetallicSmoothness.png",
+      "original_type_height_m": 1.000000026253133,
+      "unique_uv": true,
+      "atlas_size": [
+        4096,
+        4096
+      ],
+      "shader": "URP Lit / Blender Principled",
+      "direct_multiview_surface_coverage": 0.594855189796352,
+      "blend": "ArtSource/KingdomRush/Pieces/01_Quan_tot_Denas.blend",
+      "fbx": "Assets/Skins/KingdomRushCollab/Models/01_Quan_tot_Denas.fbx"
+    },
+    {
+      "name": "01_Quan_tot_Veznan",
+      "dimensions_m": [
+        0.46322008967399597,
+        0.40514037013053894,
+        0.5513057708740234
+      ],
+      "triangles": 89968,
+      "material": "KR_Art_01_Quan_tot_Veznan",
+      "texture": "Assets/Skins/KingdomRushCollab/Textures/01_Quan_tot_Veznan_Albedo.png",
+      "metallic_smoothness_texture": "Assets/Skins/KingdomRushCollab/Textures/01_Quan_tot_Veznan_MetallicSmoothness.png",
+      "original_type_height_m": 1.000000026253133,
+      "unique_uv": true,
+      "atlas_size": [
+        4096,
+        4096
+      ],
+      "shader": "URP Lit / Blender Principled",
+      "direct_multiview_surface_coverage": 0.8126577405778818,
+      "blend": "ArtSource/KingdomRush/Pieces/01_Quan_tot_Veznan.blend",
+      "fbx": "Assets/Skins/KingdomRushCollab/Models/01_Quan_tot_Veznan.fbx"
+    },
+    {
+      "name": "02_Quan_xe_Denas",
+      "dimensions_m": [
+        0.48563605546951294,
+        0.4937063455581665,
+        0.6891322135925293
+      ],
+      "triangles": 89996,
+      "material": "KR_Art_02_Quan_xe_Denas",
+      "texture": "Assets/Skins/KingdomRushCollab/Textures/02_Quan_xe_Denas_Albedo.png",
+      "metallic_smoothness_texture": "Assets/Skins/KingdomRushCollab/Textures/02_Quan_xe_Denas_MetallicSmoothness.png",
+      "original_type_height_m": 1.250000026657002,
+      "unique_uv": true,
+      "atlas_size": [
+        4096,
+        4096
+      ],
+      "shader": "URP Lit / Blender Principled",
+      "direct_multiview_surface_coverage": 0.7789734048480148,
+      "blend": "ArtSource/KingdomRush/Pieces/02_Quan_xe_Denas.blend",
+      "fbx": "Assets/Skins/KingdomRushCollab/Models/02_Quan_xe_Denas.fbx"
+    },
+    {
+      "name": "02_Quan_xe_Veznan",
+      "dimensions_m": [
+        0.5147199630737305,
+        0.5589590668678284,
+        0.6891322135925293
+      ],
+      "triangles": 90000,
+      "material": "KR_Art_02_Quan_xe_Veznan",
+      "texture": "Assets/Skins/KingdomRushCollab/Textures/02_Quan_xe_Veznan_Albedo.png",
+      "metallic_smoothness_texture": "Assets/Skins/KingdomRushCollab/Textures/02_Quan_xe_Veznan_MetallicSmoothness.png",
+      "original_type_height_m": 1.250000026657002,
+      "unique_uv": true,
+      "atlas_size": [
+        4096,
+        4096
+      ],
+      "shader": "URP Lit / Blender Principled",
+      "direct_multiview_surface_coverage": 0.8420402716670318,
+      "blend": "ArtSource/KingdomRush/Pieces/02_Quan_xe_Veznan.blend",
+      "fbx": "Assets/Skins/KingdomRushCollab/Models/02_Quan_xe_Veznan.fbx"
+    },
+    {
+      "name": "03_Quan_ngua_Denas",
+      "dimensions_m": [
+        0.6618971824645996,
+        0.47984302043914795,
+        0.7405930757522583
+      ],
+      "triangles": 89514,
+      "material": "KR_Art_03_Quan_ngua_Denas",
+      "texture": "Assets/Skins/KingdomRushCollab/Textures/03_Quan_ngua_Denas_Albedo.png",
+      "metallic_smoothness_texture": "Assets/Skins/KingdomRushCollab/Textures/03_Quan_ngua_Denas_MetallicSmoothness.png",
+      "original_type_height_m": 1.3433436417850544,
+      "unique_uv": true,
+      "atlas_size": [
+        4096,
+        4096
+      ],
+      "shader": "URP Lit / Blender Principled",
+      "direct_multiview_surface_coverage": 0.7959265917178961,
+      "blend": "ArtSource/KingdomRush/Pieces/03_Quan_ngua_Denas.blend",
+      "fbx": "Assets/Skins/KingdomRushCollab/Models/03_Quan_ngua_Denas.fbx"
+    },
+    {
+      "name": "03_Quan_ngua_Veznan",
+      "dimensions_m": [
+        0.5636656284332275,
+        0.4637982249259949,
+        0.7405930757522583
+      ],
+      "triangles": 89938,
+      "material": "KR_Art_03_Quan_ngua_Veznan",
+      "texture": "Assets/Skins/KingdomRushCollab/Textures/03_Quan_ngua_Veznan_Albedo.png",
+      "metallic_smoothness_texture": "Assets/Skins/KingdomRushCollab/Textures/03_Quan_ngua_Veznan_MetallicSmoothness.png",
+      "original_type_height_m": 1.3433436417850544,
+      "unique_uv": true,
+      "atlas_size": [
+        4096,
+        4096
+      ],
+      "shader": "URP Lit / Blender Principled",
+      "direct_multiview_surface_coverage": 0.7948712405963942,
+      "blend": "ArtSource/KingdomRush/Pieces/03_Quan_ngua_Veznan.blend",
+      "fbx": "Assets/Skins/KingdomRushCollab/Models/03_Quan_ngua_Veznan.fbx"
+    },
+    {
+      "name": "04_Quan_tuong_Denas",
+      "dimensions_m": [
+        0.6512938141822815,
+        0.543010950088501,
+        0.7993934154510498
+      ],
+      "triangles": 89998,
+      "material": "KR_Art_04_Quan_tuong_Denas",
+      "texture": "Assets/Skins/KingdomRushCollab/Textures/04_Quan_tuong_Denas_Albedo.png",
+      "metallic_smoothness_texture": "Assets/Skins/KingdomRushCollab/Textures/04_Quan_tuong_Denas_MetallicSmoothness.png",
+      "original_type_height_m": 1.4500000739368488,
+      "unique_uv": true,
+      "atlas_size": [
+        4096,
+        4096
+      ],
+      "shader": "URP Lit / Blender Principled",
+      "direct_multiview_surface_coverage": 0.8106084152241273,
+      "blend": "ArtSource/KingdomRush/Pieces/04_Quan_tuong_Denas.blend",
+      "fbx": "Assets/Skins/KingdomRushCollab/Models/04_Quan_tuong_Denas.fbx"
+    },
+    {
+      "name": "04_Quan_tuong_Veznan",
+      "dimensions_m": [
+        0.5516822338104248,
+        0.5579476952552795,
+        0.7993934154510498
+      ],
+      "triangles": 89886,
+      "material": "KR_Art_04_Quan_tuong_Veznan",
+      "texture": "Assets/Skins/KingdomRushCollab/Textures/04_Quan_tuong_Veznan_Albedo.png",
+      "metallic_smoothness_texture": "Assets/Skins/KingdomRushCollab/Textures/04_Quan_tuong_Veznan_MetallicSmoothness.png",
+      "original_type_height_m": 1.4500000739368488,
+      "unique_uv": true,
+      "atlas_size": [
+        4096,
+        4096
+      ],
+      "shader": "URP Lit / Blender Principled",
+      "direct_multiview_surface_coverage": 0.7676194467507259,
+      "blend": "ArtSource/KingdomRush/Pieces/04_Quan_tuong_Veznan.blend",
+      "fbx": "Assets/Skins/KingdomRushCollab/Models/04_Quan_tuong_Veznan.fbx"
+    },
+    {
+      "name": "05_Quan_hau_Denas",
+      "dimensions_m": [
+        0.6556156873703003,
+        0.5955284833908081,
+        0.8820892572402954
+      ],
+      "triangles": 89898,
+      "material": "KR_Art_05_Quan_hau_Denas",
+      "texture": "Assets/Skins/KingdomRushCollab/Textures/05_Quan_hau_Denas_Albedo.png",
+      "metallic_smoothness_texture": "Assets/Skins/KingdomRushCollab/Textures/05_Quan_hau_Denas_MetallicSmoothness.png",
+      "original_type_height_m": 1.6000000506864822,
+      "unique_uv": true,
+      "atlas_size": [
+        4096,
+        4096
+      ],
+      "shader": "URP Lit / Blender Principled",
+      "direct_multiview_surface_coverage": 0.7994336226539996,
+      "blend": "ArtSource/KingdomRush/Pieces/05_Quan_hau_Denas.blend",
+      "fbx": "Assets/Skins/KingdomRushCollab/Models/05_Quan_hau_Denas.fbx"
+    },
+    {
+      "name": "05_Quan_hau_Veznan",
+      "dimensions_m": [
+        0.7163336873054504,
+        0.5627270936965942,
+        0.8820892572402954
+      ],
+      "triangles": 90000,
+      "material": "KR_Art_05_Quan_hau_Veznan",
+      "texture": "Assets/Skins/KingdomRushCollab/Textures/05_Quan_hau_Veznan_Albedo.png",
+      "metallic_smoothness_texture": "Assets/Skins/KingdomRushCollab/Textures/05_Quan_hau_Veznan_MetallicSmoothness.png",
+      "original_type_height_m": 1.6000000506864822,
+      "unique_uv": true,
+      "atlas_size": [
+        4096,
+        4096
+      ],
+      "shader": "URP Lit / Blender Principled",
+      "direct_multiview_surface_coverage": 0.7216634562113095,
+      "blend": "ArtSource/KingdomRush/Pieces/05_Quan_hau_Veznan.blend",
+      "fbx": "Assets/Skins/KingdomRushCollab/Models/05_Quan_hau_Veznan.fbx"
+    },
+    {
+      "name": "06_Quan_vua_Denas",
+      "dimensions_m": [
+        0.7232846021652222,
+        0.6660703420639038,
+        0.9372198581695557
+      ],
+      "triangles": 89988,
+      "material": "KR_Art_06_Quan_vua_Denas",
+      "texture": "Assets/Skins/KingdomRushCollab/Textures/06_Quan_vua_Denas_Albedo.png",
+      "metallic_smoothness_texture": "Assets/Skins/KingdomRushCollab/Textures/06_Quan_vua_Denas_MetallicSmoothness.png",
+      "original_type_height_m": 1.7000000755120386,
+      "unique_uv": true,
+      "atlas_size": [
+        4096,
+        4096
+      ],
+      "shader": "URP Lit / Blender Principled",
+      "direct_multiview_surface_coverage": 0.6644814049180972,
+      "blend": "ArtSource/KingdomRush/Pieces/06_Quan_vua_Denas.blend",
+      "fbx": "Assets/Skins/KingdomRushCollab/Models/06_Quan_vua_Denas.fbx"
+    },
+    {
+      "name": "06_Quan_vua_Veznan",
+      "dimensions_m": [
+        0.8199999928474426,
+        0.6454263925552368,
+        0.9372198581695557
+      ],
+      "triangles": 89990,
+      "material": "KR_Art_06_Quan_vua_Veznan",
+      "texture": "Assets/Skins/KingdomRushCollab/Textures/06_Quan_vua_Veznan_Albedo.png",
+      "metallic_smoothness_texture": "Assets/Skins/KingdomRushCollab/Textures/06_Quan_vua_Veznan_MetallicSmoothness.png",
+      "original_type_height_m": 1.7000000755120386,
+      "unique_uv": true,
+      "atlas_size": [
+        4096,
+        4096
+      ],
+      "shader": "URP Lit / Blender Principled",
+      "direct_multiview_surface_coverage": 0.7880107374453026,
+      "blend": "ArtSource/KingdomRush/Pieces/06_Quan_vua_Veznan.blend",
+      "fbx": "Assets/Skins/KingdomRushCollab/Models/06_Quan_vua_Veznan.fbx"
+    }
+  ],
+  "board": {
+    "playable_grid": 8,
+    "cell_size": 1,
+    "surface_z": 0,
+    "prison_surface": 0.036,
+    "surface_detail": "Seamless albedo grain and tangent normal maps"
+  },
+  "facing": {
+    "Blender_Denas": "+Y",
+    "Blender_Veznan": "-Y",
+    "Unity": "Explicit KR_Forward marker after FBX axis conversion",
+    "verified_instances": 32
+  },
+  "review": {
+    "Blender_piece_angles": 9,
+    "Blender_piece_render_count": 108,
+    "board_angles": 9,
+    "background_angles": 3,
+    "Unity_piece_angles": 5,
+    "Unity_board_angles": 4,
+    "gallery": "Renders/KingdomRush_Multiangle_Review.jpg"
+  },
+  "backup_before_polish": "ApprovedBeforePolish_20261106",
+  "limitations": "Hidden parts inferred from one source image with user authorization. Technical and sampled-angle checks do not certify pixel identity or all possible viewing/lighting conditions.",
+  "game_integration": {
+    "catalog_id": "kingdom_rush",
+    "shop_products": [
+      "CHESS_PIECE_SKIN",
+      "BOARD_SKIN",
+      "BACKGROUND_SKIN"
+    ],
+    "runtime": "Built Addressables, real Unity player loop",
+    "runtime_checks_passed": 288,
+    "report": "GameVerification/checks.txt",
+    "basic_background": "Locked non-sale Classic default; independently equipped paid backgrounds",
+    "backend_commit": "b8892f6",
+    "live_shop_verified": true,
+    "gacha_excluded": true,
+    "limits": "No production purchase or authenticated two-client match was performed."
+  }
+}

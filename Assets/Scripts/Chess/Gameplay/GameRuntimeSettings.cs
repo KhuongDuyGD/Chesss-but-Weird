@@ -33,7 +33,7 @@ public static class GameRuntimeSettings
     public static float SoundVolume01 => SoundVolumePercent / 100f;
     public static int RecommendedGraphicsPreset => TierToGraphicsPreset(GetHardwareTier());
     public static int RecommendedTargetFps => GetRecommendedTargetFps(GetHardwareTier());
-    public static GameAntiAliasingMode RecommendedAntiAliasing => GetRecommendedAntiAliasing(RecommendedGraphicsPreset);
+    public static GameAntiAliasingMode RecommendedAntiAliasing => ResolveAntiAliasing(GetRecommendedAntiAliasing(RecommendedGraphicsPreset),RecommendedGraphicsPreset);
     public static GameAntiAliasingMode AppliedAntiAliasing => ResolveAntiAliasing(AntiAliasing, GraphicsPreset);
     public static string DeviceTierLabel => GetHardwareTier().ToString();
     public static string RecommendedSettingsLabel =>
@@ -240,12 +240,22 @@ public static class GameRuntimeSettings
             mode = GetRecommendedAntiAliasing(graphicsPreset);
 
         if ((mode == GameAntiAliasingMode.MSAA2x || mode == GameAntiAliasingMode.MSAA4x) &&
-            SystemInfo.supportsMultisampledTextures == 0)
+            (SystemInfo.supportsMultisampledTextures == 0 || UsesDeferredRenderer()))
         {
             return GameAntiAliasingMode.SMAA;
         }
 
         return mode;
+    }
+
+    private static bool UsesDeferredRenderer()
+    {
+        if (!(GraphicsSettings.currentRenderPipeline is UniversalRenderPipelineAsset asset)) return false;
+        // URP Deferred/Deferred+ cannot combine their GBuffer path with MSAA.
+        foreach (var data in asset.rendererDataList)
+            if (data is UniversalRendererData renderer &&
+                (renderer.renderingMode==RenderingMode.Deferred || renderer.renderingMode==RenderingMode.DeferredPlus)) return true;
+        return false;
     }
 
     private static int PresetToQualityIndex(int preset)

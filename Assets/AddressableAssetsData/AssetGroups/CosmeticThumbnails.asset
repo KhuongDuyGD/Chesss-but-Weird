@@ -15,18 +15,33 @@ MonoBehaviour:
   m_GroupName: CosmeticThumbnails
   m_GUID: c63a1d78250c5dd4c9382a9dd6cae4d5
   m_SerializeEntries:
-  - m_GUID: f35953e352f4d4947992fa002b0405f4
-    m_Address: Previews/Tazji'sLowPoly/Chess_Set
+  - m_GUID: 06bbcbb6d370b7d4a83152f4cc9ee55d
+    m_Address: Previews/KingdomRush/DenasBackground
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 226e4e65f16bdba4898da3b9894f1481
+    m_Address: Previews/Tazji'sCelestialBoard
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 33e637498c516e148bcbf706631da754
+    m_Address: Previews/KingdomRush/DenasBoard
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 371fb047c7acb86489a6bba74ef7e931
+    m_Address: Previews/KingdomRush/ClassicBackground
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 42d70ef44e20a69409a49b81343f076c
+    m_Address: Previews/KingdomRush/VeznanBackground
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: aa2f7fee0aa51e341900ebea93ca4a95
     m_Address: Previews/Tazji'sLowPoly/Chess_Arena
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: cf07ff9cc3181744ab9dda46bd71cb19
-    m_Address: Previews/Tazji'sWoodlandChessSet
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
@@ -40,13 +55,48 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ccdaf9bbe968e834586f596d1cbc0b1b
+    m_Address: Previews/KingdomRush/VeznanPieces
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: cdab91b12ab0a3b42bd0c52bbb8e36c4
+    m_Address: Previews/KingdomRush/Pieces
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: cf07ff9cc3181744ab9dda46bd71cb19
+    m_Address: Previews/Tazji'sWoodlandChessSet
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d11443ab13020c84dae1ceeb9ee9b8ef
+    m_Address: Previews/KingdomRush/Board
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e0f4e936f862ee24e912122bfc82612a
+    m_Address: Previews/KingdomRush/VeznanBoard
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: eb9fbd1b8a79fd544bb81c65f0e34369
     m_Address: Previews/Tazji'sForestGardenBoard
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 226e4e65f16bdba4898da3b9894f1481
-    m_Address: Previews/Tazji'sCelestialBoard
+  - m_GUID: ed942ada2c3322a42a06c689ca541250
+    m_Address: Previews/KingdomRush/Background
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: efd384f0673ec174ea1841c72d44e0c0
+    m_Address: Previews/KingdomRush/DenasPieces
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f35953e352f4d4947992fa002b0405f4
+    m_Address: Previews/Tazji'sLowPoly/Chess_Set
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0

@@ -23,6 +23,10 @@ public sealed class PieceSkinData : ScriptableObject
     public AssetReferenceGameObject blackQueen;
     public AssetReferenceGameObject blackKing;
     public bool applyTeamColor = true;
+    [Tooltip("Use the model's authored dimensions in one-unit board cells instead of fitting each type to the fallback visual.")]
+    public bool useAuthoredBoardScale;
+    [Tooltip("The prefab's local +Z faces the opposing side, along the logical board ranks.")]
+    public bool faceOpponent;
     public Color whiteColor = new Color(0.94f, 0.91f, 0.82f);
     public Color blackColor = new Color(0.18f, 0.21f, 0.27f);
     public List<PieceSkinTuning> tuning = new List<PieceSkinTuning>();

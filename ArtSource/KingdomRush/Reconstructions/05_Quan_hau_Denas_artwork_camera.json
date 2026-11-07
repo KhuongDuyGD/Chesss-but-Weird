@@ -1,0 +1,34 @@
+{
+  "name": "05_Quan_hau_Denas",
+  "yaw_degrees": -9.385986328125,
+  "pitch_degrees": 13.388964843750014,
+  "silhouette_iou": 0.911517797179315,
+  "right": [
+    0.9866120791312153,
+    -0.1630846568883182,
+    0.0
+  ],
+  "up": [
+    0.037763971662874644,
+    0.22846042852502013,
+    0.9728204947689012
+  ],
+  "eye_direction": [
+    -0.1586520966033102,
+    -0.9597964509654031,
+    0.23156054274765858
+  ],
+  "image_size": [
+    1024,
+    1024
+  ],
+  "scale_xy": [
+    456.56735002376644,
+    456.56735002376644
+  ],
+  "offset_xy": [
+    475.58364634812114,
+    463.09820477942503
+  ],
+  "note": "Camera fit permits separate X/Y scale to expose proportion differences; does not certify exact likeness."
+}

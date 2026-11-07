@@ -1,0 +1,93 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
+  m_Name: PieceSkin_KingdomRush
+  m_EditorClassIdentifier: Unity.Addressables.Editor::UnityEditor.AddressableAssets.Settings.AddressableAssetGroup
+  m_GroupName: PieceSkin_KingdomRush
+  m_GUID: be41ed1da5a12d24dbb77e308935be23
+  m_SerializeEntries:
+  - m_GUID: 02e0778784dc2d2429463a057f995d79
+    m_Address: Pieces/KingdomRush/04_Quan_tuong_Denas
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 0891c445e4e8e5943afdbebed428de2d
+    m_Address: Pieces/KingdomRush/03_Quan_ngua_Veznan
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 0b85a65c829b23246a97c0f911aa9eba
+    m_Address: Pieces/KingdomRush/05_Quan_hau_Denas
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 13ce836714aa92740971254a91252a45
+    m_Address: Pieces/KingdomRush/05_Quan_hau_Veznan
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 1a8b3c334d80a0347ac8a3a8abd49632
+    m_Address: Pieces/KingdomRush/02_Quan_xe_Denas
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 342fd512ab6992f4bb87d7121d234ef9
+    m_Address: Pieces/KingdomRush/06_Quan_vua_Denas
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 3be5e687c5f31e945ab7651ff300b148
+    m_Address: Pieces/KingdomRush/02_Quan_xe_Veznan
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 54f4a319e8782cb4890a4552d81acdc2
+    m_Address: Pieces/KingdomRush/04_Quan_tuong_Veznan
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 69d5a11eaa0d08042abf3a30573c5f70
+    m_Address: PieceSkin/kingdom_rush
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a1e70a4d2b54e754ba9b8b65ceaa755f
+    m_Address: Pieces/KingdomRush/01_Quan_tot_Veznan
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a7889447a5f727549b61453155efd798
+    m_Address: Pieces/KingdomRush/03_Quan_ngua_Denas
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b7033ee67e60a3d468802e212877e883
+    m_Address: Pieces/KingdomRush/01_Quan_tot_Denas
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c6b56ce86740c464a8c2e3ddf9449090
+    m_Address: Pieces/KingdomRush/06_Quan_vua_Veznan
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  m_ReadOnly: 0
+  m_Settings: {fileID: 11400000, guid: 8194c9a80f156474bbbfc1ccbf68345e, type: 2}
+  m_SchemaSet:
+    m_Schemas:
+    - {fileID: 11400000, guid: b576a52ac40eafa418e3ba7d91610689, type: 2}
+    - {fileID: 11400000, guid: 63bae918f1ab4bf4eb398178fc1222a0, type: 2}
+    m_SchemaDisplayOrder:
+    - PieceSkin_KingdomRush_BundledAssetGroupSchema
+    - PieceSkin_KingdomRush_ContentUpdateGroupSchema
+  m_IncludeInBuild: 1
+  m_IncludeInBuildMigrated: 1

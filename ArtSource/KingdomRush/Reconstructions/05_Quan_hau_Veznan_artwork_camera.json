@@ -1,0 +1,34 @@
+{
+  "name": "05_Quan_hau_Veznan",
+  "yaw_degrees": -11.38385009765625,
+  "pitch_degrees": 11.963928222656259,
+  "silhouette_iou": 0.8543339612041903,
+  "right": [
+    0.9803268491505559,
+    -0.19738102450474593,
+    0.0
+  ],
+  "up": [
+    0.04091626448837078,
+    0.20321767376342123,
+    0.9782783021055417
+  ],
+  "eye_direction": [
+    -0.19309357352035517,
+    -0.9590324854954813,
+    0.20729583601582208
+  ],
+  "image_size": [
+    1254,
+    1254
+  ],
+  "scale_xy": [
+    560.5572856658175,
+    560.5572856658175
+  ],
+  "offset_xy": [
+    630.5630091035644,
+    590.7616405654726
+  ],
+  "note": "Camera fit permits separate X/Y scale to expose proportion differences; does not certify exact likeness."
+}

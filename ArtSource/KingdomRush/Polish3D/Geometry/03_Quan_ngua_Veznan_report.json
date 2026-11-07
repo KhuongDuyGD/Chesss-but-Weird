@@ -1,0 +1,14 @@
+{
+  "name": "03_Quan_ngua_Veznan",
+  "triangles": 89938,
+  "vertices": 44937,
+  "nonmanifold_edges": 0,
+  "original_surface_defects": 22944,
+  "dimensions": [
+    1.4990806579589844,
+    1.2334811687469482,
+    1.9696228504180908
+  ],
+  "geometry_source": "Full reconstructed 3D sculpt; no depth-sheet or contour-extruded replacement",
+  "removed_isolated_debris_vertices": 47
+}

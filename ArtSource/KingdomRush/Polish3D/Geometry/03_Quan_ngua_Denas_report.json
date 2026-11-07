@@ -1,0 +1,14 @@
+{
+  "name": "03_Quan_ngua_Denas",
+  "triangles": 89514,
+  "vertices": 44737,
+  "nonmanifold_edges": 0,
+  "original_surface_defects": 16152,
+  "dimensions": [
+    1.7628655433654785,
+    1.2779910564422607,
+    1.9724605083465576
+  ],
+  "geometry_source": "Full reconstructed 3D sculpt; no depth-sheet or contour-extruded replacement",
+  "removed_isolated_debris_vertices": 249
+}

@@ -1,0 +1,19 @@
+{
+  "name": "03_Quan_ngua_Veznan",
+  "volumetric_mesh": true,
+  "triangles": 385008,
+  "front_visible_faces": 189421,
+  "inferred_faces": 195587,
+  "silhouette_iou_before": 0.862092746027211,
+  "silhouette_iou_after": 0.925521223347653,
+  "texture_size": [
+    4096,
+    2048
+  ],
+  "visible_color_source": "Unaltered original RGB pixels projected onto reconstructed 3D surface",
+  "unseen_color_source": "Surface-geodesic propagation from visible colors; inferred, not original evidence",
+  "exact_likeness_certified": false,
+  "contour_rebuilt": true,
+  "contour_grid": 512,
+  "depth_source": "Front and back ray intersections of the reconstructed volumetric sculpt"
+}

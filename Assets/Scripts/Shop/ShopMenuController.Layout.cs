@@ -30,17 +30,23 @@ public sealed partial class ShopMenuController
             System.Array.Resize(ref tabs, 8);
             tabs[7] = UI.Button(controls.transform, "Shop Tab TopUp", "TOP UP", new Rect(48 + 7 * 198, 169, 190, 53), UI.Lavender, null, 23);
         }
+        if (tabs.Length == 8)
+        {
+            System.Array.Resize(ref tabs, 9);
+            tabs[8] = UI.Button(controls.transform, "Shop Tab Backgrounds", "BACKGROUNDS", new Rect(1448, 169, 176, 53), UI.Blue, null, 20);
+        }
         for (int i = 0; i < tabs.Length; i++)
         {
             var rect = (RectTransform)tabs[i].transform;
-            rect.sizeDelta = new Vector2(190, 53);
-            rect.anchoredPosition = new Vector2(48 + i * 198 + 95, -195.5f);
+            rect.sizeDelta = new Vector2(168, 53);
+            int column = System.Array.IndexOf(new[] { 0, 1, 2, 8, 3, 4, 5, 6, 7 }, i);
+            rect.anchoredPosition = new Vector2(48 + column * 175 + 84, -195.5f);
             var shadow = rect.parent.Find(tabs[i].name + " Pencil Shadow") as RectTransform;
             if (shadow) { shadow.sizeDelta = rect.sizeDelta; shadow.anchoredPosition = rect.anchoredPosition + new Vector2(5, -7); }
             var label = tabs[i].GetComponentInChildren<TextMeshProUGUI>();
-            label.rectTransform.sizeDelta = new Vector2(162, 43);
-            label.rectTransform.anchoredPosition = new Vector2(95, -26.5f);
-            label.fontSizeMax = 23;
+            label.rectTransform.sizeDelta = new Vector2(152, 43);
+            label.rectTransform.anchoredPosition = new Vector2(84, -26.5f);
+            label.fontSizeMax = 21;
         }
         if (!recoveryButton) recoveryButton = UI.Button(controls.transform, "Review Pending Purchase", "REVIEW PENDING PURCHASE",
             new Rect(48, 133, 400, 32), UI.Yellow, null, 18);

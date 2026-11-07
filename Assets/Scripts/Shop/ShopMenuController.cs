@@ -10,7 +10,7 @@ using UnityEngine.InputSystem;
 using UnityEngine.UI;
 using UI = SketchbookUI;
 
-public enum ShopCategory { Featured, PieceSkins, Boards, Effects, Bundles, Collection, Summon, TopUp }
+public enum ShopCategory { Featured, PieceSkins, Boards, Effects, Bundles, Collection, Summon, TopUp, Backgrounds }
 
 public sealed partial class ShopMenuController : MonoBehaviour
 {
@@ -22,7 +22,7 @@ public sealed partial class ShopMenuController : MonoBehaviour
         public bool owned, equipped, builtIn, isDefault, previewOnly;
         public bool IncludedOrLocked => builtIn || isDefault || previewOnly;
         public ShopCategory Category => previewOnly ? ShopCategory.TopUp : offer?.isBundle == true ? ShopCategory.Bundles :
-            type == "MOVE_EFFECT" ? ShopCategory.Effects : type == CosmeticItemKinds.Board ? ShopCategory.Boards : ShopCategory.PieceSkins;
+            type == "MOVE_EFFECT" ? ShopCategory.Effects : type == CosmeticItemKinds.Background ? ShopCategory.Backgrounds : type == CosmeticItemKinds.Board ? ShopCategory.Boards : ShopCategory.PieceSkins;
     }
     private readonly List<Product> products = new List<Product>();
     private readonly HashSet<string> owned = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -61,7 +61,7 @@ public sealed partial class ShopMenuController : MonoBehaviour
         recoveryButton.onClick.AddListener(RecoverPending);
         cancelButton.onClick.AddListener(DismissConfirmation);
         confirmButton.onClick.AddListener(() => _ = PurchaseAsync());
-        collectionFilter.onClick.AddListener(() => { collectionKind = (collectionKind + 1) % 4; page = 0; Render(); });
+        collectionFilter.onClick.AddListener(() => { collectionKind = (collectionKind + 1) % 5; page = 0; Render(); });
         equippedFilter.onClick.AddListener(() => { onlyEquipped = !onlyEquipped; page = 0; Render(); });
         heroButton.onClick.AddListener(() =>
         {
@@ -138,7 +138,14 @@ public sealed partial class ShopMenuController : MonoBehaviour
         {
             foreach (var entry in artCatalog.pieceSkins.Where(e => e?.HasArt == true)) products.Add(FromItem(null, entry.displayName, CosmeticItemKinds.Set, entry.id, entry.tier));
             foreach (var entry in artCatalog.boards.Where(e => e?.HasArt == true)) products.Add(FromItem(null, entry.displayName, CosmeticItemKinds.Board, entry.id, entry.tier));
+            foreach (var entry in artCatalog.environments.Where(e => e?.HasArt == true && e.id != "classic")) products.Add(FromItem(null, entry.displayName, CosmeticItemKinds.Background, entry.id, entry.tier));
         }
+        var basicBackground = artCatalog.FindEnvironment("classic");
+        if (basicBackground?.HasArt == true)
+            products.Add(new Product { id = "background:classic", name = basicBackground.displayName, type = CosmeticItemKinds.Background,
+                key = "classic", rarity = "DEFAULT", art = basicBackground.thumbnail, owned = true, isDefault = true,
+                equipped = string.IsNullOrWhiteSpace(snapshot?.user?.equipped?.backgroundSkinId),
+                description = "The original game background. Fixed default artwork; not for sale." });
         string[] effects = { "classic", "ink_sparks", "confetti" }, names = { "Classic", "Ink sparks", "Confetti" };
         string effect = previewSession ? "classic" : CosmeticSelection.Load().moveEffectId;
         for (int i = 0; i < effects.Length; i++) products.Add(new Product { id = "effect:" + effects[i], name = names[i], key = effects[i],
@@ -156,7 +163,7 @@ public sealed partial class ShopMenuController : MonoBehaviour
         art = CosmeticThumbnailUI.Find(presentation.cosmetics, type, key)?.thumbnail,
         owned = key == CosmeticSelection.LowPolyId || itemId != null && owned.Contains(itemId),
         isDefault = key == CosmeticSelection.LowPolyId, equipped = IsEquipped(itemId, type, key),
-        description = type == CosmeticItemKinds.Board ? "A fresh place to play. Changes the board's appearance in your matches." : "Dress up your next match. A cosmetic look with the same familiar moves."
+        description = type == CosmeticItemKinds.Background ? "A new landscape around your board. Sold separately from boards and chess sets." : type == CosmeticItemKinds.Board ? "A fresh place to play. Changes the board's appearance in your matches." : "Dress up your next match. A cosmetic look with the same familiar moves."
     };
     private bool IsEquipped(string id, string type, string key)
     {
@@ -164,7 +171,8 @@ public sealed partial class ShopMenuController : MonoBehaviour
         var equipped = snapshot?.user?.equipped;
         return snapshot?.owned?.Any(i => i != null && i.itemId == id && i.isEquipped) == true ||
             (type == CosmeticItemKinds.Set && equipped?.pieceMode != "CUSTOM" && equipped?.chessSkinId == id) ||
-            (type == CosmeticItemKinds.Board && equipped?.boardSkinId == id);
+            (type == CosmeticItemKinds.Board && equipped?.boardSkinId == id) ||
+            (type == CosmeticItemKinds.Background && equipped?.backgroundSkinId == id);
     }
     private static bool ValidOffer(ShopOfferResponse offer, CosmeticCatalog catalog)
     {
@@ -185,7 +193,7 @@ public sealed partial class ShopMenuController : MonoBehaviour
         string query = search ? search.text.Trim() : "";
         return products.Where(p => (category == ShopCategory.Featured ? p.offer?.featured == true || snapshot?.catalog == null && !p.builtIn && !p.previewOnly :
             category == ShopCategory.Collection ? p.owned && p.Category != ShopCategory.Bundles && (!onlyEquipped || p.equipped) &&
-                (collectionKind == 0 || collectionKind == 1 && p.Category == ShopCategory.PieceSkins || collectionKind == 2 && p.Category == ShopCategory.Boards || collectionKind == 3 && p.Category == ShopCategory.Effects) : p.Category == category) &&
+                (collectionKind == 0 || collectionKind == 1 && p.Category == ShopCategory.PieceSkins || collectionKind == 2 && p.Category == ShopCategory.Boards || collectionKind == 3 && p.Category == ShopCategory.Effects || collectionKind == 4 && p.Category == ShopCategory.Backgrounds) : p.Category == category) &&
             (query.Length == 0 || p.name.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0))
             .OrderByDescending(p => category == ShopCategory.Collection && p.equipped).ThenBy(p => p.name, StringComparer.OrdinalIgnoreCase).ToList();
     }
@@ -198,7 +206,7 @@ public sealed partial class ShopMenuController : MonoBehaviour
         SetButtonVisible(collectionFilter, category == ShopCategory.Collection); SetButtonVisible(equippedFilter, category == ShopCategory.Collection);
         header.gameObject.SetActive(category != ShopCategory.Collection);
         header.text = category == ShopCategory.Featured ? "Featured finds" : CategoryLabel(category);
-        collectionFilter.GetComponentInChildren<TextMeshProUGUI>().text = new[] { "ALL OWNED", "PIECE SKINS", "BOARDS", "EFFECTS" }[collectionKind];
+        collectionFilter.GetComponentInChildren<TextMeshProUGUI>().text = new[] { "ALL OWNED", "PIECE SKINS", "BOARDS", "EFFECTS", "BACKGROUNDS" }[collectionKind];
         equippedFilter.targetGraphic.color = onlyEquipped ? UI.Yellow : UI.White;
         collectionFilter.interactable = equippedFilter.interactable = !busy;
         var visible = VisibleProducts(); page = Mathf.Clamp(page, 0, Mathf.Max(0, (visible.Count - 1) / 6));
@@ -228,7 +236,8 @@ public sealed partial class ShopMenuController : MonoBehaviour
         RenderDetail();
     }
     private string PriceText(Product product) => product.previewOnly ? "Coming soon" : product.owned ? product.builtIn ? "Included in your collection" : "In your collection" : product.offer != null ?
-        ShopPurchasePolicy.Price(product.offer, owned, "GOLDS").ToString("N0") + " Gold  /  " + ShopPurchasePolicy.Price(product.offer, owned, "DIAMONDS").ToString("N0") + " Diamonds" : "Available through Summon";
+        ShopPurchasePolicy.Price(product.offer, owned, "GOLDS").ToString("N0") + " Gold  /  " + ShopPurchasePolicy.Price(product.offer, owned, "DIAMONDS").ToString("N0") + " Diamonds" :
+        CosmeticSelection.IsKingdomRushShopOnly(product.key) || product.type == CosmeticItemKinds.Background ? "Shop offer unavailable" : "Available through Summon";
     private void RenderDetail()
     {
         var p = selected;
@@ -256,11 +265,14 @@ public sealed partial class ShopMenuController : MonoBehaviour
         }
         if (pending) detailState.text = "Check the purchase you already confirmed";
         if (p?.previewOnly == true) detailState.text = "Locked - coming soon";
-        equipLabel.text = p?.previewOnly == true ? "COMING SOON" : pending ? "RETRY PURCHASE" : p == null ? "EXPLORE THE SHOP" : p.Category == ShopCategory.Bundles ? "BUNDLE OWNED" :
+        bool shopUnavailable = p != null && !p.owned && p.offer == null && (CosmeticSelection.IsKingdomRushShopOnly(p.key) || p.type == CosmeticItemKinds.Background);
+        if (shopUnavailable) detailState.text = "Shop offer unavailable. Refresh after the server update.";
+        equipLabel.text = shopUnavailable ? "SHOP UNAVAILABLE" : p?.previewOnly == true ? "COMING SOON" : pending ? "RETRY PURCHASE" : p == null ? "EXPLORE THE SHOP" : p.Category == ShopCategory.Bundles ? "BUNDLE OWNED" :
             !p.owned ? "OPEN SUMMON" : p.equipped ? p.isDefault ? "DEFAULT EQUIPPED" : "USE DEFAULT" : "EQUIP";
         equipButton.interactable = !busy && !loading && p?.previewOnly != true && (pending || p != null &&
             (p.owned && p.Category != ShopCategory.Bundles && !(p.equipped && p.isDefault) || !p.owned));
         if (p?.isDefault == true && p.itemId == null) equipButton.interactable = false;
+        if (shopUnavailable) equipButton.interactable = false;
     }
     private static void SetButtonVisible(Button button, bool visible)
     {
@@ -357,6 +369,17 @@ public sealed partial class ShopMenuController : MonoBehaviour
                 if (p.equipped) key = "classic";
                 if (!previewSession) { var selection = CosmeticSelection.Load(); selection.moveEffectId = key; selection.Save(); }
                 else foreach (var item in products.Where(i => i.builtIn)) item.equipped = item.key == key;
+            }
+            else if (p.type == CosmeticItemKinds.Background)
+            {
+                var result = await gateway.EquipBackgroundAsync(p.equipped || p.isDefault ? null : p.itemId);
+                if (!CurrentAccount()) return;
+                if (result?.success != true || result.equipped == null) throw new InvalidOperationException("The background change was not confirmed.");
+                if (!previewSession)
+                {
+                    var selection = CosmeticSelection.Load(); selection.environmentId = p.equipped || p.isDefault ? "classic" : p.key; selection.Save();
+                    if (PlayerAuthService.CurrentApiUser != null) PlayerAuthService.CurrentApiUser.equipped = result.equipped;
+                }
             }
             else
             {

@@ -69,6 +69,9 @@ public sealed class BoardSkinManager
         GameObject instance = UnityEngine.Object.Instantiate(EnvironmentPrefab, parent, false);
         if (Environment) SetTransform(instance.transform, Environment.localPosition, Environment.localRotation, Environment.localScale);
         ChessModelRendering.ApplySettings(instance);
+        var backdrop = instance.GetComponent<CosmeticEnvironmentBackdrop>();
+        if (!backdrop) backdrop = instance.AddComponent<CosmeticEnvironmentBackdrop>();
+        backdrop.Configure(Environment ? Environment.horizonColor : new Color(.19f,.28f,.14f,1f));
         return instance;
     }
 

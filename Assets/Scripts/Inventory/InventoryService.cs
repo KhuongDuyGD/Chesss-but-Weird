@@ -23,4 +23,8 @@ public sealed class InventoryService
     }
     public Task<EquipItemResponse> EquipLoadoutAsync(EquipLoadoutRequest loadout) =>
         client.PutAsync<EquipItemResponse>("/api/inventory/loadout", loadout, true);
+
+    public Task<EquipItemResponse> EquipBackgroundAsync(string itemId, long? sessionVersion = null) =>
+        client.SendAsync<EquipItemResponse>("PUT", "/api/inventory/background",
+            new EquipItemRequest { itemId = itemId }, true, sessionVersion);
 }

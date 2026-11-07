@@ -1,0 +1,14 @@
+PASS 01_Quan_tot_Denas: volumetric mesh, uniform set scale, footprint <= 0.82 m, ground pivot, 1 renderer, Lit/PBR maps, mipmaps + anisotropy 16, explicit facing marker
+PASS 01_Quan_tot_Veznan: volumetric mesh, uniform set scale, footprint <= 0.82 m, ground pivot, 1 renderer, Lit/PBR maps, mipmaps + anisotropy 16, explicit facing marker
+PASS 02_Quan_xe_Denas: volumetric mesh, uniform set scale, footprint <= 0.82 m, ground pivot, 1 renderer, Lit/PBR maps, mipmaps + anisotropy 16, explicit facing marker
+PASS 02_Quan_xe_Veznan: volumetric mesh, uniform set scale, footprint <= 0.82 m, ground pivot, 1 renderer, Lit/PBR maps, mipmaps + anisotropy 16, explicit facing marker
+PASS 03_Quan_ngua_Denas: volumetric mesh, uniform set scale, footprint <= 0.82 m, ground pivot, 1 renderer, Lit/PBR maps, mipmaps + anisotropy 16, explicit facing marker
+PASS 03_Quan_ngua_Veznan: volumetric mesh, uniform set scale, footprint <= 0.82 m, ground pivot, 1 renderer, Lit/PBR maps, mipmaps + anisotropy 16, explicit facing marker
+PASS 04_Quan_tuong_Denas: volumetric mesh, uniform set scale, footprint <= 0.82 m, ground pivot, 1 renderer, Lit/PBR maps, mipmaps + anisotropy 16, explicit facing marker
+PASS 04_Quan_tuong_Veznan: volumetric mesh, uniform set scale, footprint <= 0.82 m, ground pivot, 1 renderer, Lit/PBR maps, mipmaps + anisotropy 16, explicit facing marker
+PASS 05_Quan_hau_Denas: volumetric mesh, uniform set scale, footprint <= 0.82 m, ground pivot, 1 renderer, Lit/PBR maps, mipmaps + anisotropy 16, explicit facing marker
+PASS 05_Quan_hau_Veznan: volumetric mesh, uniform set scale, footprint <= 0.82 m, ground pivot, 1 renderer, Lit/PBR maps, mipmaps + anisotropy 16, explicit facing marker
+PASS 06_Quan_vua_Denas: volumetric mesh, uniform set scale, footprint <= 0.82 m, ground pivot, 1 renderer, Lit/PBR maps, mipmaps + anisotropy 16, explicit facing marker
+PASS 06_Quan_vua_Veznan: volumetric mesh, uniform set scale, footprint <= 0.82 m, ground pivot, 1 renderer, Lit/PBR maps, mipmaps + anisotropy 16, explicit facing marker
+PASS meadow albedo texture is assigned
+PASS all 32 pieces face inward; opposing files are literally face-to-face

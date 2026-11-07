@@ -40,4 +40,5 @@ public sealed class UserEquippedResponse
     public System.Collections.Generic.List<EquipPieceRequest> pieces;
     public string chessSkinId;
     public string boardSkinId;
+    public string backgroundSkinId;
 }

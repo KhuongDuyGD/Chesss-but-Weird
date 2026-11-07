@@ -110,7 +110,7 @@ public sealed class PieceSkinVisualState : MonoBehaviour
         activeSkinId = PieceSkinCatalog.DefaultSkinId;
     }
 
-    public void ApplyPrefabSkin(GameObject prefab, string skinId, PieceType pieceType, PieceSkinPieceTuning tuning, Transform parent)
+    public void ApplyPrefabSkin(GameObject prefab, string skinId, PieceType pieceType, PieceSkinPieceTuning tuning, Transform parent, float authoredBoardScale = 0f)
     {
         if (!prefab || !parent)
         {
@@ -135,7 +135,7 @@ public sealed class PieceSkinVisualState : MonoBehaviour
         activeSkinVisual.name = $"{prefab.name} Skin Visual";
         Transform skinTransform = activeSkinVisual.transform;
         skinTransform.localRotation = Quaternion.Euler(tuning.RotationEuler) * skinTransform.localRotation;
-        FitSkinVisualToOriginalBounds(skinTransform, tuning);
+        FitSkinVisualToOriginalBounds(skinTransform, tuning, authoredBoardScale);
 
         activeSkinId = skinId;
         activePrefab = prefab;
@@ -149,7 +149,7 @@ public sealed class PieceSkinVisualState : MonoBehaviour
         SetSkinVisualRenderersVisible(visible && hasActiveSkin);
     }
 
-    private void FitSkinVisualToOriginalBounds(Transform skinTransform, PieceSkinPieceTuning tuning)
+    private void FitSkinVisualToOriginalBounds(Transform skinTransform, PieceSkinPieceTuning tuning, float authoredBoardScale)
     {
         if (!hasOriginalBounds || !skinTransform)
             return;
@@ -162,9 +162,9 @@ public sealed class PieceSkinVisualState : MonoBehaviour
         float maxFootprint = Mathf.Max(0.001f, Mathf.Max(originalBounds.size.x, originalBounds.size.z) * tuning.MaxFootprintMultiplier);
         float skinHeight = Mathf.Max(0.001f, skinBounds.size.y);
         float skinFootprint = Mathf.Max(0.001f, Mathf.Max(skinBounds.size.x, skinBounds.size.z));
-        float scale = targetHeight / skinHeight;
+        float scale = authoredBoardScale > 0f ? authoredBoardScale : targetHeight / skinHeight;
         float scaledFootprint = skinFootprint * scale;
-        if (scaledFootprint > maxFootprint)
+        if (authoredBoardScale <= 0f && scaledFootprint > maxFootprint)
             scale *= maxFootprint / scaledFootprint;
 
         skinTransform.localScale *= scale;

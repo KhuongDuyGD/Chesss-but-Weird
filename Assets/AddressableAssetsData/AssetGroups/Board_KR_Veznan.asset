@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
+  m_Name: Board_KR_Veznan
+  m_EditorClassIdentifier: Unity.Addressables.Editor::UnityEditor.AddressableAssets.Settings.AddressableAssetGroup
+  m_GroupName: Board_KR_Veznan
+  m_GUID: be92cfc9015d0da40842adc598626484
+  m_SerializeEntries:
+  - m_GUID: 7bb608ac23d8de14199dcb66f4b562af
+    m_Address: Boards/kingdom_rush_veznan
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b6790783fa084d14b88ad647cc101bca
+    m_Address: Board/kingdom_rush_veznan
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  m_ReadOnly: 0
+  m_Settings: {fileID: 11400000, guid: 8194c9a80f156474bbbfc1ccbf68345e, type: 2}
+  m_SchemaSet:
+    m_Schemas:
+    - {fileID: 11400000, guid: e967add872610a940a7e4a8b3c23ec7b, type: 2}
+    - {fileID: 11400000, guid: 243ce0910b50d254b97aef0d47b0103f, type: 2}
+    m_SchemaDisplayOrder:
+    - Board_KR_Veznan_BundledAssetGroupSchema
+    - Board_KR_Veznan_ContentUpdateGroupSchema
+  m_IncludeInBuild: 1
+  m_IncludeInBuildMigrated: 1

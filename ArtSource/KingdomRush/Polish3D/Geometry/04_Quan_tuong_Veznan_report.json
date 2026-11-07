@@ -1,0 +1,15 @@
+{
+  "name": "04_Quan_tuong_Veznan",
+  "triangles": 89886,
+  "vertices": 44917,
+  "nonmanifold_edges": 0,
+  "original_surface_defects": 19745,
+  "dimensions": [
+    1.3610925674438477,
+    1.376550555229187,
+    1.9722375869750977
+  ],
+  "geometry_source": "Full reconstructed 3D sculpt; no depth-sheet or contour-extruded replacement",
+  "flames": "Staff flame depth doubled through a smooth transition; front contours and UV islands preserved",
+  "removed_isolated_debris_vertices": 83
+}

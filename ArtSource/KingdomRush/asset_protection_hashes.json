@@ -1,0 +1,120 @@
+{
+  "files": [
+    {
+      "path": "Assets/Skins/KingdomRushCollab/Models/01_Quan_tot_Denas.fbx",
+      "sha256": "EFC5DC521620B931DD1FBF6D55D99D1ACED151461D7A5C1BA4F813E7811B883B"
+    },
+    {
+      "path": "Assets/Skins/KingdomRushCollab/Models/01_Quan_tot_Veznan.fbx",
+      "sha256": "23303B4059FB726897B5E3F1CFD5D6A7ECBA032A376B9D913B4068707246B3CB"
+    },
+    {
+      "path": "Assets/Skins/KingdomRushCollab/Models/02_Quan_xe_Denas.fbx",
+      "sha256": "101AD1FB9946A5A8FFB891E195D0597F9FB9DDA9199DD4C53674BC1F36B6D97C"
+    },
+    {
+      "path": "Assets/Skins/KingdomRushCollab/Models/02_Quan_xe_Veznan.fbx",
+      "sha256": "324616076A82DEE79F58336503D95A70932168D29C1DDB59D62D5AFFB6A6D0FA"
+    },
+    {
+      "path": "Assets/Skins/KingdomRushCollab/Models/03_Quan_ngua_Denas.fbx",
+      "sha256": "26B1E763511F6849B25B011DE9FF4A3F6EB88889E7105E62A01F197E62B1E3C7"
+    },
+    {
+      "path": "Assets/Skins/KingdomRushCollab/Models/03_Quan_ngua_Veznan.fbx",
+      "sha256": "9F23B3CE7F931E25942395064EA7367B37F2B208D617EA277851454F2686951C"
+    },
+    {
+      "path": "Assets/Skins/KingdomRushCollab/Models/04_Quan_tuong_Denas.fbx",
+      "sha256": "F160EA037FDF0546413E8CF3E60A705B38629032C5B1A38DBE64FCA3D9B3C087"
+    },
+    {
+      "path": "Assets/Skins/KingdomRushCollab/Models/04_Quan_tuong_Veznan.fbx",
+      "sha256": "E38935110B0E9734E3FE65D76FDAE16E47CED78BF3F3CCE0A72D24121755CD19"
+    },
+    {
+      "path": "Assets/Skins/KingdomRushCollab/Models/05_Quan_hau_Denas.fbx",
+      "sha256": "EC75D5B874F6F6BF0D423DF3E3646C0DBF576E4F01BC26F7E80F58FEA8620E0B"
+    },
+    {
+      "path": "Assets/Skins/KingdomRushCollab/Models/05_Quan_hau_Veznan.fbx",
+      "sha256": "BAE3602BBD46970F7FAD37E2F940714D434467889B571CC137D2C3517BCF8911"
+    },
+    {
+      "path": "Assets/Skins/KingdomRushCollab/Models/06_Quan_vua_Denas.fbx",
+      "sha256": "E856BE27A6475D483D14F9BD3384F6938622388D341F3A3ABD7063BC989F01A0"
+    },
+    {
+      "path": "Assets/Skins/KingdomRushCollab/Models/06_Quan_vua_Veznan.fbx",
+      "sha256": "EAC581AF1A29720C9D285DC108042EDEFA28431B110256C0B36886894FAFFA18"
+    },
+    {
+      "path": "Assets/Skins/KingdomRushCollab/Models/KR_Citadel_Board.fbx",
+      "sha256": "ED8C8CE80C1C5598956C85B2B6ED9E45DE3425BADB71A2E14869255489517F0F"
+    },
+    {
+      "path": "Assets/Skins/KingdomRushCollab/Models/KR_Denas_Board.fbx",
+      "sha256": "2D449D6BAF31ECCDEE42E18BD65CA7483859AA006910D1DBBA243F525809C080"
+    },
+    {
+      "path": "Assets/Skins/KingdomRushCollab/Models/KR_Linirea_Valley.fbx",
+      "sha256": "411966C25A51D3F292B536B61985884FB05CAD22F6E7BA5D1A891114F6001D57"
+    },
+    {
+      "path": "Assets/Skins/KingdomRushCollab/Models/KR_Veznan_Board.fbx",
+      "sha256": "9B0E7137D938F6B0BA5A5FD3872064D5068FBC415DC915FB7A667DE63396BA81"
+    },
+    {
+      "path": "Assets/Skins/KingdomRushCollab/Textures/01_Quan_tot_Denas_Albedo.png",
+      "sha256": "8F1242D89C974CE99BC984B8FD93298C55A9EA9D7295D20E86E0A60A6E9FB7EC"
+    },
+    {
+      "path": "Assets/Skins/KingdomRushCollab/Textures/01_Quan_tot_Veznan_Albedo.png",
+      "sha256": "526CC20682F6DDADC6D3CE874480EFA34FCB1EEE760CE5BB7AB91EFE2DB0E79D"
+    },
+    {
+      "path": "Assets/Skins/KingdomRushCollab/Textures/02_Quan_xe_Denas_Albedo.png",
+      "sha256": "1DA0CED8BCF7E75AF01F4D2BD133F1FD5F46203B19D65835E04E913B0A70E6FD"
+    },
+    {
+      "path": "Assets/Skins/KingdomRushCollab/Textures/02_Quan_xe_Veznan_Albedo.png",
+      "sha256": "27F9994F56892A519583973929BCDA49CC5DE092AA1D1A2134DBF5A91FB47F27"
+    },
+    {
+      "path": "Assets/Skins/KingdomRushCollab/Textures/03_Quan_ngua_Denas_Albedo.png",
+      "sha256": "56DCC3EDC88D8CFD458B8303FA29DE8C2DFEF6FE7EAD0DA27E0DEE03EF95AF1B"
+    },
+    {
+      "path": "Assets/Skins/KingdomRushCollab/Textures/03_Quan_ngua_Veznan_Albedo.png",
+      "sha256": "D4BC5515C67BC900BC3DB66F8DB931224B89D3DAF1B4F371FEEBA8784C2D4F42"
+    },
+    {
+      "path": "Assets/Skins/KingdomRushCollab/Textures/04_Quan_tuong_Denas_Albedo.png",
+      "sha256": "81A6E48B2DC52C3137B9F31E270EE57D091F722629FBE32C2577372197FF4E10"
+    },
+    {
+      "path": "Assets/Skins/KingdomRushCollab/Textures/04_Quan_tuong_Veznan_Albedo.png",
+      "sha256": "CA363A5B189B50966214C2BD232ADE40A6A069717CA29A1894C948DB2767C0FB"
+    },
+    {
+      "path": "Assets/Skins/KingdomRushCollab/Textures/05_Quan_hau_Denas_Albedo.png",
+      "sha256": "8A3C699B5AB97FF7F57E2784AEA9A5DD1B809627C662BB119CE02B864411D3E4"
+    },
+    {
+      "path": "Assets/Skins/KingdomRushCollab/Textures/05_Quan_hau_Veznan_Albedo.png",
+      "sha256": "76AF5E2696A46D72065056CB2827EBE3F262C4AE8BD243102BFC209297C034DC"
+    },
+    {
+      "path": "Assets/Skins/KingdomRushCollab/Textures/06_Quan_vua_Denas_Albedo.png",
+      "sha256": "A9A4F989181962E4800239DC6AF8C0C1AA0AE4AC58D3F0691C33EC43E21322F0"
+    },
+    {
+      "path": "Assets/Skins/KingdomRushCollab/Textures/06_Quan_vua_Veznan_Albedo.png",
+      "sha256": "3646536C6D5D140AD9E6D7E3D930E9F7C930BC3F79BEF7AA83508113D5D482AF"
+    },
+    {
+      "path": "Assets/Skins/KingdomRushCollab/Textures/KR_Meadow_Albedo.png",
+      "sha256": "D1731D41D1140D18EF22EACB36A1175D1B7E4925241C60A9E1193F66C4E33A9F"
+    }
+  ]
+}

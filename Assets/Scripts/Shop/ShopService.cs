@@ -17,6 +17,7 @@ public interface IShopGateway
     Task<ShopSnapshot> LoadAsync();
     Task<ShopPurchaseResponse> PurchaseAsync(ShopPurchaseRequest request);
     Task<EquipItemResponse> EquipAsync(string itemId);
+    Task<EquipItemResponse> EquipBackgroundAsync(string itemId);
 }
 
 public sealed class ShopService : IShopGateway
@@ -62,4 +63,5 @@ public sealed class ShopService : IShopGateway
         return client.PostForSessionAsync<ShopPurchaseResponse>("/api/shop/purchase", request, loadedSessionVersion);
     }
     public Task<EquipItemResponse> EquipAsync(string itemId) => inventory.EquipAsync(itemId, loadedSessionVersion);
+    public Task<EquipItemResponse> EquipBackgroundAsync(string itemId) => inventory.EquipBackgroundAsync(itemId, loadedSessionVersion);
 }

@@ -1,0 +1,34 @@
+{
+  "name": "04_Quan_tuong_Veznan",
+  "yaw_degrees": 11.94140625,
+  "pitch_degrees": 10.734375000000005,
+  "silhouette_iou": 0.9106559810032651,
+  "right": [
+    0.9783597109060412,
+    0.20691127585476699,
+    0.0
+  ],
+  "up": [
+    -0.03853848879556701,
+    0.1822254712848603,
+    0.9825012277327517
+  ],
+  "eye_direction": [
+    0.20329058255905863,
+    -0.9612396171294456,
+    0.18625610729217845
+  ],
+  "image_size": [
+    1254,
+    1254
+  ],
+  "scale_xy": [
+    523.8222378699269,
+    555.9780336608616
+  ],
+  "offset_xy": [
+    596.8559508772223,
+    571.2514136767519
+  ],
+  "note": "Camera fit permits separate X/Y scale to expose proportion differences; does not certify exact likeness."
+}

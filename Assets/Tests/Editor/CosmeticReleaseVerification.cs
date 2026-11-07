@@ -26,9 +26,18 @@ namespace CBWRelease
                 var catalog=AssetDatabase.LoadAssetAtPath<CosmeticCatalog>("Assets/Game/Data/CosmeticCatalog.asset");
                 var settings=AddressableAssetSettingsDefaultObject.Settings;
                 need(catalog&&settings,"Catalog and Addressables settings import");
-                need(catalog.pieceSkins.Count==3&&catalog.boards.Count==4,"Three piece sets and four boards");
+                need(catalog.pieceSkins.Count>0&&catalog.boards.Count>0&&catalog.environments.Count>0,"All cosmetic categories are populated");
                 need(catalog.defaultPieceSkinId=="tazji_lowpoly"&&catalog.defaultBoardId=="tazji_lowpoly","Category-scoped default IDs preserved");
-                foreach(var entry in catalog.pieceSkins.Concat(catalog.boards))
+                foreach(var list in new[]{catalog.pieceSkins,catalog.boards,catalog.environments})
+                {
+                    need(list.All(e=>e!=null&&!string.IsNullOrWhiteSpace(e.id)),"Catalog entries have non-empty IDs");
+                    need(list.Select(e=>e.id).Distinct(StringComparer.OrdinalIgnoreCase).Count()==list.Count,"Catalog category IDs are unique");
+                    foreach(string id in new[]{CosmeticSelection.KingdomRushDenasId,CosmeticSelection.KingdomRushVeznanId})
+                        need(list.Any(e=>e.id==id&&e.tier=="LEGENDARY"),"Faction is independently registered as Legendary: "+id);
+                }
+                need(catalog.FindPiece(CosmeticSelection.KingdomRushId)==null&&catalog.FindBoard(CosmeticSelection.KingdomRushId)==null,"Archived mixed set and board are outside public catalog");
+                need(catalog.FindEnvironment(CosmeticSelection.KingdomRushId)!=null&&catalog.FindEnvironment("classic")!=null,"Legacy Linirea and Classic backgrounds remain registered");
+                foreach(var entry in catalog.pieceSkins.Concat(catalog.boards).Concat(catalog.environments))
                 {
                     string key=entry.data.AssetGUID;string path=AssetDatabase.GUIDToAssetPath(key);
                     need(!string.IsNullOrEmpty(path)&&settings.FindAssetEntry(key)!=null,entry.id+" data GUID registered");
@@ -39,8 +48,9 @@ namespace CBWRelease
                     need(settings.FindAssetEntry(AssetDatabase.AssetPathToGUID(thumbPath))!=null,entry.id+" thumbnail registered");
                     var piece=AssetDatabase.LoadAssetAtPath<PieceSkinData>(path);
                     var board=AssetDatabase.LoadAssetAtPath<BoardSkinData>(path);
-                    need(catalog.pieceSkins.Contains(entry)?piece!=null:board!=null,entry.id+" category separation");
-                    var refs=piece?new[]{piece.pawn,piece.rook,piece.knight,piece.bishop,piece.queen,piece.king,piece.blackPawn,piece.blackRook,piece.blackKnight,piece.blackBishop,piece.blackQueen,piece.blackKing}:new[]{board.boardPrefab};
+                    var environment=AssetDatabase.LoadAssetAtPath<EnvironmentData>(path);
+                    need(catalog.pieceSkins.Contains(entry)?piece!=null:catalog.boards.Contains(entry)?board!=null:environment!=null,entry.id+" category separation");
+                    var refs=piece?new[]{piece.pawn,piece.rook,piece.knight,piece.bishop,piece.queen,piece.king,piece.blackPawn,piece.blackRook,piece.blackKnight,piece.blackBishop,piece.blackQueen,piece.blackKing}:board?new[]{board.boardPrefab}:new[]{environment.environmentPrefab};
                     foreach(AssetReferenceGameObject reference in refs)
                     {
                         if(reference==null||!reference.RuntimeKeyIsValid())continue; // optional black overrides
@@ -48,7 +58,16 @@ namespace CBWRelease
                         var model=AssetDatabase.LoadAssetAtPath<GameObject>(modelPath);
                         need(model&&model.GetComponentsInChildren<Renderer>(true).Length>0,entry.id+" model "+reference.AssetGUID);
                         need(settings.FindAssetEntry(reference.AssetGUID)!=null,entry.id+" model address registered "+reference.AssetGUID);
+                        foreach(var particle in model.GetComponentsInChildren<ParticleSystem>(true))
+                        {
+                            var velocity=particle.velocityOverLifetime;
+                            need(!velocity.enabled||(velocity.x.mode==velocity.y.mode&&velocity.y.mode==velocity.z.mode),entry.id+" particle XYZ velocity curve modes agree: "+particle.name);
+                        }
                     }
+                    if(environment&&entry.id!="classic")
+                        need(environment.environmentPrefab!=null&&environment.environmentPrefab.RuntimeKeyIsValid()&&environment.horizonColor.a==1f,entry.id+" custom environment has a prefab and opaque horizon");
+                    if(board&&CosmeticSelection.IsKingdomRushShopOnly(entry.id))
+                        need(board.frameFullModel&&board.prisonLayoutYaw==-90&&Mathf.Approximately(board.cameraFramePadding,1.04f),entry.id+" full-board framing and rank-end prisoner layout");
                     if(board&&board.loopAnimation)
                     {
                         string modelPath=AssetDatabase.GUIDToAssetPath(board.boardPrefab.AssetGUID);

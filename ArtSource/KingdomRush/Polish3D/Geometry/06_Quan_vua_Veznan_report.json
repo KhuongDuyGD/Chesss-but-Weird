@@ -1,0 +1,14 @@
+{
+  "name": "06_Quan_vua_Veznan",
+  "triangles": 89990,
+  "vertices": 44983,
+  "nonmanifold_edges": 0,
+  "original_surface_defects": 19293,
+  "dimensions": [
+    1.713592529296875,
+    1.3487777709960938,
+    1.9585522413253784
+  ],
+  "geometry_source": "Full reconstructed 3D sculpt; no depth-sheet or contour-extruded replacement",
+  "removed_isolated_debris_vertices": 8
+}

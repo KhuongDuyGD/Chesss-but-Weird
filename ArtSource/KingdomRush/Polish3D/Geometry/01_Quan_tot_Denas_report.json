@@ -1,0 +1,13 @@
+{
+  "name": "01_Quan_tot_Denas",
+  "triangles": 89928,
+  "vertices": 44952,
+  "nonmanifold_edges": 0,
+  "dimensions": [
+    1.3684184551239014,
+    1.3811616897583008,
+    1.9609017372131348
+  ],
+  "geometry_source": "Coherent filled volumetric reconstruction from original full surface points; no winding-dependent surface-net artifacts",
+  "removed_isolated_debris_vertices": 38
+}
