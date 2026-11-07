@@ -1,0 +1,100 @@
+{
+  "models": [
+    {
+      "name": "01_Quan_tot_Denas",
+      "albedo": "Assets/Skins/KingdomRushCollab/Textures/Advanced/01_Quan_tot_Denas_Clarity.png",
+      "emission": null,
+      "magicAnchor": null,
+      "emissiveCoverage": 0
+    },
+    {
+      "name": "01_Quan_tot_Veznan",
+      "albedo": "Assets/Skins/KingdomRushCollab/Textures/Advanced/01_Quan_tot_Veznan_Clarity.png",
+      "emission": "Assets/Skins/KingdomRushCollab/Textures/Advanced/01_Quan_tot_Veznan_Magic.png",
+      "magicAnchor": null,
+      "emissiveCoverage": 0.0
+    },
+    {
+      "name": "02_Quan_xe_Denas",
+      "albedo": "Assets/Skins/KingdomRushCollab/Textures/Advanced/02_Quan_xe_Denas_Clarity.png",
+      "emission": null,
+      "magicAnchor": null,
+      "emissiveCoverage": 0
+    },
+    {
+      "name": "02_Quan_xe_Veznan",
+      "albedo": "Assets/Skins/KingdomRushCollab/Textures/Advanced/02_Quan_xe_Veznan_Clarity.png",
+      "emission": "Assets/Skins/KingdomRushCollab/Textures/Advanced/02_Quan_xe_Veznan_Magic.png",
+      "magicAnchor": null,
+      "emissiveCoverage": 0.038319486766906635
+    },
+    {
+      "name": "03_Quan_ngua_Denas",
+      "albedo": "Assets/Skins/KingdomRushCollab/Textures/Advanced/03_Quan_ngua_Denas_Clarity.png",
+      "emission": null,
+      "magicAnchor": null,
+      "emissiveCoverage": 0
+    },
+    {
+      "name": "03_Quan_ngua_Veznan",
+      "albedo": "Assets/Skins/KingdomRushCollab/Textures/Advanced/03_Quan_ngua_Veznan_Clarity.png",
+      "emission": "Assets/Skins/KingdomRushCollab/Textures/Advanced/03_Quan_ngua_Veznan_Magic.png",
+      "magicAnchor": null,
+      "emissiveCoverage": 0.012279547986498513
+    },
+    {
+      "name": "04_Quan_tuong_Denas",
+      "albedo": "Assets/Skins/KingdomRushCollab/Textures/Advanced/04_Quan_tuong_Denas_Clarity.png",
+      "emission": null,
+      "magicAnchor": null,
+      "emissiveCoverage": 0
+    },
+    {
+      "name": "04_Quan_tuong_Veznan",
+      "albedo": "Assets/Skins/KingdomRushCollab/Textures/Advanced/04_Quan_tuong_Veznan_Clarity.png",
+      "emission": "Assets/Skins/KingdomRushCollab/Textures/Advanced/04_Quan_tuong_Veznan_Magic.png",
+      "magicAnchor": [
+        0.19732411205768585,
+        0.720562219619751,
+        -0.09958542883396149
+      ],
+      "emissiveCoverage": 0.028934363673177862
+    },
+    {
+      "name": "05_Quan_hau_Denas",
+      "albedo": "Assets/Skins/KingdomRushCollab/Textures/Advanced/05_Quan_hau_Denas_Clarity.png",
+      "emission": null,
+      "magicAnchor": null,
+      "emissiveCoverage": 0
+    },
+    {
+      "name": "05_Quan_hau_Veznan",
+      "albedo": "Assets/Skins/KingdomRushCollab/Textures/Advanced/05_Quan_hau_Veznan_Clarity.png",
+      "emission": "Assets/Skins/KingdomRushCollab/Textures/Advanced/05_Quan_hau_Veznan_Magic.png",
+      "magicAnchor": [
+        0.23726890981197357,
+        0.7808234691619873,
+        -0.16111783683300018
+      ],
+      "emissiveCoverage": 0.027452661435871346
+    },
+    {
+      "name": "06_Quan_vua_Denas",
+      "albedo": "Assets/Skins/KingdomRushCollab/Textures/Advanced/06_Quan_vua_Denas_Clarity.png",
+      "emission": null,
+      "magicAnchor": null,
+      "emissiveCoverage": 0
+    },
+    {
+      "name": "06_Quan_vua_Veznan",
+      "albedo": "Assets/Skins/KingdomRushCollab/Textures/Advanced/06_Quan_vua_Veznan_Clarity.png",
+      "emission": "Assets/Skins/KingdomRushCollab/Textures/Advanced/06_Quan_vua_Veznan_Magic.png",
+      "magicAnchor": [
+        0.24055099487304688,
+        0.8422465920448303,
+        -0.026552807539701462
+      ],
+      "emissiveCoverage": 0.021986541691929984
+    }
+  ]
+}

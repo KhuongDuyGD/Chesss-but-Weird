@@ -15,6 +15,11 @@ MonoBehaviour:
   m_GroupName: CoreCatalog
   m_GUID: 005cf2d4d2fa19e4b83f997e85e759e9
   m_SerializeEntries:
+  - m_GUID: 21d0db9b3a2861b4187244f93d6708fb
+    m_Address: Environment/classic
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: d8c3154e758c4af4993b15960f8f7ac9
     m_Address: Cosmetics/Catalog
     m_ReadOnly: 0

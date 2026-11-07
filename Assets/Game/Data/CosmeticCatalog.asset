@@ -19,9 +19,9 @@ MonoBehaviour:
     displayName: Tazji's Low Poly Chess Set
     data:
       m_AssetGUID: 020eb3b37c3d396409e57486fce5029b
-      m_SubObjectName:
-      m_SubObjectType:
-      m_SubObjectGUID:
+      m_SubObjectName: 
+      m_SubObjectType: 
+      m_SubObjectGUID: 
       m_EditorAssetChanged: 0
     thumbnail: {fileID: 21300000, guid: f35953e352f4d4947992fa002b0405f4, type: 3}
     tier: COMMON
@@ -29,9 +29,9 @@ MonoBehaviour:
     displayName: Blue Crystal Chess Set
     data:
       m_AssetGUID: 881c96052d985454dbaa483050423d6b
-      m_SubObjectName:
-      m_SubObjectType:
-      m_SubObjectGUID:
+      m_SubObjectName: 
+      m_SubObjectType: 
+      m_SubObjectGUID: 
       m_EditorAssetChanged: 0
     thumbnail: {fileID: 21300000, guid: cbaf84fc77132964faa869850e7229ba, type: 3}
     tier: COMMON
@@ -39,20 +39,40 @@ MonoBehaviour:
     displayName: Woodland Chess Set
     data:
       m_AssetGUID: 84c8b1a51192ffb45b823bfd1304c425
-      m_SubObjectName:
-      m_SubObjectType:
-      m_SubObjectGUID:
+      m_SubObjectName: 
+      m_SubObjectType: 
+      m_SubObjectGUID: 
       m_EditorAssetChanged: 0
     thumbnail: {fileID: 21300000, guid: cf07ff9cc3181744ab9dda46bd71cb19, type: 3}
     tier: COMMON
+  - id: kingdom_rush_denas
+    displayName: "Kingdom Rush \u2014 Denas \u2014 Royal Guard"
+    data:
+      m_AssetGUID: afadfbccb4440274484cf020852c50da
+      m_SubObjectName: 
+      m_SubObjectType: 
+      m_SubObjectGUID: 
+      m_EditorAssetChanged: 0
+    thumbnail: {fileID: 21300000, guid: efd384f0673ec174ea1841c72d44e0c0, type: 3}
+    tier: LEGENDARY
+  - id: kingdom_rush_veznan
+    displayName: "Kingdom Rush \u2014 Vez'Nan \u2014 Dark Dominion"
+    data:
+      m_AssetGUID: 547122227ea9b2444ba0ddcc104445bd
+      m_SubObjectName: 
+      m_SubObjectType: 
+      m_SubObjectGUID: 
+      m_EditorAssetChanged: 0
+    thumbnail: {fileID: 21300000, guid: ccdaf9bbe968e834586f596d1cbc0b1b, type: 3}
+    tier: LEGENDARY
   boards:
   - id: tazji_lowpoly
     displayName: Tazji's Low Poly Arena
     data:
       m_AssetGUID: a05a0c4b4edbf9f47a136dd34f7058c7
-      m_SubObjectName:
-      m_SubObjectType:
-      m_SubObjectGUID:
+      m_SubObjectName: 
+      m_SubObjectType: 
+      m_SubObjectGUID: 
       m_EditorAssetChanged: 0
     thumbnail: {fileID: 21300000, guid: aa2f7fee0aa51e341900ebea93ca4a95, type: 3}
     tier: COMMON
@@ -60,9 +80,9 @@ MonoBehaviour:
     displayName: Forest Garden Board
     data:
       m_AssetGUID: a7aaab4fc93ab024bb455f480b75703b
-      m_SubObjectName:
-      m_SubObjectType:
-      m_SubObjectGUID:
+      m_SubObjectName: 
+      m_SubObjectType: 
+      m_SubObjectGUID: 
       m_EditorAssetChanged: 0
     thumbnail: {fileID: 21300000, guid: eb9fbd1b8a79fd544bb81c65f0e34369, type: 3}
     tier: COMMON
@@ -70,9 +90,9 @@ MonoBehaviour:
     displayName: Classic Marble Board
     data:
       m_AssetGUID: 9e6e150ce4d9a8c4d8987b85ef5cc14c
-      m_SubObjectName:
-      m_SubObjectType:
-      m_SubObjectGUID:
+      m_SubObjectName: 
+      m_SubObjectType: 
+      m_SubObjectGUID: 
       m_EditorAssetChanged: 0
     thumbnail: {fileID: 21300000, guid: b83fbe7da58ca0f43b914b07823d5c50, type: 3}
     tier: COMMON
@@ -80,10 +100,70 @@ MonoBehaviour:
     displayName: Celestial Board
     data:
       m_AssetGUID: 1f70748d388317645bc627a9c175fb14
-      m_SubObjectName:
-      m_SubObjectType:
-      m_SubObjectGUID:
+      m_SubObjectName: 
+      m_SubObjectType: 
+      m_SubObjectGUID: 
       m_EditorAssetChanged: 0
     thumbnail: {fileID: 21300000, guid: 226e4e65f16bdba4898da3b9894f1481, type: 3}
     tier: LEGENDARY
-  environments: []
+  - id: kingdom_rush_denas
+    displayName: "Kingdom Rush \u2014 Denas Royal Citadel"
+    data:
+      m_AssetGUID: 0cac16a56c8823d4eacd524fa6a10ead
+      m_SubObjectName: 
+      m_SubObjectType: 
+      m_SubObjectGUID: 
+      m_EditorAssetChanged: 0
+    thumbnail: {fileID: 21300000, guid: 33e637498c516e148bcbf706631da754, type: 3}
+    tier: LEGENDARY
+  - id: kingdom_rush_veznan
+    displayName: "Kingdom Rush \u2014 Vez'Nan Ruin Throne"
+    data:
+      m_AssetGUID: b6790783fa084d14b88ad647cc101bca
+      m_SubObjectName: 
+      m_SubObjectType: 
+      m_SubObjectGUID: 
+      m_EditorAssetChanged: 0
+    thumbnail: {fileID: 21300000, guid: e0f4e936f862ee24e912122bfc82612a, type: 3}
+    tier: LEGENDARY
+  environments:
+  - id: kingdom_rush
+    displayName: "Kingdom Rush \u2014 Linirea Valley"
+    data:
+      m_AssetGUID: f8abee0442916dc44abbe7d82cd70d90
+      m_SubObjectName: 
+      m_SubObjectType: 
+      m_SubObjectGUID: 
+      m_EditorAssetChanged: 0
+    thumbnail: {fileID: 21300000, guid: ed942ada2c3322a42a06c689ca541250, type: 3}
+    tier: LEGENDARY
+  - id: classic
+    displayName: Classic background
+    data:
+      m_AssetGUID: 21d0db9b3a2861b4187244f93d6708fb
+      m_SubObjectName: 
+      m_SubObjectType: 
+      m_SubObjectGUID: 
+      m_EditorAssetChanged: 0
+    thumbnail: {fileID: 21300000, guid: 371fb047c7acb86489a6bba74ef7e931, type: 3}
+    tier: COMMON
+  - id: kingdom_rush_denas
+    displayName: "Kingdom Rush \u2014 Linirea Royal Heartlands"
+    data:
+      m_AssetGUID: 56e6501b0b3a26e429c84771cc8bdfd8
+      m_SubObjectName: 
+      m_SubObjectType: 
+      m_SubObjectGUID: 
+      m_EditorAssetChanged: 0
+    thumbnail: {fileID: 21300000, guid: 06bbcbb6d370b7d4a83152f4cc9ee55d, type: 3}
+    tier: LEGENDARY
+  - id: kingdom_rush_veznan
+    displayName: "Kingdom Rush \u2014 Vez'Nan Scorched Dominion"
+    data:
+      m_AssetGUID: e603ad283c984694eb99f526f672dd99
+      m_SubObjectName: 
+      m_SubObjectType: 
+      m_SubObjectGUID: 
+      m_EditorAssetChanged: 0
+    thumbnail: {fileID: 21300000, guid: 42d70ef44e20a69409a49b81343f076c, type: 3}
+    tier: LEGENDARY

@@ -1,0 +1,19 @@
+{
+  "name": "04_Quan_tuong_Veznan",
+  "volumetric_mesh": true,
+  "triangles": 418752,
+  "front_visible_faces": 207019,
+  "inferred_faces": 211733,
+  "silhouette_iou_before": 0.9061862678450034,
+  "silhouette_iou_after": 0.9530771720534517,
+  "texture_size": [
+    4096,
+    2048
+  ],
+  "visible_color_source": "Unaltered original RGB pixels projected onto reconstructed 3D surface",
+  "unseen_color_source": "Surface-geodesic propagation from visible colors; inferred, not original evidence",
+  "exact_likeness_certified": false,
+  "contour_rebuilt": true,
+  "contour_grid": 512,
+  "depth_source": "Front and back ray intersections of the reconstructed volumetric sculpt"
+}

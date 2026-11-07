@@ -3,7 +3,7 @@ using System;
 // Exact protocol tokens; no catalog registration, artwork approval or economic grant.
 public static class CosmeticItemKinds
 {
-    public const string Set = "CHESS_PIECE_SKIN", Board = "BOARD_SKIN";
+    public const string Set = "CHESS_PIECE_SKIN", Board = "BOARD_SKIN", Background = "BACKGROUND_SKIN";
     // Backend-only catalog records explicitly identified by the owner as having no Unity artwork.
     public static bool KnownMissingCode(string code) => code == "CHESS_SHADOW_KNIGHT" || code == "BOARD_VOLCANO" || code == "CHESS_DRAGON_RED";
     public static string Slot(PieceTeam team, PieceType piece) => team.ToString().ToUpperInvariant() + "_" + piece.ToString().ToUpperInvariant();

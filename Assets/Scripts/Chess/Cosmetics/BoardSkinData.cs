@@ -14,4 +14,8 @@ public sealed class BoardSkinData : ScriptableObject
     [Tooltip("Baked rotation of the prisoner pads relative to the original left/right layout. Does not rotate the board model.")]
     public float prisonLayoutYaw;
     public bool loopAnimation;
+    [Tooltip("Keep the complete decorative board mesh inside the camera while orbiting.")]
+    public bool frameFullModel;
+    [Tooltip("Optional framing padding for this board only. Zero keeps the camera's normal padding.")]
+    [Range(0f,1.3f)] public float cameraFramePadding;
 }

@@ -1,0 +1,19 @@
+{
+  "name": "05_Quan_hau_Denas",
+  "volumetric_mesh": true,
+  "triangles": 453920,
+  "front_visible_faces": 224618,
+  "inferred_faces": 229302,
+  "silhouette_iou_before": 0.9194889149570017,
+  "silhouette_iou_after": 0.9643494985574942,
+  "texture_size": [
+    4096,
+    2048
+  ],
+  "visible_color_source": "Unaltered original RGB pixels projected onto reconstructed 3D surface",
+  "unseen_color_source": "Surface-geodesic propagation from visible colors; inferred, not original evidence",
+  "exact_likeness_certified": false,
+  "contour_rebuilt": true,
+  "contour_grid": 512,
+  "depth_source": "Front and back ray intersections of the reconstructed volumetric sculpt"
+}

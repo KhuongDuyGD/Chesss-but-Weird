@@ -9,13 +9,20 @@ public sealed class CosmeticSelection
     private const string GuestSaveKey = "chess.cosmetics.selection.v1";
     private const string AccountSaveKeyPrefix = "chess.cosmetics.selection.v2.";
     public const string LowPolyId = "tazji_lowpoly";
+    public const string KingdomRushId = "kingdom_rush";
+    public const string KingdomRushDenasId = "kingdom_rush_denas";
+    public const string KingdomRushVeznanId = "kingdom_rush_veznan";
+    public static bool IsKingdomRushShopOnly(string id) =>
+        string.Equals(id, KingdomRushId, StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(id, KingdomRushDenasId, StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(id, KingdomRushVeznanId, StringComparison.OrdinalIgnoreCase);
     private const string DefaultChessItemId = "6aacc041e50e17c25a690158";
     private const string DefaultBoardItemId = "6aacc04be50e17c25a69015a";
 
     public string whiteSkinId = LowPolyId;
     public string blackSkinId = LowPolyId;
     public string boardId = LowPolyId;
-    public string environmentId = "";
+    public string environmentId = "classic";
     public string moveEffectId = "classic";
     public bool customPieces;
     public List<PieceCosmeticChoice> pieces = new List<PieceCosmeticChoice>();
@@ -73,7 +80,7 @@ public sealed class CosmeticSelection
         if (PlayerAuthService.IsGuestSession)
         {
             whiteSkinId = blackSkinId = boardId = LowPolyId;
-            environmentId = "";
+            environmentId = "classic";
             moveEffectId = "classic";
             customPieces = false;
             pieces = new List<PieceCosmeticChoice>();
@@ -87,9 +94,10 @@ public sealed class CosmeticSelection
         if (string.IsNullOrWhiteSpace(boardId) ||
             string.Equals(boardId, "default", StringComparison.OrdinalIgnoreCase))
             boardId = LowPolyId;
-        environmentId = environmentId ?? "";
+        environmentId = string.IsNullOrWhiteSpace(environmentId) ? "classic" : environmentId;
         if (moveEffectId != "ink_sparks" && moveEffectId != "confetti") moveEffectId = "classic";
     }
+
 
     private static string ReplaceRemovedPieceId(string id) =>
         string.IsNullOrWhiteSpace(id) ||

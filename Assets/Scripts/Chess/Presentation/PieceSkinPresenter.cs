@@ -23,8 +23,21 @@ internal static class PieceSkinPresenter
         }
 
         var data = manager.GetData(piece.Team, piece.Type);
+        float boardScale = 0f;
+        if (data && data.useAuthoredBoardScale && game.Board)
+        {
+            float width = Vector3.Distance(game.Board.GetTileCenterWorld(Vector2Int.zero), game.Board.GetTileCenterWorld(Vector2Int.right));
+            float depth = Vector3.Distance(game.Board.GetTileCenterWorld(Vector2Int.zero), game.Board.GetTileCenterWorld(Vector2Int.up));
+            boardScale = Mathf.Sqrt(width * depth);
+        }
         skinState.ApplyPrefabSkin(prefab, data ? data.skinId : skinId, piece.Type,
-            data ? data.GetTuning(piece.Type) : PieceSkinPieceTuning.Default, piece.transform);
+            data ? data.GetTuning(piece.Type) : PieceSkinPieceTuning.Default, piece.transform, boardScale);
+        if (data && data.faceOpponent && game.Board && skinState.ActiveVisual)
+        {
+            Vector3 forward = game.Board.GetTileCenterWorld(Vector2Int.up) - game.Board.GetTileCenterWorld(Vector2Int.zero);
+            forward *= piece.ForwardDirection;
+            skinState.ActiveVisual.transform.rotation = Quaternion.LookRotation(forward, game.Board.transform.up);
+        }
         manager.ApplyColor(skinState.ActiveVisual, piece.Team, piece.Type);
         ChessModelRendering.ApplySettings(piece.gameObject);
         PieceViewGeometry.UpdatePieceRootColliderFromVisibleRenderers(piece.gameObject);

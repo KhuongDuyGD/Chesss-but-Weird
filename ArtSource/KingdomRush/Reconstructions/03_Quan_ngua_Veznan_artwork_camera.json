@@ -1,0 +1,34 @@
+{
+  "name": "03_Quan_ngua_Veznan",
+  "yaw_degrees": 30.638671875,
+  "pitch_degrees": 12.087890624999998,
+  "silhouette_iou": 0.8704059619533242,
+  "right": [
+    0.8603982526795155,
+    0.509622258919326,
+    0.0
+  ],
+  "up": [
+    -0.10672096819219375,
+    0.1801776373574085,
+    0.9778275174816993
+  ],
+  "eye_direction": [
+    0.4983226682925003,
+    -0.8413210874632024,
+    0.20941190523840097
+  ],
+  "image_size": [
+    1254,
+    1254
+  ],
+  "scale_xy": [
+    537.2448533864695,
+    537.2448533864695
+  ],
+  "offset_xy": [
+    603.102401350043,
+    584.2829121851155
+  ],
+  "note": "Camera fit permits separate X/Y scale to expose proportion differences; does not certify exact likeness."
+}

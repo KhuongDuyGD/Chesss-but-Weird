@@ -1,0 +1,14 @@
+{
+  "name": "01_Quan_tot_Veznan",
+  "atlas_size": [
+    4096,
+    4096
+  ],
+  "surface_texels": 8058326,
+  "direct_multiview_surface_coverage": 0.8126577405778818,
+  "occluded_surface_fill": "Physical position + surface normal neighbors, never unrelated UV islands",
+  "unique_surface_UV": true,
+  "all_uv_gutters_dilated": true,
+  "geometry_source": "Coherent volumetric sculpt, not contour volume",
+  "source_views": 6
+}

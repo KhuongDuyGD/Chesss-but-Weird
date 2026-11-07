@@ -1,0 +1,34 @@
+{
+  "name": "01_Quan_tot_Veznan",
+  "yaw_degrees": 5.762838363647461,
+  "pitch_degrees": 10.528304672241202,
+  "silhouette_iou": 0.9349938173467586,
+  "right": [
+    0.9949460439624335,
+    0.10041100339854879,
+    0.0
+  ],
+  "up": [
+    -0.018347223123054517,
+    0.18179777560357496,
+    0.9831647614663908
+  ],
+  "eye_direction": [
+    0.09872056020493518,
+    -0.978195889984255,
+    0.18272124072131007
+  ],
+  "image_size": [
+    1254,
+    1254
+  ],
+  "scale_xy": [
+    532.6883143537029,
+    532.6883143537029
+  ],
+  "offset_xy": [
+    594.6927998580824,
+    579.8874540624523
+  ],
+  "note": "Camera fit permits separate X/Y scale to expose proportion differences; does not certify exact likeness."
+}

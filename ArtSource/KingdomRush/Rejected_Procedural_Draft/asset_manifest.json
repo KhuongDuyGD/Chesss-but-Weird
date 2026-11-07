@@ -1,0 +1,225 @@
+{
+  "authoring": "Editable original mesh construction in Blender from supplied reference images",
+  "coordinates": "Blender Z up / front -Y; FBX Unity Y up, forward -Z; meters; ground pivot",
+  "pieces": [
+    {
+      "name": "01_Quan_tot_Denas",
+      "kind": "Pawn",
+      "faction": "White",
+      "reference_height": 1.000000026253133,
+      "dimensions_blender_xyz": [
+        0.6954665780067444,
+        0.6954666376113892,
+        1.0
+      ],
+      "max_footprint": 0.6954666376113892,
+      "reference_max_footprint": 0.6954666674137115,
+      "triangles": 22862,
+      "mesh_parts": 113,
+      "fbx": "Assets/Skins/KingdomRushCollab/Models/01_Quan_tot_Denas.fbx",
+      "blend": "ArtSource/KingdomRush/Pieces/01_Quan_tot_Denas.blend"
+    },
+    {
+      "name": "01_Quan_tot_Veznan",
+      "kind": "Pawn",
+      "faction": "Black",
+      "reference_height": 1.000000026253133,
+      "dimensions_blender_xyz": [
+        0.6954665780067444,
+        0.6954666376113892,
+        1.0
+      ],
+      "max_footprint": 0.6954666376113892,
+      "reference_max_footprint": 0.6954666674137115,
+      "triangles": 26218,
+      "mesh_parts": 117,
+      "fbx": "Assets/Skins/KingdomRushCollab/Models/01_Quan_tot_Veznan.fbx",
+      "blend": "ArtSource/KingdomRush/Pieces/01_Quan_tot_Veznan.blend"
+    },
+    {
+      "name": "02_Quan_xe_Denas",
+      "kind": "Rook",
+      "faction": "White",
+      "reference_height": 1.250000026657002,
+      "dimensions_blender_xyz": [
+        0.7061653733253479,
+        0.7061654329299927,
+        1.25
+      ],
+      "max_footprint": 0.7061654329299927,
+      "reference_max_footprint": 0.7061654627323151,
+      "triangles": 18652,
+      "mesh_parts": 110,
+      "fbx": "Assets/Skins/KingdomRushCollab/Models/02_Quan_xe_Denas.fbx",
+      "blend": "ArtSource/KingdomRush/Pieces/02_Quan_xe_Denas.blend"
+    },
+    {
+      "name": "02_Quan_xe_Veznan",
+      "kind": "Rook",
+      "faction": "Black",
+      "reference_height": 1.250000026657002,
+      "dimensions_blender_xyz": [
+        0.7061653733253479,
+        0.7061654329299927,
+        1.25
+      ],
+      "max_footprint": 0.7061654329299927,
+      "reference_max_footprint": 0.7061654627323151,
+      "triangles": 24240,
+      "mesh_parts": 140,
+      "fbx": "Assets/Skins/KingdomRushCollab/Models/02_Quan_xe_Veznan.fbx",
+      "blend": "ArtSource/KingdomRush/Pieces/02_Quan_xe_Veznan.blend"
+    },
+    {
+      "name": "03_Quan_ngua_Denas",
+      "kind": "Knight",
+      "faction": "White",
+      "reference_height": 1.3433436417850544,
+      "dimensions_blender_xyz": [
+        0.6954665780067444,
+        0.7726147174835205,
+        1.3433436155319214
+      ],
+      "max_footprint": 0.7726147174835205,
+      "reference_max_footprint": 0.7726146876811981,
+      "triangles": 27156,
+      "mesh_parts": 130,
+      "fbx": "Assets/Skins/KingdomRushCollab/Models/03_Quan_ngua_Denas.fbx",
+      "blend": "ArtSource/KingdomRush/Pieces/03_Quan_ngua_Denas.blend"
+    },
+    {
+      "name": "03_Quan_ngua_Veznan",
+      "kind": "Knight",
+      "faction": "Black",
+      "reference_height": 1.3433436417850544,
+      "dimensions_blender_xyz": [
+        0.6954665780067444,
+        0.7726146578788757,
+        1.3433436155319214
+      ],
+      "max_footprint": 0.7726146578788757,
+      "reference_max_footprint": 0.7726146876811981,
+      "triangles": 30150,
+      "mesh_parts": 140,
+      "fbx": "Assets/Skins/KingdomRushCollab/Models/03_Quan_ngua_Veznan.fbx",
+      "blend": "ArtSource/KingdomRush/Pieces/03_Quan_ngua_Veznan.blend"
+    },
+    {
+      "name": "04_Quan_tuong_Denas",
+      "kind": "Bishop",
+      "faction": "White",
+      "reference_height": 1.4500000739368488,
+      "dimensions_blender_xyz": [
+        0.6954665780067444,
+        0.6954666972160339,
+        1.4500000476837158
+      ],
+      "max_footprint": 0.6954666972160339,
+      "reference_max_footprint": 0.6954666972160339,
+      "triangles": 17716,
+      "mesh_parts": 95,
+      "fbx": "Assets/Skins/KingdomRushCollab/Models/04_Quan_tuong_Denas.fbx",
+      "blend": "ArtSource/KingdomRush/Pieces/04_Quan_tuong_Denas.blend"
+    },
+    {
+      "name": "04_Quan_tuong_Veznan",
+      "kind": "Bishop",
+      "faction": "Black",
+      "reference_height": 1.4500000739368488,
+      "dimensions_blender_xyz": [
+        0.6954665780067444,
+        0.6954666972160339,
+        1.4500000476837158
+      ],
+      "max_footprint": 0.6954666972160339,
+      "reference_max_footprint": 0.6954666972160339,
+      "triangles": 20496,
+      "mesh_parts": 104,
+      "fbx": "Assets/Skins/KingdomRushCollab/Models/04_Quan_tuong_Veznan.fbx",
+      "blend": "ArtSource/KingdomRush/Pieces/04_Quan_tuong_Veznan.blend"
+    },
+    {
+      "name": "05_Quan_hau_Denas",
+      "kind": "Queen",
+      "faction": "White",
+      "reference_height": 1.6000000506864822,
+      "dimensions_blender_xyz": [
+        0.7111356258392334,
+        0.711135745048523,
+        1.600000023841858
+      ],
+      "max_footprint": 0.711135745048523,
+      "reference_max_footprint": 0.711135745048523,
+      "triangles": 21228,
+      "mesh_parts": 114,
+      "fbx": "Assets/Skins/KingdomRushCollab/Models/05_Quan_hau_Denas.fbx",
+      "blend": "ArtSource/KingdomRush/Pieces/05_Quan_hau_Denas.blend"
+    },
+    {
+      "name": "05_Quan_hau_Veznan",
+      "kind": "Queen",
+      "faction": "Black",
+      "reference_height": 1.6000000506864822,
+      "dimensions_blender_xyz": [
+        0.7111356258392334,
+        0.711135745048523,
+        1.600000023841858
+      ],
+      "max_footprint": 0.711135745048523,
+      "reference_max_footprint": 0.711135745048523,
+      "triangles": 25668,
+      "mesh_parts": 132,
+      "fbx": "Assets/Skins/KingdomRushCollab/Models/05_Quan_hau_Veznan.fbx",
+      "blend": "ArtSource/KingdomRush/Pieces/05_Quan_hau_Veznan.blend"
+    },
+    {
+      "name": "06_Quan_vua_Denas",
+      "kind": "King",
+      "faction": "White",
+      "reference_height": 1.7000000755120386,
+      "dimensions_blender_xyz": [
+        0.7371945977210999,
+        0.7371947169303894,
+        1.7000000476837158
+      ],
+      "max_footprint": 0.7371947169303894,
+      "reference_max_footprint": 0.7371947169303894,
+      "triangles": 23658,
+      "mesh_parts": 112,
+      "fbx": "Assets/Skins/KingdomRushCollab/Models/06_Quan_vua_Denas.fbx",
+      "blend": "ArtSource/KingdomRush/Pieces/06_Quan_vua_Denas.blend"
+    },
+    {
+      "name": "06_Quan_vua_Veznan",
+      "kind": "King",
+      "faction": "Black",
+      "reference_height": 1.7000000755120386,
+      "dimensions_blender_xyz": [
+        0.7371945977210999,
+        0.7371947169303894,
+        1.7000000476837158
+      ],
+      "max_footprint": 0.7371947169303894,
+      "reference_max_footprint": 0.7371947169303894,
+      "triangles": 22396,
+      "mesh_parts": 116,
+      "fbx": "Assets/Skins/KingdomRushCollab/Models/06_Quan_vua_Veznan.fbx",
+      "blend": "ArtSource/KingdomRush/Pieces/06_Quan_vua_Veznan.blend"
+    }
+  ],
+  "board": {
+    "playable_grid": 8,
+    "cell_size": 1,
+    "surface_z": 0,
+    "prison_x": 4.93,
+    "prison_y": [
+      3.15,
+      1.89,
+      0.63,
+      -0.63,
+      -1.89,
+      -3.15
+    ],
+    "prison_surface": 0.036
+  }
+}

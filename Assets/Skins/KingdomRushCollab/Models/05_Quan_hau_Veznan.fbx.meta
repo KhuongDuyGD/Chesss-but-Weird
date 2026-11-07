@@ -1,0 +1,410 @@
+fileFormatVersion: 2
+guid: a85355192a030ed47a376122d02af580
+ModelImporter:
+  serializedVersion: 24200
+  internalIDToNameTable: []
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: "KR \u2022 Arcane violet"
+    second: {fileID: 2100000, guid: c5bd12125ab79b24786061182099c1bf, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: "KR \u2022 Azure crystal"
+    second: {fileID: 2100000, guid: 8fe5242c3dc894c4b92ecda00b57f539, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: "KR \u2022 Baked meadow"
+    second: {fileID: 2100000, guid: 31e367dda9ca18a46a00cf96403d5d4f, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: "KR \u2022 Basalt cut edges"
+    second: {fileID: 2100000, guid: 17f089d43f78f9c4a8e4dd48fca446b1, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: "KR \u2022 Basalt shadows"
+    second: {fileID: 2100000, guid: 639d68a49f0c5ca45be85dbeaf90d1bb, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: "KR \u2022 Basalt tile variation"
+    second: {fileID: 2100000, guid: bbf8108ebfa5f1744b070bcf7ede39f3, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: "KR \u2022 Blackened armor"
+    second: {fileID: 2100000, guid: 1d6ed8651bd9e3b4b904d2674cabffd0, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: "KR \u2022 Blue fabric highlight"
+    second: {fileID: 2100000, guid: 0068bd597a372904cba37856edcb056c, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: "KR \u2022 Cape lining blue"
+    second: {fileID: 2100000, guid: 7fe7b09aba249be4098e5aa0b814850b, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: "KR \u2022 Cape lining purple"
+    second: {fileID: 2100000, guid: 5353025e0e3bb0d40824f4e859c0b530, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: "KR \u2022 Dark Tower basalt"
+    second: {fileID: 2100000, guid: dcb4bd392dc7283499580c6953aa8b90, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: "KR \u2022 Dark armor edges"
+    second: {fileID: 2100000, guid: 46b81a9796d0e2a4ab3aebc2810ac1ab, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: "KR \u2022 Denas golden hair"
+    second: {fileID: 2100000, guid: a025e9084812e03428b83e689797eb5c, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: "KR \u2022 Denas royal blue"
+    second: {fileID: 2100000, guid: 8ec274217cb4d8b4d9efdae4cc4171e0, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: "KR \u2022 Distant mountain mist"
+    second: {fileID: 2100000, guid: 86a4efe55c93c7e41bf0be87c52de0fa, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: "KR \u2022 Ermine fur"
+    second: {fileID: 2100000, guid: 2430ce83e2d07934fbbb5c79fb563e13, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: "KR \u2022 Eye and recess ink"
+    second: {fileID: 2100000, guid: 1b75454b38ad418478d83c190f790d02, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: "KR \u2022 Fel crystal body"
+    second: {fileID: 2100000, guid: 1bc0a5b36cddea94283d43b61b0cb715, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: "KR \u2022 Gold edge"
+    second: {fileID: 2100000, guid: 6f1d6dfddefa44c4b887b179c9cd6c95, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: "KR \u2022 Hand forged silver"
+    second: {fileID: 2100000, guid: 85c2f9af790b9834daeee2dd44a9a972, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: "KR \u2022 Iron horseshoe"
+    second: {fileID: 2100000, guid: f8987a645c994f24fbc85384003b5b58, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: "KR \u2022 Ivory robes"
+    second: {fileID: 2100000, guid: 32951d8931e333947bd69b67dbb0a233, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: "KR \u2022 Limestone highlights"
+    second: {fileID: 2100000, guid: f863620fcc59b9c418eb55a34dabce45, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: "KR \u2022 Limestone shadows"
+    second: {fileID: 2100000, guid: 3d700a4fe2a653c40925dce72786097d, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: "KR \u2022 Linirea limestone"
+    second: {fileID: 2100000, guid: 5950d20a2deb2e94ca61990d38fb54ae, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: "KR \u2022 Meadow grass"
+    second: {fileID: 2100000, guid: ddec89b82198bee409b8d36015b00c3c, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: "KR \u2022 Orc skin"
+    second: {fileID: 2100000, guid: 5ed25eb316692914f8a9a7d8a5c91c8f, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: "KR \u2022 Palfrey ivory"
+    second: {fileID: 2100000, guid: 938c697e8d944a2489c75b7ba7f0895a, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: "KR \u2022 Pine green"
+    second: {fileID: 2100000, guid: 5b483b4c441eae24ab732be3aebfd788, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: "KR \u2022 Raven hair"
+    second: {fileID: 2100000, guid: c97e1fdb54eccc8478a726eaea1a0b76, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: "KR \u2022 River turquoise"
+    second: {fileID: 2100000, guid: 17b65312f92877247b737d221e1e48b8, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: "KR \u2022 Royal gold"
+    second: {fileID: 2100000, guid: 95cfa9583e3d402479bc66757bb895da, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: "KR \u2022 Silver blade edge"
+    second: {fileID: 2100000, guid: 719ca8f25ef9bda40aa60a887fb2d09f, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: "KR \u2022 Skin highlight"
+    second: {fileID: 2100000, guid: cf9713eb68352364d898babee9fcf364, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: "KR \u2022 Smoky basalt tile"
+    second: {fileID: 2100000, guid: de7cb1e1b7c462d4d8338c510ec9f53e, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: "KR \u2022 Soul fire"
+    second: {fileID: 2100000, guid: c8904193e60b5084ab1fc21aa708d533, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: "KR \u2022 Sunlit grass"
+    second: {fileID: 2100000, guid: 7d03f6ab9218c424e866d00706cfc74d, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: "KR \u2022 Terracotta roofs"
+    second: {fileID: 2100000, guid: 568797655479799408339bac22f8f576, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: "KR \u2022 Timber"
+    second: {fileID: 2100000, guid: 4797aa86ff4e2e44a91ad466cc56daa9, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: "KR \u2022 Travertine tile variation"
+    second: {fileID: 2100000, guid: 88464f4a36bea644aa9f62380508376c, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: "KR \u2022 Tree canopy"
+    second: {fileID: 2100000, guid: 3b8391ed895c930408ae781aa1d1858a, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: "KR \u2022 Valley rock"
+    second: {fileID: 2100000, guid: d5355e07d70ebc5439745c709769346a, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: "KR \u2022 VezNan imperial violet"
+    second: {fileID: 2100000, guid: 298ced0fa85e08543a8fa00130431e34, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: "KR \u2022 Violet silk edge"
+    second: {fileID: 2100000, guid: 143388122e9107e47b89ae6ac5288580, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: "KR \u2022 Warm ivory bone"
+    second: {fileID: 2100000, guid: 49ccca844b976d543a2a49f3382549ee, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: "KR \u2022 Warm skin"
+    second: {fileID: 2100000, guid: a5e0c20068b04db4b8ff3d55d0a1d1a3, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: "KR \u2022 Warm travertine tile"
+    second: {fileID: 2100000, guid: 2e7bb3fb9ac3aca41a4f243946e13b1b, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: "KR \u2022 Worn leather"
+    second: {fileID: 2100000, guid: 68d62b13248203f44b54d2be8978c951, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: KR_Art_01_Quan_tot_Denas
+    second: {fileID: 2100000, guid: 9da14c4eca8dd0848962955ce31c5db2, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: KR_Art_01_Quan_tot_Veznan
+    second: {fileID: 2100000, guid: 3160d27d32a5be141a1f68de6561b031, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: KR_Art_02_Quan_xe_Denas
+    second: {fileID: 2100000, guid: 606a50a13990ae84ca8d2411d6366a24, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: KR_Art_02_Quan_xe_Veznan
+    second: {fileID: 2100000, guid: 83b3abaf74f64924697b9fe991b482bd, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: KR_Art_03_Quan_ngua_Denas
+    second: {fileID: 2100000, guid: 145dabbf197452745800d45a5d633f56, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: KR_Art_03_Quan_ngua_Veznan
+    second: {fileID: 2100000, guid: c5371be45064c814db1273122517f793, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: KR_Art_04_Quan_tuong_Denas
+    second: {fileID: 2100000, guid: da74913aa60f2b142b4a122a9703d2ed, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: KR_Art_04_Quan_tuong_Veznan
+    second: {fileID: 2100000, guid: d9e89538177149242ba18f489380c33f, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: KR_Art_05_Quan_hau_Denas
+    second: {fileID: 2100000, guid: 26d80acfa2d63154fb2ea7d00952a2bc, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: KR_Art_05_Quan_hau_Veznan
+    second: {fileID: 2100000, guid: ff7d979c2ef70fa4e9e8a1c14401b137, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: KR_Art_06_Quan_vua_Denas
+    second: {fileID: 2100000, guid: 310f90a0845d13346aa0d3bf54ede52d, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: KR_Art_06_Quan_vua_Veznan
+    second: {fileID: 2100000, guid: f4a4a30c81f9ce9459bee1b7cae3bcd0, type: 2}
+  materials:
+    materialImportMode: 1
+    materialName: 0
+    materialSearch: 1
+    materialLocation: 1
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    resampleCurves: 1
+    optimizeGameObjects: 0
+    removeConstantScaleCurves: 0
+    motionNodeName: 
+    animationImportErrors: 
+    animationImportWarnings: 
+    animationRetargetingWarnings: 
+    animationDoRetargetingWarnings: 0
+    importAnimatedCustomProperties: 0
+    importConstraints: 0
+    animationCompression: 1
+    animationRotationError: 0.5
+    animationPositionError: 0.5
+    animationScaleError: 0.5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    extraUserProperties: []
+    clipAnimations: []
+    isReadable: 1
+  meshes:
+    lODScreenPercentages: []
+    globalScale: 1
+    meshCompression: 0
+    addColliders: 0
+    useSRGBMaterialColor: 1
+    sortHierarchyByName: 1
+    importPhysicalCameras: 1
+    importVisibility: 1
+    importBlendShapes: 0
+    importCameras: 0
+    importLights: 0
+    nodeNameCollisionStrategy: 1
+    fileIdsGeneration: 2
+    swapUVChannels: 0
+    generateSecondaryUV: 0
+    useFileUnits: 1
+    keepQuads: 0
+    weldVertices: 1
+    bakeAxisConversion: 0
+    preserveHierarchy: 0
+    skinWeightsMode: 0
+    maxBonesPerVertex: 4
+    minBoneWeight: 0.001
+    optimizeBones: 1
+    generateMeshLods: 0
+    meshLodGenerationFlags: 0
+    maximumMeshLod: -1
+    meshOptimizationFlags: -1
+    indexFormat: 0
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVMarginMethod: 1
+    secondaryUVMinLightmapResolution: 40
+    secondaryUVMinObjectScale: 1
+    secondaryUVPackMargin: 4
+    useFileScale: 1
+    strictVertexDataChecks: 0
+  tangentSpace:
+    normalSmoothAngle: 60
+    normalImportMode: 0
+    tangentImportMode: 3
+    normalCalculationMode: 4
+    legacyComputeAllNormalsFromSmoothingGroupsWhenMeshHasBlendShapes: 0
+    blendShapeNormalImportMode: 1
+    normalSmoothingSource: 0
+  referencedClips: []
+  importAnimation: 0
+  humanDescription:
+    serializedVersion: 3
+    human: []
+    skeleton: []
+    armTwist: 0.5
+    foreArmTwist: 0.5
+    upperLegTwist: 0.5
+    legTwist: 0.5
+    armStretch: 0.05
+    legStretch: 0.05
+    feetSpacing: 0
+    globalScale: 1
+    rootMotionBoneName: 
+    hasTranslationDoF: 0
+    hasExtraRoot: 0
+    skeletonHasParents: 1
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  autoGenerateAvatarMappingIfUnspecified: 1
+  animationType: 2
+  humanoidOversampling: 1
+  avatarSetup: 0
+  addHumanoidExtraRootOnlyWhenUsingAvatar: 1
+  importBlendShapeDeformPercent: 1
+  remapMaterialsIfMaterialImportModeIsNone: 0
+  additionalBone: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

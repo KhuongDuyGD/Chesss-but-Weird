@@ -1,0 +1,170 @@
+[
+  {
+    "name": "01_Quan_tot_Denas",
+    "original_size": [
+      1024,
+      1024
+    ],
+    "bbox_pixels": [
+      250,
+      112,
+      852,
+      951
+    ],
+    "source_unchanged": true
+  },
+  {
+    "name": "01_Quan_tot_Veznan",
+    "original_size": [
+      1254,
+      1254
+    ],
+    "bbox_pixels": [
+      120,
+      38,
+      1038,
+      1181
+    ],
+    "source_unchanged": true
+  },
+  {
+    "name": "02_Quan_xe_Denas",
+    "original_size": [
+      1254,
+      1254
+    ],
+    "bbox_pixels": [
+      276,
+      25,
+      1044,
+      1207
+    ],
+    "source_unchanged": true
+  },
+  {
+    "name": "02_Quan_xe_Veznan",
+    "original_size": [
+      1254,
+      1254
+    ],
+    "bbox_pixels": [
+      230,
+      14,
+      1023,
+      1208
+    ],
+    "source_unchanged": true
+  },
+  {
+    "name": "03_Quan_ngua_Denas",
+    "original_size": [
+      1024,
+      1024
+    ],
+    "bbox_pixels": [
+      110,
+      44,
+      893,
+      1024
+    ],
+    "source_unchanged": true
+  },
+  {
+    "name": "03_Quan_ngua_Veznan",
+    "original_size": [
+      1254,
+      1254
+    ],
+    "bbox_pixels": [
+      199,
+      14,
+      969,
+      1197
+    ],
+    "source_unchanged": true
+  },
+  {
+    "name": "04_Quan_tuong_Denas",
+    "original_size": [
+      1024,
+      1024
+    ],
+    "bbox_pixels": [
+      194,
+      57,
+      882,
+      962
+    ],
+    "source_unchanged": true
+  },
+  {
+    "name": "04_Quan_tuong_Veznan",
+    "original_size": [
+      1254,
+      1254
+    ],
+    "bbox_pixels": [
+      230,
+      13,
+      980,
+      1174
+    ],
+    "source_unchanged": true
+  },
+  {
+    "name": "05_Quan_hau_Denas",
+    "original_size": [
+      1024,
+      1024
+    ],
+    "bbox_pixels": [
+      127,
+      11,
+      807,
+      961
+    ],
+    "source_unchanged": true
+  },
+  {
+    "name": "05_Quan_hau_Veznan",
+    "original_size": [
+      1254,
+      1254
+    ],
+    "bbox_pixels": [
+      208,
+      9,
+      1028,
+      1189
+    ],
+    "source_unchanged": true
+  },
+  {
+    "name": "06_Quan_vua_Denas",
+    "original_size": [
+      1254,
+      1254
+    ],
+    "bbox_pixels": [
+      152,
+      8,
+      966,
+      1209
+    ],
+    "source_unchanged": true
+  },
+  {
+    "name": "06_Quan_vua_Veznan",
+    "original_size": [
+      1254,
+      1254
+    ],
+    "bbox_pixels": [
+      169,
+      0,
+      1053,
+      1174
+    ],
+    "source_unchanged": true
+  }
+]

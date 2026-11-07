@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
+  m_Name: Board_KR_Denas
+  m_EditorClassIdentifier: Unity.Addressables.Editor::UnityEditor.AddressableAssets.Settings.AddressableAssetGroup
+  m_GroupName: Board_KR_Denas
+  m_GUID: 1c69c01fe6a5c9944ab6d2d3d033da4a
+  m_SerializeEntries:
+  - m_GUID: 01e7c768cef095a4db6e2bc6ddc1c42b
+    m_Address: Boards/kingdom_rush_denas
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 0cac16a56c8823d4eacd524fa6a10ead
+    m_Address: Board/kingdom_rush_denas
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  m_ReadOnly: 0
+  m_Settings: {fileID: 11400000, guid: 8194c9a80f156474bbbfc1ccbf68345e, type: 2}
+  m_SchemaSet:
+    m_Schemas:
+    - {fileID: 11400000, guid: 2f8e4e73410a2fd4c883f0e7fed25ac9, type: 2}
+    - {fileID: 11400000, guid: efef3818b7ee77b4aa32cc252b3bed68, type: 2}
+    m_SchemaDisplayOrder:
+    - Board_KR_Denas_BundledAssetGroupSchema
+    - Board_KR_Denas_ContentUpdateGroupSchema
+  m_IncludeInBuild: 1
+  m_IncludeInBuildMigrated: 1

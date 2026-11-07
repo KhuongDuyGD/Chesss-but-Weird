@@ -206,6 +206,16 @@ public sealed class ChessOrbitCamera : MonoBehaviour
                     halfDepth = Mathf.Max(halfDepth, Mathf.Abs((inverseRotation * offset).z));
                 }
 
+        if (chessboard.TryGetCosmeticPresentationBounds(out Bounds cosmeticBounds))
+            for (int x = -1; x <= 1; x += 2) for (int y = -1; y <= 1; y += 2) for (int z = -1; z <= 1; z += 2)
+            {
+                Vector3 point = cosmeticBounds.center + Vector3.Scale(cosmeticBounds.extents, new Vector3(x, y, z));
+                Vector3 projected = inverseRotation * (point - currentPivot);
+                halfWidth = Mathf.Max(halfWidth, Mathf.Abs(projected.x));
+                halfViewHeight = Mathf.Max(halfViewHeight, Mathf.Abs(projected.y));
+                halfDepth = Mathf.Max(halfDepth, Mathf.Abs(projected.z));
+            }
+
         // Leave space for the existing match HUD without letting its FOV changes
         // alter this orthographic view. Narrow screens fit the full board horizontally.
         float hudFraction = chessGame && chessGame.GameStarted ? (chessGame.IsAramGame || chessGame.UsesDotNetOnline ? .76f : .88f) : .94f;
@@ -216,11 +226,23 @@ public sealed class ChessOrbitCamera : MonoBehaviour
             safeHeight = Mathf.Clamp(Screen.safeArea.height / Screen.height, .1f, 1f);
         }
         float aspect = Mathf.Max(.1f, viewCamera.aspect);
+        float padding = chessboard.CosmeticCameraFramePadding > 0 ? chessboard.CosmeticCameraFramePadding : framePadding;
         viewCamera.orthographic = true;
         viewCamera.orthographicSize = Mathf.Max(.01f,
             Mathf.Max(halfViewHeight / safeHeight, halfWidth / (aspect * safeWidth)) *
-            Mathf.Max(1f, framePadding) * currentZoom / hudFraction);
+            Mathf.Max(1f, padding) * currentZoom / hudFraction);
         float distance = Mathf.Max(tileScale * 10f, halfDepth + viewCamera.nearClipPlane + tileScale * 2f);
+        // Orthographic zoom enlarges the entire near rectangle. At low orbit pitches
+        // its lower edge used to pass under the ground, clipping a strip of every
+        // environment and exposing the scene skybox. Dolly back without changing
+        // projection, framing, zoom limits or the orbit pivot.
+        Vector3 viewDirection = rotation * Vector3.forward;
+        float downward = Mathf.Max(.01f, -Vector3.Dot(viewDirection, boardUp));
+        float viewportVerticalReach = viewCamera.orthographicSize *
+            (Mathf.Abs(Vector3.Dot(rotation * Vector3.up, boardUp)) +
+             aspect * Mathf.Abs(Vector3.Dot(rotation * Vector3.right, boardUp)));
+        distance = Mathf.Max(distance, viewCamera.nearClipPlane +
+            (viewportVerticalReach + tileScale * 2f) / downward);
         viewCamera.farClipPlane = Mathf.Max(viewCamera.farClipPlane, distance + halfDepth + tileScale * 2f);
         transform.SetPositionAndRotation(currentPivot - rotation * Vector3.forward * distance, rotation);
         ApplyParallelProjection();

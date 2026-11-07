@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1ae833690a2b4c58af1b070050b68bc7, type: 3}
+  m_Name: KingdomRushVeznan
+  m_EditorClassIdentifier: Assembly-CSharp::EnvironmentData
+  environmentId: kingdom_rush_veznan
+  displayName: "Kingdom Rush \u2014 Vez'Nan Scorched Dominion"
+  preview:
+    m_AssetGUID: 42d70ef44e20a69409a49b81343f076c
+    m_SubObjectName: 
+    m_SubObjectType: 
+    m_SubObjectGUID: 
+    m_EditorAssetChanged: 0
+  useBoardScale: 1
+  environmentPrefab:
+    m_AssetGUID: d1c448623e4ff0347bd7e2f4642ab0dc
+    m_SubObjectName: 
+    m_SubObjectType: 
+    m_SubObjectGUID: 
+    m_EditorAssetChanged: 0
+  localPosition: {x: 0, y: 0, z: 0}
+  localRotation: {x: 0, y: 0, z: 0}
+  localScale: {x: 1, y: 1, z: 1}
+  horizonColor: {r: 0.115, g: 0.105, b: 0.15, a: 1}

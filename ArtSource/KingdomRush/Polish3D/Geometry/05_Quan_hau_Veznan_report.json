@@ -1,0 +1,13 @@
+{
+  "name": "05_Quan_hau_Veznan",
+  "triangles": 90000,
+  "vertices": 44970,
+  "nonmanifold_edges": 0,
+  "dimensions": [
+    1.606332540512085,
+    1.2618796825408936,
+    1.9780287742614746
+  ],
+  "geometry_source": "Coherent filled volumetric reconstruction from original full surface points; no winding-dependent surface-net artifacts",
+  "removed_isolated_debris_vertices": 0
+}

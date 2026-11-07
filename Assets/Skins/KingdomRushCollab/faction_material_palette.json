@@ -1,0 +1,572 @@
+{
+  "materials": [
+    {
+      "name": "KR HQ Royal limestone",
+      "color": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "metallic": 0,
+      "roughness": 0.82,
+      "albedo": "Assets/Skins/KingdomRushCollab/Textures/StyleDirection/Style_Limestone_Albedo.png",
+      "normal": "Assets/Skins/KingdomRushCollab/Textures/StyleDirection/Style_Limestone_Normal.png",
+      "metalSmooth": "Assets/Skins/KingdomRushCollab/Textures/StyleDirection/Style_Limestone_MetalSmooth.png",
+      "emission": [
+        0.64,
+        0.6,
+        0.5,
+        1
+      ],
+      "emissionStrength": 0
+    },
+    {
+      "name": "KR HQ Ivory tile",
+      "color": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "metallic": 0,
+      "roughness": 0.78,
+      "albedo": "Assets/Skins/KingdomRushCollab/Textures/StyleDirection/Style_Ivory_Albedo.png",
+      "normal": "Assets/Skins/KingdomRushCollab/Textures/StyleDirection/Style_Ivory_Normal.png",
+      "metalSmooth": "Assets/Skins/KingdomRushCollab/Textures/StyleDirection/Style_Ivory_MetalSmooth.png",
+      "emission": [
+        0.77,
+        0.75,
+        0.66,
+        1
+      ],
+      "emissionStrength": 0
+    },
+    {
+      "name": "KR HQ Blue slate",
+      "color": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "metallic": 0,
+      "roughness": 0.73,
+      "albedo": "Assets/Skins/KingdomRushCollab/Textures/StyleDirection/Style_Slate_Albedo.png",
+      "normal": "Assets/Skins/KingdomRushCollab/Textures/StyleDirection/Style_Slate_Normal.png",
+      "metalSmooth": "Assets/Skins/KingdomRushCollab/Textures/StyleDirection/Style_Slate_MetalSmooth.png",
+      "emission": [
+        0.12,
+        0.22,
+        0.28,
+        1
+      ],
+      "emissionStrength": 0
+    },
+    {
+      "name": "KR HQ Azure enamel",
+      "color": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "metallic": 0.05,
+      "roughness": 0.66,
+      "albedo": "Assets/Skins/KingdomRushCollab/Textures/StyleDirection/Style_Blue_Albedo.png",
+      "normal": "Assets/Skins/KingdomRushCollab/Textures/StyleDirection/Style_Blue_Normal.png",
+      "metalSmooth": "Assets/Skins/KingdomRushCollab/Textures/StyleDirection/Style_Blue_MetalSmooth.png",
+      "emission": [
+        0.035,
+        0.13,
+        0.29,
+        1
+      ],
+      "emissionStrength": 0
+    },
+    {
+      "name": "KR HQ Crown gold",
+      "color": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "metallic": 0.82,
+      "roughness": 0.4,
+      "albedo": "Assets/Skins/KingdomRushCollab/Textures/FactionsHQ/HQ_Gold_Albedo.png",
+      "normal": "Assets/Skins/KingdomRushCollab/Textures/FactionsHQ/HQ_Gold_Normal.png",
+      "metalSmooth": "Assets/Skins/KingdomRushCollab/Textures/FactionsHQ/HQ_Gold_MetalSmooth.png",
+      "emission": [
+        0.69,
+        0.46,
+        0.14,
+        1
+      ],
+      "emissionStrength": 0
+    },
+    {
+      "name": "KR HQ Obsidian",
+      "color": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "metallic": 0,
+      "roughness": 0.85,
+      "albedo": "Assets/Skins/KingdomRushCollab/Textures/StyleDirection/Style_Basalt_Albedo.png",
+      "normal": "Assets/Skins/KingdomRushCollab/Textures/StyleDirection/Style_Basalt_Normal.png",
+      "metalSmooth": "Assets/Skins/KingdomRushCollab/Textures/StyleDirection/Style_Basalt_MetalSmooth.png",
+      "emission": [
+        0.21,
+        0.19,
+        0.23,
+        1
+      ],
+      "emissionStrength": 0
+    },
+    {
+      "name": "KR HQ Ash tile",
+      "color": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "metallic": 0,
+      "roughness": 0.85,
+      "albedo": "Assets/Skins/KingdomRushCollab/Textures/StyleDirection/Style_Ash_Albedo.png",
+      "normal": "Assets/Skins/KingdomRushCollab/Textures/StyleDirection/Style_Ash_Normal.png",
+      "metalSmooth": "Assets/Skins/KingdomRushCollab/Textures/StyleDirection/Style_Ash_MetalSmooth.png",
+      "emission": [
+        0.36,
+        0.34,
+        0.38,
+        1
+      ],
+      "emissionStrength": 0
+    },
+    {
+      "name": "KR HQ Onyx tile",
+      "color": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "metallic": 0,
+      "roughness": 0.85,
+      "albedo": "Assets/Skins/KingdomRushCollab/Textures/StyleDirection/Style_Basalt_Albedo.png",
+      "normal": "Assets/Skins/KingdomRushCollab/Textures/StyleDirection/Style_Basalt_Normal.png",
+      "metalSmooth": "Assets/Skins/KingdomRushCollab/Textures/StyleDirection/Style_Basalt_MetalSmooth.png",
+      "emission": [
+        0.21,
+        0.19,
+        0.23,
+        1
+      ],
+      "emissionStrength": 0
+    },
+    {
+      "name": "KR HQ Tyrant violet",
+      "color": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "metallic": 0.05,
+      "roughness": 0.65,
+      "albedo": "Assets/Skins/KingdomRushCollab/Textures/FactionsHQ/HQ_Violet_Albedo.png",
+      "normal": "Assets/Skins/KingdomRushCollab/Textures/FactionsHQ/HQ_Violet_Normal.png",
+      "metalSmooth": "Assets/Skins/KingdomRushCollab/Textures/FactionsHQ/HQ_Violet_MetalSmooth.png",
+      "emission": [
+        0.26,
+        0.075,
+        0.33,
+        1
+      ],
+      "emissionStrength": 0
+    },
+    {
+      "name": "KR HQ Sickly soul",
+      "color": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "metallic": 0,
+      "roughness": 0.68,
+      "albedo": "Assets/Skins/KingdomRushCollab/Textures/FactionsHQ/HQ_Soul_Albedo.png",
+      "normal": "Assets/Skins/KingdomRushCollab/Textures/FactionsHQ/HQ_Soul_Normal.png",
+      "metalSmooth": "Assets/Skins/KingdomRushCollab/Textures/FactionsHQ/HQ_Soul_MetalSmooth.png",
+      "emission": [
+        0.2,
+        0.64,
+        0.06,
+        1
+      ],
+      "emissionStrength": 1.8
+    },
+    {
+      "name": "KR HQ Charred earth",
+      "color": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "metallic": 0,
+      "roughness": 0.96,
+      "albedo": "Assets/Skins/KingdomRushCollab/Textures/StyleDirection/Style_Scorched_Albedo.png",
+      "normal": "Assets/Skins/KingdomRushCollab/Textures/StyleDirection/Style_Scorched_Normal.png",
+      "metalSmooth": "Assets/Skins/KingdomRushCollab/Textures/StyleDirection/Style_Scorched_MetalSmooth.png",
+      "emission": [
+        0.17,
+        0.14,
+        0.15,
+        1
+      ],
+      "emissionStrength": 0
+    },
+    {
+      "name": "KR HQ Ash rock",
+      "color": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "metallic": 0,
+      "roughness": 0.85,
+      "albedo": "Assets/Skins/KingdomRushCollab/Textures/StyleDirection/Style_Basalt_Albedo.png",
+      "normal": "Assets/Skins/KingdomRushCollab/Textures/StyleDirection/Style_Basalt_Normal.png",
+      "metalSmooth": "Assets/Skins/KingdomRushCollab/Textures/StyleDirection/Style_Basalt_MetalSmooth.png",
+      "emission": [
+        0.21,
+        0.19,
+        0.23,
+        1
+      ],
+      "emissionStrength": 0
+    },
+    {
+      "name": "KR HQ Cinder",
+      "color": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "metallic": 0,
+      "roughness": 0.82,
+      "albedo": "Assets/Skins/KingdomRushCollab/Textures/FactionsHQ/HQ_Cinder_Albedo.png",
+      "normal": "Assets/Skins/KingdomRushCollab/Textures/FactionsHQ/HQ_Cinder_Normal.png",
+      "metalSmooth": "Assets/Skins/KingdomRushCollab/Textures/FactionsHQ/HQ_Cinder_MetalSmooth.png",
+      "emission": [
+        0.85,
+        0.19,
+        0.025,
+        1
+      ],
+      "emissionStrength": 2.2
+    },
+    {
+      "name": "KR HQ Meadow",
+      "color": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "metallic": 0,
+      "roughness": 0.94,
+      "albedo": "Assets/Skins/KingdomRushCollab/Textures/StyleDirection/Style_Meadow_Albedo.png",
+      "normal": "Assets/Skins/KingdomRushCollab/Textures/StyleDirection/Style_Meadow_Normal.png",
+      "metalSmooth": "Assets/Skins/KingdomRushCollab/Textures/StyleDirection/Style_Meadow_MetalSmooth.png",
+      "emission": [
+        0.2,
+        0.3,
+        0.095,
+        1
+      ],
+      "emissionStrength": 0
+    },
+    {
+      "name": "KR HQ New leaf",
+      "color": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "metallic": 0,
+      "roughness": 0.91,
+      "albedo": "Assets/Skins/KingdomRushCollab/Textures/StyleDirection/Style_Leaf_Albedo.png",
+      "normal": "Assets/Skins/KingdomRushCollab/Textures/StyleDirection/Style_Leaf_Normal.png",
+      "metalSmooth": "Assets/Skins/KingdomRushCollab/Textures/StyleDirection/Style_Leaf_MetalSmooth.png",
+      "emission": [
+        0.24,
+        0.37,
+        0.085,
+        1
+      ],
+      "emissionStrength": 0
+    },
+    {
+      "name": "KR HQ Deep leaf",
+      "color": [
+        0.72,
+        0.84,
+        0.88,
+        1
+      ],
+      "metallic": 0,
+      "roughness": 0.91,
+      "albedo": "Assets/Skins/KingdomRushCollab/Textures/StyleDirection/Style_Leaf_Albedo.png",
+      "normal": "Assets/Skins/KingdomRushCollab/Textures/StyleDirection/Style_Leaf_Normal.png",
+      "metalSmooth": "Assets/Skins/KingdomRushCollab/Textures/StyleDirection/Style_Leaf_MetalSmooth.png",
+      "emission": [
+        0.24,
+        0.37,
+        0.085,
+        1
+      ],
+      "emissionStrength": 0
+    },
+    {
+      "name": "KR HQ River",
+      "color": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "metallic": 0.05,
+      "roughness": 0.66,
+      "albedo": "Assets/Skins/KingdomRushCollab/Textures/StyleDirection/Style_Water_Albedo.png",
+      "normal": "Assets/Skins/KingdomRushCollab/Textures/StyleDirection/Style_Water_Normal.png",
+      "metalSmooth": "Assets/Skins/KingdomRushCollab/Textures/StyleDirection/Style_Water_MetalSmooth.png",
+      "emission": [
+        0.045,
+        0.24,
+        0.27,
+        1
+      ],
+      "emissionStrength": 0
+    },
+    {
+      "name": "KR HQ Mountain blue",
+      "color": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "metallic": 0,
+      "roughness": 0.73,
+      "albedo": "Assets/Skins/KingdomRushCollab/Textures/StyleDirection/Style_Slate_Albedo.png",
+      "normal": "Assets/Skins/KingdomRushCollab/Textures/StyleDirection/Style_Slate_Normal.png",
+      "metalSmooth": "Assets/Skins/KingdomRushCollab/Textures/StyleDirection/Style_Slate_MetalSmooth.png",
+      "emission": [
+        0.12,
+        0.22,
+        0.28,
+        1
+      ],
+      "emissionStrength": 0
+    },
+    {
+      "name": "KR HQ Mist blue",
+      "color": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "metallic": 0,
+      "roughness": 0.82,
+      "albedo": "Assets/Skins/KingdomRushCollab/Textures/StyleDirection/Style_Limestone_Albedo.png",
+      "normal": "Assets/Skins/KingdomRushCollab/Textures/StyleDirection/Style_Limestone_Normal.png",
+      "metalSmooth": "Assets/Skins/KingdomRushCollab/Textures/StyleDirection/Style_Limestone_MetalSmooth.png",
+      "emission": [
+        0.64,
+        0.6,
+        0.5,
+        1
+      ],
+      "emissionStrength": 0
+    },
+    {
+      "name": "KR HQ rock",
+      "color": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "metallic": 0,
+      "roughness": 0.82,
+      "albedo": "Assets/Skins/KingdomRushCollab/Textures/StyleDirection/Style_Limestone_Albedo.png",
+      "normal": "Assets/Skins/KingdomRushCollab/Textures/StyleDirection/Style_Limestone_Normal.png",
+      "metalSmooth": "Assets/Skins/KingdomRushCollab/Textures/StyleDirection/Style_Limestone_MetalSmooth.png",
+      "emission": [
+        0.64,
+        0.6,
+        0.5,
+        1
+      ],
+      "emissionStrength": 0
+    },
+    {
+      "name": "KR HQ ironedge",
+      "color": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "metallic": 0.68,
+      "roughness": 0.55,
+      "albedo": "Assets/Skins/KingdomRushCollab/Textures/FactionsHQ/HQ_Iron_Albedo.png",
+      "normal": "Assets/Skins/KingdomRushCollab/Textures/FactionsHQ/HQ_Iron_Normal.png",
+      "metalSmooth": "Assets/Skins/KingdomRushCollab/Textures/FactionsHQ/HQ_Iron_MetalSmooth.png",
+      "emission": [
+        0.21,
+        0.19,
+        0.23,
+        1
+      ],
+      "emissionStrength": 0
+    },
+    {
+      "name": "KR HQ trunk",
+      "color": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "metallic": 0,
+      "roughness": 0.92,
+      "albedo": "Assets/Skins/KingdomRushCollab/Textures/StyleDirection/Style_Bark_Albedo.png",
+      "normal": "Assets/Skins/KingdomRushCollab/Textures/StyleDirection/Style_Bark_Normal.png",
+      "metalSmooth": "Assets/Skins/KingdomRushCollab/Textures/StyleDirection/Style_Bark_MetalSmooth.png",
+      "emission": [
+        0.2,
+        0.12,
+        0.065,
+        1
+      ],
+      "emissionStrength": 0
+    },
+    {
+      "name": "KR HQ cyan",
+      "color": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "metallic": 0.05,
+      "roughness": 0.66,
+      "albedo": "Assets/Skins/KingdomRushCollab/Textures/StyleDirection/Style_Blue_Albedo.png",
+      "normal": "Assets/Skins/KingdomRushCollab/Textures/StyleDirection/Style_Blue_Normal.png",
+      "metalSmooth": "Assets/Skins/KingdomRushCollab/Textures/StyleDirection/Style_Blue_MetalSmooth.png",
+      "emission": [
+        0.08,
+        0.38,
+        0.95,
+        1
+      ],
+      "emissionStrength": 2
+    },
+    {
+      "name": "KR HQ leather",
+      "color": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "metallic": 0,
+      "roughness": 0.92,
+      "albedo": "Assets/Skins/KingdomRushCollab/Textures/StyleDirection/Style_Bark_Albedo.png",
+      "normal": "Assets/Skins/KingdomRushCollab/Textures/StyleDirection/Style_Bark_Normal.png",
+      "metalSmooth": "Assets/Skins/KingdomRushCollab/Textures/StyleDirection/Style_Bark_MetalSmooth.png",
+      "emission": [
+        0.2,
+        0.12,
+        0.065,
+        1
+      ],
+      "emissionStrength": 0
+    },
+    {
+      "name": "KR HQ Leaf highlights",
+      "color": [
+        1.13,
+        1.08,
+        0.94,
+        1
+      ],
+      "metallic": 0,
+      "roughness": 0.91,
+      "albedo": "Assets/Skins/KingdomRushCollab/Textures/StyleDirection/Style_Leaf_Albedo.png",
+      "normal": "Assets/Skins/KingdomRushCollab/Textures/StyleDirection/Style_Leaf_Normal.png",
+      "metalSmooth": "Assets/Skins/KingdomRushCollab/Textures/StyleDirection/Style_Leaf_MetalSmooth.png",
+      "emission": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "emissionStrength": 0
+    },
+    {
+      "name": "KR HQ Bone ivory",
+      "color": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "metallic": 0,
+      "roughness": 0.87,
+      "albedo": "Assets/Skins/KingdomRushCollab/Textures/StyleDirection/Style_Bone_Albedo.png",
+      "normal": "Assets/Skins/KingdomRushCollab/Textures/StyleDirection/Style_Bone_Normal.png",
+      "metalSmooth": "Assets/Skins/KingdomRushCollab/Textures/StyleDirection/Style_Bone_MetalSmooth.png",
+      "emission": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "emissionStrength": 0
+    },
+    {
+      "name": "KR HQ Bone recess",
+      "color": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "metallic": 0,
+      "roughness": 0.98,
+      "albedo": "Assets/Skins/KingdomRushCollab/Textures/StyleDirection/Style_Cavity_Albedo.png",
+      "normal": "Assets/Skins/KingdomRushCollab/Textures/StyleDirection/Style_Cavity_Normal.png",
+      "metalSmooth": "Assets/Skins/KingdomRushCollab/Textures/StyleDirection/Style_Cavity_MetalSmooth.png",
+      "emission": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "emissionStrength": 0
+    }
+  ],
+  "revision": "StylizedFantasy_ReleaseCleanup_20261107"
+}

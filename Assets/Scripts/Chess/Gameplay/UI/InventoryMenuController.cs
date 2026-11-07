@@ -13,7 +13,7 @@ public sealed class InventoryMenuController : MonoBehaviour
 {
     private const float DesignWidth = 1672f, DesignHeight = 941f;
     private const int PageSize = 6;
-    private enum Category { All, Chess, Board, Effects }
+    private enum Category { All, Chess, Board, Effects, Backgrounds }
     private enum Ownership { Owned, Equipped, All }
     private enum SortOrder { Equipped, Name, Rarity }
     private sealed class InventoryEntry
@@ -27,7 +27,7 @@ public sealed class InventoryMenuController : MonoBehaviour
     private readonly List<InventoryEntry> items = new List<InventoryEntry>();
     private readonly HashSet<string> selectedTags = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
     private readonly List<Button> tagButtons = new List<Button>();
-    private readonly Button[] categoryButtons = new Button[4];
+    private readonly Button[] categoryButtons = new Button[5];
     private readonly Button[] ownershipButtons = new Button[3];
     private readonly Button[] sortButtons = new Button[3];
     private RectTransform root, contentRoot, itemRoot, filterOverlay, tagRoot;
@@ -77,7 +77,7 @@ public sealed class InventoryMenuController : MonoBehaviour
 
         UI.Text(content, "Collection Heading", "COLLECTION", new Rect(72, 188, 820, 48), 33);
         countLabel = UI.Text(content, "Collection Count", "", new Rect(1132, 195, 468, 38), 22, UI.Muted, TextAlignmentOptions.Right);
-        string[] labels = { "ALL", "CHESS", "BOARD", "EFFECTS" };
+        string[] labels = { "ALL", "CHESS", "BOARD", "EFFECTS", "BACKGROUNDS" };
         for (int i = 0; i < labels.Length; i++)
         {
             Category value = (Category)i;
@@ -216,7 +216,7 @@ public sealed class InventoryMenuController : MonoBehaviour
 
     private static Category ItemCategory(InventoryEntry item) =>
         item.localEffect ? Category.Effects : IsChessType(item.type) ? Category.Chess :
-        IsBoardType(item.type) ? Category.Board : Category.All;
+        IsBoardType(item.type) ? Category.Board : item.type == CosmeticItemKinds.Background ? Category.Backgrounds : Category.All;
 
     private List<InventoryEntry> GetVisibleItems()
     {

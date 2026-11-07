@@ -50,6 +50,20 @@ public class Chessboard : MonoBehaviour
     private Transform cosmeticBoard;
     private Transform prisonSlotSpace;
     private float prisonLayoutYaw;
+    private bool frameFullCosmetic;
+    public float CosmeticCameraFramePadding { get; private set; }
+    public bool TryGetCosmeticPresentationBounds(out Bounds bounds)
+    {
+        bounds = default;
+        if (!frameFullCosmetic || !cosmeticBoard) return false;
+        bool found = false;
+        foreach (var renderer in cosmeticBoard.GetComponentsInChildren<Renderer>(true))
+        {
+            if (!found) { bounds = renderer.bounds; found = true; }
+            else bounds.Encapsulate(renderer.bounds);
+        }
+        return found;
+    }
     // Measured centers/surface of the six gold pads in Tazji's arena (board units).
     [Header("Prisoner Rails")]
     [SerializeField] private float prisonRailX = 4.93f;
@@ -70,12 +84,14 @@ public class Chessboard : MonoBehaviour
     private bool generatedTilesBeforeCosmetic;
 
     // Board prefabs use an 8x8 playable area centered at origin, surface at local Y=0.
-    public void AttachCosmeticBoard(Transform visual, Transform slotSpace = null, float slotLayoutYaw = 0f)
+    public void AttachCosmeticBoard(Transform visual, Transform slotSpace = null, float slotLayoutYaw = 0f, bool frameFullModel = false, float cameraFramePadding = 0f)
     {
         if (!cosmeticBoard) generatedTilesBeforeCosmetic = showGeneratedTiles;
         cosmeticBoard = visual;
         prisonSlotSpace = slotSpace ? slotSpace : visual;
         prisonLayoutYaw = slotLayoutYaw;
+        frameFullCosmetic = frameFullModel;
+        CosmeticCameraFramePadding = cameraFramePadding > 0 ? Mathf.Clamp(cameraFramePadding,1f,1.3f) : 0;
         if (!visual) return;
         showGeneratedTiles = false;
         RefreshAllTileVisuals();
@@ -95,6 +111,8 @@ public class Chessboard : MonoBehaviour
         cosmeticBoard = null;
         prisonSlotSpace = null;
         prisonLayoutYaw = 0f;
+        frameFullCosmetic = false;
+        CosmeticCameraFramePadding = 0;
         RefreshAllTileVisuals();
         ApplyBoardRendererVisibility();
     }

@@ -1,0 +1,19 @@
+{
+  "name": "06_Quan_vua_Veznan",
+  "volumetric_mesh": true,
+  "triangles": 463788,
+  "front_visible_faces": 228990,
+  "inferred_faces": 234798,
+  "silhouette_iou_before": 0.8813947148863759,
+  "silhouette_iou_after": 0.9071375987962431,
+  "texture_size": [
+    4096,
+    2048
+  ],
+  "visible_color_source": "Unaltered original RGB pixels projected onto reconstructed 3D surface",
+  "unseen_color_source": "Surface-geodesic propagation from visible colors; inferred, not original evidence",
+  "exact_likeness_certified": false,
+  "contour_rebuilt": true,
+  "contour_grid": 512,
+  "depth_source": "Front and back ray intersections of the reconstructed volumetric sculpt"
+}

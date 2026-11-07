@@ -119,13 +119,20 @@ public sealed class LoadingManager : MonoBehaviour
             boardVisual = new GameObject("Selected board visual");
             var model = Board.InstantiateBoard(boardVisual.transform);
             game.Board.AttachCosmeticBoard(boardVisual.transform, model ? model.transform : null,
-                Board.Data ? Board.Data.prisonLayoutYaw : 0f);
+                Board.Data ? Board.Data.prisonLayoutYaw : 0f, Board.Data && Board.Data.frameFullModel,
+                Board.Data ? Board.Data.cameraFramePadding : 0f);
         }
         else game.Board.ShowFallbackBoard();
         if (Board.EnvironmentPrefab)
         {
             environmentVisual = new GameObject("Selected environment");
             environmentVisual.transform.position = game.Board.GetBoardCenterWorld();
+            if (Board.Environment && Board.Environment.useBoardScale)
+            {
+                float width = Vector3.Distance(game.Board.GetTileCenterWorld(Vector2Int.zero), game.Board.GetTileCenterWorld(Vector2Int.right));
+                float depth = Vector3.Distance(game.Board.GetTileCenterWorld(Vector2Int.zero), game.Board.GetTileCenterWorld(Vector2Int.up));
+                environmentVisual.transform.localScale = Vector3.one * Mathf.Sqrt(width * depth);
+            }
             Board.InstantiateEnvironment(environmentVisual.transform);
         }
         game.PrepareAuthenticatedBoard();

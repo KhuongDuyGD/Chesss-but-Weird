@@ -1,0 +1,100 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1ce2f9a80e66472182ba97e02f649dd5, type: 3}
+  m_Name: KingdomRushVeznan
+  m_EditorClassIdentifier: Assembly-CSharp::PieceSkinData
+  skinId: kingdom_rush_veznan
+  displayName: "Kingdom Rush \u2014 Vez'Nan \u2014 Dark Dominion"
+  preview:
+    m_AssetGUID: ccdaf9bbe968e834586f596d1cbc0b1b
+    m_SubObjectName: 
+    m_SubObjectType: 
+    m_SubObjectGUID: 
+    m_EditorAssetChanged: 0
+  pawn:
+    m_AssetGUID: 2833bc2f70dd5d54a8e8eaba650ed19c
+    m_SubObjectName: 
+    m_SubObjectType: 
+    m_SubObjectGUID: 
+    m_EditorAssetChanged: 0
+  rook:
+    m_AssetGUID: 0e8795e4c579f9941be05771bb1ac173
+    m_SubObjectName: 
+    m_SubObjectType: 
+    m_SubObjectGUID: 
+    m_EditorAssetChanged: 0
+  knight:
+    m_AssetGUID: 7b6184918a46cd442bae8f9934b123c2
+    m_SubObjectName: 
+    m_SubObjectType: 
+    m_SubObjectGUID: 
+    m_EditorAssetChanged: 0
+  bishop:
+    m_AssetGUID: 951440b589425a24d8d08c4889e7aef3
+    m_SubObjectName: 
+    m_SubObjectType: 
+    m_SubObjectGUID: 
+    m_EditorAssetChanged: 0
+  queen:
+    m_AssetGUID: 439140ff108f28948a3e2d3832b5f779
+    m_SubObjectName: 
+    m_SubObjectType: 
+    m_SubObjectGUID: 
+    m_EditorAssetChanged: 0
+  king:
+    m_AssetGUID: e3802e540d50ecb4fa82df254c6aa836
+    m_SubObjectName: 
+    m_SubObjectType: 
+    m_SubObjectGUID: 
+    m_EditorAssetChanged: 0
+  blackPawn:
+    m_AssetGUID: 639bb535e8126ab4fba1b1eda0477ca7
+    m_SubObjectName: 
+    m_SubObjectType: 
+    m_SubObjectGUID: 
+    m_EditorAssetChanged: 0
+  blackRook:
+    m_AssetGUID: 2ea16cde1a94999428ea0541d36230aa
+    m_SubObjectName: 
+    m_SubObjectType: 
+    m_SubObjectGUID: 
+    m_EditorAssetChanged: 0
+  blackKnight:
+    m_AssetGUID: e23ed909f8b96b1418060428ef207bf1
+    m_SubObjectName: 
+    m_SubObjectType: 
+    m_SubObjectGUID: 
+    m_EditorAssetChanged: 0
+  blackBishop:
+    m_AssetGUID: ea1279b438fb3294883ff0df0c31d78d
+    m_SubObjectName: 
+    m_SubObjectType: 
+    m_SubObjectGUID: 
+    m_EditorAssetChanged: 0
+  blackQueen:
+    m_AssetGUID: 13538d2154de0d447ac5e1d48749fcc2
+    m_SubObjectName: 
+    m_SubObjectType: 
+    m_SubObjectGUID: 
+    m_EditorAssetChanged: 0
+  blackKing:
+    m_AssetGUID: e6f7b0950fcfb6e4e95d710884619120
+    m_SubObjectName: 
+    m_SubObjectType: 
+    m_SubObjectGUID: 
+    m_EditorAssetChanged: 0
+  applyTeamColor: 0
+  useAuthoredBoardScale: 1
+  faceOpponent: 1
+  whiteColor: {r: 0.94, g: 0.91, b: 0.82, a: 1}
+  blackColor: {r: 0.18, g: 0.21, b: 0.27, a: 1}
+  tuning: []

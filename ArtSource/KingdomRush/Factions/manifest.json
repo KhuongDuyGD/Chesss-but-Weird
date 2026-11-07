@@ -1,0 +1,57 @@
+{
+  "coordinate_system": "Blender Z up; Unity Y up; one cell = one metre",
+  "factions": [
+    {
+      "id": "kingdom_rush_denas",
+      "board": "KR_Denas_Board",
+      "cells": 64,
+      "grid_bounds": [
+        -4,
+        4,
+        -4,
+        4
+      ],
+      "prison_layout_yaw": -90,
+      "prison_top_y": 0.036,
+      "prison_rank_z": [
+        -4.93,
+        4.93
+      ],
+      "prison_files": [
+        -3.15,
+        -1.89,
+        -0.63,
+        0.63,
+        1.89,
+        3.15
+      ],
+      "environment": "KR_Denas_Environment"
+    },
+    {
+      "id": "kingdom_rush_veznan",
+      "board": "KR_Veznan_Board",
+      "cells": 64,
+      "grid_bounds": [
+        -4,
+        4,
+        -4,
+        4
+      ],
+      "prison_layout_yaw": -90,
+      "prison_top_y": 0.036,
+      "prison_rank_z": [
+        -4.93,
+        4.93
+      ],
+      "prison_files": [
+        -3.15,
+        -1.89,
+        -0.63,
+        0.63,
+        1.89,
+        3.15
+      ],
+      "environment": "KR_Veznan_Environment"
+    }
+  ]
+}

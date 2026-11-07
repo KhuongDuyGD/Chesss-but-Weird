@@ -382,6 +382,8 @@ public partial class ChessLanController
             {
                 var board = player.loadout.FirstOrDefault(l => l.type == CosmeticItemKinds.Board);
                 if (catalog && catalog.FindBoard(board?.unityAssetKey) != null) selection.boardId = board.unityAssetKey;
+                var background = player.loadout.FirstOrDefault(l => l.type == CosmeticItemKinds.Background);
+                if (catalog && catalog.FindEnvironment(background?.unityAssetKey) != null) selection.environmentId = background.unityAssetKey;
             }
         }
         return selection;

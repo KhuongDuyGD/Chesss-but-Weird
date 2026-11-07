@@ -1,0 +1,14 @@
+{
+  "name": "04_Quan_tuong_Denas",
+  "triangles": 89998,
+  "vertices": 44987,
+  "nonmanifold_edges": 0,
+  "original_surface_defects": 14151,
+  "dimensions": [
+    1.604854941368103,
+    1.3380348682403564,
+    1.96978759765625
+  ],
+  "geometry_source": "Full reconstructed 3D sculpt; no depth-sheet or contour-extruded replacement",
+  "removed_isolated_debris_vertices": 3
+}
