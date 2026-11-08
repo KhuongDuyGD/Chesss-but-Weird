@@ -1,7 +1,7 @@
 # Unity online client for the .NET backend
 
 The Classic and ARAM online menus now use the REST and SignalR contract in
-`D:/Stuurdy/Chess_But_Weird_BE/ChessGame.Api/Online/ONLINE_CONTRACT.md`.
+`D:/Game_Project/ChessButWeirdBE/ChessGame.Api/Online/ONLINE_CONTRACT.md`.
 REST/SignalR protocol version is 1. Online ARAM rules version is 2 (26 buffs).
 The newer local practice mode has 35 buffs and continues to use its own runtime.
 
@@ -12,10 +12,19 @@ snapshot adapter and lobby/match session classes have been removed. The Node
 relay and ARAM-V1 reference under `OnlineServer` and the old backend analysis
 and multiplayer proposal have also been removed.
 
-`AramBuffRuntime` and `AramBuffDraftView` now handle local practice only. Their
-old six-buff online branches, seeded fallback and wire snapshots were removed.
-Online ARAM uses `OnlineAramPresenter` and backend snapshots. The shared local
+`AramBuffRuntime` handles local practice only. Its old six-buff online branches,
+seeded fallback and wire snapshots were removed. Online ARAM uses
+`OnlineAramPresenter` and backend snapshots, sharing `AramBuffDraftView` cards
+and `AramAbilityView` controls with practice. The shared local
 and bot move value is now `ChessMove`; its old CSV protocol helpers are gone.
+
+Online cards use only the local side's server `draftOptions`; selection and
+gameplay remain server-authoritative. Optional `chaos.buffDefinitions` supplies
+`id`, `tier`, `displayName`, full `description` and concise `summary` for the
+26 online buffs. Older servers use the client's online v2 fallback text.
+Rarity visuals and reading controls are shared with practice. Settings /
+Gameplay / Draft Card Descriptions saves the initial Full/Summary mode;
+per-card and footer switches apply only to the current draft, not in-match tooltips.
 
 Existing scenes keep the `ChessLanController` component and script GUID. Its
 network flow uses the .NET client. Removed script GUIDs were checked against

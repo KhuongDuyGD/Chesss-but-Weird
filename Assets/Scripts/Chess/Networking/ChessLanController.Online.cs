@@ -295,8 +295,7 @@ public partial class ChessLanController
     internal void SetOnlineNotice(string message) { statusMessage = message; }
     internal bool BlocksOnlineBoardPointer(Vector2 screen)
     {
-        var point = new Vector2(screen.x, Screen.height - screen.y) / GetGuiScale();
-        return aramPresenter?.ContainsPointer(point) == true;
+        return aramPresenter?.ContainsPointer(screen) == true;
     }
     internal void SendAbility(AbilityCommand command) => Run(async () => { await online.AbilityAsync(command); });
     private void HandleState(MatchState state)
@@ -494,15 +493,6 @@ public partial class ChessLanController
     private static bool IsAramGameMode(string mode) => PlayModeNames.IsChaos(mode);
     private static string NormalizeRoomCode(string value) => new string((value ?? "").Trim().ToUpperInvariant().Where(char.IsLetterOrDigit).Take(8).ToArray());
     private static string ToSquare(Vector2Int square) => ((char)('a' + square.x)).ToString() + (square.y + 1);
-    // ARAM targeting remains in its presenter; match actions use the paper UGUI HUD.
-    private void OnGUI()
-    {
-        if (aramPresenter == null || online?.State?.chaos == null || presentedMatchId != online.State.matchId || chessGame.PauseLocked) return;
-        var before = GUI.matrix; GUI.matrix = Matrix4x4.Scale(Vector3.one * GetGuiScale());
-        try { aramPresenter.Draw(); }
-        finally { GUI.enabled = true; GUI.matrix = before; }
-    }
     private DateTime lastStateReceivedAt;
-    internal static float OnlineGuiScale => GetGuiScale();
 
 }

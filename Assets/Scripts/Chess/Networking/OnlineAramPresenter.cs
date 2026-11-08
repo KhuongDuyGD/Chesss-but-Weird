@@ -6,8 +6,8 @@ using Newtonsoft.Json.Linq;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-// Displays the backend's ARAM v2 rules. The local practice runtime has additional
-// buffs; it must never adjudicate an online match or roll its random outcomes.
+// Presents server-authoritative Chaos through the same cards and controls as practice.
+// The local runtime must never adjudicate an online match or roll its outcomes.
 internal sealed class OnlineAramPresenter : IDisposable
 {
     private readonly ChessLanController owner;
@@ -18,7 +18,15 @@ internal sealed class OnlineAramPresenter : IDisposable
     private readonly List<int> targets = new List<int>();
     private readonly Dictionary<int, string> formation = new Dictionary<int, string>();
     private int? formationPiece;
-    private Vector2 scroll;
+    private GameObject uiHost;
+    private AramBuffDraftView draftView;
+    private AramAbilityView abilityView;
+    private readonly List<AramBuffDefinition> definitions = AramBuffLibrary.CreateBuiltInDefinitions();
+    private string draftFingerprint;
+    private bool disposed;
+
+    private bool Visible => !disposed && state?.chaos != null && state.IsActive && !game.PauseLocked;
+    private bool CanInteract => Visible && owner.CanSendOnlineCommand;
     private GameObject markers;
     private string markerFingerprint;
     private Camera camera;
@@ -59,118 +67,180 @@ internal sealed class OnlineAramPresenter : IDisposable
         "One-Man Army: king only; two-square straight moves and a rifle." };
 
     public OnlineAramPresenter(ChessLanController owner, ChessGame game)
-    { this.owner = owner; this.game = game; }
+    {
+        this.owner = owner; this.game = game;
+        uiHost = new GameObject("Online CHAOS UI");
+        uiHost.transform.SetParent(game.transform, false);
+        draftView = uiHost.AddComponent<AramBuffDraftView>();
+        abilityView = uiHost.AddComponent<AramAbilityView>();
+        abilityView.InitializeOnline(BuildPresentation, () => Visible && !draftView.IsDraftVisible);
+        // Older servers have no metadata. Their v2 descriptions still differ
+        // from practice, so never fall back to the current local rule text.
+        ResetOnlineDefinitions();
+    }
+
+    private void ResetOnlineDefinitions()
+    {
+        foreach (var definition in definitions.Where(d => (int)d.Id < Buffs.Length))
+        {
+            string copy = BuffText((int)definition.Id);
+            definition.Configure(definition.Id, definition.Tier, copy.Split(':')[0], definition.ShortName,
+                copy, definition.AccentColor, AramBuffDefinition.FirstSentence(copy));
+        }
+    }
 
     public void Apply(MatchState next)
     {
         if (state != null && (state.matchId != next.matchId || (string)state.chaos?["phase"] != (string)next.chaos?["phase"])) CancelTargeting();
         int? previousBuff = (int?)side?["buffId"];
+        if (state == null || state.matchId != next.matchId) ResetOnlineDefinitions();
         state = next;
         team = next.players.First(p => p.userId == PlayerAuthService.UserId).color;
         side = next.chaos?["sides"]?.FirstOrDefault(s => (string)s["team"] == team);
         if (previousBuff != (int?)side?["buffId"]) CancelTargeting();
+        foreach (var metadata in next.chaos?["buffDefinitions"] ?? new JArray())
+        {
+            var definition = Definition((int)metadata["id"]);
+            if (definition)
+            {
+                var tier = Enum.TryParse((string)metadata["tier"], out AramBuffTier parsedTier) && Enum.IsDefined(typeof(AramBuffTier), parsedTier)
+                    ? parsedTier : definition.Tier;
+                definition.Configure(definition.Id, tier,
+                    (string)metadata["displayName"] ?? definition.DisplayName, definition.ShortName,
+                    (string)metadata["description"] ?? definition.Description, definition.AccentColor,
+                    (string)metadata["summary"] ?? AramBuffDefinition.FirstSentence((string)metadata["description"] ?? definition.Description));
+            }
+        }
+        RefreshDraft();
         RefreshMarkers();
         UpdateRifle();
     }
-    private Rect Panel => new Rect(20, 252, 420, Mathf.Max(150, Screen.height / ChessLanController.OnlineGuiScale - 272));
-    public bool ContainsPointer(Vector2 point) => Panel.Contains(point);
-    public void Draw()
+    private AramBuffDefinition Definition(int id) => AramBuffLibrary.FindById(definitions, (AramBuffId)id);
+    public bool ContainsPointer(Vector2 screen) => draftView && draftView.ContainsPointer(screen) ||
+        abilityView && abilityView.ContainsPointer(screen);
+
+    private void RefreshDraft()
     {
-        if (state?.chaos == null || state.status == "Finished" || state.status == "Cancelled") return;
-        GUILayout.BeginArea(Panel, GUI.skin.box);
-        scroll = GUILayout.BeginScrollView(scroll);
-        GUILayout.Label("CHAOS - " + (string)state.chaos["phase"]);
-        if (state.chaos["forcedPawn"]?.Type == JTokenType.Integer) GUILayout.Label("Extra move: pawn #" + (int)state.chaos["forcedPawn"]);
+        bool choosing = state.IsActive && (string)state.chaos?["phase"] == "Draft" && side?["buffId"]?.Type != JTokenType.Integer;
+        if (!choosing)
+        {
+            draftFingerprint = null;
+            draftView.HideAll();
+            return;
+        }
+        string key = state.matchId + "|" + team + "|" + side?["draftOptions"];
+        if (key == draftFingerprint) return;
+        draftFingerprint = key;
+        var options = new List<AramBuffDefinition>();
+        foreach (var option in side?["draftOptions"] ?? new JArray())
+        {
+            var definition = Definition((int)option);
+            if (definition) options.Add(definition);
+        }
+        draftView.ShowOnlineDraft(options, (team == "Black" ? PieceTeam.Black : PieceTeam.White), definition =>
+        {
+            // Revalidate the latest snapshot, not a captured draft or an enemy option.
+            if (!CanInteract || (string)state.chaos?["phase"] != "Draft" || side?["buffId"]?.Type == JTokenType.Integer ||
+                side?["draftOptions"]?.Any(o => (int)o == (int)definition.Id) != true) return;
+            Send(new AbilityCommand { kind = "SelectBuff", buffId = (int)definition.Id });
+        });
+    }
+
+    private AramAbilityView.Presentation BuildPresentation()
+    {
+        var view = new AramAbilityView.Presentation { Visible = Visible && !draftView.IsDraftVisible,
+            Context = state?.matchId + "|" + state?.stateVersion + "|" + action,
+            PresentationContext = state?.matchId + "|" + side?["buffId"] + "|" + state?.chaos?["phase"] + "|" + action,
+            InstructionRequired = state?.status == "AwaitingReady" || !string.IsNullOrEmpty(action),
+            RifleActive = aiming, RifleHint = "Hold right mouse to aim. Left mouse fires." };
+        if (!view.Visible) return view;
+        var summary = new List<string>();
+        var details = new List<string>();
         foreach (var s in state.chaos["sides"] ?? new JArray())
         {
             int? id = (int?)s["buffId"];
-            GUILayout.Label((string)s["team"] + ": " + (id.HasValue ? BuffText(id.Value) : "Choosing a buff..."));
+            var definition = id.HasValue ? Definition(id.Value) : null;
+            summary.Add((string)s["team"] + ": " + (definition ? definition.DisplayName : "Choosing a buff..."));
+            if (definition) details.Add((string)s["team"] + ": " + definition.Description);
             foreach (var effect in s["effects"] ?? new JArray())
             {
                 var active = ((JObject)effect).Properties().Where(p => p.Name != "pieceId" && p.Value.Type != JTokenType.Null &&
                     (p.Value.Type != JTokenType.Boolean || (bool)p.Value) && (p.Value.Type != JTokenType.Integer || (int)p.Value != 0));
-                string description = string.Join(", ", active.Select(p => p.Name + ": " + p.Value));
-                if (description.Length > 0) GUILayout.Label("#" + (int)effect["pieceId"] + " " + description);
+                string text = string.Join(", ", active.Select(p => p.Name + ": " + p.Value));
+                if (text.Length > 0) details.Add("#" + (int)effect["pieceId"] + " " + text);
             }
         }
-        GUI.enabled = owner.CanSendOnlineCommand;
-        if (side != null)
+        view.Summary = string.Join("\n", summary);
+        view.Details = string.Join("\n\n", details);
+        view.Status = "CHAOS / " + (string)state.chaos["phase"];
+        if (!owner.CanSendOnlineCommand) view.Status += " / Waiting for server...";
+        if (state.chaos["forcedPawn"]?.Type == JTokenType.Integer) view.Status += "\nExtra move: pawn #" + (int)state.chaos["forcedPawn"];
+        void Add(string label, Action invoke, string id) => view.Actions.Add(new AramAbilityView.AbilityAction(label, invoke, CanInteract, id: id));
+        void Target(string label, string kind) => Add(label, () => { CancelTargeting(); action = kind; }, kind);
+        int? buff = (int?)side?["buffId"];
+        if (buff.HasValue)
         {
-            int? buff = (int?)side["buffId"];
-            if (!buff.HasValue)
+            view.Status += $"\nOwner turns: {(int?)side["completedTurns"] ?? 0} / Tickets: {(int?)side["tickets"] ?? 0}";
+            if ((string)state.chaos["phase"] == "Draft") view.Status += "\nWaiting for your opponent to choose...";
+            if ((string)state.chaos["phase"] == "Setup" && (bool?)side["setupComplete"] != true)
             {
-                foreach (var option in side["draftOptions"] ?? new JArray())
-                { int id = (int)option; if (GUILayout.Button(BuffText(id))) Send(new AbilityCommand { kind = "SelectBuff", buffId = id }); }
+                if (buff == 0) Target("Choose 3 commandant pawns", "SelectTargets");
+                if (buff == 3) Target("Choose a knight and bishop", "SelectTargets");
             }
-            else
+            if ((string)state.chaos["phase"] == "Setup" && buff == 23 && (bool?)side["formationComplete"] != true)
             {
-                GUILayout.Label($"Owner turns: {(int?)side["completedTurns"] ?? 0} | Combat tickets: {(int?)side["tickets"] ?? 0}");
-                if ((bool?)side["setupComplete"] != true)
+                if (side["formationDeadline"]?.Type == JTokenType.Date)
+                    view.Status += "\nFormation ends (UTC): " + ((DateTime)side["formationDeadline"]).ToString("HH:mm:ss");
+                Add("Arrange your army", () => {
+                    CancelTargeting(); action = "ConfirmFormation";
+                    foreach (var p in state.board.Where(p => p.team == team)) formation[p.id] = p.square;
+                }, "Arrange");
+            }
+            if (state.status == "InProgress")
+            {
+                var deployment = state.chaos["deployments"]?.FirstOrDefault();
+                if (deployment != null) { if ((string)deployment["team"] == team) Target("Deploy " + (string)deployment["kind"], "Deploy"); }
+                else if ((string)state.chaos["escapeTeam"] == team) Target("Escape: choose a safe square", "Escape");
+                else if (state.turn == team && state.chaos["rifle"]?.Type != JTokenType.Object)
                 {
-                    if (buff == 0) Button("Choose 3 commandant pawns", "SelectTargets");
-                    if (buff == 3) Button("Choose a knight and bishop", "SelectTargets");
-                    if (buff == 23)
-                    {
-                        if (GUILayout.Button("Arrange your army"))
-                        {
-                            CancelTargeting(); action = "ConfirmFormation";
-                            foreach (var p in state.board.Where(p => p.team == team)) formation[p.id] = p.square;
-                        }
-                        if (side["formationDeadline"]?.Type == JTokenType.Date)
-                            GUILayout.Label("Deadline (UTC): " + ((DateTime)side["formationDeadline"]).ToString("HH:mm:ss"));
-                    }
-                }
-                if (state.status == "InProgress")
-                {
-                    var deployment = state.chaos["deployments"]?.FirstOrDefault();
-                    if (deployment != null) { if ((string)deployment["team"] == team) Button("Deploy " + (string)deployment["kind"], "Deploy"); }
-                    else if ((string)state.chaos["escapeTeam"] == team) Button("Escape - choose a safe square", "Escape");
-                    else if (state.turn == team && state.chaos["rifle"]?.Type != JTokenType.Object)
-                    {
-                        if (buff == 3 && GUILayout.Button("Toggle knight/bishop swap")) Send(new AbilityCommand { kind = "ToggleSwap" });
-                        if (buff == 7) Button("Snipe: bishop, then enemy piece", "Snipe");
-                        if (buff == 10) Button("Recruit: enemy, then destination", "Recruit");
-                        if (buff == 12) Button("Load pawn: rook, then allied pawn", "LoadPawn");
-                        if (buff == 13) Button("Hide king: allied home-rank piece", "HideKing");
-                        if (buff == 14 && GUILayout.Button("Battle gacha (combat tickets)")) Send(new AbilityCommand { kind = "BattleGacha" });
-                        if (buff == 25 && GUILayout.Button("Aim rifle")) Send(new AbilityCommand { kind = "AimRifle" });
-                    }
+                    if (buff == 3) Add("Toggle knight/bishop swap", () => Send(new AbilityCommand { kind = "ToggleSwap" }), "ToggleSwap");
+                    if (buff == 7) Target("Snipe: bishop, then enemy", "Snipe");
+                    if (buff == 10) Target("Recruit: enemy, then destination", "Recruit");
+                    if (buff == 12) Target("Load pawn: rook, then pawn", "LoadPawn");
+                    if (buff == 13) Target("Hide king: home-rank ally", "HideKing");
+                    if (buff == 14) Add("Battle gacha", () => Send(new AbilityCommand { kind = "BattleGacha" }), "BattleGacha");
+                    if (buff == 25) Add("Aim rifle", () => Send(new AbilityCommand { kind = "AimRifle" }), "AimRifle");
                 }
             }
         }
         if (aiming)
         {
-            GUILayout.Label("Hold right mouse to aim. Left mouse fires. Server resolves the shot.");
-            GUILayout.Label($"Yaw {yaw:F1} / Pitch {pitch:F1}");
-            if (GUILayout.Button("Fire")) Fire();
-            if (GUILayout.Button("Exit rifle (keep charge)")) Send(new AbilityCommand { kind = "ExitRifle" });
+            view.Status += $"\nYaw {yaw:F1} / Pitch {pitch:F1}";
+            Add("Fire", Fire, "FireRifle");
+            Add("Exit rifle", () => Send(new AbilityCommand { kind = "ExitRifle" }), "ExitRifle");
         }
         if (!string.IsNullOrEmpty(action))
         {
-            GUILayout.Label("Click pieces/squares on the board: " + action);
-            GUILayout.Label("Selected IDs: " + string.Join(", ", targets));
+            view.InstructionRequired = true;
+            view.Status += "\nClick the board: " + action + "\nSelected: " + string.Join(", ", targets);
             if (action == "ConfirmFormation")
             {
-                GUILayout.Label("Select a piece, then its destination. An occupied destination swaps both planned positions.");
-                foreach (var p in formation) GUILayout.Label($"#{p.Key}: {p.Value}" + (formationPiece == p.Key ? " (selected)" : ""));
-                if (GUILayout.Button("Confirm entire formation")) Send(new AbilityCommand { kind = action,
-                    formation = formation.Select(p => new FormationPlacement { pieceId = p.Key, square = p.Value }).ToList() });
+                view.Status += "\nSelect a piece, then its destination. Occupied squares swap.";
+                view.Details += "\n\n" + string.Join("\n", formation.Select(p => $"#{p.Key}: {p.Value}" + (formationPiece == p.Key ? " (selected)" : "")));
+                Add("Confirm entire formation", () => Send(new AbilityCommand { kind = "ConfirmFormation",
+                    formation = formation.Select(p => new FormationPlacement { pieceId = p.Key, square = p.Value }).ToList() }), "ConfirmFormation");
             }
-            if (GUILayout.Button("Cancel targeting")) CancelTargeting();
+            Add("Cancel targeting", CancelTargeting, "CancelTargeting");
         }
-        GUI.enabled = true;
-        GUILayout.EndScrollView(); GUILayout.EndArea();
-        if (aiming) GUI.Label(new Rect(Screen.width / ChessLanController.OnlineGuiScale / 2 - 8, Screen.height / ChessLanController.OnlineGuiScale / 2 - 12, 24, 24), "+");
+        return view;
     }
     internal static string BuffText(int id) => id >= 0 && id < Buffs.Length ? Buffs[id] : "Unknown buff " + id;
-    private void Button(string label, string kind)
-    { if (GUILayout.Button(label)) { CancelTargeting(); action = kind; } }
     private void CancelTargeting() { action = null; targets.Clear(); formation.Clear(); formationPiece = null; }
     private void Send(AbilityCommand command)
-    { if (!owner.CanSendOnlineCommand) return; CancelTargeting(); owner.SendAbility(command); }
+    { if (!CanInteract) return; CancelTargeting(); owner.SendAbility(command); }
     public bool HandleClick(Vector2Int square, int? pieceId)
     {
-        if (aiming) return true;
+        if (!Visible || draftView.IsDraftVisible || aiming) return true;
         if (string.IsNullOrEmpty(action)) return false;
         if (!owner.CanSendOnlineCommand) return true;
         string targetSquare = ((char)('a' + square.x)).ToString() + (square.y + 1);
@@ -206,6 +276,9 @@ internal sealed class OnlineAramPresenter : IDisposable
     }
     public void Update()
     {
+        draftView.SetOverlayVisible(Visible);
+        draftView.SetOnlineAvailability(CanInteract);
+        abilityView.SetVisible(Visible);
         if (!aiming || !camera || Mouse.current == null || !owner.CanSendOnlineCommand || game.PauseLocked) return;
         if (Mouse.current.rightButton.isPressed)
         {
@@ -297,5 +370,12 @@ internal sealed class OnlineAramPresenter : IDisposable
         marker.GetComponent<Renderer>().SetPropertyBlock(block);
     }
     public void Dispose()
-    { RestoreCamera(); if (markers) { markers.SetActive(false); UnityEngine.Object.Destroy(markers); } }
+    {
+        disposed = true;
+        RestoreCamera();
+        if (uiHost) { uiHost.SetActive(false); UnityEngine.Object.Destroy(uiHost); }
+        foreach (var definition in definitions) if (definition) UnityEngine.Object.Destroy(definition);
+        definitions.Clear();
+        if (markers) { markers.SetActive(false); UnityEngine.Object.Destroy(markers); }
+    }
 }

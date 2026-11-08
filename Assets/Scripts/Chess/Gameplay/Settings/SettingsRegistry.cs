@@ -31,6 +31,7 @@ namespace ChessButWeird.Settings
             toggle("selected_piece",p,"Highlight Selected Piece","Lift the selected model slightly; does not affect selection.",true);
             toggle("ability_targets",p,"Show Ability Targets","Show target-square hints. Ability instructions and validation stay active.",true);
             choice("buff_detail",p,"Buff Tooltip Detail","Simple: essential text. Detailed: complete catalog mechanics. Nerd: also available public progress.",1,new[]{"Simple","Detailed","Nerd"},null);
+            choice("draft_description",p,"Draft Card Descriptions","Default text when choosing a Chaos buff in practice or online. The draft screen can switch temporarily; in-match tooltips use their own preference.",1,new[]{"Summary","Full description"},null);
             toggle("buff_source",p,"Show Buff Source","Include the owning side in buff hover information.",true);
             toggle("trigger_preview",p,"Show Trigger Progress","Include known public counters and readiness in Nerd buff details.",true);
             toggle("upgrade_rarity",p,"Show Buff Rarity","Include the catalog rarity label in buff hover information.",true);
@@ -38,9 +39,9 @@ namespace ChessButWeird.Settings
             choice("graphics",v,"Graphics Preset","Texture filtering, mipmaps, reflections and level of detail. Explicit AA and shadows remain independent.",0,new[]{"Auto (recommended)","Low","Medium","High"},null);
             choice("aa",v,"Anti-Aliasing","Auto uses the existing hardware recommendation. MSAA falls back to SMAA on unsupported hardware.",0,new[]{"Auto","Off","FXAA","SMAA","MSAA 2x","MSAA 4x"},null);
             choice("shadows",v,"Shadow Quality","Off removes shadows. Higher tiers draw sharper shadows over a larger distance.",0,new[]{"Off","Low","Medium","High"},null);
-            choice("effects",v,"Effects Quality","Controls summon spark count, glyphs, rays and halos. Core feedback remains readable.",2,new[]{"Low","Medium","High"},null);
+            choice("effects",v,"Effects Quality","Controls summon sparks and decorations, plus buff-card halo motion. Core feedback remains readable.",2,new[]{"Low","Medium","High"},null);
             choice("animation_quality",v,"Animation Behavior","Flat removes the cosmetic move arc. Smooth keeps it. Match timing stays unchanged.",1,new[]{"Flat","Smooth"},null);
-            choice("animation_speed",v,"Animation Speed","Piece movement presentation only; simulation, clocks, bot thinking and turn timing stay unchanged.",1,new[]{"0.5x","0.75x","1.0x","1.25x","1.5x","2.0x","3.0x","Instant"},new[]{.5f,.75f,1,1.25f,1.5f,2,3,0});
+            choice("animation_speed",v,"Animation Speed","Piece and buff-card movement presentation only; simulation, clocks, bot thinking and turn timing stay unchanged.",1,new[]{"0.5x","0.75x","1.0x","1.25x","1.5x","2.0x","3.0x","Instant"},new[]{.5f,.75f,1,1.25f,1.5f,2,3,0});
             slider("shake",v,"Screen Shake","Intensity of the summon reward reveal shake. Does not move the gameplay camera.",35,0,100,5);
             slider("flash",v,"Flash Intensity","Brightness of the summon reveal flash; accessibility overrides may suppress it.",100,0,100,5);
             toggle("vsync",v,"VSync","Synchronize to the display refresh rate. Overrides the frame rate limit while enabled.",false);
@@ -67,7 +68,7 @@ namespace ChessButWeird.Settings
             toggle("large_text",x,"Large Text","Enlarge Settings text and gameplay hover information. UI Scale and Tooltip Size are in General.",false);
             toggle("contrast_ui",x,"High Contrast UI","Stronger text contrast in Settings and buff tooltips.",false);
             choice("colorblind",x,"Color Vision Support","Distinct move-hint colors. Text labels remain available; does not recolor your equipped cosmetics.",0,new[]{"Off","Protanopia","Deuteranopia","Tritanopia"},null);
-            toggle("reduce_motion",x,"Reduce Motion","Remove piece arcs, hover wobble and rotating summon decorations.",false);
+            toggle("reduce_motion",x,"Reduce Motion","Remove piece arcs, buff-card reveals and lifts, hover wobble and rotating decorations.",false);
             toggle("reduce_flashing",x,"Reduce Flashing","Suppress the bright full-screen summon reveal flash.",false);
             toggle("disable_shake",x,"Disable Screen Shake","Overrides intensity without replacing your saved Screen Shake value.",false);
             toggle("visual_chaos",x,"Reduce Visual Chaos","Temporarily use low effects, flat motion, no shake and no flash. Individual preferences are preserved.",false);

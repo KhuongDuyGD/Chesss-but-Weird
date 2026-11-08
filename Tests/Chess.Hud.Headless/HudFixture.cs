@@ -13,6 +13,11 @@ public static class UserSettings
     {public string Read(string id)=>null;public void Write(string id,string value){}public void Flush(){}}
 }
 
+public static class PlayModeNames
+{
+    public static string DisplayText(string value) => (value ?? "").Replace("ARAM", "CHAOS").Replace("Aram", "Chaos");
+}
+
 // Narrow dependencies for copied production HUD and ChessGame.Statistics sources.
 // No gameplay, account, transport, actual match scene or server is loaded here.
 public enum PieceTeam { White, Black }
