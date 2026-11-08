@@ -2,8 +2,8 @@
 
 The Classic and ARAM online menus now use the REST and SignalR contract in
 `D:/Game_Project/ChessButWeirdBE/ChessGame.Api/Online/ONLINE_CONTRACT.md`.
-REST/SignalR protocol version is 1. Online ARAM rules version is 2 (26 buffs).
-The newer local practice mode has 35 buffs and continues to use its own runtime.
+REST/SignalR protocol version is 1. New online Chaos matches use rules version 3,
+matching all 35 practice buffs. Stored version 2 matches keep their original 26-buff rules.
 
 ## Legacy backend cleanup (2026-10-06)
 
@@ -21,10 +21,17 @@ and bot move value is now `ChessMove`; its old CSV protocol helpers are gone.
 Online cards use only the local side's server `draftOptions`; selection and
 gameplay remain server-authoritative. Optional `chaos.buffDefinitions` supplies
 `id`, `tier`, `displayName`, full `description` and concise `summary` for the
-26 online buffs. Older servers use the client's online v2 fallback text.
+match's pinned catalog. Version 3 includes all 35 buffs, `combinedPlies`, persistent
+decision queues and authoritative `legalMoves` for Unity highlights/promotion.
+`pieceKind` accompanies purchases and the opening Queen replacement. Version 2
+uses its original metadata and commands; older servers use online v2 fallback text.
 Rarity visuals and reading controls are shared with practice. Settings /
 Gameplay / Draft Card Descriptions saves the initial Full/Summary mode;
 per-card and footer switches apply only to the current draft, not in-match tooltips.
+
+Deploy the updated API and distribute the updated Unity client together for new
+version 3 matches. Reconnecting uses the saved version, counters and pending
+deployment/quest/redeployment decisions; it does not reroll buffs or outcomes.
 
 Existing scenes keep the `ChessLanController` component and script GUID. Its
 network flow uses the .NET client. Removed script GUIDs were checked against
@@ -149,7 +156,7 @@ the gate and begin loading/Ready. The worker enforces expiry even if clients
 are offline. Private rooms/rematches have no acceptance gate. UI countdowns use
 snapshot serverTime plus monotonic elapsed time; the server decides expiry.
 
-The local backend source in `D:/Stuurdy/Chess_But_Weird_BE/ChessGame.Api` now
+The local backend source in `D:/Game_Project/ChessButWeirdBE/ChessGame.Api` now
 contains these additions. Deploy/restart the updated API at the configured
 base URL before trying this menu against a hosted backend with the old contract.
 
@@ -208,9 +215,10 @@ two-client, MongoDB, authentication or deployment validation.
 4. Disconnect one client during a command; reconnect and recover it. Check
    that no move applies twice, the board matches the other client and input
    stays locked while disconnected. Repeat across token renewal/API restart.
-5. Test each of the 26 online ARAM buffs from the backend contract. Exercise
+5. Test each of the 35 online ARAM buffs from the backend contract. Exercise
    three-pawn targets, knight/bishop targets, full formation and fallback,
-   Snipe/LoadPawn/Recruit/HideKing, combat gacha, Deploy and Escape.
+   automatic Sniper captures, LoadPawn/UnloadPawn/Recruit/HideKing, combat gacha,
+   Queen replacement/refund, purchases, quests, promotion traps, Deploy and Escape.
 6. Rifle: verify both colors' camera axes, hit/miss, blockers, board occlusion,
    king/queen immunity, expiry, charge/cooldown and reconnect while aiming.
 7. End by resignation, timeout and draw. Verify rewards/Elo/profile against
@@ -218,5 +226,13 @@ two-client, MongoDB, authentication or deployment validation.
 8. Request/accept/decline a rematch. Verify new Ready/draft, new loadouts and
    main-menu return without reopening the previous finished match.
 
-These checks are for manual execution; the agent has not run server/API,
-MongoDB or automated gameplay tests.
+These checks require a deployed API and two authenticated clients. The November
+35-buff update has rule/serialization regression tests and a headless Unity
+presenter audit using real server snapshots; this does not cover live transport,
+MongoDB, rendering or two-client gameplay.
+
+To regenerate the client audit fixtures, set `CHAOS35_FIXTURE_OUTPUT` to this
+checkout's `Logs/chaos35-client-fixtures.json`, then run
+`dotnet test Tests/ChessGame.Api.Tests.csproj --filter FullyQualifiedName~Chaos35RulesTests`
+in the backend checkout. Run `tools/verify-match-hud-headless.ps1 -Chaos35` in
+Unity's checkout. The existing HUD regression audit runs without `-Chaos35`.

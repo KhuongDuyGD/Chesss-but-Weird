@@ -42,7 +42,7 @@ public partial class ChessGame
         BeginGameInternal(PieceTeam.White, ParseOnlineTeam(local.color), true, PieceTeam.White);
         SetActiveMatchIdentity(state.matchId);
         // The old ARAM runtime is not started: online mechanics come from the
-        // backend's v2 snapshot, independently of newer local practice rules.
+        // backend's versioned snapshot, including the shared 35-buff rules.
         ClearRuntimePiecesRoot(); ClearPieceMap();
         ApplyDotNetState(state);
     }
@@ -200,8 +200,14 @@ public partial class ChessGame
     {
         var from = piece.BoardPosition;
         if (from == destination || currentTurn != localControlledTeam || dotNetState.status != "InProgress") return false;
+        if ((int?)dotNetState.chaos?["rulesVersion"] == 3 &&
+            dotNetState.chaos["legalMoves"]?.Any(move => (string)move["from"] == OnlineSquare(from) && (string)move["to"] == OnlineSquare(destination)) != true) return false;
         ClearSelection(); inputLocked = true; RefreshLocalInteractionState();
-        if (piece.Type == PieceType.Pawn && destination.y == (piece.ForwardDirection > 0 ? 7 : 0))
+        bool needsPromotion = piece.Type == PieceType.Pawn && destination.y == (piece.ForwardDirection > 0 ? 7 : 0);
+        if ((int?)dotNetState.chaos?["rulesVersion"] == 3)
+            needsPromotion = dotNetState.chaos["legalMoves"]?.Any(move => (string)move["from"] == OnlineSquare(from) &&
+                (string)move["to"] == OnlineSquare(destination) && move["promotion"]?.Type == Newtonsoft.Json.Linq.JTokenType.String) == true;
+        if (needsPromotion)
         {
             onlinePromotionPending = true;
             turnSelectionUI?.ShowPromotionChoice(piece.Team, promotion =>
@@ -215,6 +221,17 @@ public partial class ChessGame
         // Hints never adjudicate a server command. Classic hints use the shared
         // domain engine; ARAM highlights geometric candidates from v2 effects.
         safeMoveBuffer.Clear();
+        if ((int?)dotNetState.chaos?["rulesVersion"] == 3)
+        {
+            string fromSquare = OnlineSquare(piece.BoardPosition);
+            foreach (var move in dotNetState.chaos["legalMoves"] ?? new Newtonsoft.Json.Linq.JArray())
+                if ((string)move["from"] == fromSquare)
+                {
+                    var to = ParseOnlineSquare((string)move["to"]);
+                    if (!safeMoveBuffer.Contains(to)) safeMoveBuffer.Add(to);
+                }
+            return safeMoveBuffer;
+        }
         if (dotNetState.chaos == null && !string.IsNullOrEmpty(dotNetState.fen))
         {
             var state = ChessButWeird.Domain.FenCodec.Parse(dotNetState.fen);
@@ -229,7 +246,7 @@ public partial class ChessGame
             var effect = side?["effects"]?.FirstOrDefault(e => (int?)e["pieceId"] == OnlinePieceId(piece));
             int? buff = (int?)side?["buffId"];
             var id = OnlinePieceId(piece);
-            var context = new ChessButWeird.Domain.AramPieceContext(buff.HasValue ? (ChessButWeird.Domain.AramBuffs)(1 << buff.Value) : 0,
+            var context = new ChessButWeird.Domain.AramPieceContext(buff.HasValue ? (ChessButWeird.Domain.AramBuffs)(1UL << buff.Value) : 0,
                 side?["commandantPawns"]?.Any(p => (int)p == id) == true,
                 (int?)side?["swappedKnight"] == id && (bool?)side?["swapActive"] == true,
                 (int?)side?["swappedBishop"] == id && (bool?)side?["swapActive"] == true,
@@ -247,6 +264,7 @@ public partial class ChessGame
         }
         return safeMoveBuffer;
     }
+    private static string OnlineSquare(Vector2Int square) => ((char)('a' + square.x)).ToString() + (square.y + 1);
     private void ConfigureOnlineHitbox(ChessPiece view, string kind, MatchState state)
     {
         var spec = state.chaos?["hitboxes"]?.FirstOrDefault(b => (string)b["kind"] == kind);

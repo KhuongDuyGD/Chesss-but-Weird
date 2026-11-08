@@ -1,9 +1,10 @@
 param(
-    [string]$UnityPath = 'D:/Unity Editor/6000.4.7f1/Editor/Unity.exe'
+    [string]$UnityPath = 'D:/Unity Editor/6000.4.7f1/Editor/Unity.exe',
+    [switch]$Chaos35
 )
 $ErrorActionPreference='Stop'
 $sourceRoot=Split-Path $PSScriptRoot -Parent
-$auditRoot=Join-Path $sourceRoot ('Logs/hud-headless/' + (Get-Date -Format 'yyyyMMdd-HHmmss'))
+$auditRoot=Join-Path $sourceRoot ('Logs/hud-headless/' + (Get-Date -Format 'yyyyMMdd-HHmmss') + '-' + [Guid]::NewGuid().ToString('N').Substring(0,6))
 New-Item -ItemType Directory -Force -Path "$auditRoot/Assets/Editor", "$auditRoot/Assets/Fixture", "$auditRoot/Packages", "$auditRoot/ProjectSettings" | Out-Null
 # Keep every mutation in this new test project. No main-project startup hooks,
 # scene edits, MCP, account code, screenshots or graphics device are loaded.
@@ -16,6 +17,11 @@ $uiFiles=@(
     'Core/ChessGame.Statistics.cs','Gameplay/UI/MatchHudTooltip.cs','UI/ChessFontCatalog.cs','Bot/StockfishDifficulty.cs',
     'Gameplay/Settings/SettingsModel.cs','Gameplay/Settings/SettingsRegistry.cs','Gameplay/Settings/SettingsLanguages.cs','Gameplay/Settings/TooltipPreferences.cs','Gameplay/Settings/SettingsUiScale.cs'
 )
+if($Chaos35) {
+    $uiFiles += 'Networking/OnlineAramPresenter.cs','Networking/OnlineAramPresenter.Chaos35.cs','Backend/OnlineDtos.cs'
+    Copy-Item -LiteralPath "$sourceRoot/Tests/Chess.Hud.Headless/Chaos35OnlineAudit.cs","$sourceRoot/Tests/Chess.Hud.Headless/Chaos35OnlinePorts.cs" -Destination "$auditRoot/Assets/Fixture"
+    Copy-Item -LiteralPath "$sourceRoot/Logs/chaos35-client-fixtures.json" -Destination "$auditRoot/fixtures.json"
+}
 $hashes=@()
 foreach($relative in $uiFiles) {
     $path=Join-Path $sourceRoot ('Assets/Scripts/Chess/'+$relative)
@@ -35,15 +41,19 @@ New-Item -ItemType Directory -Force -Path "$auditRoot/Assets/Resources/UI" | Out
 Copy-Item -LiteralPath "$sourceRoot/Assets/Resources/UI/MenuEdgeAntialiasing.shader" -Destination "$auditRoot/Assets/Resources/UI"
 Copy-Item -LiteralPath "$sourceRoot/ProjectSettings/ProjectVersion.txt" -Destination "$auditRoot/ProjectSettings"
 $dependencies=[ordered]@{}
-foreach($package in @('com.unity.ugui','com.unity.inputsystem')) {
+$packages=@('com.unity.ugui','com.unity.inputsystem')
+if($Chaos35){$packages+='com.unity.nuget.newtonsoft-json'}
+foreach($package in $packages) {
     $cached=Get-ChildItem -LiteralPath "$sourceRoot/Library/PackageCache" -Directory | Where-Object {$_.Name.StartsWith($package+'@')} | Select-Object -First 1
     if(!$cached){throw "Import $package in the main project first."}
     $dependencies[$package]='file:'+ $cached.FullName.Replace('\','/')
 }
 foreach($module in @('ui','imgui','uielements','jsonserialize')) {$dependencies['com.unity.modules.'+$module]='1.0.0'}
+if($Chaos35){$dependencies['com.unity.modules.physics']='1.0.0'}
 @{dependencies=$dependencies} | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath "$auditRoot/Packages/manifest.json" -Encoding utf8
 $editorLog=Join-Path $auditRoot 'Editor.log'
-$args=@('-batchmode','-nographics','-projectPath',('"'+$auditRoot+'"'),'-executeMethod','HudAuditRunner.Run','-logFile',('"'+$editorLog+'"'))
+$entry=if($Chaos35){'Chaos35OnlineAudit.Run'}else{'HudAuditRunner.Run'}
+$args=@('-batchmode','-nographics','-projectPath',('"'+$auditRoot+'"'),'-executeMethod',$entry,'-logFile',('"'+$editorLog+'"'))
 $process=Start-Process -FilePath $UnityPath -ArgumentList $args -WindowStyle Hidden -PassThru
 Write-Output "Isolated headless HUD project: $auditRoot"
 Write-Output "Only this new process ($($process.Id)) is supervised; the user's Editor is untouched."

@@ -8,7 +8,7 @@ using UnityEngine.InputSystem;
 
 // Presents server-authoritative Chaos through the same cards and controls as practice.
 // The local runtime must never adjudicate an online match or roll its outcomes.
-internal sealed class OnlineAramPresenter : IDisposable
+internal sealed partial class OnlineAramPresenter : IDisposable
 {
     private readonly ChessLanController owner;
     private readonly ChessGame game;
@@ -93,7 +93,14 @@ internal sealed class OnlineAramPresenter : IDisposable
     {
         if (state != null && (state.matchId != next.matchId || (string)state.chaos?["phase"] != (string)next.chaos?["phase"])) CancelTargeting();
         int? previousBuff = (int?)side?["buffId"];
-        if (state == null || state.matchId != next.matchId) ResetOnlineDefinitions();
+        if (state == null || state.matchId != next.matchId)
+        {
+            if ((int?)next.chaos?["rulesVersion"] == 3) ResetPracticeDefinitions();
+            else ResetOnlineDefinitions();
+        }
+        string previousDecision = state?.chaos?["deployments"]?.FirstOrDefault()?["id"]?.ToString();
+        string nextDecision = next.chaos?["deployments"]?.FirstOrDefault()?["id"]?.ToString();
+        if (previousDecision != nextDecision || state != null && state.turn != next.turn) CancelTargeting();
         state = next;
         team = next.players.First(p => p.userId == PlayerAuthService.UserId).color;
         side = next.chaos?["sides"]?.FirstOrDefault(s => (string)s["team"] == team);
@@ -148,6 +155,7 @@ internal sealed class OnlineAramPresenter : IDisposable
 
     private AramAbilityView.Presentation BuildPresentation()
     {
+        if ((int?)state?.chaos?["rulesVersion"] == 3) return BuildChaos35Presentation();
         var view = new AramAbilityView.Presentation { Visible = Visible && !draftView.IsDraftVisible,
             Context = state?.matchId + "|" + state?.stateVersion + "|" + action,
             PresentationContext = state?.matchId + "|" + side?["buffId"] + "|" + state?.chaos?["phase"] + "|" + action,
@@ -235,7 +243,7 @@ internal sealed class OnlineAramPresenter : IDisposable
         return view;
     }
     internal static string BuffText(int id) => id >= 0 && id < Buffs.Length ? Buffs[id] : "Unknown buff " + id;
-    private void CancelTargeting() { action = null; targets.Clear(); formation.Clear(); formationPiece = null; }
+    private void CancelTargeting() { action = null; actionPieceKind = null; targets.Clear(); formation.Clear(); formationPiece = null; }
     private void Send(AbilityCommand command)
     { if (!CanInteract) return; CancelTargeting(); owner.SendAbility(command); }
     public bool HandleClick(Vector2Int square, int? pieceId)
@@ -243,6 +251,7 @@ internal sealed class OnlineAramPresenter : IDisposable
         if (!Visible || draftView.IsDraftVisible || aiming) return true;
         if (string.IsNullOrEmpty(action)) return false;
         if (!owner.CanSendOnlineCommand) return true;
+        if ((int?)state?.chaos?["rulesVersion"] == 3 && action != "ConfirmFormation") return HandleChaos35Click(square, pieceId);
         string targetSquare = ((char)('a' + square.x)).ToString() + (square.y + 1);
         if (action == "ConfirmFormation")
         {
