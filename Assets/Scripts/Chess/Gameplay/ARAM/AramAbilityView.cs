@@ -15,11 +15,42 @@ public sealed class AramAbilityView : MonoBehaviour
         public AbilityAction(string label, Action invoke, bool enabled=true, string detail=null, string id=null)
         { Id=id??label; Label=label; Invoke=invoke; Enabled=enabled; Detail=detail; }
     }
+    public sealed class Presentation
+    {
+        public bool Visible, RifleActive, InstructionRequired;
+        public string Context, PresentationContext, Summary, Status, Details, RifleHint;
+        public readonly List<AbilityAction> Actions = new List<AbilityAction>();
+    }
+    private Func<Presentation> onlinePresentation;
+    private Func<bool> onlineVisible;
     private AramBuffRuntime runtime;
+    public void InitializeOnline(Func<Presentation> source, Func<bool> visibility)
+    {
+        onlinePresentation = source;
+        onlineVisible = visibility;
+        Initialize(null);
+    }
+    public bool ContainsPointer(Vector2 screen) => root && root.activeInHierarchy &&
+        RectTransformUtility.RectangleContainsScreenPoint(actionPanel, screen);
+
+    private Presentation ReadPresentation()
+    {
+        if (onlinePresentation != null) return onlinePresentation();
+        if (!runtime) return null;
+        var value = new Presentation {
+            Visible = runtime.AbilityHudVisible, RifleActive = runtime.RifleActive,
+            InstructionRequired = runtime.AbilityInstructionRequired,
+            Context = runtime.AbilityContext, Summary = runtime.AbilityBuffSummary,
+            Status = runtime.AbilityStatus, Details = runtime.AbilityBuffDetails,
+            RifleHint = runtime.RifleMouseHint
+        };
+        runtime.GetAbilityActions(value.Actions);
+        return value;
+    }
     private GameObject root;
     private TextMeshProUGUI status, summary, details, crosshair, rifleHint;
     private readonly List<Button> buttons=new List<Button>();
-    private readonly List<AbilityAction> actions=new List<AbilityAction>(), freshActions=new List<AbilityAction>();
+    private readonly List<AbilityAction> actions=new List<AbilityAction>();
     private RectTransform actionPanel, frame, actionContent;
     private ScrollRect actionScroll;
     private Button expandButton;
@@ -29,12 +60,14 @@ public sealed class AramAbilityView : MonoBehaviour
     public float PanelHeight => root&&root.activeSelf?actionPanel.rect.height:0;
     public void SetVisible(bool visible)
     {
+        if (requestedVisible == visible) return;
         requestedVisible=visible;
         nextRefresh=0;
         if(!visible){expanded=false;if(root)root.SetActive(false);}
     }
     public void Initialize(AramBuffRuntime source)
     {
+        if (root) return;
         runtime=source;
         root=new GameObject("CHAOS Abilities",typeof(RectTransform),typeof(Canvas),typeof(CanvasScaler),typeof(GraphicRaycaster));
         root.transform.SetParent(transform,false);
@@ -73,34 +106,37 @@ public sealed class AramAbilityView : MonoBehaviour
     }
     private void Update()
     {
-        if(!root||!runtime)return;
-        bool visible=requestedVisible&&runtime.AbilityHudVisible;
+        if(!root)return;
+        bool visible=requestedVisible&&(runtime?runtime.AbilityHudVisible:onlineVisible?.Invoke()==true);
         if(!visible){if(root.activeSelf)root.SetActive(false);return;}
         // Only this view owns visibility. Turn changes never pulse an empty panel.
         if(!root.activeSelf)root.SetActive(true);
         if(Time.unscaledTime<nextRefresh)return;
         nextRefresh=Time.unscaledTime+.1f;
-        string context=runtime.AbilityContext;
-        bool contextChanged=displayedPresentation!=runtime.AbilityPresentationContext;
-        displayedPresentation=runtime.AbilityPresentationContext;
+        var presentation=ReadPresentation();
+        if (presentation == null) return;
+        string context=presentation.Context;
+        string presentationContext=runtime?runtime.AbilityPresentationContext:presentation.PresentationContext??context;
+        bool contextChanged=displayedPresentation!=presentationContext;
+        displayedPresentation=presentationContext;
         displayedContext=context;
-        runtime.GetAbilityActions(actions);
-        summary.text=runtime.AbilityBuffSummary;
-        status.text=runtime.AbilityStatus;
-        details.text=expanded?TooltipPreferences.Description(runtime.AbilityBuffDetails):"";
-        crosshair.gameObject.SetActive(runtime.RifleActive);
-        rifleHint.gameObject.SetActive(runtime.RifleActive);
-        rifleHint.text=runtime.RifleMouseHint;
+        actions.Clear(); actions.AddRange(presentation.Actions);
+        summary.text=presentation.Summary;
+        status.text=presentation.Status;
+        details.text=expanded?TooltipPreferences.Description(presentation.Details):"";
+        crosshair.gameObject.SetActive(presentation.RifleActive);
+        rifleHint.gameObject.SetActive(presentation.RifleActive);
+        rifleHint.text=presentation.RifleHint;
         expandButton.GetComponentInChildren<TextMeshProUGUI>().text=expanded?"Collapse":"Expand";
         while(buttons.Count<actions.Count)
         {
             int index=buttons.Count;
             var button=MatchHudStyle.Button(actionContent,"Ability "+index,"",()=>
             {
-                if(!requestedVisible||!runtime.AbilityHudVisible||displayedContext!=runtime.AbilityContext||index>=actions.Count)return;
+                var fresh=ReadPresentation();
+                if(!requestedVisible||fresh==null||!fresh.Visible||displayedContext!=fresh.Context||index>=actions.Count)return;
                 string id=actions[index].Id;
-                runtime.GetAbilityActions(freshActions);
-                foreach(var current in freshActions)
+                foreach(var current in fresh.Actions)
                     if(current.Id==id){if(current.Enabled)current.Invoke?.Invoke();break;}
             });
             button.GetComponentInChildren<TextMeshProUGUI>().rectTransform.sizeDelta=new Vector2(-16,-4);
@@ -108,10 +144,10 @@ public sealed class AramAbilityView : MonoBehaviour
         }
         float width=Mathf.Min(expanded?360:300,frame.rect.width-40);
         float summaryHeight=Mathf.Clamp(summary.GetPreferredValues(summary.text,width-32,0).y+6,34,94);
-        float statusHeight=string.IsNullOrEmpty(status.text)?0:Mathf.Clamp(status.GetPreferredValues(status.text,width-32,0).y+6,32,runtime.AbilityInstructionRequired?150:62);
+        float statusHeight=string.IsNullOrEmpty(status.text)?0:Mathf.Clamp(status.GetPreferredValues(status.text,width-32,0).y+6,32,presentation.InstructionRequired?150:62);
         float header=52+summaryHeight+statusHeight+12;
         // Long summaries are available without clipping inside the expanded scroll.
-        if(expanded)details.text=runtime.AbilityBuffSummary+"\n\n"+TooltipPreferences.Description(runtime.AbilityBuffDetails);
+        if(expanded)details.text=presentation.Summary+"\n\n"+TooltipPreferences.Description(presentation.Details);
         float detailHeight=expanded?details.GetPreferredValues(details.text,width-48,0).y+16:0;
         float cellHeight=expanded?64:38, gap=6;
         float contentHeight=detailHeight+actions.Count*(cellHeight+gap);

@@ -36,6 +36,7 @@ public sealed class AramBuffDefinition : ScriptableObject
     [SerializeField] private string displayName;
     [SerializeField] private string shortName;
     [SerializeField, TextArea(2, 5)] private string description;
+    [SerializeField, TextArea(1, 3)] private string summary;
     [SerializeField] private Color accentColor = new Color(1f, 0.82f, 0.28f, 1f);
 
     public AramBuffId Id => id;
@@ -44,14 +45,22 @@ public sealed class AramBuffDefinition : ScriptableObject
     public string ShortName => string.IsNullOrWhiteSpace(shortName) ? DisplayName : shortName;
     public string Description => PlayModeNames.DisplayText(description);
     public Color AccentColor => accentColor;
+    public string Summary => string.IsNullOrWhiteSpace(summary) ? FirstSentence(Description) : PlayModeNames.DisplayText(summary);
+    public static string FirstSentence(string text)
+    {
+        if (string.IsNullOrEmpty(text)) return string.Empty;
+        int end = text.IndexOf(". ", System.StringComparison.Ordinal);
+        return end < 0 ? text : text.Substring(0, end + 1);
+    }
 
-    public void Configure(AramBuffId newId, AramBuffTier newTier, string newDisplayName, string newShortName, string newDescription, Color newAccentColor)
+    public void Configure(AramBuffId newId, AramBuffTier newTier, string newDisplayName, string newShortName, string newDescription, Color newAccentColor, string newSummary = null)
     {
         id = newId;
         tier = newTier;
         displayName = newDisplayName;
         shortName = newShortName;
         description = newDescription;
+        summary = newSummary;
         accentColor = newAccentColor;
     }
 }
@@ -163,11 +172,54 @@ public static class AramBuffLibrary
         return System.Enum.TryParse(value, true, out id) && System.Enum.IsDefined(typeof(AramBuffId), id);
     }
 
+    private static string BuiltInSummary(AramBuffId id)
+    {
+        string[] summaries = {
+            "Three chosen Pawns can advance two clear squares throughout the match.",
+            "Castle through danger, then unlock a second castle on the opposite wing.",
+            "One chosen Knight can land partway through its L-shaped leaps.",
+            "Swap a Knight and Bishop's movement while hiding your real buff from the enemy.",
+            "Your original Queen explodes once when captured, destroying nearby non-Kings.",
+            "Teleport your original Queen to empty squares. Five uses, with a recharge.",
+            "Sacrifice an allied Pawn to empower another Pawn's forward movement and captures.",
+            "Long Bishop captures charge an automatic ranged capture without moving.",
+            "Pawn captures have a 25% chance to grant another move. Up to three bonuses.",
+            "Crates at combined moves 25 and 50 let you deploy a Rook, then a Queen.",
+            "Avoid early checks to recruit an enemy piece into your home territory.",
+            "Retreat Pawns onto your back rank to turn them into deadly mines.",
+            "Carry a nearby Pawn inside a Rook, then unload or parachute it to safety.",
+            "Swap your King with a back-rank ally, with an opening swap and later recharges.",
+            "Capture non-Pawns for tickets. Spend one to summon a random ally each turn.",
+            "Your first check teleports the King to safety and leaves a transforming decoy.",
+            "Your initial Rooks become cannons that can capture over one blocker.",
+            "Gain a powerful extra Queen whose growing betrayal risk may turn her against you.",
+            "The board's outer files collapse in two stages. Keep your army away from the edges.",
+            "Randomize your starting army, keeping only Kings and Queens unchanged.",
+            "Escape checkmate by moving your King to nearby safety, up to three times.",
+            "Your army can pass through allies, but phasing cannot deliver check.",
+            "Enemies that capture your pieces are infected and die after four combined moves.",
+            "Arrange your army in your half. An unchanged formation refunds a random Gold buff.",
+            "Trade every non-King for a half-board filled with Pawns.",
+            "Fight with only an empowered King and a rifle that recharges every three owner turns.",
+            "Complete capture and promotion quests for a Queen reward. Any draw becomes a loss.",
+            "Trade your Queen for a smaller piece, then reclaim a Queen after ten owner turns.",
+            "Castle kingside immediately, swapping blocking allies into the vacated squares.",
+            "Any non-Queen that captures an enemy Queen gains Queen movement forever.",
+            "Your Rooks can drive through allies to empty squares, without checking through them.",
+            "Spend capture points to buy reinforcements. Credit is allowed until your balance is negative.",
+            "Replace your King with a Queen. Win by checkmate before your 25-turn deadline.",
+            "Enemy Pawns lose promotion and become limited orthogonal movers on the far rank.",
+            "After promotion, redeploy the promoted piece to any safe, empty active square."
+        };
+        int index = (int)id;
+        return index >= 0 && index < summaries.Length ? summaries[index] : null;
+    }
+
     private static AramBuffDefinition Create(AramBuffId id, AramBuffTier tier, string displayName, string shortName, string description, Color accentColor)
     {
         AramBuffDefinition definition = ScriptableObject.CreateInstance<AramBuffDefinition>();
         definition.name = $"CHAOS {id}";
-        definition.Configure(id, tier, displayName, shortName, description, accentColor);
+        definition.Configure(id, tier, displayName, shortName, description, accentColor, BuiltInSummary(id));
         return definition;
     }
 }

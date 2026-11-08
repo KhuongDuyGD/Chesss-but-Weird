@@ -31,7 +31,48 @@ public sealed class AramBuffDraftView : MonoBehaviour
     private Action<List<AramBuffDefinition>, List<AramBuffDefinition>> completion;
     private PieceTeam choosingTeam = PieceTeam.White;
     private float toastUntil;
-    private AramBuffRuntime runtime;
+    private Button descriptionButton;
+    private TextMeshProUGUI descriptionButtonLabel;
+    private bool fullDescriptions;
+    private float descriptionDefault;
+    private AramBuffDefinition pendingSelection;
+    private Action<AramBuffDefinition> onlineSelection;
+    private bool onlineCanSelect;
+    public bool IsDraftVisible => draftPanel && draftPanel.gameObject.activeInHierarchy;
+
+    // Online options belong to the server and only the local player may pick.
+    // Reuse the practice cards without running the local two-player draft.
+    public void ShowOnlineDraft(List<AramBuffDefinition> options, PieceTeam team, Action<AramBuffDefinition> onSelected)
+    {
+        ShowDraft(options, null);
+        onlineSelection = onSelected;
+        choosingTeam = team;
+        titleLabel.text = team.ToString().ToUpperInvariant() + " CHAOS ROLL";
+        SetOnlineAvailability(true);
+    }
+
+    public void SetOnlineAvailability(bool available)
+    {
+        onlineCanSelect = available;
+        if (!IsDraftVisible || onlineSelection == null) return;
+        // Reading remains available while a network selection is pending.
+        draftGroup.interactable = true;
+        foreach (var card in cards)
+        {
+            card.Choose.interactable = available;
+            card.Motion.SetPending(!available, card.Definition == pendingSelection);
+        }
+        subtitleLabel.text = available ? "Choose 1 buff for your army. Your opponent chooses separately."
+            : "Waiting for the server connection or selection confirmation...";
+    }
+
+    public void SetOverlayVisible(bool visible)
+    {
+        if (canvasRoot) canvasRoot.gameObject.SetActive(visible);
+    }
+
+    public bool ContainsPointer(Vector2 screen) => IsDraftVisible &&
+        RectTransformUtility.RectangleContainsScreenPoint(draftPanel, screen);
     public float GameplayHudTop
     {get {return 0;}}
     private RectTransform gameplayFrame;
@@ -39,6 +80,10 @@ public sealed class AramBuffDraftView : MonoBehaviour
     public void ShowDraft(List<AramBuffDefinition> pool, Action<List<AramBuffDefinition>, List<AramBuffDefinition>> onCompleted)
     {
         EnsureBuilt();
+        onlineSelection = null;
+        pendingSelection = null;
+        descriptionDefault = UserSettings.Get("draft_description");
+        fullDescriptions = descriptionDefault > .5f;
         completion = onCompleted;
         choosingTeam = PieceTeam.White;
         whiteOptions.Clear();
@@ -63,6 +108,10 @@ public sealed class AramBuffDraftView : MonoBehaviour
     public void ShowPracticeRoll(List<AramBuffDefinition> rolledWhiteOptions, List<AramBuffDefinition> rolledBlackOptions, Action<List<AramBuffDefinition>, List<AramBuffDefinition>> onCompleted)
     {
         EnsureBuilt();
+        onlineSelection = null;
+        pendingSelection = null;
+        descriptionDefault = UserSettings.Get("draft_description");
+        fullDescriptions = descriptionDefault > .5f;
         completion = onCompleted;
         choosingTeam = PieceTeam.White;
         whiteOptions.Clear();
@@ -129,6 +178,12 @@ public sealed class AramBuffDraftView : MonoBehaviour
 
     private void Update()
     {
+        if (IsDraftVisible && !Mathf.Approximately(descriptionDefault, UserSettings.Get("draft_description")))
+        {
+            descriptionDefault = UserSettings.Get("draft_description");
+            fullDescriptions = descriptionDefault > .5f;
+            RefreshDescriptions();
+        }
         if (toastPanel && toastPanel.gameObject.activeSelf && Time.unscaledTime >= toastUntil)
             toastPanel.gameObject.SetActive(false);
         LayoutGameplayHud();
@@ -152,11 +207,11 @@ public sealed class AramBuffDraftView : MonoBehaviour
 
         int count = pool == null ? 0 : pool.Count;
         int columns = 3;
-        Vector2 cardSize = new Vector2(356f, 410f);
+        Vector2 cardSize = new Vector2(356f, 444f);
         Vector2 gap = new Vector2(24f, 24f);
         float totalWidth = columns * cardSize.x + (columns - 1) * gap.x;
         int rows = Mathf.CeilToInt(Mathf.Max(1, count) / (float)columns);
-        float totalHeight = rows * cardSize.y + (rows - 1) * gap.y;
+        float totalHeight = rows * cardSize.y + (rows - 1) * gap.y + 32;
         cardRoot.sizeDelta = new Vector2(1116f, totalHeight);
 
         for (int i = 0; i < count; i++)
@@ -166,46 +221,90 @@ public sealed class AramBuffDraftView : MonoBehaviour
             int row = i / columns;
             Vector2 position = new Vector2(
                 -totalWidth * 0.5f + cardSize.x * 0.5f + col * (cardSize.x + gap.x),
-                -cardSize.y * 0.5f - row * (cardSize.y + gap.y));
+                -16 - cardSize.y * 0.5f - row * (cardSize.y + gap.y));
             cards.Add(CreateCard(definition, position, cardSize, i));
         }
         cardScroll.vertical = rows > 1;
         cardScroll.verticalNormalizedPosition = 1f;
+        RefreshDescriptions();
     }
 
-    private BuffCardView CreateCard(AramBuffDefinition definition, Vector2 position, Vector2 size, int index, bool selectable = true, string headingOverride = null)
+    private BuffCardView CreateCard(AramBuffDefinition definition, Vector2 position, Vector2 size, int index)
     {
         RectTransform card = CreateRect(cardRoot, definition ? definition.ShortName : $"Buff {index + 1}", position, size);
         card.anchorMin=card.anchorMax=new Vector2(.5f,1);
-        var background = MatchHudStyle.Surface(card);
-        Color accent = definition ? definition.AccentColor : new Color(1f, 0.9f, 0.4f, 1f);
-        background.Configure(Color.Lerp(MatchHudStyle.Paper,accent,.12f),MatchHudStyle.Ink,12,1.8f,.3f,0);
-
-        if (selectable)
-        {
-            Button button = MatchHudStyle.Button(card,"Choose buff","Choose this buff",() => SelectBuff(definition));
-            MatchHudStyle.Place((RectTransform)button.transform,Vector2.one*.5f,new Vector2(312,40),new Vector2(0,-175));
-            button.GetComponentInChildren<TMP_Text>().rectTransform.sizeDelta=new Vector2(-16,-4);
-        }
-
-        TextMeshProUGUI tier = AddText(card, "Tier", new Vector2(0f, 174f), new Vector2(312f, 32f), 20f, TextAlignmentOptions.Left, MatchHudStyle.Accent);
-        tier.text = definition
-            ? $"{(string.IsNullOrEmpty(headingOverride) ? string.Empty : headingOverride + " - ")}{definition.Tier.ToString().ToUpperInvariant()}"
-            : (string.IsNullOrEmpty(headingOverride) ? "BUFF" : headingOverride);
-        TextMeshProUGUI name = AddText(card, "Name", new Vector2(0f, 112f), new Vector2(312f, 84f), 28f, TextAlignmentOptions.Left, MatchHudStyle.Ink);
-        name.text = definition ? definition.DisplayName : "CHAOS Buff";
-        var viewport=CreateRect(card,"Description viewport",new Vector2(0,-38),new Vector2(312,208));
+        var tierValue=definition?definition.Tier:AramBuffTier.Silver;
+        Color accent=AramBuffCardTheme.Accent(tierValue), ink=AramBuffCardTheme.Ink(tierValue);
+        var background=MatchHudStyle.Surface(card);
+        background.Configure(ink,accent,18,2,.22f,index);
+        var inset=CreateRect(card,"Inner ink frame",Vector2.zero,size-new Vector2(14,14));
+        MatchHudStyle.Surface(inset,false).Configure(Color.clear,new Color(accent.r,accent.g,accent.b,.18f),13,.8f,0,0);
+        var filigree=CreateRect(card,"Rarity filigree",Vector2.zero,size).gameObject.AddComponent<AramBuffCardVisual>();
+        filigree.ConfigureFrame(tierValue);
+        var emblem=CreateRect(card,"Buff emblem",new Vector2(0,126),new Vector2(300,92)).gameObject.AddComponent<AramBuffCardVisual>();
+        emblem.Configure(definition);
+        var tier=AddText(card,"Tier",new Vector2(0,194),new Vector2(300,28),18,TextAlignmentOptions.Center,accent);
+        tier.text=tierValue.ToString().ToUpperInvariant();tier.characterSpacing=6;
+        var name=AddText(card,"Name",new Vector2(0,45),new Vector2(300,66),27,TextAlignmentOptions.Center,MatchHudStyle.Paper);
+        name.text=definition?definition.DisplayName:"CHAOS Buff";
+        var divider=CreateRect(card,"Rule divider",new Vector2(0,0),new Vector2(300,1));
+        var line=divider.gameObject.AddComponent<Image>();line.color=new Color(accent.r,accent.g,accent.b,.25f);line.raycastTarget=false;
+        var viewport=CreateRect(card,"Description viewport",new Vector2(0,-75),new Vector2(300,126));
         viewport.gameObject.AddComponent<RectMask2D>();
-        var hit=viewport.gameObject.AddComponent<Image>();hit.color=Color.clear;
-        TextMeshProUGUI desc = AddText(viewport, "Description", Vector2.zero, new Vector2(312f, 208f), 20f, TextAlignmentOptions.TopLeft, MatchHudStyle.Ink);
-        desc.text = definition ? definition.Description : string.Empty;
-        desc.textWrappingMode = TextWrappingModes.Normal;
+        viewport.gameObject.AddComponent<Image>().color=Color.clear;
+        var desc=AddText(viewport,"Description",Vector2.zero,new Vector2(300,126),19,TextAlignmentOptions.TopLeft,new Color(.87f,.87f,.90f));
+        desc.textWrappingMode=TextWrappingModes.Normal;
         desc.rectTransform.anchorMin=desc.rectTransform.anchorMax=desc.rectTransform.pivot=new Vector2(.5f,1);
-        desc.rectTransform.sizeDelta=new Vector2(312,Mathf.Max(208,desc.GetPreferredValues(desc.text,312,0).y+8));
         var scroll=viewport.gameObject.AddComponent<ScrollRect>();scroll.viewport=viewport;scroll.content=desc.rectTransform;
-        scroll.horizontal=false;scroll.vertical=desc.rectTransform.sizeDelta.y>208;scroll.movementType=ScrollRect.MovementType.Clamped;
-        scroll.scrollSensitivity=28;scroll.verticalNormalizedPosition=1;
-        return new BuffCardView();
+        scroll.horizontal=false;scroll.movementType=ScrollRect.MovementType.Clamped;scroll.scrollSensitivity=28;
+        var hint=AddText(card,"Reading hint",new Vector2(-60,-151),new Vector2(180,22),14,TextAlignmentOptions.Left,accent);
+        var button=MatchHudStyle.Button(card,"Choose buff","Choose this buff",()=>SelectBuff(definition));
+        MatchHudStyle.Place((RectTransform)button.transform,Vector2.one*.5f,new Vector2(300,42),new Vector2(0,-187));
+        button.GetComponent<HandDrawnRoundedGraphic>().Configure(AramBuffCardTheme.Paper(tierValue),accent,9,1.2f,.2f,index);
+        button.GetComponentInChildren<TMP_Text>().rectTransform.sizeDelta=new Vector2(-16,-4);
+        var motion=card.gameObject.AddComponent<AramBuffCardMotion>();motion.Initialize(index);
+        var view=new BuffCardView { Definition=definition, Description=desc, Scroll=scroll, Hint=hint, Choose=button, Motion=motion, FullDescription=fullDescriptions };
+        var reading=MatchHudStyle.Button(card,"Card reading mode","",()=>
+        {
+            if(!IsDraftVisible)return;
+            view.FullDescription=!view.FullDescription;
+            RefreshCardDescription(view);
+        });
+        MatchHudStyle.Place((RectTransform)reading.transform,Vector2.one*.5f,new Vector2(108,25),new Vector2(96,-151));
+        reading.GetComponent<HandDrawnRoundedGraphic>().Configure(new Color(accent.r,accent.g,accent.b,.08f),new Color(accent.r,accent.g,accent.b,.3f),6,.8f,0,0);
+        view.ReadingLabel=reading.GetComponentInChildren<TextMeshProUGUI>();
+        view.ReadingLabel.color=accent;view.ReadingLabel.fontSize=14;view.ReadingLabel.rectTransform.sizeDelta=new Vector2(-8,-2);
+        return view;
+    }
+
+    public void ToggleDescriptions()
+    {
+        if (!IsDraftVisible) return;
+        fullDescriptions=!fullDescriptions;
+        RefreshDescriptions();
+    }
+
+    private void RefreshDescriptions()
+    {
+        foreach(var card in cards)
+        {
+            card.FullDescription=fullDescriptions;
+            RefreshCardDescription(card);
+        }
+        if(descriptionButtonLabel)descriptionButtonLabel.text=fullDescriptions?"All cards: Full  /  Summary":"All cards: Summary  /  Full";
+    }
+
+    private void RefreshCardDescription(BuffCardView card)
+    {
+        var definition=card.Definition;
+        card.Description.text=definition?(card.FullDescription?definition.Description:definition.Summary):string.Empty;
+        float height=Mathf.Max(126,card.Description.GetPreferredValues(card.Description.text,300,0).y+8);
+        card.Description.rectTransform.sizeDelta=new Vector2(300,height);
+        card.Scroll.vertical=height>127;
+        card.Scroll.verticalNormalizedPosition=1;
+        card.Hint.text="Scroll to read all";
+        card.Hint.gameObject.SetActive(card.Scroll.vertical);
+        card.ReadingLabel.text=card.FullDescription?"Summary":"Read full";
     }
 
     private void ClearCards()
@@ -221,6 +320,16 @@ public sealed class AramBuffDraftView : MonoBehaviour
 
     private void SelectBuff(AramBuffDefinition definition)
     {
+        if (onlineSelection != null)
+        {
+            if (definition && onlineCanSelect && IsDraftVisible)
+            {
+                pendingSelection = definition;
+                SetOnlineAvailability(false);
+                onlineSelection.Invoke(definition);
+            }
+            return;
+        }
         if (!definition || completion == null || !draftPanel.gameObject.activeSelf)
             return;
 
@@ -299,18 +408,26 @@ public sealed class AramBuffDraftView : MonoBehaviour
         RectTransform layout = MenuDesignFrame.Create(canvasRoot, "CHAOS", new Vector2(ReferenceWidth, ReferenceHeight));
         draftPanel = CreateRect(layout, "Draft Panel", Vector2.zero, new Vector2(ReferenceWidth, ReferenceHeight));
         Image dim = draftPanel.gameObject.AddComponent<Image>();
-        dim.color = new Color(.16f,.14f,.20f,.94f);
+        dim.color = new Color(.055f,.065f,.105f,.985f);
 
-        titleLabel = AddText(draftPanel, "Draft Title", new Vector2(0f, 284f), new Vector2(1120f, 60f), 40f, TextAlignmentOptions.Center, MatchHudStyle.Paper);
-        subtitleLabel = AddText(draftPanel, "Draft Subtitle", new Vector2(0f, 224f), new Vector2(1120f, 62f), 22f, TextAlignmentOptions.Center, MatchHudStyle.Paper);
-        var viewport=CreateRect(draftPanel,"Draft viewport",new Vector2(0,-32),new Vector2(1120,412));
+        titleLabel = AddText(draftPanel, "Draft Title", new Vector2(0f, 286f), new Vector2(1120f, 60f), 40f, TextAlignmentOptions.Center, MatchHudStyle.Paper);
+        subtitleLabel = AddText(draftPanel, "Draft Subtitle", new Vector2(0f, 232f), new Vector2(1120f, 62f), 22f, TextAlignmentOptions.Center, MatchHudStyle.Paper);
+        var viewport=CreateRect(draftPanel,"Draft viewport",new Vector2(0,-30),new Vector2(1160,480));
         viewport.gameObject.AddComponent<RectMask2D>();
         var scrollHit=viewport.gameObject.AddComponent<Image>();scrollHit.color=Color.clear;
-        cardRoot = CreateRect(viewport, "Draft Cards", Vector2.zero, new Vector2(1116f, 410f));
+        cardRoot = CreateRect(viewport, "Draft Cards", Vector2.zero, new Vector2(1116f, 476f));
         cardRoot.anchorMin=cardRoot.anchorMax=cardRoot.pivot=new Vector2(.5f,1);
         cardScroll=viewport.gameObject.AddComponent<ScrollRect>();cardScroll.viewport=viewport;cardScroll.content=cardRoot;
         cardScroll.horizontal=false;cardScroll.movementType=ScrollRect.MovementType.Clamped;cardScroll.scrollSensitivity=40;
         CreateContinueButton(draftPanel);
+        descriptionButton=MatchHudStyle.Button(draftPanel,"Draft reading mode","",ToggleDescriptions);
+        MatchHudStyle.Place((RectTransform)descriptionButton.transform,Vector2.one*.5f,new Vector2(300,34),new Vector2(408,-310));
+        descriptionButton.GetComponent<HandDrawnRoundedGraphic>().Configure(new Color(.14f,.15f,.22f),new Color(.42f,.43f,.53f),8,1,0,0);
+        descriptionButtonLabel=descriptionButton.GetComponentInChildren<TextMeshProUGUI>();
+        descriptionButtonLabel.color=MatchHudStyle.Paper;descriptionButtonLabel.fontSize=17;
+        descriptionButtonLabel.rectTransform.sizeDelta=new Vector2(-16,-4);
+        var help=AddText(draftPanel,"Reading preference hint",new Vector2(-210,-310),new Vector2(650,34),17,TextAlignmentOptions.Left,new Color(.61f,.63f,.72f));
+        help.text="Default text: Settings / Gameplay / Draft Card Descriptions";
 
         gameplayFrame=MatchHudStyle.Rect(canvasRoot,"CHAOS Gameplay Safe Area",Vector2.zero,Vector2.one,Vector2.zero,Vector2.zero);
         gameplayFrame.gameObject.AddComponent<ResponsiveSafeArea>();
@@ -376,5 +493,13 @@ public sealed class AramBuffDraftView : MonoBehaviour
         rect.offsetMax = Vector2.zero;
     }
 
-    private readonly struct BuffCardView { }
+    private sealed class BuffCardView
+    {
+        public AramBuffDefinition Definition;
+        public TextMeshProUGUI Description, Hint, ReadingLabel;
+        public bool FullDescription;
+        public ScrollRect Scroll;
+        public Button Choose;
+        public AramBuffCardMotion Motion;
+    }
 }

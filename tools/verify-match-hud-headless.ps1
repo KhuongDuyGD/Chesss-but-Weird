@@ -10,6 +10,7 @@ New-Item -ItemType Directory -Force -Path "$auditRoot/Assets/Editor", "$auditRoo
 $uiFiles=@(
     'Gameplay/UI/AnalysisBoardView.cs','Gameplay/UI/MatchHudStyle.cs',
     'Gameplay/UI/ResponsiveSafeArea.cs','Gameplay/UI/MenuDesignFrame.cs',
+    'Gameplay/ARAM/AramBuffCardVisual.cs','Gameplay/ARAM/AramBuffCardMotion.cs',
     'Gameplay/ARAM/AramAbilityView.cs','Gameplay/ARAM/AramBuffDraftView.cs','Gameplay/ARAM/AramBuffDefinition.cs',
     'Profile/HandDrawnRoundedGraphic.cs','UI/AntialiasedUIGraphic.cs','UI/UIEdgeMesh.cs','Application/MatchStatistics.cs',
     'Core/ChessGame.Statistics.cs','Gameplay/UI/MatchHudTooltip.cs','UI/ChessFontCatalog.cs','Bot/StockfishDifficulty.cs',

@@ -136,6 +136,12 @@ public partial class ChessGame
         int? id = (int?)side?["buffId"];
         details = id.HasValue ? OnlineAramPresenter.BuffText(id.Value) : "The player is choosing a buff.";
         name = id.HasValue ? details.Split(':')[0] : "Choosing...";
+        var metadata = id.HasValue ? dotNetState.chaos["buffDefinitions"]?.FirstOrDefault(d => (int?)d["id"] == id) : null;
+        if (metadata != null)
+        {
+            name = (string)metadata["displayName"] ?? name;
+            details = (string)metadata["description"] ?? details;
+        }
         if (id.HasValue) details += $"\nOwner turns: {(int?)side["completedTurns"] ?? 0}; combat tickets: {(int?)side["tickets"] ?? 0}.";
         return true;
     }
