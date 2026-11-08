@@ -92,7 +92,7 @@ namespace ChessButWeird.Online
     { public int pieceId; public string square; }
     [Serializable, Preserve] public sealed class AbilityCommand
     {
-        public string kind, target; public int? buffId, pieceId, targetPieceId; public double? yaw, pitch;
+        public string kind, target, pieceKind; public int? buffId, pieceId, targetPieceId; public double? yaw, pitch;
         public List<int> pieceIds = new List<int>();
         public List<FormationPlacement> formation = new List<FormationPlacement>();
     }
