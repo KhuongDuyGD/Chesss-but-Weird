@@ -49,6 +49,7 @@ public sealed partial class ShopMenuController : MonoBehaviour
         if (initialized) return;
         EnsureAdditionalControls();
         initialized = true; gateway = service ?? new ShopService(); close = onClose; summon = onSummon; previewSession = isolatedPreview;
+        if (!previewSession) PlayerAuthService.WalletChanged += OnAuthoritativeWalletChanged;
         backButton.onClick.AddListener(Back);
         refreshButton.onClick.AddListener(() => { if (!busy) _ = RefreshAsync(); });
         previousButton.onClick.AddListener(() => { page--; Render(); });
@@ -77,6 +78,14 @@ public sealed partial class ShopMenuController : MonoBehaviour
         DismissConfirmation();
         if (!busy) _ = RefreshAsync();
     }
+
+    private void OnAuthoritativeWalletChanged(UserMeResponse user)
+    {
+        if (!this || previewSession || snapshot == null || snapshot.user?.userId != user?.userId || sessionGeneration != AuthStorage.SessionVersion) return;
+        snapshot.user = user;
+        if (isActiveAndEnabled) Render();
+    }
+    private void OnDestroy() => PlayerAuthService.WalletChanged -= OnAuthoritativeWalletChanged;
 
     public async Task RefreshAsync()
     {

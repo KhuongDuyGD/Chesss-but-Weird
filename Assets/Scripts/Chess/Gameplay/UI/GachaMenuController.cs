@@ -66,6 +66,7 @@ public sealed partial class GachaMenuController : MonoBehaviour
     public void Initialize(RectTransform newRoot, UnityAction newBackToModeSelection)
     {
         root = newRoot;
+        PlayerAuthService.WalletChanged += OnAuthoritativeWalletChanged;
         backToModeSelection = newBackToModeSelection;
         LoadSprites();
         BuildContentRoot();
@@ -87,6 +88,13 @@ public sealed partial class GachaMenuController : MonoBehaviour
     private void OnEnable()
     {
         if (mainScreen) RefreshAll();
+    }
+
+    private void OnAuthoritativeWalletChanged(UserMeResponse user)
+    {
+        if (!this || user?.wallet == null || user.userId != PlayerAuthService.UserId || !PlayerAuthService.IsAuthenticated) return;
+        wallet = new GachaWalletResponse { golds = user.wallet.golds, diamonds = user.wallet.diamonds, tickets = user.wallet.tickets };
+        if (mainScreen && isActiveAndEnabled) RefreshAll();
     }
 
     private async void RefreshFromServer()
@@ -657,6 +665,7 @@ public sealed partial class GachaMenuController : MonoBehaviour
 
     private void OnDestroy()
     {
+        PlayerAuthService.WalletChanged -= OnAuthoritativeWalletChanged;
         for (int i = 0; i < runtimeSprites.Count; i++)
         {
             if (!runtimeSprites[i])

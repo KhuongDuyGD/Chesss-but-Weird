@@ -67,7 +67,7 @@ public sealed class MainMenuPresentation : MonoBehaviour
         InkDoodle(page, "Chessboard Pencil Underline", new Rect(1569, 879, 137, 19), MainMenuInkGraphic.Drawing.Underline, new Color(.36f, .48f, .70f, .35f), 2f);
 
         Label(page, "Friendly Footer", "Play well. Respect others. Stay weird.", new Rect(104, 987, 580, 39), 25, QuietInk);
-        Label(page, "Main Menu Version", "v" + Application.version, new Rect(1597, 987, 206, 39), 25, QuietInk, TextAlignmentOptions.Right);
+        Label(page, "Main Menu Version", CommunityContent.VersionLabel, new Rect(1530, 987, 273, 39), 25, QuietInk, TextAlignmentOptions.Right);
         BuildCredits(page);
         LinkNavigation();
         navigationRing = new[] { startButton, settingsButton, creditsButton, logoutButton };

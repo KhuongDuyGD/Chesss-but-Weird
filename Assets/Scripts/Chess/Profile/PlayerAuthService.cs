@@ -3,7 +3,10 @@ using UnityEngine;
 
 public static class PlayerAuthService
 {
+    public static event Action StateChanged;
+    public static event Action<UserMeResponse> WalletChanged;
     private const string GuestProfileKey = "guest.profile";
+    private static long profileSessionVersion = -1;
 
     public static PlayerProfile CurrentProfile { get; private set; }
     public static UserMeResponse CurrentApiUser { get; private set; }
@@ -20,6 +23,7 @@ public static class PlayerAuthService
         CurrentApiUser = null;
         IsGuestSession = false;
         AuthStorage.Clear();
+        StateChanged?.Invoke();
     }
 
     public static void BeginGuestSession()
@@ -31,6 +35,7 @@ public static class PlayerAuthService
         CurrentProfile.lastLoginAtUtc = DateTime.UtcNow.ToString("O");
         PlayerProfileStore.Reload();
         SaveGuestProfile();
+        StateChanged?.Invoke();
         Debug.Log($"[PlayerAuthService] Guest session started for '{CurrentDisplayName}'.");
     }
 
@@ -60,6 +65,8 @@ public static class PlayerAuthService
         if (user == null || string.IsNullOrWhiteSpace(user.userId))
             throw new ApiException("The account profile is incomplete.");
 
+        bool changedAccount = IsGuestSession || CurrentApiUser == null || CurrentApiUser.userId != user.userId || profileSessionVersion != AuthStorage.SessionVersion;
+        profileSessionVersion = AuthStorage.SessionVersion;
         ClearGuestSessionInternal(false);
         IsGuestSession = false;
         CurrentApiUser = user;
@@ -81,6 +88,8 @@ public static class PlayerAuthService
         };
         PlayerProfileStore.Reload();
         PlayerProfileStore.ApplyServerSnapshot(user);
+        WalletChanged?.Invoke(user);
+        if (changedAccount) StateChanged?.Invoke();
     }
     public static void RecordHotseatResult(string mode, string result, string detail, string matchId)
     {
