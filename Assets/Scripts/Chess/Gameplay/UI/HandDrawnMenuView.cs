@@ -12,7 +12,7 @@ using UnityEngine.InputSystem.UI;
 using UnityEngine.UI;
 using UI = SketchbookUI;
 
-public class HandDrawnMenuView : MonoBehaviour
+public partial class HandDrawnMenuView : MonoBehaviour
 {
     private const float ReferenceWidth = 1920f;
     private const float ReferenceHeight = 1080f;
@@ -70,6 +70,7 @@ public class HandDrawnMenuView : MonoBehaviour
 
         EnsureEventSystem();
         BuildCanvas();
+        BuildCommunityScreen();
         BuildMainScreen();
         BuildModeScreen();
         BuildPlaySelectionScreen();
@@ -97,6 +98,7 @@ public class HandDrawnMenuView : MonoBehaviour
 
     public void ShowModeSelection()
     {
+        communityController?.RefreshMailbox();
         GameMusicManager.PlayMainMenuHubMusic();
         SetVisible(true);
         SetInputEnabled(true);
@@ -227,7 +229,8 @@ public class HandDrawnMenuView : MonoBehaviour
     private void BuildMainScreen()
     {
         mainScreen = CreateScreen("Main Menu");
-        mainScreen.gameObject.AddComponent<MainMenuPresentation>().Build(
+        var presentation = mainScreen.gameObject.AddComponent<MainMenuPresentation>();
+        presentation.Build(
             assets.mainMenuLogoOriginal,
             () => chessGame.OpenTurnSelection(), ShowSettingsMenu, () => owner.LogoutToAuthentication());
     }
@@ -288,10 +291,14 @@ public class HandDrawnMenuView : MonoBehaviour
                 Gacha = CreateAuthenticatedAction("Gacha", ShowGachaMenu),
                 Profile = CreateAuthenticatedAction("Player Profile", ShowProfileMenu),
                 Settings = ShowSettingsMenu,
+                Mailbox = () => ShowCommunity(true),
+                News = () => ShowCommunity(false),
                 Back = () => owner.ShowMainMenu(),
                 Logout = () => owner.LogoutToAuthentication()
             });
         modeLogoutButton = modePresentation.LogoutButton;
+        communityController.BindEntry(modePresentation.MailboxButton, true);
+        communityController.BindEntry(modePresentation.NewsButton, false);
     }
 
     private void BuildInventoryScreen()
@@ -882,7 +889,8 @@ public class HandDrawnMenuView : MonoBehaviour
         CanvasGroup activeGroup = GetOrAddCanvasGroup(activeScreen);
         bool forward = GetScreenOrder(activeScreen) >= GetScreenOrder(previousScreen);
         float direction = forward ? 1f : -1f;
-        float halfDuration = ScreenTransitionDuration * 0.5f;
+        float halfDuration = UserSettings.Presentation.ReducedMotion ? 0f :
+            (activeScreen == communityScreen || previousScreen == communityScreen ? 0.12f : ScreenTransitionDuration * 0.5f);
 
         previousScreen.gameObject.SetActive(true);
         activeScreen.gameObject.SetActive(true);
@@ -958,6 +966,7 @@ public class HandDrawnMenuView : MonoBehaviour
 
     private void SetAllScreensActive(bool active)
     {
+        if (communityScreen) communityScreen.gameObject.SetActive(active);
         if (mainScreen)
             mainScreen.gameObject.SetActive(active);
         if (modeScreen)
@@ -986,7 +995,7 @@ public class HandDrawnMenuView : MonoBehaviour
 
     private RectTransform[] GetMenuScreens()
     {
-        return new[] { mainScreen, modeScreen, playScreen, inventoryScreen, shopScreen, localModeScreen, aramModeScreen, multiplayerModeScreen, gachaScreen, botDifficultyScreen, sideScreen, skinScreen };
+        return new[] { mainScreen, modeScreen, playScreen, communityScreen, inventoryScreen, shopScreen, localModeScreen, aramModeScreen, multiplayerModeScreen, gachaScreen, botDifficultyScreen, sideScreen, skinScreen };
     }
 
     private void ResetInactiveTransitionScreens(RectTransform previousScreen, RectTransform activeScreen)
@@ -1206,6 +1215,7 @@ public class HandDrawnMenuView : MonoBehaviour
 
     private void OnDestroy()
     {
+        if (communityController) communityController.Dispose();
         for (int i = 0; i < runtimeSprites.Count; i++)
             if (runtimeSprites[i])
                 Destroy(runtimeSprites[i]);

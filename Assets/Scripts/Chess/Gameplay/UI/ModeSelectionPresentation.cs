@@ -11,7 +11,7 @@ public sealed class ModeSelectionPresentation : MonoBehaviour
 {
     public sealed class Actions
     {
-        public UnityAction Play, Local, Online, Aram, Shop, Inventory, Gacha, Profile, Settings, Back, Logout;
+        public UnityAction Play, Local, Online, Aram, Shop, Inventory, Gacha, Profile, Settings, Back, Logout, Mailbox, News;
     }
 
     private static readonly Color Ink = new Color(.15f, .145f, .17f);
@@ -22,6 +22,8 @@ public sealed class ModeSelectionPresentation : MonoBehaviour
     private GameObject selectionBeforeOverlay;
 
     public Button LogoutButton => logout;
+    public Button MailboxButton { get; private set; }
+    public Button NewsButton { get; private set; }
 
     public void Build(Sprite logo, Actions actions)
     {
@@ -39,9 +41,11 @@ public sealed class ModeSelectionPresentation : MonoBehaviour
         Label(page, "Mode Hub Title", "YOUR NEXT MOVE", new Rect(537, 69, 935, 114), 66, Ink).characterSpacing = 2f;
         Label(page, "Mode Hub Welcome", "Play a little. Get weird a lot.", new Rect(539, 186, 852, 48), 31, QuietInk);
 
-        Label(page, "Modes Section", "MAKE YOUR MOVE", new Rect(124, 278, 1500, 43), 30, Ink);
+        Label(page, "Modes Section", "MAKE YOUR MOVE", new Rect(124, 278, 850, 43), 30, Ink);
         var content = UI.Node(page, "Mode Hub Controls", new Rect(0, 0, 1920, 1080));
         controls = content.gameObject.AddComponent<CanvasGroup>();
+        MailboxButton = UI.Button(content, "Mailbox", "MAILBOX", new Rect(1038, 260, 360, 63), UI.Blue, actions.Mailbox, 25);
+        NewsButton = UI.Button(content, "News", "NEWS", new Rect(1440, 260, 360, 63), UI.Pink, actions.News, 25);
         local = ModeCard(content, "Play", "PLAY", "Pick your next battle", "PVE · CHAOS · CLASSIC", new Rect(120, 350, 536, 485),
             UI.Yellow, ModeMenuDoodleGraphic.Drawing.Local, actions.Play ?? actions.Local);
         gacha = ModeCard(content, "Gacha", "GACHA", "Unbox something strange", "Discover your next favourite.", new Rect(692, 350, 536, 485),
@@ -60,12 +64,16 @@ public sealed class ModeSelectionPresentation : MonoBehaviour
         logout = ButtonFace(content, "Logout", new Rect(1644, 57, 164, 47), new Color(.97f, .954f, .914f), actions.Logout, false);
         Label(logout.transform, "Logout Label", "LOG OUT", new Rect(8, 3, 148, 40), 23, Ink, TextAlignmentOptions.Center).fontStyle = FontStyles.Bold;
         Label(page, "Mode Hub Footer", "Play well. Respect others. Stay weird.", new Rect(361, 985, 897, 42), 26, QuietInk);
-        Label(page, "Mode Hub Version", "v" + Application.version, new Rect(1597, 987, 206, 39), 25, QuietInk, TextAlignmentOptions.Right);
+        Label(page, "Mode Hub Version", CommunityContent.VersionLabel, new Rect(1530, 987, 273, 39), 25, QuietInk, TextAlignmentOptions.Right);
 
         music = page.gameObject.AddComponent<MenuMusicWidget>().Build(page, content, this);
 
         LinkNavigation();
-        navigationRing = new[] { local, gacha, inventory, profile, settings, shop, back, logout, music };
+        navigationRing = new[] { local, gacha, inventory, profile, settings, shop, MailboxButton, NewsButton, back, logout, music };
+        Nav(MailboxButton, logout, NewsButton, gacha, music);
+        Nav(NewsButton, MailboxButton, inventory, gacha, null);
+        Nav(inventory, NewsButton, shop, gacha, null);
+        Nav(logout, null, MailboxButton, gacha, music);
     }
 
     private static Button ModeCard(Transform parent, string name, string title, string description, string note,
