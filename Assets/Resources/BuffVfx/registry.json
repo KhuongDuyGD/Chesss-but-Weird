@@ -1,0 +1,529 @@
+{
+  "recipes": [
+    {
+      "duration": 1.1,
+      "glyph": "commander",
+      "id": 0,
+      "color": {
+        "g": 0.7,
+        "b": 0.41,
+        "r": 0.85,
+        "a": 1
+      },
+      "group": 8,
+      "implemented": true,
+      "key": "CommandantPawn",
+      "prop": null
+    },
+    {
+      "duration": 1.1,
+      "glyph": "fortress",
+      "id": 1,
+      "color": {
+        "g": 0.7,
+        "b": 0.41,
+        "r": 0.85,
+        "a": 1
+      },
+      "group": 8,
+      "implemented": true,
+      "key": "StrongFortress",
+      "prop": null
+    },
+    {
+      "duration": 1.1,
+      "glyph": "leap",
+      "id": 2,
+      "color": {
+        "g": 0.7,
+        "b": 0.41,
+        "r": 0.85,
+        "a": 1
+      },
+      "group": 8,
+      "implemented": true,
+      "key": "FreestyleLeap",
+      "prop": null
+    },
+    {
+      "duration": 1.1,
+      "glyph": "swap",
+      "id": 3,
+      "color": {
+        "g": 0.7,
+        "b": 0.41,
+        "r": 0.85,
+        "a": 1
+      },
+      "group": 8,
+      "implemented": true,
+      "key": "Doppelganger",
+      "prop": null
+    },
+    {
+      "duration": 1.1,
+      "glyph": "bomb",
+      "id": 4,
+      "color": {
+        "g": 0.64,
+        "b": 0.25,
+        "r": 1,
+        "a": 1
+      },
+      "group": 4,
+      "implemented": true,
+      "key": "SuicideBomber",
+      "prop": null
+    },
+    {
+      "duration": 1.1,
+      "glyph": "lightning",
+      "id": 5,
+      "color": {
+        "g": 0.79,
+        "b": 0.9,
+        "r": 0.46,
+        "a": 1
+      },
+      "group": 5,
+      "implemented": true,
+      "key": "FlyingThunderGod",
+      "prop": null
+    },
+    {
+      "duration": 1.1,
+      "glyph": "fang",
+      "id": 6,
+      "color": {
+        "g": 0.23,
+        "b": 0.31,
+        "r": 0.77,
+        "a": 1
+      },
+      "group": 4,
+      "implemented": true,
+      "key": "NobleSacrifice",
+      "prop": null
+    },
+    {
+      "duration": 1.1,
+      "glyph": "reticle",
+      "id": 7,
+      "color": {
+        "g": 0.84,
+        "b": 0.83,
+        "r": 0.43,
+        "a": 1
+      },
+      "group": 4,
+      "implemented": true,
+      "key": "AbsoluteSniper",
+      "prop": "Sniper"
+    },
+    {
+      "duration": 1.1,
+      "glyph": "leap",
+      "id": 8,
+      "color": {
+        "g": 0.7,
+        "b": 0.41,
+        "r": 0.85,
+        "a": 1
+      },
+      "group": 8,
+      "implemented": true,
+      "key": "GamblingLeadsToMisery",
+      "prop": null
+    },
+    {
+      "duration": 1.1,
+      "glyph": "crown",
+      "id": 9,
+      "color": {
+        "g": 0.65,
+        "b": 0.22,
+        "r": 0.96,
+        "a": 1
+      },
+      "group": 6,
+      "implemented": true,
+      "key": "LootBox",
+      "prop": null
+    },
+    {
+      "duration": 1.1,
+      "glyph": "peace",
+      "id": 10,
+      "color": {
+        "g": 0.7,
+        "b": 0.41,
+        "r": 0.85,
+        "a": 1
+      },
+      "group": 8,
+      "implemented": true,
+      "key": "PeaceTShirt",
+      "prop": null
+    },
+    {
+      "duration": 1.1,
+      "glyph": "bomb",
+      "id": 11,
+      "color": {
+        "g": 0.65,
+        "b": 0.22,
+        "r": 0.96,
+        "a": 1
+      },
+      "group": 6,
+      "implemented": true,
+      "key": "RiseOfPawn",
+      "prop": null
+    },
+    {
+      "duration": 1.1,
+      "glyph": "passenger",
+      "id": 12,
+      "color": {
+        "g": 0.7,
+        "b": 0.41,
+        "r": 0.85,
+        "a": 1
+      },
+      "group": 7,
+      "implemented": true,
+      "key": "MobileFortress",
+      "prop": null
+    },
+    {
+      "duration": 1.1,
+      "glyph": "swap",
+      "id": 13,
+      "color": {
+        "g": 0.79,
+        "b": 0.9,
+        "r": 0.46,
+        "a": 1
+      },
+      "group": 5,
+      "implemented": true,
+      "key": "HidingKing",
+      "prop": null
+    },
+    {
+      "duration": 1.1,
+      "glyph": "crown",
+      "id": 14,
+      "color": {
+        "g": 0.7,
+        "b": 0.41,
+        "r": 0.85,
+        "a": 1
+      },
+      "group": 7,
+      "implemented": true,
+      "key": "GachaBanner",
+      "prop": null
+    },
+    {
+      "duration": 1.1,
+      "glyph": "log",
+      "id": 15,
+      "color": {
+        "g": 0.79,
+        "b": 0.9,
+        "r": 0.46,
+        "a": 1
+      },
+      "group": 5,
+      "implemented": true,
+      "key": "SubstituteNinjutsu",
+      "prop": null
+    },
+    {
+      "duration": 1.1,
+      "glyph": "cannon",
+      "id": 16,
+      "color": {
+        "g": 0.67,
+        "b": 0.29,
+        "r": 0.92,
+        "a": 1
+      },
+      "group": 4,
+      "implemented": true,
+      "key": "HighTechEra",
+      "prop": "Cannon"
+    },
+    {
+      "duration": 1.1,
+      "glyph": "fracture",
+      "id": 17,
+      "color": {
+        "g": 0.49,
+        "b": 0.89,
+        "r": 0.76,
+        "a": 1
+      },
+      "group": 4,
+      "implemented": true,
+      "key": "QueensBetrayal",
+      "prop": null
+    },
+    {
+      "duration": 1.1,
+      "glyph": "fracture",
+      "id": 18,
+      "color": {
+        "g": 0.65,
+        "b": 0.22,
+        "r": 0.96,
+        "a": 1
+      },
+      "group": 6,
+      "implemented": true,
+      "key": "DefinitionOfAram",
+      "prop": null
+    },
+    {
+      "duration": 1.1,
+      "glyph": "unitPawn",
+      "id": 19,
+      "color": {
+        "g": 0.7,
+        "b": 0.41,
+        "r": 0.85,
+        "a": 1
+      },
+      "group": 7,
+      "implemented": true,
+      "key": "RngFiesta",
+      "prop": null
+    },
+    {
+      "duration": 1.1,
+      "glyph": "evade",
+      "id": 20,
+      "color": {
+        "g": 0.79,
+        "b": 0.9,
+        "r": 0.46,
+        "a": 1
+      },
+      "group": 5,
+      "implemented": true,
+      "key": "IFrameRoll",
+      "prop": null
+    },
+    {
+      "duration": 1.1,
+      "glyph": "ghost",
+      "id": 21,
+      "color": {
+        "g": 0.79,
+        "b": 0.9,
+        "r": 0.46,
+        "a": 1
+      },
+      "group": 5,
+      "implemented": true,
+      "key": "GhostArmy",
+      "prop": null
+    },
+    {
+      "duration": 1.1,
+      "glyph": "poison",
+      "id": 22,
+      "color": {
+        "g": 0.76,
+        "b": 0.32,
+        "r": 0.52,
+        "a": 1
+      },
+      "group": 6,
+      "implemented": true,
+      "key": "PlagueTown",
+      "prop": null
+    },
+    {
+      "duration": 1.1,
+      "glyph": "commander",
+      "id": 23,
+      "color": {
+        "g": 0.7,
+        "b": 0.41,
+        "r": 0.85,
+        "a": 1
+      },
+      "group": 8,
+      "implemented": true,
+      "key": "CustomizeArmy",
+      "prop": null
+    },
+    {
+      "duration": 1.1,
+      "glyph": "unitPawn",
+      "id": 24,
+      "color": {
+        "g": 0.7,
+        "b": 0.41,
+        "r": 0.85,
+        "a": 1
+      },
+      "group": 7,
+      "implemented": true,
+      "key": "PawnsRevolution",
+      "prop": null
+    },
+    {
+      "duration": 1.1,
+      "glyph": "crown",
+      "id": 25,
+      "color": {
+        "g": 0.85,
+        "b": 0.51,
+        "r": 0.96,
+        "a": 1
+      },
+      "group": 4,
+      "implemented": true,
+      "key": "OneManArmy",
+      "prop": "KingRifle"
+    },
+    {
+      "duration": 1.1,
+      "glyph": "crown",
+      "id": 26,
+      "color": {
+        "g": 0.7,
+        "b": 0.41,
+        "r": 0.85,
+        "a": 1
+      },
+      "group": 8,
+      "implemented": true,
+      "key": "EveryManForHimself",
+      "prop": null
+    },
+    {
+      "duration": 1.1,
+      "glyph": "fracture",
+      "id": 27,
+      "color": {
+        "g": 0.7,
+        "b": 0.41,
+        "r": 0.85,
+        "a": 1
+      },
+      "group": 7,
+      "implemented": true,
+      "key": "SacUrQueen",
+      "prop": null
+    },
+    {
+      "duration": 1.1,
+      "glyph": "fortress",
+      "id": 28,
+      "color": {
+        "g": 0.7,
+        "b": 0.41,
+        "r": 0.85,
+        "a": 1
+      },
+      "group": 8,
+      "implemented": true,
+      "key": "AutoCastling",
+      "prop": null
+    },
+    {
+      "duration": 1.1,
+      "glyph": "crown",
+      "id": 29,
+      "color": {
+        "g": 0.7,
+        "b": 0.41,
+        "r": 0.85,
+        "a": 1
+      },
+      "group": 7,
+      "implemented": true,
+      "key": "UltimateQuest",
+      "prop": null
+    },
+    {
+      "duration": 1.1,
+      "glyph": "truck",
+      "id": 30,
+      "color": {
+        "g": 0.79,
+        "b": 0.9,
+        "r": 0.46,
+        "a": 1
+      },
+      "group": 5,
+      "implemented": true,
+      "key": "MonsterTruck",
+      "prop": null
+    },
+    {
+      "duration": 1.1,
+      "glyph": "crown",
+      "id": 31,
+      "color": {
+        "g": 0.7,
+        "b": 0.41,
+        "r": 0.85,
+        "a": 1
+      },
+      "group": 7,
+      "implemented": true,
+      "key": "CreditCard",
+      "prop": null
+    },
+    {
+      "duration": 1.1,
+      "glyph": "hourglass",
+      "id": 32,
+      "color": {
+        "g": 0.7,
+        "b": 0.41,
+        "r": 0.85,
+        "a": 1
+      },
+      "group": 7,
+      "implemented": true,
+      "key": "KingIsPoorPiece",
+      "prop": null
+    },
+    {
+      "duration": 1.1,
+      "glyph": "lock",
+      "id": 33,
+      "color": {
+        "g": 0.7,
+        "b": 0.41,
+        "r": 0.85,
+        "a": 1
+      },
+      "group": 7,
+      "implemented": true,
+      "key": "DoubleEdgedTrap",
+      "prop": null
+    },
+    {
+      "duration": 1.1,
+      "glyph": "leap",
+      "id": 34,
+      "color": {
+        "g": 0.7,
+        "b": 0.41,
+        "r": 0.85,
+        "a": 1
+      },
+      "group": 7,
+      "implemented": true,
+      "key": "Paratrooper",
+      "prop": null
+    }
+  ]
+}

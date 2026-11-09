@@ -1,7 +1,30 @@
 {
   "schemaVersion": 1,
-  "currentVersion": "0.6.1",
+  "currentVersion": "0.7.0",
   "articles": [
+    {
+      "id": "NEWS_CHAOS_VFX_20261109",
+      "schemaVersion": 1,
+      "locale": "en-US",
+      "category": "Updates",
+      "version": "0.7.0",
+      "title": "Chaos gets a visual upgrade!",
+      "summary": "Distinct effects, clearer status icons and formation previews across all 35 Chaos buffs.",
+      "body": "Chaos buffs now have distinct status symbols, movement trails, transformation cues and deployment effects. Crown halos, parachutes and new prop art make each resolved action easier to follow.\n\nTrack quest milestones, recruitment readiness and the Kingless countdown in the match HUD. Preview your formation before confirming it, with clear legal landing markers for supported tactical powers. Reduced Motion and effect preferences remain available.\n\nThese changes are integrated for Practice and Multiplayer Chaos. Online availability depends on the updated server and game build.",
+      "artKey": "chaos",
+      "publishAtUtc": "2026-11-09T13:52:38Z",
+      "sourceCommitDateUtc": "2026-11-09T13:52:38Z",
+      "sourceUrl": "https://github.com/KhuongDuyGD/Chesss-but-Weird/commit/04a0b14cd3d54c6dfebb89913d702f2ce214969c",
+      "priority": 110,
+      "featured": true,
+      "pinned": true,
+      "targetBuild": null,
+      "expiresAtUtc": null,
+      "ctaTarget": null,
+      "editorialStatus": "Published",
+      "rightsClearanceRequired": false,
+      "rightsCleared": false
+    },
     {
       "id": "NEWS_KR_INSPIRED_20261107",
       "schemaVersion": 1,

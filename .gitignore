@@ -118,7 +118,6 @@ InitTestScene*.unity*
 # Auto-generated scenes by play mode tests
 /[Aa]ssets/[Ii]nit[Tt]est[Ss]cene*.unity*
 ProjectSettings/McpUnitySettings.json
-ProjectSettings/McpUnitySettings.json
 
 # Standalone shared-domain build and verification outputs
 /Tests/**/bin/
@@ -131,5 +130,3 @@ ProjectSettings/McpUnitySettings.json
 /CinematicProof/
 *.slnx
 Assets/Fonts/Schoolbell/Schoolbell TMP.asset
-ProjectSettings/McpUnitySettings.json
-ProjectSettings/McpUnitySettings.json

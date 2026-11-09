@@ -54,6 +54,7 @@ public sealed partial class AramBuffRuntime
 
     private void ResetExtendedState()
     {
+        ResetVisuals();
         ExitRifle(false);
         ResetDocumentState();
         Array.Clear(disguisedBuff,0,2); foreach(var display in displayBuffs) display.Clear();
@@ -65,7 +66,7 @@ public sealed partial class AramBuffRuntime
         bloodthirsty.Clear(); cannonTurns.Clear(); sniperUntil.Clear(); infectedUntil.Clear();
         passengers.Clear(); decoys.Clear(); mines.Clear(); crates.Clear(); decisions.Clear(); lootRounds.Clear();
         foreach(var marker in boardMarkers) if(marker) Destroy(marker);
-        boardMarkers.Clear(); formation.Clear(); customizing=false; targetAction=null; targetCancel=null;
+        boardMarkers.Clear(); formation.Clear(); formationDraft.Clear();customizing=false; targetAction=null; targetCancel=null;
         forcedPawn=null; unstableQueens.Clear(); collapsedFiles=0; initializedEffects=false; actionMessage="";
         if(abilityView) abilityView.SetVisible(false);
     }
@@ -115,7 +116,7 @@ public sealed partial class AramBuffRuntime
 
     private void OnApplicationFocus(bool focused)
     {if(rifleCamera)SetRifleCursorSuspended(!focused||(game&&game.PauseLocked));}
-    private void OnDisable(){ExitRifle(false);}
+    private void OnDisable(){ExitRifle(false);if(buffVfx)buffVfx.ClearVisuals();}
 
     private void OnDestroy()
     {
@@ -134,6 +135,7 @@ public sealed partial class AramBuffRuntime
 
     private void ApplyTeamInitialEffects(PieceTeam team)
     {
+        var visualBefore=CaptureVisualArmy(team);
         var army=game.GetActivePiecesForAram(team);
         if(army.Count>0)homeRanks[Side(team)]=army[0].ForwardDirection<0?7:0;
         if(HasBuff(team,AramBuffId.PawnsRevolution) || HasBuff(team,AramBuffId.OneManArmy))
@@ -155,6 +157,7 @@ public sealed partial class AramBuffRuntime
         if(HasBuff(team,AramBuffId.CustomizeArmy)) decisions.Enqueue(()=>StartFormation(team));
         swapReady[Side(team)]=AramBalanceRules.DoppelgangerCooldown;
         ApplyDocumentInitialEffects(team);
+        foreach(int id in new[]{19,24,28,32})if(HasBuff(team,(AramBuffId)id))VisualArmy(id,team,visualBefore,"Initialized");
     }
 
     private List<Vector2Int> EmptySquares(PieceTeam? team=null,int ranks=4)
@@ -185,21 +188,27 @@ public sealed partial class AramBuffRuntime
     {
         if(!active)return;
         ObserveCheckConditions();
+        RecordTraversalVisual(moving,from,to);
         grantExtraTurn=false;
         int side=Side(moving.Team);
         if(cannonTurns.ContainsKey(moving) && captured && !MovementRules.IsPathClear(new UnityBoardAdapter(game.AramBoard),UnityBoardAdapter.ToSquare(from),UnityBoardAdapter.ToSquare(to)))
+        {
             cannonTurns[moving]=AramBalanceRules.ExpiryAfterCapture(combinedPlies,AramBalanceRules.CannonLifetime);
+            Visual(AramBuffId.HighTechEra,moving,from,to);
+        }
         if(!captured)return;
         OnPieceRemoved(captured);
         if(captured.Team==moving.Team)
         {
-            if(moving.Type==PieceType.Pawn && HasBuff(moving.Team,AramBuffId.NobleSacrifice)) bloodthirsty.Add(moving);
+            if(moving.Type==PieceType.Pawn && HasBuff(moving.Team,AramBuffId.NobleSacrifice))
+            {bloodthirsty.Add(moving);Visual(AramBuffId.NobleSacrifice,moving,from,to);}
             return;
         }
-        if((moving.Type!=PieceType.King||decoys.Contains(moving))&&HasBuff(captured.Team,AramBuffId.PlagueTown))infectedUntil[moving]=AramBalanceRules.ExpiryAfterCapture(combinedPlies,AramBalanceRules.PlagueLifetime);
+        if((moving.Type!=PieceType.King||decoys.Contains(moving))&&HasBuff(captured.Team,AramBuffId.PlagueTown))
+        {infectedUntil[moving]=AramBalanceRules.ExpiryAfterCapture(combinedPlies,AramBalanceRules.PlagueLifetime);Visual(AramBuffId.PlagueTown,moving,from,to,"Infect");}
         CaptureReward(moving.Team,captured);
         if(moving.Type!=PieceType.King&&moving.Type==captured.Type&&HasBuff(moving.Team,AramBuffId.EveryManForHimself))questCaptures[side].Add(moving.Type);
-        if(moving.Type!=PieceType.Queen&&captured.Type==PieceType.Queen&&HasBuff(moving.Team,AramBuffId.UltimateQuest))queenMastery.Add(moving);
+        if(moving.Type!=PieceType.Queen&&captured.Type==PieceType.Queen&&HasBuff(moving.Team,AramBuffId.UltimateQuest)){queenMastery.Add(moving);VisualDetails(29,moving.Team,game.AramTile(from),game.AramTile(to),"Mastery",new[]{new ChessButWeird.BuffVfx.BuffVisualChange{ActorId=moving.GetInstanceID(),Actor=moving.transform,Team=moving.Team,From=game.AramTile(from),To=game.AramTile(to),FromKind=moving.Type.ToString(),ToKind=moving.Type.ToString()}},actor:moving);}
         if(moving.Type==PieceType.Pawn && HasBuff(moving.Team,AramBuffId.GamblingLeadsToMisery) && extraUses[side]<AramBalanceRules.GamblingMaximumUses && UnityEngine.Random.value<AramBalanceRules.GamblingChance)
         { grantExtraTurn=true; }
         if(moving.Type==PieceType.Bishop && HasBuff(moving.Team,AramBuffId.AbsoluteSniper) && captured.Type!=PieceType.Pawn &&
@@ -211,10 +220,10 @@ public sealed partial class AramBuffRuntime
         PieceTeam team=moving.Team;
         if(!active)return team==PieceTeam.White?PieceTeam.Black:PieceTeam.White;
         if(decoys.Contains(moving) && captured && captured.Team!=team)
-        { var original=moving;decoys.Remove(moving);moving=game.AramReplace(moving,captured.Type,team);TransferInfection(original,moving); }
+        { var original=moving;VisualDecoyEnd(moving);decoys.Remove(moving);moving=game.AramReplace(moving,captured.Type,team);TransferInfection(original,moving); }
         if(Live(moving) && moving.Type==PieceType.Pawn && HasBuff(team,AramBuffId.RiseOfPawn) && to.y==Home(team) && to.y-from.y==-moving.ForwardDirection)
-        { game.AramRemove(moving,false); mines[to]=team; RefreshBoardMarkers(); }
-        if(Live(moving)&&BlocksPromotion(moving)&&to.y==(Home(team)==0?7:0))trapPawns.Add(moving);
+        { game.AramRemove(moving,false); mines[to]=team; RefreshBoardMarkers();VisualTile(11,to,team,"Arm"); }
+        if(Live(moving)&&BlocksPromotion(moving)&&to.y==(Home(team)==0?7:0)&&trapPawns.Add(moving))VisualResult(33,moving,from,"Transformed",moving.Type.ToString());
         ResolveLanding(moving,to);
         if(grantExtraTurn && Live(moving) && moving.Type==PieceType.Pawn && to.y!=(Home(team)==0?7:0))
         {
@@ -222,7 +231,7 @@ public sealed partial class AramBuffRuntime
             if(game.AramHasMove(moving))
             {
                 AdvanceCombinedPly();
-                if(Live(forcedPawn)){extraUses[Side(team)]++;Say("Extra turn: move the same Pawn again.");return team;}
+                if(Live(forcedPawn)){extraUses[Side(team)]++;VisualResult(8,moving,from,"ExtraMove",moving.Type.ToString(),1);Say("Extra turn: move the same Pawn again.");return team;}
                 forcedPawn=null;CompleteOwnerTurn(team);CheckCollapse();return team==PieceTeam.White?PieceTeam.Black:PieceTeam.White;
             }
         }
@@ -240,10 +249,10 @@ public sealed partial class AramBuffRuntime
     {
         if(!Live(moving))return;
         if(mines.TryGetValue(to,out var mineTeam) && mineTeam!=moving.Team)
-        { mines.Remove(to); game.AramRemove(moving); Say("A mine detonated."); RefreshBoardMarkers(); return; }
+        { mines.Remove(to);VisualTile(11,to,mineTeam,"Trigger"); game.AramRemove(moving); Say("A mine detonated."); RefreshBoardMarkers(); return; }
         if(crates.TryGetValue(to,out var crate))
         {
-            crates.Remove(to); RefreshBoardMarkers();
+            crates.Remove(to);VisualTile(9,to,crate.Team,crate.Team==moving.Team?"Claim":"Destroyed"); RefreshBoardMarkers();
             if(crate.Team==moving.Team) QueueDeployment(crate.Team,crate.Kind,null);
             else Say("Enemy supply crate destroyed.");
         }
@@ -252,6 +261,7 @@ public sealed partial class AramBuffRuntime
     public void OnPieceRemoved(ChessPiece piece)
     {
         if(!piece)return;
+        if(decoys.Contains(piece))VisualDecoyEnd(piece);
         if(passengers.TryGetValue(piece,out var team))
         {
             var traits=passengerTraits[piece];passengers.Remove(piece);passengerTraits.Remove(piece);passengerReady.Remove(piece);
@@ -273,6 +283,7 @@ public sealed partial class AramBuffRuntime
                 {
                     game.AramRelocate(king,Pick(safe));var decoy=game.AramSpawn(PieceType.King,team,original);
                     if(decoy){decoy.gameObject.AddComponent<AramDecoyTag>();decoys.Add(decoy);AddMarker(decoy,GetState(team).GetBuff(AramBuffId.SubstituteNinjutsu),"");}
+                    Visual(AramBuffId.SubstituteNinjutsu,king,original,king.BoardPosition,"Substitute");
                     Say("Substitute Ninjutsu activated.");
                 }
                 else Say("Substitute Ninjutsu: no safe destination.");
@@ -281,7 +292,7 @@ public sealed partial class AramBuffRuntime
         EnsureActionView();
     }
 
-    private void QueueDeployment(PieceTeam team,PieceType kind,Vector2Int? center,int ranks=4,PassengerTraits? traits=null)
+    private void QueueDeployment(PieceTeam team,PieceType kind,Vector2Int? center,int ranks=4,PassengerTraits? traits=null,Vector2Int? visualFrom=null,int visualBuff=-1)
     {
         decisions.Enqueue(()=>
         {
@@ -293,8 +304,10 @@ public sealed partial class AramBuffRuntime
             {
                 if(!allowed.Contains(p)||At(p)||!game.AramCanPlace(DeploymentKind(kind,team,p),team,p))return false;
                 var type=DeploymentKind(kind,team,p);
-                if(traits.HasValue)RestorePassenger(team,type,p,traits.Value);
-                else{var spawned=game.AramSpawn(type,team,p,true);if(kind==PieceType.Pawn&&type!=PieceType.Pawn)PawnPromoted(null,spawned);}
+                if(traits.HasValue)RestorePassenger(team,type,p,traits.Value,center??p,true);
+                else{var spawned=game.AramSpawn(type,team,p,true);if(kind==PieceType.Pawn&&type!=PieceType.Pawn)PawnPromoted(null,spawned);
+                    if(visualFrom.HasValue)Visual(AramBuffId.QueensBetrayal,spawned,visualFrom.Value,p,"Transferred");
+                    if(visualBuff>=0)VisualResult(visualBuff,spawned,p,"QuestReward");}
                 return true;
             },false);game.AramHighlight(allowed);
         });
@@ -323,7 +336,7 @@ public sealed partial class AramBuffRuntime
             if(processed&&decisions.Count==0&&!customizing){game.AramInitializeDrawTracking();game.AramRefreshPosition();}
             return HasPendingDecision;
         }
-        if(Keyboard.current!=null && Keyboard.current.escapeKey.wasPressedThisFrame) {CancelTarget();return true;}
+        if(Keyboard.current!=null && Keyboard.current.escapeKey.wasPressedThisFrame) {if(customizing)ResetFormationPreview();else CancelTarget();return true;}
         if(Mouse.current==null||!Mouse.current.leftButton.wasPressedThisFrame || (EventSystem.current && EventSystem.current.IsPointerOverGameObject()))return true;
         if(game.AramReadPointer(out var square))
         {
@@ -363,7 +376,7 @@ public sealed partial class AramBuffRuntime
         actions.Clear();
         if(!active||!game||!game.GameStarted||game.GameOver)return;
         if(rifleCamera){actions.Add(new AramAbilityView.AbilityAction("Exit rifle",()=>ExitRifle(false)));return;}
-        if(customizing){actions.Add(new AramAbilityView.AbilityAction("Confirm formation",FinishFormation));return;}
+        if(customizing){actions.Add(new AramAbilityView.AbilityAction("Confirm formation",FinishFormation));actions.Add(new AramAbilityView.AbilityAction("Reset preview",ResetFormationPreview));return;}
         if(targetAction!=null){if(targetCancel!=null)actions.Add(new AramAbilityView.AbilityAction("Cancel",CancelTarget));return;}
         if(decisions.Count>0||IsSelectingSetupTargets||game.InputLocked||game.PauseLocked||game.HasPendingPromotion||Live(forcedPawn))return;
         if(game.IsBotGame&&game.CurrentTurn!=game.PlayerTeam)return;
@@ -401,7 +414,7 @@ public sealed partial class AramBuffRuntime
         if(empty.Count==0){Say("No drop can keep both Kings safe; ticket retained.");return;}
         var square=Pick(empty); var piece=game.AramSpawn(kind,team,square,true);
         if(!piece)return;
-        tickets[side]--;rollsThisTurn[side]++;Say($"Gacha deployed a {kind}.");ResolveLanding(piece,square);game.AramRefreshPosition();
+        tickets[side]--;rollsThisTurn[side]++;VisualResult(14,piece,square,"Summoned");Say($"Gacha deployed a {kind}.");ResolveLanding(piece,square);game.AramRefreshPosition();
     }
 
     private void ToggleSwap(PieceTeam team)
@@ -410,7 +423,7 @@ public sealed partial class AramBuffRuntime
         if(!Live(state.SwappedKnight)||!Live(state.SwappedBishop)){Say("Both selected pieces must survive to swap.");return;}
         swapActive[side]=!swapActive[side];
         if(game.AramInCheck(team)){swapActive[side]=!swapActive[side];Say("This swap would leave your King in check.");return;}
-        swapReady[side]=combinedPlies+AramBalanceRules.DoppelgangerCooldown;game.ClearSelection();Say("Both movement sets swapped.");game.AramRefreshPosition();
+        swapReady[side]=combinedPlies+AramBalanceRules.DoppelgangerCooldown;VisualPair(team,swapActive[side]?"Exchanged":"Restored");game.ClearSelection();Say("Both movement sets swapped.");game.AramRefreshPosition();
     }
 
     private void HideKing(PieceTeam team,bool initial=false)
@@ -418,8 +431,9 @@ public sealed partial class AramBuffRuntime
         var king=game.AramKing(team);if(!king||(!initial&&king.BoardPosition.y!=Home(team))){Say("King must be on the back rank.");return;}
         Choose($"{team}: choose an ally on your back rank to swap with the King.",p=>
         {
+            var from=king.BoardPosition;
             var piece=At(p);if(!piece||piece==king||piece.Team!=team||p.y!=Home(team)||!game.AramRelocate(king,p,!initial,true))return false;
-            hidingReady[Side(team)]=combinedPlies+AramBalanceRules.HidingKingCooldown;return true;
+            hidingReady[Side(team)]=combinedPlies+AramBalanceRules.HidingKingCooldown;Visual(AramBuffId.HidingKing,king,from,p,"Swap");return true;
         },!initial);
     }
 
@@ -434,6 +448,7 @@ public sealed partial class AramBuffRuntime
                 if(!game.AramSafeRemoval(pawn,team))return false;
                 var traits=new PassengerTraits(bloodthirsty.Contains(pawn),GetState(team).CommandantPawns.Contains(pawn),queenMastery.Contains(pawn),trapPawns.Contains(pawn));
                 game.AramRemove(pawn,false);passengers[rook]=team;passengerTraits[rook]=traits;passengerReady[rook]=completedTurns[Side(team)]+1;
+                VisualDetails(12,team,game.AramTile(q),game.AramTile(rook.BoardPosition),"Embarked",new[]{new ChessButWeird.BuffVfx.BuffVisualChange{ActorId=pawn.GetInstanceID(),Team=team,From=game.AramTile(q),To=game.AramTile(rook.BoardPosition),FromKind="Pawn",ToKind=null}});
                 AddMarker(rook,GetState(team).GetBuff(AramBuffId.MobileFortress),"");return true;
             });return true;
         });
@@ -450,7 +465,7 @@ public sealed partial class AramBuffRuntime
                 var occupant=At(q);if(!Live(enemy)||!SquareAvailable(q)||!InHome(q,team,3)||(occupant&&(!full||occupant.Type!=PieceType.Pawn)))return false;
                 if(!game.AramCanPlace(enemy.Type,team,q,false,enemy))return false;
                 var kind=enemy.Type;if(occupant&&occupant!=enemy)game.AramRemove(occupant);
-                game.AramRemove(enemy,false);game.AramSpawn(kind,team,q,true);peaceUsed[Side(team)]=true;return true;
+                var origin=enemy.BoardPosition;game.AramRemove(enemy,false);var recruited=game.AramSpawn(kind,team,q,true);peaceUsed[Side(team)]=true;VisualResult(10,recruited,origin,"Recruited");return true;
             });return true;
         });
     }
@@ -469,6 +484,7 @@ public sealed partial class AramBuffRuntime
         if(!IsSniperAttack(bishop,destination)||game.CurrentTurn!=bishop.Team||game.InputLocked||game.PauseLocked||
             game.HasPendingPromotion||HasPendingDecision||!CanMove(bishop,destination)||!game.AramSafeSnipe(At(destination),bishop.Team))return false;
         var enemy=At(destination);var team=bishop.Team;var from=bishop.BoardPosition;
+        Visual(AramBuffId.AbsoluteSniper,bishop,from,destination);
         game.AramAbilityCapture(team,enemy,$"Bishop on {from} sniped {enemy.Type} on {destination}",true);
         BeforeNormalMove(bishop,enemy,from,destination);
         sniperUntil.Remove(bishop);RemoveMarker(bishop);game.AramRemove(enemy,false);
@@ -491,7 +507,7 @@ public sealed partial class AramBuffRuntime
         squares.RemoveAll(p=>Mathf.Abs(p.x-from.x)>2||Mathf.Abs(p.y-from.y)>2||!game.AramSafeDestination(king,p));
         if(squares.Count==0)return false;
         Choose("I-Frame Roll: choose a safe square within two squares of your King.",p=>
-        {if(!squares.Contains(p)||!game.AramRelocate(king,p))return false;escapeUses[Side(team)]++;return true;},false);
+        {if(!squares.Contains(p)||!game.AramRelocate(king,p))return false;escapeUses[Side(team)]++;Visual(AramBuffId.IFrameRoll,king,from,p,"Escape");return true;},false);
         game.AramHighlight(squares);return true;
     }
 
@@ -499,24 +515,27 @@ public sealed partial class AramBuffRuntime
     {
         customizing=true;formationTeam=team;formationDeadline=Time.unscaledTime+120f;formationPiece=null;formation.Clear();
         foreach(var p in game.GetActivePiecesForAram(team))formation[p]=p.BoardPosition;
+        ResetFormationPreview();
         Choose($"{team}: select a piece, then a square in your half. You have 120 seconds.",p=>
         {
-            var piece=At(p);
-            if(!formationPiece){if(piece&&piece.Team==team)formationPiece=piece;return false;}
-            if(!InHome(p,team)||!SquareAvailable(p))return false;
-            if(game.AramRelocate(formationPiece,p,false,true,false))formationPiece=null;
-            else if(piece&&piece.Team==team)formationPiece=piece;
-            return false;
+            ChessPiece occupant=null;foreach(var pair in formationDraft)if(pair.Value==p){occupant=pair.Key;break;}
+            if(!formationPiece){if(occupant)formationPiece=occupant;RefreshInteractionVisuals();return false;}
+            if(!InHome(p,team)||!SquareAvailable(p)||At(p)&&At(p).Team!=team){Say("Choose an available square in your half.");return false;}
+            var origin=formationDraft[formationPiece];formationDraft[formationPiece]=p;if(occupant&&occupant!=formationPiece)formationDraft[occupant]=origin;
+            formationPiece=null;RefreshInteractionVisuals();return false;
         },false);
     }
 
     private void FinishFormation()
     {
         if(!customizing)return;
-        bool unchanged=true;foreach(var pair in formation)if(Live(pair.Key)&&pair.Key.BoardPosition!=pair.Value)unchanged=false;
+        var visualBefore=CaptureVisualArmy(formationTeam);
+        bool unchanged=true;foreach(var pair in formationDraft)if(Live(pair.Key)&&pair.Value!=formation[pair.Key])unchanged=false;
+        game.AramRestoreFormation(formationDraft);
         if(game.AramInCheck(formationTeam))
         { game.AramRestoreFormation(formation);unchanged=true;Say("Unsafe formation restored."); }
-        customizing=false;targetAction=null;targetCancel=null;formationPiece=null;formation.Clear();
+        VisualArmy(23,formationTeam,visualBefore,unchanged?"FormationRefunded":"FormationApplied");
+        customizing=false;targetAction=null;targetCancel=null;formationPiece=null;formation.Clear();formationDraft.Clear();buffVfx?.ClearPreview();
         if(unchanged)
         {
             var pool=GetBuffsByTier(draftPool,AramBuffTier.Gold);var replacement=Pick(pool);
@@ -531,6 +550,7 @@ public sealed partial class AramBuffRuntime
     private void RefreshBoardMarkers()
     {
         foreach(var marker in boardMarkers)if(marker)Destroy(marker);boardMarkers.Clear();
+        if(EnsureVisuals()){RefreshVisualBoard();return;}
         foreach(var pair in mines)MarkSquare(pair.Key,"MINE",new Color(.9f,.2f,.15f));
         foreach(var pair in crates)MarkSquare(pair.Key,pair.Value.Kind==PieceType.Rook?"ROOK CRATE":"QUEEN CRATE",new Color(1f,.8f,.1f));
         for(int x=0;x<8;x++)if(x<collapsedFiles||x>=8-collapsedFiles)for(int y=0;y<8;y++)MarkSquare(new Vector2Int(x,y),"VOID",new Color(.15f,.05f,.25f));

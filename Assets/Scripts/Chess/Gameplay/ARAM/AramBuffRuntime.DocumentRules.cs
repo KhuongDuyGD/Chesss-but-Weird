@@ -49,7 +49,7 @@ public sealed partial class AramBuffRuntime
         Choose($"{team}: choose a Rook, Bishop or Knight on the board as the type replacing your Queen.",p=>
         {
             var sample=At(p);if(!sample||sample.Team!=team||(sample.Type!=PieceType.Rook&&sample.Type!=PieceType.Bishop&&sample.Type!=PieceType.Knight))return false;
-            var replacement=game.AramReplace(queen,sample.Type,team);GetState(team).OriginalQueen=null;
+            var origin=queen.BoardPosition;var replacement=game.AramReplace(queen,sample.Type,team);GetState(team).OriginalQueen=null;VisualResult(27,replacement,origin,"Sacrificed","Queen");
             return replacement;
         },false);
     }
@@ -75,7 +75,7 @@ public sealed partial class AramBuffRuntime
             if(!Live(p)||combinedPlies>=cannonTurns[p])cannonTurns.Remove(p);
         foreach(var p in new List<ChessPiece>(infectedUntil.Keys))
             if(!Live(p))infectedUntil.Remove(p);
-            else if(combinedPlies>=infectedUntil[p]){infectedUntil.Remove(p);game.AramRemove(p);Say("An infected piece died from Plague.");}
+            else if(combinedPlies>=infectedUntil[p]){Visual(AramBuffId.PlagueTown,p,p.BoardPosition,p.BoardPosition,"Expire");infectedUntil.Remove(p);game.AramRemove(p);Say("An infected piece died from Plague.");}
         foreach(var team in new[]{PieceTeam.White,PieceTeam.Black})
         {
             if(combinedPlies<=AramBalanceRules.PeaceGoal&&game.AramInCheck(team))peaceFailed[Side(team)]=true;
@@ -89,8 +89,10 @@ public sealed partial class AramBuffRuntime
             if(UnityEngine.Random.value<AramBalanceRules.BetrayalChance(checks))
             {
                 var receiver=queen.Team==PieceTeam.White?PieceTeam.Black:PieceTeam.White;
+                var visualFrom=queen.BoardPosition;
+                Visual(AramBuffId.QueensBetrayal,queen,visualFrom,visualFrom,"Betrayal");
                 unstableQueens.Remove(queen);betrayalChecks.Remove(queen);game.AramRemove(queen);
-                QueueDeployment(receiver,PieceType.Queen,null,3);Say("An unstable Queen betrayed her army.");
+                QueueDeployment(receiver,PieceType.Queen,null,3,visualFrom:visualFrom);Say("An unstable Queen betrayed her army.");
             }
             else betrayalChecks[queen]=checks+1;
         }
@@ -116,6 +118,7 @@ public sealed partial class AramBuffRuntime
         var selected=Pick(eligible);var victim=At(selected);
         if(victim){game.AramAbilityCapture(team,victim,$"Loot crate captured {victim.Type} on {selected}");CaptureReward(team,victim);game.AramRemove(victim);}
         crates[selected]=new SupplyCrate(team,milestone==25?PieceType.Rook:PieceType.Queen);RefreshBoardMarkers();
+        VisualTile(9,selected,team,"Drop");
     }
     private void CheckCollapse()
     {
@@ -127,6 +130,9 @@ public sealed partial class AramBuffRuntime
     }
     private void CollapsePieces()
     {
+        var cells=new List<Vector3>(16);foreach(int x in new[]{collapsedFiles-1,8-collapsedFiles})for(int y=0;y<8;y++)cells.Add(game.AramTile(new Vector2Int(x,y)));
+        RefreshVisualBoard();
+        VisualTile(18,Vector2Int.zero,PieceTeam.White,"Collapse",cells.ToArray());
         foreach(var team in new[]{PieceTeam.White,PieceTeam.Black})
             foreach(var p in game.GetActivePiecesForAram(team))if(!SquareAvailable(p.BoardPosition))game.AramRemove(p);
         foreach(var p in new List<Vector2Int>(crates.Keys))if(!SquareAvailable(p))crates.Remove(p);
@@ -137,7 +143,7 @@ public sealed partial class AramBuffRuntime
     {
         foreach(var team in new[]{PieceTeam.White,PieceTeam.Black})
             if(IsKingless(team)&&completedTurns[Side(team)]>=AramBalanceRules.PoorKingDeadline)
-            {game.AramWin(team==PieceTeam.White?PieceTeam.Black:PieceTeam.White);return true;}
+            {bool wasOver=game.GameOver;game.AramWin(team==PieceTeam.White?PieceTeam.Black:PieceTeam.White);if(!wasOver)EnsureVisuals()?.FinishKingless();return true;}
         return false;
     }
     internal bool DrawIsLoss(PieceTeam team) => (HasBuff(team,AramBuffId.EveryManForHimself)||IsKingless(team));
@@ -161,7 +167,7 @@ public sealed partial class AramBuffRuntime
                 var allowed=EmptySquares();allowed.Add(promoted.BoardPosition);
                 allowed.RemoveAll(p=>p!=promoted.BoardPosition&&!game.AramSafeDestination(promoted,p));
                 Choose($"{promoted.Team}: choose a highlighted square for your promoted {promoted.Type}.",p=>
-                {if(!allowed.Contains(p))return false;return p==promoted.BoardPosition||game.AramRelocate(promoted,p);},false);
+                {if(!allowed.Contains(p))return false;var origin=promoted.BoardPosition;if(p!=origin&&!game.AramRelocate(promoted,p))return false;VisualResult(34,promoted,origin,"Landed",promoted.Type.ToString());return true;},false);
                 game.AramHighlight(allowed);
             });
     }
@@ -174,12 +180,12 @@ public sealed partial class AramBuffRuntime
         questRewarded[side]=true;
         decisions.Enqueue(()=>
         {
-            if(CountPieces(team,PieceType.Pawn)<2){QueueDeployment(team,PieceType.Queen,null,0);return;}
+            if(CountPieces(team,PieceType.Pawn)<2){QueueDeployment(team,PieceType.Queen,null,0,visualBuff:26);return;}
             int remaining=2;
             Func<Vector2Int,bool> select=null;select=p=>
             {
                 var pawn=At(p);if(!pawn||pawn.Team!=team||pawn.Type!=PieceType.Pawn)return false;
-                var replacement=game.AramReplace(pawn,PieceType.Queen,team);promotedQueens.Add(replacement);
+                var origin=pawn.BoardPosition;var replacement=game.AramReplace(pawn,PieceType.Queen,team);promotedQueens.Add(replacement);VisualResult(26,replacement,origin,"QuestReward","Pawn");
                 if(--remaining>0){Choose($"{team}: select the second Pawn to become a Queen.",select,false);return false;}
                 return true;
             };
@@ -193,7 +199,7 @@ public sealed partial class AramBuffRuntime
         {
             var piece=At(p);if(!piece||piece.Team!=team||piece.Type==PieceType.King||promotedQueens.Contains(piece))return false;
             if(!game.AramCanPlace(PieceType.Queen,team,p,false,piece))return false;
-            game.AramReplace(piece,PieceType.Queen,team);queenRefundUsed[side]=true;return true;
+            var before=piece.Type.ToString();var replacement=game.AramReplace(piece,PieceType.Queen,team);queenRefundUsed[side]=true;VisualResult(27,replacement,p,"Restored",before);return true;
         });
     }
     private void BuyPiece(PieceTeam team,PieceType type)
@@ -202,8 +208,8 @@ public sealed partial class AramBuffRuntime
         Choose($"{team}: place your {type} in an empty home square. Price: {AramBalanceRules.PurchasePrice((PieceKind)type)}.",p=>
         {
             if(At(p)||!InHome(p,team)||!game.AramCanPlace(type,team,p))return false;
-            if(!game.AramSpawn(type,team,p,true))return false;
-            credit[side]-=AramBalanceRules.PurchasePrice((PieceKind)type);bought[side]=true;return true;
+            var purchased=game.AramSpawn(type,team,p,true);if(!purchased)return false;
+            int cost=AramBalanceRules.PurchasePrice((PieceKind)type);credit[side]-=cost;bought[side]=true;VisualResult(31,purchased,p,"Purchased",amount:cost);return true;
         });
     }
     private void ReselectDoppelganger(PieceTeam team)
@@ -217,7 +223,7 @@ public sealed partial class AramBuffRuntime
                 var bishop=At(q);if(!Live(knight)||!bishop||bishop.Team!=team||bishop.Type!=PieceType.Bishop)return false;
                 state.SwappedKnight=knight;state.SwappedBishop=bishop;swapActive[Side(team)]=true;
                 if(game.AramInCheck(team)){state.SwappedKnight=oldKnight;state.SwappedBishop=oldBishop;swapActive[Side(team)]=oldActive;return false;}
-                swapReady[Side(team)]=combinedPlies+4;ApplyAllMarkers();return true;
+                swapReady[Side(team)]=combinedPlies+4;VisualPair(team,"Exchanged");ApplyAllMarkers();return true;
             });return true;
         });
     }
@@ -232,11 +238,11 @@ public sealed partial class AramBuffRuntime
                 var kind=q.y==(Home(team)==0?7:0)&&!HasBuff(team==PieceTeam.White?PieceTeam.Black:PieceTeam.White,AramBuffId.DoubleEdgedTrap)?PieceType.Queen:PieceType.Pawn;
                 if(!game.AramCanPlace(kind,team,q))return false;
                 var traits=passengerTraits[rook];passengers.Remove(rook);passengerReady.Remove(rook);passengerTraits.Remove(rook);RemoveMarker(rook);
-                RestorePassenger(team,kind,q,traits);return true;
+                RestorePassenger(team,kind,q,traits,rook.BoardPosition);return true;
             });return true;
         });
     }
-    private void RestorePassenger(PieceTeam team,PieceType kind,Vector2Int square,PassengerTraits traits)
+    private void RestorePassenger(PieceTeam team,PieceType kind,Vector2Int square,PassengerTraits traits,Vector2Int origin,bool parachuted=false)
     {
         var piece=game.AramSpawn(kind,team,square,true);if(!piece)return;
         if(traits.Mastery)queenMastery.Add(piece);
@@ -246,6 +252,7 @@ public sealed partial class AramBuffRuntime
             if(traits.Trapped||BlocksPromotion(piece)&&square.y==(Home(team)==0?7:0))trapPawns.Add(piece);
         }
         else PawnPromoted(null,piece);
+        VisualResult(12,piece,origin,parachuted?"Parachuted":"Disembarked");
     }
     private void RemoveMarker(ChessPiece piece)
     {

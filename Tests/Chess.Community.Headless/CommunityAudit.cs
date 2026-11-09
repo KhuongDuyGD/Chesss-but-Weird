@@ -49,19 +49,19 @@ public static class CommunityAudit
     private static async Task Audit()
     {
         var catalog = CommunityContent.Catalog;
-        Check(CommunityContent.Error == null, "Bundled catalog failed"); Check(catalog.articles.Count == 7, "Expected seven verified source articles");
-        Check(CommunityContent.VersionLabel == "v.0.6.1", "Shared product version");
+        Check(CommunityContent.Error == null, "Bundled catalog failed"); Check(catalog.articles.Count == 8, "Expected eight verified source articles");
+        Check(CommunityContent.VersionLabel == "v.0.7.0", "Shared product version");
         Check(catalog.articles.OrderBy(a => DateTimeOffset.Parse(a.sourceCommitDateUtc)).First().version == "0.1.0", "First update version");
         Check(catalog.articles.All(a => a.locale == "en-US" && (a.title + a.summary + a.body).All(c => c < 128)), "News must stay English with existing font");
         var news = catalog.PublicArticles(DateTimeOffset.UtcNow).ToList();
-        Check(news.Count == 6 && news[0].id == "NEWS_CHAOS35_20261108", "Rights gate / fallback hero / ordering");
+        Check(news.Count == 7 && news[0].id == "NEWS_CHAOS_VFX_20261109", "Rights gate / fallback hero / ordering");
         Check(!news.Any(a => a.rightsClearanceRequired), "Uncleared rights leaked publicly");
         Check(!CommunityNewsCatalog.TrustedSource("https://github.com.evil.example/KhuongDuyGD/Chesss-but-Weird/commit/" + new string('a', 40)), "URL host spoof allowed");
         Check(!CommunityNewsCatalog.TrustedSource("javascript:alert(1)"), "Unsafe URL allowed");
         Reject(() => CommunityNewsCatalog.Parse("{broken"), "Broken catalog accepted");
         Reject(() => CommunityNewsCatalog.Parse(Newtonsoft.Json.JsonConvert.SerializeObject(new CommunityNewsCatalog { schemaVersion = 88, currentVersion = "0.6.0" })), "Unsupported schema accepted");
         var modified = Newtonsoft.Json.JsonConvert.DeserializeObject<CommunityNewsCatalog>(Newtonsoft.Json.JsonConvert.SerializeObject(catalog));
-        modified.articles[0].editorialStatus = "Published"; Reject(() => CommunityNewsCatalog.Parse(Newtonsoft.Json.JsonConvert.SerializeObject(modified)), "Rights validation missing");
+        modified.articles.First(a => a.rightsClearanceRequired).editorialStatus = "Published"; Reject(() => CommunityNewsCatalog.Parse(Newtonsoft.Json.JsonConvert.SerializeObject(modified)), "Rights validation missing");
         var aRead = new CommunityNewsReadSet("[]"); aRead.Mark(news[0].id);
         Check(new CommunityNewsReadSet(aRead.Serialize()).IsRead(news[0].id), "Read state did not persist");
         Check(!new CommunityNewsReadSet("[]").IsRead(news[0].id), "Read state leaked");

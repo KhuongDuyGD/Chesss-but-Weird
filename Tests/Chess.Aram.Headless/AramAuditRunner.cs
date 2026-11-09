@@ -9,8 +9,9 @@ using UnityEngine;
 using TMPro;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.LowLevel;
+using ChessButWeird.BuffVfx;
 
-public static class AramAuditRunner
+public static partial class AramAuditRunner
 {
     private static int checks,ticks;
     private static readonly List<string> report=new List<string>();
@@ -80,7 +81,7 @@ public static class AramAuditRunner
             AuditTooltip(game,id);End(game);
         }
         report.Add("PASS all 35 buff initializations and setup transitions");
-        TestClocks();TestActions();TestSpecialRules();TestCastle();TestLoot();TestQuest();TestRepetition();TestInteractions();TestDisguise();TestAutomaticSniper();TestRifleCursor();
+        TestClocks();TestActions();TestSpecialRules();TestCastle();TestLoot();TestQuest();TestRepetition();TestInteractions();TestDisguise();TestAutomaticSniper();TestRifleCursor();TestCombatVisualHooks();TestLandscapeVisualHooks();TestStrategyVisualHooks();
     }
     private static void TestDisguise()
     {
@@ -172,10 +173,8 @@ public static class AramAuditRunner
     }
     private static void TestInteractions()
     {
-        var game=Match(AramBuffId.CommandantPawn);var marker=game.Board[0,1].GetComponent<AramBuffPieceMarker>();
-        Check(marker&&marker.enabled,"Committed Commandant marker is absent");Call(game.Runtime,"ApplyAllMarkers");
-        Check(game.Board[0,1].GetComponents<AramBuffPieceMarker>().Length==1&&game.Board[0,1].GetComponent<AramBuffPieceMarker>()==marker&&marker.enabled,"Marker refresh duplicated or scheduled destruction of the current marker");
-        Check(Field<Transform>(marker,"markerRoot")&&Field<Transform>(marker,"markerRoot").gameObject.activeSelf&&Field<TextMesh>(marker,"label")==null,"Committed marker lacks its small ring or still has a text label");End(game);
+        var game=Match(AramBuffId.CommandantPawn);var runtime=game.Runtime;Call(runtime,"LateUpdate");var fx=(BuffVfxOrchestrator)Call(runtime,"EnsureVisuals");
+        Check(fx.ActiveStatuses==3,"Committed Commandant selections use three shared sigils");Call(runtime,"ApplyAllMarkers");Call(runtime,"LateUpdate");Check(fx.ActiveStatuses==3,"Marker refresh never duplicates committed sigils");End(game);
         game=Match(AramBuffId.AbsoluteSniper,AramBuffId.SuicideBomber);var bishop=game.Board[2,0];var king=game.Board[4,0];var enemyKing=game.Board[4,7];var queen=game.Board[3,7];ClearArmy(game,bishop,king,enemyKing,queen);
         Call(game,"AramRelocate",enemyKing,new Vector2Int(7,7),false,false,true);game.Add(PieceTeam.Black,PieceType.Rook,4,7);
         Call(game,"AramRelocate",bishop,new Vector2Int(1,1),false,false,true);Call(game,"AramRelocate",queen,new Vector2Int(3,3),false,false,true);game.Add(PieceTeam.White,PieceType.Pawn,4,3);
@@ -230,6 +229,7 @@ public static class AramAuditRunner
         game.PauseLocked=true;Check(!(bool)Call(runtime,"TrySniperAttack",bishop,new Vector2Int(3,3)),"Paused Sniper executed");game.PauseLocked=false;
         game.CurrentTurn=PieceTeam.Black;Check(!(bool)Call(runtime,"TrySniperAttack",bishop,new Vector2Int(3,3)),"Sniper executed on opponent turn");game.CurrentTurn=PieceTeam.White;
         Check((bool)Call(runtime,"TrySniperAttack",bishop,new Vector2Int(3,3)),"Automatic Sniper did not capture");
+        Check(Field<BuffVfxOrchestrator>(runtime,"buffVfx").ActiveCount==1,"Accepted local Sniper capture did not publish VFX");
         Check(game.Board[1,1]==bishop&&!game.Board[3,3]&&bishop.BoardPosition==new Vector2Int(1,1),"Sniper moved the Bishop or kept the victim");
         Check(!charges.ContainsKey(bishop)&&game.CurrentTurn==PieceTeam.Black&&game.Statistics.MoveCount==1,"Sniper did not consume charge and exactly one move");
         bool captureRecorded=false;foreach(var row in game.Statistics.Entries)if(row.IsMove&&row.Captured==PieceKind.Rook)captureRecorded=true;
@@ -286,5 +286,29 @@ public static class AramAuditRunner
         BeginDecision(runtime);Check(!Select(runtime,1,1)&&Select(runtime,2,1),"Army quest did not select exactly two Pawns");Check(game.Board[1,1].Type==PieceType.Queen&&game.Board[2,1].Type==PieceType.Queen,"Army quest reward missing");
         Call(runtime,"TryQueueQuestReward",PieceTeam.White);Check(Field<Queue<Action>>(runtime,"decisions").Count==0,"Army quest reward repeated");Check((bool)Call(runtime,"DrawIsLoss",PieceTeam.White),"Army quest draw policy missing");End(game);
         report.Add("PASS five-type quest, promotion requirement, two-Queen reward, once-only and draw loss");
+    }
+    private static void TestCombatVisualHooks()
+    {
+        var game=Match(AramBuffId.NobleSacrifice);var runtime=game.Runtime;var fx=(BuffVfxOrchestrator)Call(runtime,"EnsureVisuals");
+        Check(fx.Ready,"Practice VFX resources missing");var pawn=game.Board[2,1];var ally=game.Board[3,1];Call(game,"AramRelocate",ally,new Vector2Int(3,2),false,false,true);
+        Check(runtime.IsLegalAramMove(pawn,pawn.BoardPosition,ally.BoardPosition,game.Board),"Noble visual fixture is not a legal sacrifice");
+        runtime.BeforeNormalMove(pawn,ally,pawn.BoardPosition,ally.BoardPosition);Check(fx.ActiveCount==1,"Noble accepted capture hook missing");End(game);
+        game=Match(AramBuffId.SuicideBomber);runtime=game.Runtime;fx=(BuffVfxOrchestrator)Call(runtime,"EnsureVisuals");
+        Call(game,"AramRemove",game.Board[3,0],true);Check(fx.ActiveCount==1,"Bomber actual removal did not publish explosion");End(game);
+        game=Match(AramBuffId.HighTechEra);runtime=game.Runtime;fx=(BuffVfxOrchestrator)Call(runtime,"EnsureVisuals");var rook=game.Board[0,0];var enemy=game.Board[0,6];
+        Check(runtime.IsLegalAramMove(rook,rook.BoardPosition,enemy.BoardPosition,game.Board),"Cannon visual fixture must jump one blocker");
+        runtime.BeforeNormalMove(rook,enemy,rook.BoardPosition,enemy.BoardPosition);Check(fx.ActiveCount==1,"Cannon confirmed capture hook missing");End(game);
+        game=Match(AramBuffId.QueensBetrayal);runtime=game.Runtime;fx=(BuffVfxOrchestrator)Call(runtime,"EnsureVisuals");
+        var unstable=Field<HashSet<ChessPiece>>(runtime,"unstableQueens");ChessPiece queen=null;foreach(var q in unstable)queen=q;
+        Field<Dictionary<ChessPiece,int>>(runtime,"betrayalChecks")[queen]=20;Ply(runtime);Check(fx.ActiveCount==1&&!unstable.Contains(queen),"Betrayal cue must follow actual confirmed removal");
+        BeginDecision(runtime);Check(Select(runtime,0,5),"Receiver could not place the betrayed Queen");Check(fx.ActiveCount==2&&game.Board[0,5].Team==PieceTeam.Black,"Transfer cue missing at actual new ownership");End(game);
+        game=Match(AramBuffId.OneManArmy);runtime=game.Runtime;fx=(BuffVfxOrchestrator)Call(runtime,"EnsureVisuals");
+        Call(runtime,"EnterRifle",PieceTeam.White);Check(Field<GameObject>(runtime,"rifleModel"),"Actual King rifle model missing");
+        // A headless editor cannot physically capture the cursor; exercise the real resolved-ray path.
+        Call(runtime,"ResolveRifleShot",new Ray(new Vector3(4,.95f,0),Vector3.forward));
+        Check(fx.ActiveCount==1&&!runtime.RifleActive,"Resolved local King rifle shot did not publish VFX");
+        runtime.EndMatch();Check(!fx.gameObject.activeSelf&&fx.ActiveCount==0,"Match restart did not retire local VFX host");
+        UnityEngine.Object.DestroyImmediate(game.gameObject);
+        report.Add("PASS six combat presentation hooks: legal sacrifice, actual bomb removal, stationary Sniper, cannon jump, confirmed betrayal/placement and actual rifle ray resolution");
     }
 }
