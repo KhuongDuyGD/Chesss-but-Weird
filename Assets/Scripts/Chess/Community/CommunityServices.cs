@@ -37,7 +37,7 @@ public static class CommunityContent
                 if (!source) throw new FormatException("News catalog not included in build.");
                 catalog = CommunityNewsCatalog.Parse(source.text);
             }
-            catch (Exception ex) { Error = "Could not read the news catalog. Please update the game."; Debug.LogWarning("[Community] " + ex.Message); catalog = new CommunityNewsCatalog { currentVersion = "0.6.1", schemaVersion = 1 }; }
+            catch (Exception ex) { Error = "Could not read the news catalog. Please update the game."; Debug.LogWarning("[Community] " + ex.Message); catalog = new CommunityNewsCatalog { currentVersion = "0.7.0", schemaVersion = 1 }; }
             return catalog;
         }
     }
