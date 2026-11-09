@@ -18,9 +18,10 @@ $uiFiles=@(
     'Gameplay/Settings/SettingsModel.cs','Gameplay/Settings/SettingsRegistry.cs','Gameplay/Settings/SettingsLanguages.cs','Gameplay/Settings/TooltipPreferences.cs','Gameplay/Settings/SettingsUiScale.cs'
 )
 if($Chaos35) {
-    $uiFiles += 'Networking/OnlineAramPresenter.cs','Networking/OnlineAramPresenter.Chaos35.cs','Backend/OnlineDtos.cs'
+    $uiFiles += 'Networking/OnlineAramPresenter.cs','Networking/OnlineAramPresenter.Chaos35.cs','Networking/OnlineAramPresenter.Visuals.cs','Backend/OnlineDtos.cs'
     Copy-Item -LiteralPath "$sourceRoot/Tests/Chess.Hud.Headless/Chaos35OnlineAudit.cs","$sourceRoot/Tests/Chess.Hud.Headless/Chaos35OnlinePorts.cs" -Destination "$auditRoot/Assets/Fixture"
     Copy-Item -LiteralPath "$sourceRoot/Logs/chaos35-client-fixtures.json" -Destination "$auditRoot/fixtures.json"
+    Copy-Item -LiteralPath "$sourceRoot/Logs/BuffVfx/backend-strategy-fixtures.json" -Destination "$auditRoot/strategy-fixtures.json"
 }
 $hashes=@()
 foreach($relative in $uiFiles) {
@@ -50,6 +51,7 @@ foreach($package in $packages) {
 }
 foreach($module in @('ui','imgui','uielements','jsonserialize')) {$dependencies['com.unity.modules.'+$module]='1.0.0'}
 if($Chaos35){$dependencies['com.unity.modules.physics']='1.0.0'}
+if($Chaos35){. "$PSScriptRoot/buff-vfx-fixture.ps1"; Add-BuffVfxFixture $sourceRoot $auditRoot $dependencies}
 @{dependencies=$dependencies} | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath "$auditRoot/Packages/manifest.json" -Encoding utf8
 $editorLog=Join-Path $auditRoot 'Editor.log'
 $entry=if($Chaos35){'Chaos35OnlineAudit.Run'}else{'HudAuditRunner.Run'}

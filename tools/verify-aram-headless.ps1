@@ -21,6 +21,11 @@ $uiFiles=@(
     'Gameplay/ARAM/AramBuffRuntime.Progress.cs',
     'Gameplay/ARAM/AramBuffRuntime.Repetition.cs',
     'Gameplay/ARAM/AramBuffRuntime.Rifle.cs',
+    'Gameplay/ARAM/AramBuffRuntime.Visuals.cs',
+    'Gameplay/ARAM/AramBuffRuntime.StrategyVisuals.cs',
+    'Gameplay/ARAM/AramBuffCardVisual.cs',
+    'Gameplay/ARAM/AramBuffCardMotion.cs',
+    'Gameplay/Settings/SettingsModel.cs','Gameplay/Settings/SettingsRegistry.cs','Gameplay/Settings/SettingsLanguages.cs','Gameplay/Settings/TooltipPreferences.cs','Gameplay/Settings/SettingsUiScale.cs',
     'Gameplay/ARAM/AramBuffPieceMarker.cs',
     'Gameplay/ARAM/AramDecoyTag.cs',
     'Core/ChessGame.Aram.cs',
@@ -61,7 +66,9 @@ $extracted | Set-Content -LiteralPath "$auditRoot/Assets/Fixture/ChessGame.Extra
 $hashes+=((Get-FileHash -LiteralPath "$sourceRoot/Assets/Scripts/Chess/Core/ChessGame.cs" -Algorithm SHA256).Hash+' Core/ChessGame.cs (11 extracted rules)')
 $hashes | Set-Content -LiteralPath "$auditRoot/source-sha256.txt"
 Copy-Item -LiteralPath "$sourceRoot/Tests/Chess.Aram.Headless/AramFixture.cs" -Destination "$auditRoot/Assets/Fixture"
+Copy-Item -LiteralPath "$sourceRoot/Tests/Chess.Aram.Headless/SettingsPorts.cs" -Destination "$auditRoot/Assets/Fixture"
 Copy-Item -LiteralPath "$sourceRoot/Tests/Chess.Aram.Headless/AramAuditRunner.cs" -Destination "$auditRoot/Assets/Editor"
+Copy-Item -LiteralPath "$sourceRoot/Tests/Chess.Aram.Headless/AramLandscapeAudit.cs","$sourceRoot/Tests/Chess.Aram.Headless/AramStrategyAudit.cs" -Destination "$auditRoot/Assets/Editor"
 Copy-Item -LiteralPath "$sourceRoot/Logs/loading-compile/Chess.Domain.dll" -Destination "$auditRoot/Assets/Fixture"
 Copy-Item -LiteralPath "$sourceRoot/Assets/TextMesh Pro" -Destination "$auditRoot/Assets" -Recurse
 Copy-Item -LiteralPath "$sourceRoot/Assets/Fonts" -Destination "$auditRoot/Assets" -Recurse
@@ -77,6 +84,8 @@ foreach($package in @('com.unity.ugui','com.unity.inputsystem')) {
     $dependencies[$package]='file:'+ $cached.FullName.Replace('\','/')
 }
 foreach($module in @('ui','imgui','uielements','jsonserialize','physics','particlesystem')) {$dependencies['com.unity.modules.'+$module]='1.0.0'}
+. "$PSScriptRoot/buff-vfx-fixture.ps1"
+Add-BuffVfxFixture $sourceRoot $auditRoot $dependencies
 @{dependencies=$dependencies} | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath "$auditRoot/Packages/manifest.json" -Encoding utf8
 $editorLog=Join-Path $auditRoot 'Editor.log'
 $args=@('-batchmode','-nographics','-projectPath',('"'+$auditRoot+'"'),'-executeMethod','AramAuditRunner.Run','-logFile',('"'+$editorLog+'"'))

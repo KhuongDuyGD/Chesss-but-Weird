@@ -120,6 +120,7 @@ internal sealed partial class OnlineAramPresenter : IDisposable
         }
         RefreshDraft();
         RefreshMarkers();
+        PresentVisuals();
         UpdateRifle();
     }
     private AramBuffDefinition Definition(int id) => AramBuffLibrary.FindById(definitions, (AramBuffId)id);
@@ -243,7 +244,7 @@ internal sealed partial class OnlineAramPresenter : IDisposable
         return view;
     }
     internal static string BuffText(int id) => id >= 0 && id < Buffs.Length ? Buffs[id] : "Unknown buff " + id;
-    private void CancelTargeting() { action = null; actionPieceKind = null; targets.Clear(); formation.Clear(); formationPiece = null; }
+    private void CancelTargeting() { action = null; actionPieceKind = null; targets.Clear(); formation.Clear(); formationPiece = null;buffVfx?.ClearPreview(); }
     private void Send(AbilityCommand command)
     { if (!CanInteract) return; CancelTargeting(); owner.SendAbility(command); }
     public bool HandleClick(Vector2Int square, int? pieceId)
@@ -255,6 +256,7 @@ internal sealed partial class OnlineAramPresenter : IDisposable
         string targetSquare = ((char)('a' + square.x)).ToString() + (square.y + 1);
         if (action == "ConfirmFormation")
         {
+            if(!FormationCell(square))return true;
             if (formationPiece.HasValue)
             {
                 string previous = formation[formationPiece.Value];
@@ -262,7 +264,8 @@ internal sealed partial class OnlineAramPresenter : IDisposable
                 if (displaced.Value != null) formation[displaced.Key] = previous;
                 formation[formationPiece.Value] = targetSquare; formationPiece = null;
             }
-            else if (pieceId.HasValue && formation.ContainsKey(pieceId.Value)) formationPiece = pieceId;
+            else {var virtualPiece=formation.FirstOrDefault(p=>p.Value==targetSquare);if(virtualPiece.Value!=null)formationPiece=virtualPiece.Key;}
+            nextPreview=0;RefreshInteractionVisuals();
             return true;
         }
         if (action == "Deploy" || action == "Escape") Send(new AbilityCommand { kind = action, target = targetSquare });
@@ -285,6 +288,8 @@ internal sealed partial class OnlineAramPresenter : IDisposable
     }
     public void Update()
     {
+        if(buffVfx)buffVfx.Paused=game.PauseLocked;
+        RefreshInteractionVisuals();
         draftView.SetOverlayVisible(Visible);
         draftView.SetOnlineAvailability(CanInteract);
         abilityView.SetVisible(Visible);
@@ -322,6 +327,7 @@ internal sealed partial class OnlineAramPresenter : IDisposable
                 foreach (var renderer in view.GetComponentsInChildren<Renderer>())
                 { hiddenShooter[renderer] = renderer.enabled; renderer.enabled = false; }
             yaw = team == "White" ? 0 : 180; pitch = 0; aiming = true;
+            if(buffVfx&&buffVfx.Ready)rifleViewModel=buffVfx.CreateRifleView(camera.transform);
         }
         else if (!shouldAim && aiming) RestoreCamera();
         if (aiming) PlaceRifleCamera();
@@ -340,6 +346,7 @@ internal sealed partial class OnlineAramPresenter : IDisposable
     }
     private void RestoreCamera()
     {
+        if(rifleViewModel){UnityEngine.Object.Destroy(rifleViewModel);rifleViewModel=null;}
         foreach (var renderer in hiddenShooter) if (renderer.Key) renderer.Key.enabled = renderer.Value;
         hiddenShooter.Clear();
         if (camera)
@@ -353,6 +360,8 @@ internal sealed partial class OnlineAramPresenter : IDisposable
     }
     private void RefreshMarkers()
     {
+        if(!visualUnavailable&&(int?)state.chaos?["rulesVersion"]==3&&state.chaos?["visualBoard"] is JArray)
+        {if(markers){markers.SetActive(false);UnityEngine.Object.Destroy(markers);markers=null;}markerFingerprint=null;return;}
         string key = string.Join("|", new[] { state.chaos?["mines"]?.ToString(), state.chaos?["crates"]?.ToString(), state.chaos?["collapsedFiles"]?.ToString() });
         if (key == markerFingerprint) return;
         markerFingerprint = key; if (markers) { markers.SetActive(false); UnityEngine.Object.Destroy(markers); }

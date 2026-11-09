@@ -21,9 +21,7 @@ public sealed partial class AramBuffRuntime
         previousCamera.enabled=false;
         previousCursorLock=Cursor.lockState;previousCursorVisible=Cursor.visible;
         rifleMouseLocked=true;rifleCursorSuspended=false;ApplyRifleCursor();
-        rifleModel=GameObject.CreatePrimitive(PrimitiveType.Cube);rifleModel.name="King Rifle";Destroy(rifleModel.GetComponent<Collider>());
-        rifleModel.transform.SetParent(rifleCamera.transform,false);rifleModel.transform.localPosition=new Vector3(.18f,-.16f,.4f);
-        rifleModel.transform.localScale=new Vector3(.07f,.08f,.45f);
+        rifleModel=EnsureVisuals()?.CreateRifleView(rifleCamera.transform);
         Say("Move mouse to aim; left-click fires at the crosshair. ALT locks/unlocks the mouse. Escape exits and saves your shot.");
     }
 
@@ -41,14 +39,21 @@ public sealed partial class AramBuffRuntime
         // Locked FPS input fires through the centre crosshair, not the UI pointer.
         if(!Mouse.current.leftButton.wasPressedThisFrame)return;
         var ray=rifleCamera.ViewportPointToRay(new Vector3(.5f,.5f,0));
+        ResolveRifleShot(ray);
+    }
+    private void ResolveRifleShot(Ray ray)
+    {
+        var king=game.AramKing(rifleTeam);
         if(Physics.Raycast(ray,out var hit,500f))
         {
             var victim=hit.collider.GetComponentInParent<ChessPiece>();
+            string outcome=victim&&victim.Team!=rifleTeam&&victim.Type!=PieceType.King&&victim.Type!=PieceType.Queen?"Hit":"Blocked";
+            if(king)Visual(AramBuffId.OneManArmy,king,king.BoardPosition,victim?victim.BoardPosition:king.BoardPosition,outcome,source:ray.origin,target:hit.point);
             if(victim&&victim.Team!=rifleTeam&&victim.Type!=PieceType.King&&victim.Type!=PieceType.Queen)
             {game.AramRemove(victim);Say("Rifle hit.");}
             else Say("Shot ended: invalid target.");
         }
-        else Say("Shot missed.");
+        else {if(king)Visual(AramBuffId.OneManArmy,king,king.BoardPosition,king.BoardPosition,"Miss",source:ray.origin,target:ray.GetPoint(12));Say("Shot missed.");}
         ExitRifle(true);game.AramRefreshPosition();
     }
 

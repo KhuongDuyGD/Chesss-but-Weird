@@ -20,6 +20,7 @@ public sealed partial class ChessGame : MonoBehaviour
     private FixtureAnimator pieceAnimator;
     private FixtureTurnUI turnSelectionUI;
     private ChessPiece whiteKing,blackKing;
+    private ChessPiece selectedPiece;
     private const int BoardSize=8;
     private const float BoardClickRaycastDistance=500;
     private LayerMask boardClickRaycastMask=~0;
@@ -90,7 +91,7 @@ public sealed class FixtureBoard
     public static bool operator !(FixtureBoard board)=>board==null;
     public Vector3 GetTileCenterWorld(Vector2Int p)=>new Vector3(p.x,0,p.y);
     public void ClearLegalMoveHighlights(){}
-    public void SetLegalMoveHighlights(List<Vector2Int> squares){}
+    public void SetLegalMoveHighlights(List<Vector2Int> squares,bool ability=false){}
     public bool TryGetTileFromObject(GameObject obj,out Vector2Int p){p=default;return false;}
     public bool IsValidTile(Vector2Int p)=>ChessMoveRules.IsInsideBoard(p);
 }

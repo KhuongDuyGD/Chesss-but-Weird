@@ -172,6 +172,14 @@ public sealed partial class AramBuffRuntime : MonoBehaviour
         AramTeamState state = GetState(piece.Team);
         if(piece.Type==PieceType.King&&from.y==destination.y&&Mathf.Abs(destination.x-from.x)>=2&&
             (destination.x==2||destination.x==6)&&HasBuff(piece.Team,AramBuffId.StrongFortress))castledWings[Side(piece.Team)]|=destination.x==6?1:2;
+        if(state.FreestyleKnight==piece)VisualResult(2,piece,from,"Leap",piece.Type.ToString());
+        if(piece.Type==PieceType.King&&from.y==destination.y&&Mathf.Abs(destination.x-from.x)>=2&&(destination.x==2||destination.x==6)&&state.HasBuff(AramBuffId.StrongFortress))
+        {
+            var rook=At(new Vector2Int(destination.x==6?5:3,destination.y));var changes=new List<ChessButWeird.BuffVfx.BuffVisualChange>();
+            changes.Add(new ChessButWeird.BuffVfx.BuffVisualChange{ActorId=piece.GetInstanceID(),Actor=piece.transform,Team=piece.Team,From=game.AramTile(from),To=game.AramTile(destination),FromKind="King",ToKind="King"});
+            if(rook&&rook.Type==PieceType.Rook)changes.Add(new ChessButWeird.BuffVfx.BuffVisualChange{ActorId=rook.GetInstanceID(),Actor=rook.transform,Team=rook.Team,From=game.AramTile(new Vector2Int(destination.x==6?7:0,destination.y)),To=game.AramTile(rook.BoardPosition),FromKind="Rook",ToKind="Rook"});
+            VisualDetails(1,piece.Team,game.AramTile(from),game.AramTile(destination),"Castle",changes.ToArray(),actor:piece);
+        }
         if (!state.HasBuff(AramBuffId.FlyingThunderGod) || piece != state.OriginalQueen)
             return;
 
@@ -179,7 +187,10 @@ public sealed partial class AramBuffRuntime : MonoBehaviour
         bool queenPattern = (delta.x == 0 || delta.y == 0 || Mathf.Abs(delta.x) == Mathf.Abs(delta.y)) &&
             MovementRules.IsPathClear(new UnityBoardAdapter(board), UnityBoardAdapter.ToSquare(from), UnityBoardAdapter.ToSquare(destination));
         if (!queenPattern)
+        {
             state.MarkQueenTeleportUsed(piece, FlyingThunderGodBuff.CooldownTurns);
+            Visual(AramBuffId.FlyingThunderGod,piece,from,destination,"Teleport");
+        }
     }
 
     public bool TryGetQueenExplosion(ChessPiece capturedPiece, Vector2Int center, ChessPiece movingPiece, ChessPiece[,] board, List<ChessPiece> victims)
@@ -192,6 +203,10 @@ public sealed partial class AramBuffRuntime : MonoBehaviour
             return false;
 
         state.SuicideBomberUsed = true;
+        var blastTiles = new List<Vector3>(9);
+        for(int x=center.x-1;x<=center.x+1;x++)for(int y=center.y-1;y<=center.y+1;y++)
+            if(SquareAvailable(new Vector2Int(x,y)))blastTiles.Add(game.AramTile(new Vector2Int(x,y)));
+        Visual(AramBuffId.SuicideBomber,capturedPiece,center,center,tiles:blastTiles.ToArray());
         victims.Clear();
         for (int x = center.x - 1; x <= center.x + 1; x++)
             for (int y = center.y - 1; y <= center.y + 1; y++)
@@ -247,7 +262,7 @@ public sealed partial class AramBuffRuntime : MonoBehaviour
                 return TrySelectDoppelgangerBishop(piece);
             case AramTargetKind.FreestyleKnight:
                 if(piece.Type!=PieceType.Knight){ShowTargetWarning("Choose a Knight for Freestyle Leap.");return true;}
-                GetState(piece.Team).FreestyleKnight=piece;TryStartNextTargetTask();return true;
+                GetState(piece.Team).FreestyleKnight=piece;VisualResult(2,piece,piece.BoardPosition,"Selected");TryStartNextTargetTask();return true;
             default:
                 return true;
         }
@@ -292,6 +307,7 @@ public sealed partial class AramBuffRuntime : MonoBehaviour
         state.CommandantPawns.Clear();
         for (int i = 0; i < pendingTargetPieces.Count; i++)
             state.CommandantPawns.Add(pendingTargetPieces[i]);
+        VisualSelection(0,state.Team,state.CommandantPawns,"Selected");
 
         TryStartNextTargetTask();
         return true;
@@ -320,6 +336,7 @@ public sealed partial class AramBuffRuntime : MonoBehaviour
         }
 
         GetState(currentTargetTask.Team).SwappedBishop = piece;
+        VisualPair(piece.Team,"Exchanged");
         AddMarker(piece, currentTargetTask.Buff, "KNIGHT");
         TryStartNextTargetTask();
         return true;
@@ -617,6 +634,8 @@ public sealed partial class AramBuffRuntime : MonoBehaviour
     {
         if (!piece || !buff)
             return;
+        // Combat statuses use the shared, stacked sigils; PICK remains a setup-only marker.
+        if(label!="PICK"&&EnsureVisuals()?.Registry.Find((int)buff.Id)?.implemented==true)return;
 
         AramBuffPieceMarker marker = piece.GetComponent<AramBuffPieceMarker>();
         if (!marker)

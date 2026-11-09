@@ -13,7 +13,11 @@ public sealed class ChessLanController
 public sealed partial class ChessGame
 {
     public FixtureOnlineBoard Board;
-    public ChessPiece OnlinePieceView(int id) => null;
+    public readonly Dictionary<int,ChessPiece> TestViews=new Dictionary<int,ChessPiece>();
+    public ChessPiece TestSelected;
+    public ChessPiece OnlinePieceView(int id) => TestViews.TryGetValue(id,out var p)?p:null;
+    internal ChessPiece AramVisualSelected=>TestSelected;
+    internal bool AramReadPointer(out Vector2Int square){square=default;return false;}
     public static Vector2Int ParseOnlineSquare(string value) => new Vector2Int(value[0]-'a',value[1]-'1');
 }
 public sealed class FixtureOnlineBoard : MonoBehaviour

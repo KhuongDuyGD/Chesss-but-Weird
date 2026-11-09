@@ -13,6 +13,8 @@ public partial class ChessGame
     internal void AramWin(PieceTeam winner) => FinishGame(winner);
     internal bool AramIsMate(PieceTeam team) => IsCheckmate(team);
     internal bool AramHasMove(ChessPiece piece) => GetSafeLegalMoves(piece).Count>0;
+    internal ChessPiece AramVisualSelected=>selectedPiece;
+    internal List<Vector2Int> AramVisualLegalMoves(ChessPiece piece)=>GetSafeLegalMoves(piece);
     internal bool AramIsAlive(ChessPiece piece) => piece && ChessMoveRules.IsInsideBoard(piece.BoardPosition) && pieces[piece.BoardPosition.x,piece.BoardPosition.y] == piece;
     internal Vector3 AramTile(Vector2Int square) => chessboard.GetTileCenterWorld(square);
     internal void AramHighlight(List<Vector2Int> squares)
