@@ -12,9 +12,9 @@ namespace ChessButWeird.Online
         public int initialSeconds = 600, incrementSeconds = 5, protocolVersion = 1;
     }
     [Serializable, Preserve] public sealed class LobbyRequest
-    { public string requestId; public GameSettings settings; }
+    { public string requestId; public GameSettings settings; public bool rated; }
     [Serializable, Preserve] public sealed class Ticket
-    { public string ticketId, status, matchId; public GameSettings settings; public DateTime createdAt, expiresAt; }
+    { public string ticketId, status, matchId; public GameSettings settings; public DateTime createdAt, expiresAt; public bool rated; }
     [Serializable, Preserve] public sealed class Room
     {
         public string roomId, code, ownerId, status, matchId;
@@ -60,7 +60,7 @@ namespace ChessButWeird.Online
     }
     [Serializable, Preserve] public sealed class MatchState
     {
-        public string matchId, status, turn, fen, castlingRights, enPassantTarget, rematchId;
+        public string matchId, status, turn, fen, castlingRights, enPassantTarget, rematchId, checkedTeam;
         public long stateVersion, eventSequence;
         public int halfMoveClock, fullMoveNumber;
         public DateTime serverTime, readyDeadline;
@@ -80,7 +80,7 @@ namespace ChessButWeird.Online
     {
         public string matchId, status; public GameSettings settings;
         public List<Player> players = new List<Player>();
-        public DateTime createdAt; public DateTime? startedAt, finishedAt; public Result result;
+        public DateTime createdAt; public DateTime? startedAt, finishedAt; public Result result; public bool rated;
     }
     [Serializable, Preserve] public sealed class Page<T>
     { public int pageNumber, pageSize; public long total; public List<T> items = new List<T>(); }

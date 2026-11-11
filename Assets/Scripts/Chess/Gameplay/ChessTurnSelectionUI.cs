@@ -557,7 +557,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
     {
         resultMenu?.Hide();
         pauseMenu?.SetResultSpectating(false);
-        chessGame.RestartToMainMenu();
+        chessGame.RestartToMainMenu(null, ShowTurnSelection);
     }
 
     public void SetMatchPlayers(string whiteName, string blackName)

@@ -77,7 +77,7 @@ public partial class ChessLanController
         if ((!online.Connected || expired) && !reconnecting && Time.unscaledTime >= nextReconnectAt && PlayerAuthService.CanUseOnlineFeatures)
             _ = ReconnectAsync(expired);
         if ((showLanPanel || online.State?.status == "AwaitingReady") && online.Connected && !requestInFlight && !reconnecting && Time.unscaledTime >= nextPollAt)
-        { nextPollAt = Time.unscaledTime + 8; Run(async () => { await online.RefreshAsync(); if (showLanPanel && menuPage == OnlineMenuPage.FindRoom && lobbyUi?.IsCodeFocused != true) await LoadRoomListAsync(); }, backgroundRead: true); }
+        { nextPollAt = Time.unscaledTime + (online.Ticket?.status == "Queued" ? 2 : 8); Run(async () => { await online.RefreshAsync(); if (showLanPanel && menuPage == OnlineMenuPage.FindRoom && lobbyUi?.IsCodeFocused != true) await LoadRoomListAsync(); }, backgroundRead: true); }
         chessGame?.SetOnlineInputAvailable(CanSendOnlineCommand);
     }
     private async Task ReconnectAsync(bool renew)
@@ -125,6 +125,7 @@ public partial class ChessLanController
         if (!PlayerAuthService.CanUseOnlineFeatures) { turnSelectionUI?.RequestAuthentication("Sign in to play online."); return; }
         customRoomEntry = PlayModeNames.IsCustom(mode) ? mode : (PlayModeOption?)null;
         directMatchmaking = !customRoomEntry.HasValue;
+        if (selectedOnlineMode != mode && !HasLobbyReservation) queueRequest = roomRequest = null;
         selectedOnlineMode = mode;
         loadoutOpenVersion++;
         requestedGameMode = PlayModeNames.Backend(mode);
@@ -170,7 +171,8 @@ public partial class ChessLanController
     }
     private GameSettings Settings() => new GameSettings { mode = requestedGameMode, region = onlineRegion,
         initialSeconds = onlineInitialSeconds, incrementSeconds = onlineIncrementSeconds };
-    private LobbyRequest NewRequest() => new LobbyRequest { requestId = Guid.NewGuid().ToString("N"), settings = Settings() };
+    private LobbyRequest NewRequest() => new LobbyRequest { requestId = Guid.NewGuid().ToString("N"), settings = Settings(),
+        rated = directMatchmaking && PlayModeNames.IsRanked(selectedOnlineMode) };
     public void RequestCreateRoom() => Run(async () =>
     {
         int epoch = lifecycle;
@@ -272,8 +274,11 @@ public partial class ChessLanController
     {
         matchHud?.Hide();
         aramPresenter?.Dispose(); aramPresenter = null; presentedMatchId = null;
-        if (!leaving && online?.State?.IsActive == true) Run(async () => await online.LeaveAsync());
-        online?.ForgetFinishedMatch();
+        if (!leaving && online != null)
+        {
+            if (online.State?.IsActive == true) Run(async () => { await online.LeaveAsync(); CloseSessionFromPause(); });
+            else CloseSessionFromPause();
+        }
         HideLanSetup();
     }
     private async void HandleMoveRequested(ChessMove move)
@@ -467,7 +472,7 @@ public partial class ChessLanController
     }
     private void ShowError(Exception e)
     {
-        statusMessage = e.Message;
+        statusMessage = PlayerNotificationText.FromException(e);
         if (e is ApiException api && (api.StatusCode == 401 || api.ErrorCode == "Unauthorized"))
             statusMessage = "Session expired. Sign in again.";
         serverHealthStatus = online?.Connected == true ? "Online" : "Reconnecting";
@@ -487,7 +492,7 @@ public partial class ChessLanController
     private string GetRecentMatchLine(int index)
     {
         var m = recentMatches.ElementAtOrDefault(index);
-        return m == null ? "No recent match" : PlayModeNames.DisplayBackend(m.settings.mode) + " - " + (m.result?.outcome ?? m.status);
+        return m == null ? "No recent match" : PlayModeNames.DisplayBackend(m.settings.mode) + (m.rated ? " / Ranked" : " / Normal") + " - " + (m.result?.outcome ?? m.status);
     }
     private static string Name(Player p) => p == null ? "Opponent" : string.IsNullOrWhiteSpace(p.displayName) ? p.username : p.displayName;
     private static bool IsAramGameMode(string mode) => PlayModeNames.IsChaos(mode);

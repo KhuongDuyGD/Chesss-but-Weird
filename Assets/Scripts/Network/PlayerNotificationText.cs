@@ -135,6 +135,7 @@ public static class PlayerNotificationText
             case "roomnotfound": return "Room not found. Check the room code and try again.";
             case "roomfull": return "This room is full. Please join another room.";
             case "alreadyinroom": return "Leave your current room before joining another.";
+            case "lobbyreservationconflict": return "Your room or match reservation changed. Refresh the lobby and try again.";
             case "playersnotready": case "roomnotready": return "Both players must be ready before starting.";
             case "matchpaused": return "The match is paused. Wait for it to resume before moving.";
             case "matchfinished": case "gameover": return "This match has already ended.";

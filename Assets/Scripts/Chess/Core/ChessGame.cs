@@ -928,7 +928,7 @@ public partial class ChessGame : MonoBehaviour
     {
         pauseLocked = false;
         Time.timeScale = 1f;
-        if (chessboard) PrepareGame();
+        PrepareGame();
         turnSelectionUI?.ResetMatchPresentationForMenu();
         ReturnedToMainMenu?.Invoke();
         // Subscribers release match presenters before the destination opens its UI.
@@ -998,32 +998,37 @@ public partial class ChessGame : MonoBehaviour
         aramCoordinator?.EndMatch();
         botFrames.Clear();
 
-        if (piecesRoot)
+        // The additive board scene may already be unloaded. Match flags must
+        // still reset, otherwise gameOver blocks the next game from the menu.
+        if (chessboard)
         {
-            runtimePiecesRoot = piecesRoot;
+            if (piecesRoot)
+            {
+                runtimePiecesRoot = piecesRoot;
 
-            if (clearRuntimePiecesOnStart)
-                ClearRuntimePiecesRoot();
-        }
-        else if (clearRuntimePiecesOnStart)
-        {
-            DestroyRuntimePiecesRoots();
-            runtimePiecesRoot = CreateRuntimePiecesRoot();
-        }
-        else
-        {
-            runtimePiecesRoot = FindRuntimePiecesRoot() ?? CreateRuntimePiecesRoot();
-        }
+                if (clearRuntimePiecesOnStart)
+                    ClearRuntimePiecesRoot();
+            }
+            else if (clearRuntimePiecesOnStart)
+            {
+                DestroyRuntimePiecesRoots();
+                runtimePiecesRoot = CreateRuntimePiecesRoot();
+            }
+            else
+            {
+                runtimePiecesRoot = FindRuntimePiecesRoot() ?? CreateRuntimePiecesRoot();
+            }
 
-        if (spawnDefaultPiecesOnStart && runtimePiecesRoot.GetComponentsInChildren<ChessPiece>(true).Length == 0)
-            CreateDefaultPieces();
+            if (spawnDefaultPiecesOnStart && runtimePiecesRoot.GetComponentsInChildren<ChessPiece>(true).Length == 0)
+                CreateDefaultPieces();
 
-        RefreshPieceMap();
-        AlignAllPiecesToBoard();
-        ApplyPieceSkinsToRuntimePieces();
-        SetRuntimePiecesVisible(false);
-        chessboard?.SetPresentationVisible(false);
-        chessboard?.SetInteractionEnabled(false);
+            RefreshPieceMap();
+            AlignAllPiecesToBoard();
+            ApplyPieceSkinsToRuntimePieces();
+            SetRuntimePiecesVisible(false);
+            chessboard.SetPresentationVisible(false);
+            chessboard.SetInteractionEnabled(false);
+        }
 
         currentTurn = PieceTeam.White;
         status = ChessGameStatus.NotStarted;
@@ -1434,6 +1439,7 @@ public partial class ChessGame : MonoBehaviour
 
     private bool IsTeamInCheck(PieceTeam team)
     {
+        if (dotNetState != null) return OnlineCheckedTeam(dotNetState) == team;
         if(aramMode&&!serverAuthoritativeMode&&aramCoordinator.Runtime.IsKingless(team))return false;
         ChessPiece king = FindKing(team);
         if (!king)
@@ -1932,7 +1938,7 @@ public partial class ChessGame : MonoBehaviour
         ShowCheckWarning(currentTurn);
     }
 
-    private void ShowCheckWarning(PieceTeam checkedTeam)
+    private void ShowCheckWarning(PieceTeam checkedTeam, bool playAudio = true)
     {
         ChessPiece king = FindKing(checkedTeam);
         if (!king)
@@ -1948,7 +1954,7 @@ public partial class ChessGame : MonoBehaviour
         checkedKing = king;
         checkedKingOriginalScale = checkedKing.transform.localScale;
         checkPulseCoroutine = StartCoroutine(AnimateCheckedKing(checkedKing, checkedTeam));
-        PlaySound(checkSound);
+        if (playAudio) PlaySound(checkSound);
         turnSelectionUI?.ShowCheckWarning(checkedTeam);
     }
 
