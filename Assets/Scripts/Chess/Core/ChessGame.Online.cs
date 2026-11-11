@@ -54,6 +54,7 @@ public partial class ChessGame
             previous.status == "InProgress" && state.stateVersion == previous.stateVersion + 1;
         bool changed = dotNetState == null || !SameBoard(dotNetState, state);
         bool turnChanged = dotNetState == null || dotNetState.turn != state.turn || dotNetState.status != state.status;
+        bool playMoveAudio = animateChanges && changed;
         dotNetState = state;
         dotNetSnapshotReceivedAt = Time.realtimeSinceStartup;
         if (changed)
@@ -110,9 +111,10 @@ public partial class ChessGame
         SetRuntimePiecesVisible(true); chessboard?.SetPresentationVisible(true);
         if (!gameOver && turnChanged && !onlinePromotionPending) turnSelectionUI?.SetTurn(currentTurn);
         RefreshLocalInteractionState();
-        if (!gameOver && state.chaos == null && !string.IsNullOrEmpty(state.fen))
+        if (playMoveAudio) PlayOnlineMoveAudio(previous, state);
+        if (!gameOver && state.status == "InProgress")
         {
-            if (ChessButWeird.Domain.ClassicRules.IsInCheck(ChessButWeird.Domain.FenCodec.Parse(state.fen).Board, (ChessButWeird.Domain.Team)currentTurn)) ShowCheckWarning(currentTurn);
+            if (OnlineCheckedTeam(state) is PieceTeam checkedTeam) ShowCheckWarning(checkedTeam, previous == null || playMoveAudio || OnlineCheckedTeam(previous) != checkedTeam);
             else StopCheckWarning();
         }
         if (state.status == "Finished" && state.result != null && !gameOver)
@@ -120,6 +122,36 @@ public partial class ChessGame
             if (state.result.outcome == "Draw") FinishDraw(state.result.reason);
             else FinishGame(state.result.outcome == "BlackWin" ? PieceTeam.Black : PieceTeam.White);
         }
+    }
+    private static PieceTeam? OnlineCheckedTeam(MatchState state)
+    {
+        if (state == null || state.status != "InProgress") return null;
+        if (state.checkedTeam == "White" || state.checkedTeam == "Black") return ParseOnlineTeam(state.checkedTeam);
+        // Compatibility with servers that predate the explicit check projection.
+        if (state.chaos == null && !string.IsNullOrEmpty(state.fen) &&
+            ChessButWeird.Domain.ClassicRules.IsInCheck(ChessButWeird.Domain.FenCodec.Parse(state.fen).Board,
+                (ChessButWeird.Domain.Team)ParseOnlineTeam(state.turn))) return ParseOnlineTeam(state.turn);
+        return null;
+    }
+
+    private void PlayOnlineMoveAudio(MatchState previous, MatchState state)
+    {
+        PlaySound(OnlineMoveClip(previous, state));
+        var before = previous.board.ToDictionary(p => p.id);
+        if (state.board.Any(p => before.TryGetValue(p.id, out var old) && old.kind == "Pawn" && p.kind != "Pawn"))
+            PlaySound(promotionSound);
+    }
+
+    private AudioClip OnlineMoveClip(MatchState previous, MatchState state)
+    {
+        var before = previous.board.ToDictionary(p => p.id);
+        var relocated = state.board.Where(p => before.TryGetValue(p.id, out var old) && old.square != p.square).ToList();
+        bool captured = previous.captures != null && state.captures != null ? state.captures.Count > previous.captures.Count :
+            previous.board.Any(p => p.team != previous.turn && !state.board.Any(now => now.id == p.id));
+        bool castled = relocated.Any(p => p.kind == "King" && before[p.id].kind == "King" &&
+            p.square[1] == before[p.id].square[1] && Math.Abs(p.square[0] - before[p.id].square[0]) == 2) &&
+            relocated.Any(p => p.kind == "Rook");
+        return captured ? hitSound : castled ? castleSound : relocated.Count > 0 ? moveSound : null;
     }
     private static bool SameBoard(MatchState a, MatchState b) => a.turn == b.turn && a.board.Count == b.board.Count &&
         a.board.Zip(b.board, (x, y) => x.id == y.id && x.square == y.square && x.kind == y.kind && x.team == y.team &&

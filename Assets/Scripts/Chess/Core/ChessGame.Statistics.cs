@@ -23,7 +23,8 @@ public partial class ChessGame
     public string StatisticsBuffProgress(PieceTeam team,AramBuffId id) => StatisticsBuffsVisible(team) &&
         !aramCoordinator.Runtime.DisguisesBuff(team,StatisticsViewer)
         ? aramCoordinator.Runtime.BuffProgress(team,id) : string.Empty;
-    public string StatisticsMode => aramMode ? "CHAOS" : botMode ? (IsBotPractice ? "Practice" : "Challenge") : serverAuthoritativeMode ? "Multiplayer" : "Local";
+    public string StatisticsMode => UsesDotNetOnline ? PlayModeNames.DisplayBackend(dotNetState.settings.mode) + (dotNetState.rated ? " / Ranked" : " / Normal") :
+        aramMode ? "CHAOS" : botMode ? (IsBotPractice ? "Practice" : "Challenge") : serverAuthoritativeMode ? "Multiplayer" : "Local";
     public string StatisticsPlayerName(PieceTeam team)
     {
         string supplied = turnSelectionUI ? turnSelectionUI.GetMatchPlayerName(team) : null;

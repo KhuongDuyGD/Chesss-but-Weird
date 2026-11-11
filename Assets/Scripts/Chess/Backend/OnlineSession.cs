@@ -99,11 +99,15 @@ namespace ChessButWeird.Online
         }
         public async Task RefreshAsync()
         {
-            await ConnectAsync();
+            // Connecting already restores match, ticket and room. Do not repeat
+            // the same REST/subscription round trips on initial lobby entry.
+            if (!Connected) { await ConnectAsync(); return; }
             var match = await Rest.CurrentMatchAsync();
             if (match != null && !ignoredMatches.Contains(match.matchId)) await SubscribeAsync(match.matchId);
             else if (State != null && !ignoredMatches.Contains(State.matchId)) await SubscribeAsync(State.matchId);
             Ticket = await Rest.CurrentTicketAsync();
+            if (!string.IsNullOrEmpty(Ticket?.matchId) && !ignoredMatches.Contains(Ticket.matchId) && State?.matchId != Ticket.matchId)
+                await SubscribeAsync(Ticket.matchId);
             await RestoreRoomAsync();
             LobbyChanged?.Invoke();
         }
@@ -324,7 +328,8 @@ namespace ChessButWeird.Online
             pendingArguments = null;
             if (!ack.accepted) Notice?.Invoke(ack.errorCode);
             // Also recover if the command committed but its push was lost.
-            await SubscribeAsync(matchId);
+            if (State?.matchId != matchId || State.eventSequence < ack.eventSequence || State.stateVersion < ack.stateVersion)
+                await SubscribeAsync(matchId);
             HistoryChanged?.Invoke();
             return ack;
         }

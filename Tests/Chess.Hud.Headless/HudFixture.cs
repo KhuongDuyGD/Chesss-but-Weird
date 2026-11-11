@@ -16,6 +16,7 @@ public static class UserSettings
 public static class PlayModeNames
 {
     public static string DisplayText(string value) => (value ?? "").Replace("ARAM", "CHAOS").Replace("Aram", "Chaos");
+    public static string DisplayBackend(string value) => DisplayText(value);
 }
 
 // Narrow dependencies for copied production HUD and ChessGame.Statistics sources.
@@ -25,6 +26,9 @@ public enum PieceType { King, Queen, Rook, Bishop, Knight, Pawn }
 public sealed class ChessOrbitCamera : MonoBehaviour { public bool IsOrbitUnlocked; public bool IsBoardViewActive=>isActiveAndEnabled; }
 public sealed partial class ChessGame : MonoBehaviour
 {
+    private sealed class FixtureOnlineSettings { public string mode = "Classic"; }
+    private sealed class FixtureOnlineState { public FixtureOnlineSettings settings = new FixtureOnlineSettings(); public bool rated; }
+    private FixtureOnlineState dotNetState = new FixtureOnlineState();
     public enum ChessGameStatus { Playing, Draw, Checkmate }
     private bool aramMode,botMode,serverAuthoritativeMode,gameStarted=true,pauseLocked;
     private StockfishDifficulty botDifficulty=StockfishDifficulty.Beginner;
