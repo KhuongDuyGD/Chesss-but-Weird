@@ -10,6 +10,14 @@ public sealed class CosmeticEnvironmentBackdrop : MonoBehaviour
     private CameraClearFlags previousClearFlags;
     private Color previousColor, horizon;
     private bool configured;
+    private Material skybox, previousSkybox;
+
+    public void ConfigureSkybox(Material material)
+    {
+        skybox = material; previousSkybox = RenderSettings.skybox;
+        RenderSettings.skybox = skybox;
+        configured = true; Apply();
+    }
 
     public void Configure(Color color)
     {
@@ -18,7 +26,12 @@ public sealed class CosmeticEnvironmentBackdrop : MonoBehaviour
         Apply();
     }
 
-    private void OnEnable() { if (configured) Apply(); }
+    private void OnEnable()
+    {
+        if (!configured) return;
+        if (skybox) { previousSkybox = RenderSettings.skybox; RenderSettings.skybox = skybox; }
+        Apply();
+    }
     private void LateUpdate() { if (configured) Apply(); }
 
     private void Apply()
@@ -31,11 +44,15 @@ public sealed class CosmeticEnvironmentBackdrop : MonoBehaviour
             if (view) { previousClearFlags = view.clearFlags; previousColor = view.backgroundColor; }
         }
         if (!view) return;
-        view.clearFlags = CameraClearFlags.SolidColor;
-        view.backgroundColor = horizon;
+        view.clearFlags = skybox ? CameraClearFlags.Skybox : CameraClearFlags.SolidColor;
+        if (!skybox) view.backgroundColor = horizon;
     }
 
-    private void OnDisable() { Restore(); }
+    private void OnDisable()
+    {
+        Restore();
+        if (skybox && RenderSettings.skybox == skybox) RenderSettings.skybox = previousSkybox;
+    }
     private void Restore()
     {
         if (view) { view.clearFlags = previousClearFlags; view.backgroundColor = previousColor; }

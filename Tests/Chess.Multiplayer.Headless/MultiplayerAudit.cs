@@ -91,6 +91,21 @@ public static class MultiplayerAudit
             Set(controller, "directMatchmaking", false);
             Check(!((LobbyRequest)Call(controller, "NewRequest")).rated, "Custom room requested ranked play");
             lines.Add("PASS normal/ranked/custom request classification");
+            var catalog = ScriptableObject.CreateInstance<CosmeticCatalog>();
+            catalog.boards.Add(new CosmeticCatalogEntry { id = "kingdom_rush_denas" });
+            catalog.boards.Add(new CosmeticCatalogEntry { id = "kingdom_rush_veznan" });
+            typeof(LoadingManager).GetProperty("Catalog").SetValue(LoadingManager.For(game), catalog);
+            var cosmetics = new MatchState { sharedBoardAssetKey = "kingdom_rush_veznan", players = new System.Collections.Generic.List<Player> {
+                new Player { userId = "a", color = "White", loadout = new System.Collections.Generic.List<Loadout> { new Loadout { type = "BOARD_SKIN", unityAssetKey = "kingdom_rush_denas" } } },
+                new Player { userId = "b", color = "Black", loadout = new System.Collections.Generic.List<Loadout> { new Loadout { type = "BOARD_SKIN", unityAssetKey = "kingdom_rush_veznan" }, new Loadout { type = "BACKGROUND_SKIN", unityAssetKey = "kingdom_rush_veznan" } } }
+            } };
+            var frozen = (CosmeticSelection)Call(controller, "FrozenSelection", cosmetics);
+            Check(frozen.boardId == "kingdom_rush_veznan" && frozen.environmentId == "classic", "Multiplayer ignored the shared board/background policy");
+            cosmetics.sharedBoardAssetKey = null; cosmetics.players.Reverse();
+            frozen = (CosmeticSelection)Call(controller, "FrozenSelection", cosmetics);
+            Check(frozen.boardId == "kingdom_rush_denas", "Legacy fallback differs between players");
+            UnityEngine.Object.DestroyImmediate(catalog);
+            lines.Add("PASS authoritative shared board, galaxy multiplayer background and deterministic legacy fallback");
             File.WriteAllLines("audit-result.txt", lines);
             foreach (string line in lines) Debug.Log(line);
             EditorApplication.Exit(0);

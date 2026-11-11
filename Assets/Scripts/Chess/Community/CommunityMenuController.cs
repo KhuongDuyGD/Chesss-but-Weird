@@ -15,7 +15,7 @@ public sealed class CommunityMenuController : MonoBehaviour
 {
     private RectTransform root, list, detail, filterBar;
     private TextMeshProUGUI heading, counters, status;
-    private Button backButton, switchButton, retryButton, previousButton, nextButton;
+    private Button backButton, switchButton, retryButton, previousButton, nextButton, allButton;
     private ScrollRect listScroll, detailScroll;
     private UnityAction back, login;
     private bool isMail, refreshing, claimBusy, disposed, built;
@@ -59,6 +59,7 @@ public sealed class CommunityMenuController : MonoBehaviour
         nextButton = UI.Button(root, "Next Page", ">", new Rect(586, 889, 112, 40), UI.White, () => { page++; RefreshMailbox(); }, 26);
         Label(root, "News Local Read Policy", "Development notes / Read history stays on this device / " + CommunityContent.VersionLabel,
             new Rect(104, 1009, 1630, 36), 22, UI.Muted);
+        allButton = UI.Button(root, "All Action", "READ ALL", new Rect(1410, 158, 408, 54), UI.Yellow, AllAction, 23);
         built = true;
         PlayerAuthService.StateChanged += OnSessionChanged;
         ResetReadScope();
@@ -98,7 +99,7 @@ public sealed class CommunityMenuController : MonoBehaviour
         AuthStorage.SessionVersion == epoch && PlayerAuthService.IsAuthenticated && PlayerAuthService.UserId == userId;
     public async void RefreshMailbox()
     {
-        if (!built || disposed || refreshing) return;
+        if (!built || disposed || refreshing || claimBusy) return;
         if (!PlayerAuthService.IsAuthenticated) { mailbox = null; UpdateCounters(); if (root.gameObject.activeInHierarchy && isMail) Render(); return; }
         long request = session.Current, epoch = AuthStorage.SessionVersion;
         string userId = PlayerAuthService.UserId;
@@ -171,6 +172,9 @@ public sealed class CommunityMenuController : MonoBehaviour
         previousButton.interactable = page > 1 && !refreshing;
         nextButton.interactable = mailbox != null && page * 20L < mailbox.total && !refreshing;
         retryButton.interactable = !refreshing && !claimBusy;
+        ShowButton(allButton, !isMail || PlayerAuthService.IsAuthenticated);
+        SetButtonText(allButton, isMail ? claimBusy ? "CONFIRMING..." : "CLAIM ALL" : "READ ALL");
+        allButton.interactable = isMail ? !refreshing && !claimBusy && (mailbox?.unclaimedCount ?? 0) > 0 : News().Any(a => !newsRead.IsRead(a.id));
         status.text = isMail ? mailError ?? (refreshing ? "Loading your mailbox..." : "Reading does not claim rewards. Your welcome gift never expires.") : CommunityContent.Error ?? "News and updates from the Chess But Weird team.";
         BuildFilters(); UpdateCounters();
         if (isMail) RenderMailbox(); else RenderNews();
@@ -285,6 +289,47 @@ public sealed class CommunityMenuController : MonoBehaviour
                 claimBusy = false; if (isMail && root.gameObject.activeInHierarchy) Render();
                 if (confirmed) RefreshMailbox();
             }
+        }
+    }
+    private void AllAction()
+    {
+        if (isMail) { ClaimAll(); return; }
+        foreach (var article in News()) newsRead.Mark(article.id);
+        PlayerPrefs.SetString(readScope, newsRead.Serialize()); PlayerPrefs.Save();
+        Render();
+    }
+    private async void ClaimAll()
+    {
+        if (claimBusy || refreshing || !PlayerAuthService.IsAuthenticated || (mailbox?.unclaimedCount ?? 0) == 0) return;
+        long request = session.Current, epoch = AuthStorage.SessionVersion;
+        string userId = PlayerAuthService.UserId;
+        detailRequest++; // Discard a pre-claim Read response that could repaint an unclaimed letter.
+        claimBusy = true; Render();
+        try
+        {
+            var receipt = await Gateway.ClaimAll(epoch);
+            if (!Accept(request, epoch, userId)) return;
+            var me = await Gateway.Me(epoch);
+            if (!Accept(request, epoch, userId) || me == null || me.userId != userId) return;
+            PlayerAuthService.ApplyApiUser(me);
+            var result = await Gateway.List(page, epoch);
+            if (!Accept(request, epoch, userId)) return;
+            mailbox = result;
+            selectedMail = result.items.Find(m => m.mailId == selectedMailId);
+            mailError = null;
+            string rewards = string.Join("\n", receipt.rewards.Select(a => $"{a.amount:N0} {a.currency}"));
+            AuthNotificationView.Show(receipt.claimedCount > 0 ? "All gifts claimed" : "No gifts remaining",
+                receipt.claimedCount > 0 ? $"Claimed gifts from {receipt.claimedCount} letters and marked them as read.\n{rewards}" : "Your mailbox and wallet are up to date.",
+                AuthNotificationView.ResultKind.Success);
+        }
+        catch (OperationCanceledException) { }
+        catch (Exception)
+        {
+            if (Accept(request, epoch, userId)) mailError = "Claim outcome could not be confirmed. REFRESH to recover your mailbox and wallet. Retrying will never grant the same gift twice.";
+        }
+        finally
+        {
+            if (Accept(request, epoch, userId)) { claimBusy = false; UpdateCounters(); if (isMail && root.gameObject.activeInHierarchy) Render(); }
         }
     }
     private void RenderNews()

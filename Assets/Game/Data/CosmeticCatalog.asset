@@ -127,18 +127,8 @@ MonoBehaviour:
     thumbnail: {fileID: 21300000, guid: e0f4e936f862ee24e912122bfc82612a, type: 3}
     tier: LEGENDARY
   environments:
-  - id: kingdom_rush
-    displayName: "Kingdom Rush \u2014 Linirea Valley"
-    data:
-      m_AssetGUID: f8abee0442916dc44abbe7d82cd70d90
-      m_SubObjectName: 
-      m_SubObjectType: 
-      m_SubObjectGUID: 
-      m_EditorAssetChanged: 0
-    thumbnail: {fileID: 21300000, guid: ed942ada2c3322a42a06c689ca541250, type: 3}
-    tier: LEGENDARY
   - id: classic
-    displayName: Classic background
+    displayName: Purple Galaxy
     data:
       m_AssetGUID: 21d0db9b3a2861b4187244f93d6708fb
       m_SubObjectName: 

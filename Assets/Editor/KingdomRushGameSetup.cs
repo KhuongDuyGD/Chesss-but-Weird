@@ -71,12 +71,13 @@ public static class KingdomRushGameSetup
         background.environmentPrefab = ModelPrefab(settings, "KR_Linirea_Valley", "Environment_KingdomRush", "Environments/KingdomRush");
         background.preview = Preview(settings, Root + "/Previews/KR_Linirea_Background.png", "Background");
         background.localPosition = background.localRotation = Vector3.zero; background.localScale = Vector3.one; background.useBoardScale = true;
-        Register(settings, background, "Environment_KingdomRush", "Environment/" + Id);
-        Upsert(catalog.environments, background, Id, background.displayName, background.preview, "LEGENDARY");
+        // Linirea Valley is archived; do not add its environment to new content builds.
+        catalog.environments.RemoveAll(entry => entry.id == Id);
 
-        // No model override means the scene keeps its original background.
+        // The default explicitly owns the galaxy sky, even in the standalone match scene.
         var basic = LoadOrCreate<EnvironmentData>(Data + "/Environments/Classic.asset");
-        basic.environmentId = "classic"; basic.displayName = "Classic background";
+        basic.environmentId = "classic"; basic.displayName = "Purple Galaxy";
+        basic.skybox = AssetDatabase.LoadAssetAtPath<Material>("Assets/Skyboxes/VoidPixFreePack/VoidPix_Blink_Skybox.mat");
         basic.environmentPrefab = new AssetReferenceGameObject("");
         string classicPreview = Root + "/Previews/Classic_Background.png";
         basic.preview = Preview(settings, File.Exists(classicPreview) ? classicPreview : "Assets/Skins/Tazji'sLowPoly/Chess_Arena/Chess_Arena_Preview.png", "ClassicBackground");

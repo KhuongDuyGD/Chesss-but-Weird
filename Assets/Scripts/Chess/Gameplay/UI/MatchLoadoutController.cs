@@ -70,7 +70,7 @@ public sealed class MatchLoadoutController : MonoBehaviour
         actionLabel = action;
         startButton.name = "Find Match";
         startButton.GetComponentInChildren<TextMeshProUGUI>().text = action;
-        sideLabel.text = description ?? "Choose your loadout. Your equipment is saved before matchmaking.";
+        sideLabel.text = onlineMode ? "Side: RANDOM  /  Board: RANDOM from both loadouts" : description ?? "Choose your loadout. Your equipment is saved before matchmaking.";
         if (onlineMode && !networkNotice)
         {
             networkNotice = UI.Text(content, "Network Notice", "", new Rect(64, 811, 1544, 32), 20, UI.Muted);
@@ -125,7 +125,9 @@ public sealed class MatchLoadoutController : MonoBehaviour
     private void OpenPicker(bool bothSides, bool online, PieceTeam team, Action<CosmeticSelection> onStart, UnityAction onBack)
     {
         requestVersion++; sessionUser = PlayerAuthService.CurrentApiUser?.userId;
-        playerTeam = team; canChooseBlack = bothSides || online; onlineMode = online;
+        playerTeam = team; canChooseBlack = bothSides && !online; onlineMode = online;
+        backgroundButton.gameObject.SetActive(!online);
+        categoryButtons[(int)Slot.Background].gameObject.SetActive(!online);
         lobbyLocked = queueSearching = queueBusy = false; cancelSearch = null; canContinue = null;
         actionLabel = "START MATCH";
         startAction = onStart; backAction = onBack;
@@ -193,11 +195,12 @@ public sealed class MatchLoadoutController : MonoBehaviour
         whiteButton.targetGraphic.color = playerTeam == PieceTeam.White ? UI.Yellow : UI.White;
         blackButton.targetGraphic.color = playerTeam == PieceTeam.Black ? UI.Yellow : UI.White;
         sideLabel.gameObject.SetActive(!canChooseBlack);
-        sideLabel.text = onlineMode ? "Your equipment will be saved before joining a room or queue." :
+        sideLabel.text = onlineMode ? "Side: RANDOM  /  Board: RANDOM from both loadouts" :
             "Your side: " + playerTeam + "   ·   Bot uses its default pieces";
     }
     private void OpenPopup(Slot category)
     {
+        if (onlineMode && category == Slot.Background) return;
         if (submitting || lobbyLocked) return;
         slot = category; overlay.gameObject.SetActive(true);
         contentInput.interactable = contentInput.blocksRaycasts = false;
@@ -338,6 +341,8 @@ public sealed class MatchLoadoutController : MonoBehaviour
         {
             if (!FitsPiece(choice, playerTeam, editingPiece.Value)) return;
             selection.SetPiece(playerTeam, editingPiece.Value, choice.assetKey, choice.itemId);
+            if (onlineMode && choice.type == CosmeticItemKinds.Set)
+                selection.SetPiece(playerTeam == PieceTeam.White ? PieceTeam.Black : PieceTeam.White, editingPiece.Value, choice.assetKey, choice.itemId);
         }
         else if (onlineMode) selection.whiteSkinId = selection.blackSkinId = choice.id;
         else if (playerTeam == PieceTeam.White) selection.whiteSkinId = choice.id;
@@ -378,7 +383,7 @@ public sealed class MatchLoadoutController : MonoBehaviour
                     choices.FirstOrDefault(c => c.itemId == binding.itemId && FitsPiece(c, playerTeam, piece));
                 var button = UI.Button(summaryRoot, playerTeam + " " + kind + " Skin", "", new Rect(640 + i % 2 * 294, i / 2 * 142, 286, 132), UI.White,
                     () => { editingPiece = piece; OpenPopup(Slot.Chess); });
-                UI.Text(button.transform, "Slot", playerTeam + " " + kind, new Rect(10, 9, 266, 34), 24);
+                UI.Text(button.transform, "Slot", onlineMode ? kind.ToString() : playerTeam + " " + kind, new Rect(10, 9, 266, 34), 24);
                 UI.Text(button.transform, "Skin", choice?.name ?? "Base set", new Rect(10, 48, 266, 70), 23, UI.Muted, TextAlignmentOptions.Center, true);
                 button.interactable = !loading && !submitting && !lobbyLocked; i++;
             }
@@ -464,9 +469,9 @@ public sealed class MatchLoadoutController : MonoBehaviour
                 }
                 selection.blackSkinId = selection.whiteSkinId;
             }
-            // Background is account equipment in both local and online modes;
+            // Background is local account equipment;
             // an empty item ID explicitly restores the locked, non-sale default.
-            if (!PlayerAuthService.IsGuestSession && (selection.environmentId != "classic" || !string.IsNullOrEmpty(PlayerAuthService.CurrentApiUser?.equipped?.backgroundSkinId)))
+            if (!onlineMode && !PlayerAuthService.IsGuestSession && (selection.environmentId != "classic" || !string.IsNullOrEmpty(PlayerAuthService.CurrentApiUser?.equipped?.backgroundSkinId)))
             {
                 var background = FindChoice(CosmeticItemKinds.Background, selection.environmentId);
                 if (selection.environmentId != "classic" && string.IsNullOrWhiteSpace(background?.itemId)) throw new InvalidOperationException("Background unavailable. Refresh your collection.");

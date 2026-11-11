@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: Classic
   m_EditorClassIdentifier: Assembly-CSharp::EnvironmentData
   environmentId: classic
-  displayName: Classic background
+  displayName: Purple Galaxy
+  skybox: {fileID: 2100000, guid: 262a1840f46aa044085a89a1a1c59638, type: 2}
   preview:
     m_AssetGUID: 371fb047c7acb86489a6bba74ef7e931
     m_SubObjectName: 
