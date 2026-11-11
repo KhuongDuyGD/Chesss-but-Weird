@@ -123,7 +123,7 @@ public sealed class LoadingManager : MonoBehaviour
                 Board.Data ? Board.Data.cameraFramePadding : 0f);
         }
         else game.Board.ShowFallbackBoard();
-        if (Board.EnvironmentPrefab)
+        if (Board.Environment || Board.EnvironmentPrefab)
         {
             environmentVisual = new GameObject("Selected environment");
             environmentVisual.transform.position = game.Board.GetBoardCenterWorld();

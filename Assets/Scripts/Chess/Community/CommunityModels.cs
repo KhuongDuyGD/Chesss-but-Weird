@@ -63,6 +63,11 @@ using Newtonsoft.Json;
 }
 [Serializable] public sealed class CommunityMailEnrollment { public bool created; public CommunityMail mail; }
 [Serializable] public sealed class CommunityMailReceipt { public string receiptId, mailId, claimedAtUtc; }
+[Serializable] public sealed class CommunityMailClaimAllReceipt
+{
+    public int claimedCount;
+    public List<CommunityMailAttachment> rewards = new List<CommunityMailAttachment>();
+}
 
 // Each operation also checks ApiClient's auth epoch. This gate rejects out-of-order responses within the same account.
 public sealed class CommunityRequestGate

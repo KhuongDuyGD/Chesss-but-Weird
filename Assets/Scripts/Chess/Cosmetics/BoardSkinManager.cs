@@ -24,9 +24,9 @@ public sealed class BoardSkinManager
         if (!BoardPrefab && !string.Equals(boardId, fallback, StringComparison.OrdinalIgnoreCase))
             yield return LoadBoard(catalog, fallback, null);
         report(0.7f);
-        if (catalog && !string.IsNullOrWhiteSpace(environmentId))
+        if (catalog)
         {
-            CosmeticCatalogEntry entry = catalog.FindEnvironment(environmentId);
+            CosmeticCatalogEntry entry = catalog.FindEnvironment(environmentId) ?? catalog.FindEnvironment("classic");
             if (entry != null)
             {
                 yield return assets.Load<EnvironmentData>(entry.data, value => Environment = value, p => report(0.7f + p * 0.1f));
@@ -52,6 +52,8 @@ public sealed class BoardSkinManager
         GameObject instance = UnityEngine.Object.Instantiate(BoardPrefab, parent, false);
         if (Data) SetTransform(instance.transform, Data.localPosition, Data.localRotation, Data.localScale);
         ChessModelRendering.ApplySettings(instance);
+        if (Data && Data.boardId != CosmeticSelection.KingdomRushDenasId && Data.boardId != CosmeticSelection.KingdomRushVeznanId && Data.boardId != CosmeticSelection.KingdomRushId)
+            instance.AddComponent<LegacyBoardPresentation>();
         if (Data && Data.loopAnimation)
             foreach (var animation in instance.GetComponentsInChildren<Animation>(true))
             {
@@ -65,13 +67,15 @@ public sealed class BoardSkinManager
 
     public GameObject InstantiateEnvironment(Transform parent)
     {
-        if (assets.IsDisposed || !EnvironmentPrefab) return null;
-        GameObject instance = UnityEngine.Object.Instantiate(EnvironmentPrefab, parent, false);
+        if (assets.IsDisposed || !Environment && !EnvironmentPrefab) return null;
+        GameObject instance = EnvironmentPrefab ? UnityEngine.Object.Instantiate(EnvironmentPrefab, parent, false) : new GameObject("Galaxy Background");
+        if (!EnvironmentPrefab) instance.transform.SetParent(parent, false);
         if (Environment) SetTransform(instance.transform, Environment.localPosition, Environment.localRotation, Environment.localScale);
         ChessModelRendering.ApplySettings(instance);
         var backdrop = instance.GetComponent<CosmeticEnvironmentBackdrop>();
         if (!backdrop) backdrop = instance.AddComponent<CosmeticEnvironmentBackdrop>();
-        backdrop.Configure(Environment ? Environment.horizonColor : new Color(.19f,.28f,.14f,1f));
+        if (Environment && Environment.skybox) backdrop.ConfigureSkybox(Environment.skybox);
+        else backdrop.Configure(Environment ? Environment.horizonColor : new Color(.19f,.28f,.14f,1f));
         return instance;
     }
 

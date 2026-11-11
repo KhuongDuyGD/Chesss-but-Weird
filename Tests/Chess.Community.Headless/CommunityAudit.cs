@@ -22,6 +22,9 @@ public static class CommunityAudit
     public static void Run()
     {
         if (!Application.isBatchMode || !Application.dataPath.Replace('\\', '/').Contains("/Logs/community-qa/")) throw new Exception("Isolated QA project required.");
+        // Keep reruns independent without deleting unrelated device preferences.
+        foreach (var id in new[] { "account-A", "account-B", "account-C", (string)null })
+            PlayerPrefs.DeleteKey(CommunityNewsReadSet.Scope(id, id == null));
         output = Path.GetDirectoryName(Application.dataPath);
         EditorSettings.enterPlayModeOptionsEnabled = true;
         EditorSettings.enterPlayModeOptions = EnterPlayModeOptions.DisableDomainReload;
@@ -85,6 +88,9 @@ public static class CommunityAudit
         controller.Open(false); Check(Text("35 BUFFS"), "Guest news hero missing");
         Check(newsEntry.transform.Find("Unread Hint").gameObject.activeSelf && !mailEntry.transform.Find("Gift Hint").gameObject.activeSelf, "Guest hint state incorrect");
         Capture("news-overview.png");
+        Click("All Action");
+        Check(!newsEntry.transform.Find("Unread Hint").gameObject.activeSelf, "READ ALL left an unread news badge");
+        Check(!Button("All Action").interactable, "READ ALL should disable when all public articles are read");
         var newsList = page.GetComponentsInChildren<ScrollRect>().First(s => s.name != "Readable Detail");
         var newsDetail = page.GetComponentsInChildren<ScrollRect>().First(s => s.name == "Readable Detail");
         newsList.verticalNormalizedPosition = .2f; Canvas.ForceUpdateCanvases();
@@ -167,6 +173,13 @@ public static class CommunityAudit
         Check(!Button("CLAIM GIFT").interactable && Text("The outcome is not confirmed"), "Uncertain wallet outcome enabled retry/success");
         Check(AuthNotificationView.Successes == 1, "False success before wallet recovery");
         gateway.FailMe = false; controller.RefreshMailbox(); Check(Text("CLAIMED"), "Refresh failed to recover committed claim");
+        gateway.LoseClaimResponse = false;
+        PlayerAuthService.Switch("account-C"); controller.Open(true);
+        Check(Button("All Action").interactable, "CLAIM ALL disabled with pending rewards");
+        Click("All Action");
+        Check(gateway.Letters["account-C"].IsClaimed && !gateway.Letters["account-C"].IsUnread, "CLAIM ALL did not claim/read the letter");
+        Check(!Button("All Action").interactable && !mailEntry.transform.Find("Gift Hint").gameObject.activeSelf, "CLAIM ALL left a pending gift badge");
+        Check(AuthNotificationView.Successes == 2 && PlayerAuthService.CurrentApiUser.wallet.golds == 3000, "CLAIM ALL did not confirm the authoritative wallet");
         PlayerAuthService.Switch(null); controller.Open(true); Check(!Buttons().Any(b => b.name.StartsWith("Mail welcome-")), "Logout left private letter visible");
         controller.Open(false); foreach (var article in news) Click("News " + article.id);
         Check(!newsEntry.transform.Find("Unread Hint").gameObject.activeSelf, "Read news kept its unread hint");
@@ -189,6 +202,14 @@ public static class CommunityAudit
         Check(!Bounds((RectTransform)music.transform).Overlaps(Bounds((RectTransform)mode.MailboxButton.transform)), "Music/mail buttons overlap");
         Check(!Bounds((RectTransform)mode.MailboxButton.transform).Overlaps(Bounds((RectTransform)mode.NewsButton.transform)), "Mail/news buttons overlap");
         Capture("main-menu-2.png");
+        foreach (var menuRoot in new[] { main, hub })
+        {
+            var quit = menuRoot.GetComponentsInChildren<Button>().Single(b => b.name == "Quit Game");
+            var logout = menuRoot.GetComponentsInChildren<Button>().Single(b => b.name == "Logout");
+            Check(!Bounds((RectTransform)quit.transform).Overlaps(Bounds((RectTransform)logout.transform)), "Quit overlaps Logout");
+            quit.onClick.Invoke();
+        }
+        Check(GameRuntimeSettings.QuitRequests == 2, "Menu quit buttons are not wired");
     }
     private static Rect Bounds(RectTransform rect) { var c = new Vector3[4]; rect.GetWorldCorners(c); return Rect.MinMaxRect(c[0].x, c[0].y, c[2].x, c[2].y); }
     private static void Within(RectTransform child, RectTransform parent, string label)

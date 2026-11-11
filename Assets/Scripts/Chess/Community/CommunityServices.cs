@@ -9,6 +9,7 @@ public interface ICommunityMailboxGateway
     Task<CommunityMail> Get(string mailId, long epoch);
     Task<CommunityMail> Read(string mailId, long epoch);
     Task<CommunityMailReceipt> Claim(string mailId, long epoch);
+    Task<CommunityMailClaimAllReceipt> ClaimAll(long epoch);
     Task<UserMeResponse> Me(long epoch);
 }
 public sealed class CommunityMailboxGateway : ICommunityMailboxGateway
@@ -18,6 +19,7 @@ public sealed class CommunityMailboxGateway : ICommunityMailboxGateway
     public Task<CommunityMail> Get(string id, long epoch) => ApiClient.Shared.SendAsync<CommunityMail>("GET", Path(id), null, true, epoch);
     public Task<CommunityMail> Read(string id, long epoch) => ApiClient.Shared.PostForSessionAsync<CommunityMail>(Path(id) + "/read", new { }, epoch);
     public Task<CommunityMailReceipt> Claim(string id, long epoch) => ApiClient.Shared.PostForSessionAsync<CommunityMailReceipt>(Path(id) + "/claim", new { }, epoch);
+    public Task<CommunityMailClaimAllReceipt> ClaimAll(long epoch) => ApiClient.Shared.PostForSessionAsync<CommunityMailClaimAllReceipt>("/api/mailbox/claim-all", new { }, epoch);
     public Task<UserMeResponse> Me(long epoch) => ApiClient.Shared.SendAsync<UserMeResponse>("GET", "/api/users/me", null, true, epoch);
     private static string Path(string id) => "/api/mailbox/" + Uri.EscapeDataString(id);
 }

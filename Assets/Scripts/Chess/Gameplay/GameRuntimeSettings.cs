@@ -16,6 +16,14 @@ public enum GameAntiAliasingMode
 
 public static class GameRuntimeSettings
 {
+    public static void QuitGame()
+    {
+#if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+#else
+        Application.Quit();
+#endif
+    }
     private static readonly Dictionary<int, RenderPipelineAsset> pipelineOverrides = new Dictionary<int, RenderPipelineAsset>();
     private static readonly Dictionary<int, UniversalRenderPipelineAsset> pipelineCopies = new Dictionary<int, UniversalRenderPipelineAsset>();
     private const int MinimumFps = 30;
@@ -169,6 +177,18 @@ public static class GameRuntimeSettings
         QualitySettings.shadowResolution = tier == 1 ? UnityEngine.ShadowResolution.Low : tier == 2 ? UnityEngine.ShadowResolution.Medium : UnityEngine.ShadowResolution.High;
         QualitySettings.shadowCascades = tier <= 1 ? 0 : tier == 2 ? 2 : 4;
         QualitySettings.shadows = enabled ? UnityEngine.ShadowQuality.All : UnityEngine.ShadowQuality.Disable;
+        // The original match scene stores a shadowless Sun. Renderer flags alone cannot cast shadows.
+        var main = Camera.main;
+        Light sun = RenderSettings.sun;
+        if (!sun && main)
+            foreach (var light in Object.FindObjectsByType<Light>(FindObjectsInactive.Exclude))
+                if (light.type == LightType.Directional && light.gameObject.scene == main.gameObject.scene &&
+                    (!sun || light.intensity > sun.intensity)) sun = light;
+        if (sun)
+        {
+            sun.shadows = !enabled ? LightShadows.None : tier == 1 ? LightShadows.Hard : LightShadows.Soft;
+            sun.shadowBias = .045f; sun.shadowNormalBias = .08f; sun.shadowStrength = .8f;
+        }
         foreach (var camera in Object.FindObjectsByType<Camera>(FindObjectsInactive.Include))
         {
             if (!camera || !camera.gameObject.scene.IsValid() ||
@@ -177,6 +197,11 @@ public static class GameRuntimeSettings
             camera.GetUniversalAdditionalCameraData().renderShadows = enabled;
         }
         ChessModelRendering.RefreshShadows(enabled);
+    }
+    public static void RefreshMatchCameras()
+    {
+        ApplyAntiAliasing(AntiAliasing);
+        ApplyShadows();
     }
 
     private static void ApplyFrameRate(int fps)

@@ -20,6 +20,12 @@ public static class AddressableCosmeticsSetup
     public static void BuildContent()
     {
         Setup();
+        BuildExistingContent();
+    }
+
+    [MenuItem("Chess/Rebuild Existing Addressable Cosmetics")]
+    public static void BuildExistingContent()
+    {
         AddressableAssetSettings.BuildPlayerContent(out var result);
         if (!string.IsNullOrEmpty(result.Error)) throw new InvalidOperationException(result.Error);
         Debug.Log("[Cosmetics] Addressables content build succeeded: " + result.OutputPath);

@@ -61,7 +61,8 @@ public sealed class ModeSelectionPresentation : MonoBehaviour
 
         back = ButtonFace(content, "Back", new Rect(122, 976, 184, 58), new Color(.983f, .972f, .946f), actions.Back, false);
         Label(back.transform, "Back Label", "BACK", new Rect(16, 6, 152, 45), 29, Ink, TextAlignmentOptions.Center).fontStyle = FontStyles.Bold;
-        logout = ButtonFace(content, "Logout", new Rect(1644, 57, 164, 47), new Color(.97f, .954f, .914f), actions.Logout, false);
+        logout = ButtonFace(content, "Logout", new Rect(1552, 57, 164, 47), new Color(.97f, .954f, .914f), actions.Logout, false);
+        UI.Button(content, "Quit Game", "QUIT", new Rect(1736, 24, 156, 56), UI.Pink, GameRuntimeSettings.QuitGame, 24);
         Label(logout.transform, "Logout Label", "LOG OUT", new Rect(8, 3, 148, 40), 23, Ink, TextAlignmentOptions.Center).fontStyle = FontStyles.Bold;
         Label(page, "Mode Hub Footer", "Play well. Respect others. Stay weird.", new Rect(361, 985, 897, 42), 26, QuietInk);
         Label(page, "Mode Hub Version", CommunityContent.VersionLabel, new Rect(1530, 987, 273, 39), 25, QuietInk, TextAlignmentOptions.Right);

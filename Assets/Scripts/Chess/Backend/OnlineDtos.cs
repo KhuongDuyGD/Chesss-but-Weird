@@ -60,7 +60,7 @@ namespace ChessButWeird.Online
     }
     [Serializable, Preserve] public sealed class MatchState
     {
-        public string matchId, status, turn, fen, castlingRights, enPassantTarget, rematchId, checkedTeam;
+        public string matchId, status, turn, fen, castlingRights, enPassantTarget, rematchId, checkedTeam, sharedBoardAssetKey;
         public long stateVersion, eventSequence;
         public int halfMoveClock, fullMoveNumber;
         public DateTime serverTime, readyDeadline;

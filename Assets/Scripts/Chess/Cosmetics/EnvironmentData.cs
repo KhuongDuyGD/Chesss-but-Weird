@@ -8,6 +8,7 @@ public sealed class EnvironmentData : ScriptableObject
     public string displayName;
     public AssetReferenceSprite preview;
     public bool useBoardScale;
+    public Material skybox;
     public AssetReferenceGameObject environmentPrefab;
     public Vector3 localPosition;
     public Vector3 localRotation;

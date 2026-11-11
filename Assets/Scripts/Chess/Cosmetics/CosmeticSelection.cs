@@ -94,7 +94,7 @@ public sealed class CosmeticSelection
         if (string.IsNullOrWhiteSpace(boardId) ||
             string.Equals(boardId, "default", StringComparison.OrdinalIgnoreCase))
             boardId = LowPolyId;
-        environmentId = string.IsNullOrWhiteSpace(environmentId) ? "classic" : environmentId;
+        environmentId = string.IsNullOrWhiteSpace(environmentId) || environmentId == KingdomRushId ? "classic" : environmentId;
         if (moveEffectId != "ink_sparks" && moveEffectId != "confetti") moveEffectId = "classic";
     }
 

@@ -23,7 +23,7 @@ MonoBehaviour:
   m_IncludeAddressesForFolderChildren: 1
   m_InternalIdNamingMode: 0
   m_CacheClearBehavior: 0
-  m_IncludeInBuild: 1
+  m_IncludeInBuild: 0
   m_BundledAssetProviderType:
     m_AssemblyName: Unity.ResourceManager
     m_ClassName: UnityEngine.ResourceManagement.ResourceProviders.BundledAssetProvider

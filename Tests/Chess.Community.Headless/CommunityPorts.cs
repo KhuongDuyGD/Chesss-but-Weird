@@ -39,7 +39,7 @@ public static class GameMusicManager
     public static void SetActivePack(GameMusicPack pack) { ActivePack = pack; }
     public static string GetPackDisplayName(GameMusicPack pack) => pack.ToString();
 }
-public static class GameRuntimeSettings { public static float MusicVolume01 => 0; }
+public static class GameRuntimeSettings { public static float MusicVolume01 => 0; public static int QuitRequests; public static void QuitGame() => QuitRequests++; }
 
 public sealed class FixtureMailboxGateway : ICommunityMailboxGateway
 {
@@ -80,6 +80,15 @@ public sealed class FixtureMailboxGateway : ICommunityMailboxGateway
         Claims++; Letters[Id].claimedAtUtc = "2026-11-09T00:02:00Z"; Letters[Id].status = "Claimed";
         if (LoseClaimResponse) throw new Exception("response lost after commit");
         return Task.FromResult(new CommunityMailReceipt { mailId = id, receiptId = "mail:" + id, claimedAtUtc = Letters[Id].claimedAtUtc });
+    }
+    public async Task<CommunityMailClaimAllReceipt> ClaimAll(long epoch)
+    {
+        if (Offline) throw new Exception("offline");
+        var result = new CommunityMailClaimAllReceipt();
+        if (!Letters[Id].IsClaimable) return result;
+        result.rewards.AddRange(Letters[Id].attachments); result.claimedCount = 1;
+        await Read(Letters[Id].mailId, epoch); await Claim(Letters[Id].mailId, epoch);
+        return result;
     }
     private static CommunityMail Copy(CommunityMail mail) => Newtonsoft.Json.JsonConvert.DeserializeObject<CommunityMail>(Newtonsoft.Json.JsonConvert.SerializeObject(mail));
 }

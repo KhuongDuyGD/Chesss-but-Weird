@@ -382,14 +382,12 @@ public partial class ChessLanController
                     selection.customPieces = true;
                     selection.SetPiece(slotTeam, kind, item.unityAssetKey, item.itemId);
                 }
-            if (player.userId == PlayerAuthService.UserId)
-            {
-                var board = player.loadout.FirstOrDefault(l => l.type == CosmeticItemKinds.Board);
-                if (catalog && catalog.FindBoard(board?.unityAssetKey) != null) selection.boardId = board.unityAssetKey;
-                var background = player.loadout.FirstOrDefault(l => l.type == CosmeticItemKinds.Background);
-                if (catalog && catalog.FindEnvironment(background?.unityAssetKey) != null) selection.environmentId = background.unityAssetKey;
-            }
         }
+        // Legacy snapshots deterministically use White's board on both clients.
+        string board = state.sharedBoardAssetKey ?? state.players.FirstOrDefault(p => p.color == "White")?.loadout
+            .FirstOrDefault(l => l.type == CosmeticItemKinds.Board)?.unityAssetKey;
+        if (catalog && catalog.FindBoard(board) != null) selection.boardId = board;
+        selection.environmentId = "classic";
         return selection;
     }
     private async Task RefreshAccountAsync(int epoch)

@@ -16,7 +16,7 @@ public sealed class CosmeticCatalog : ScriptableObject
 
     public CosmeticCatalogEntry FindPiece(string id) => Find(pieceSkins, id);
     public CosmeticCatalogEntry FindBoard(string id) => Find(boards, id);
-    public CosmeticCatalogEntry FindEnvironment(string id) => Find(environments, id);
+    public CosmeticCatalogEntry FindEnvironment(string id) => id == CosmeticSelection.KingdomRushId ? null : Find(environments, id);
 
     private static CosmeticCatalogEntry Find(List<CosmeticCatalogEntry> entries, string id)
     {
