@@ -86,6 +86,18 @@ public static class SketchbookUI
         return button;
     }
 
+    public static Button QuitButton(Transform parent, float referenceWidth)
+    {
+        var red = new Color(.76f, .12f, .17f);
+        var button = Button(parent, "Quit Game", "", new Rect(referenceWidth - 68, 14, 48, 48), new Color(1f,.88f,.87f), null);
+        button.GetComponent<HandDrawnRoundedGraphic>().Configure(new Color(1f,.88f,.87f), red, 24, 2f, .25f, 0);
+        button.onClick.AddListener(() => SettingsPrompt.Show(button.GetComponentInParent<Canvas>().rootCanvas.transform as RectTransform,
+            "Quit the game?", GameRuntimeSettings.QuitGame, "Quit Game"));
+        var icon = Node(button.transform, "Power icon", new Rect(6, 6, 36, 36)).gameObject.AddComponent<MatchHudIconGraphic>();
+        icon.Configure(MatchHudIconGraphic.Symbol.Power, red);
+        return button;
+    }
+
     public static Image Image(Transform parent, string name, Sprite sprite, Rect area)
     {
         var image = Node(parent, name, area).gameObject.AddComponent<AntialiasedMenuImage>();

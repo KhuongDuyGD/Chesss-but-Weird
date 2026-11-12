@@ -4,6 +4,29 @@ using UnityEngine;
 
 public sealed partial class AramBuffRuntime
 {
+    public string BuffHudStatus(PieceTeam team,AramBuffId id)
+    {
+        if(!HasBuff(team,id)||!game)return "";
+        int side=Side(team);var state=GetState(team);
+        switch(id)
+        {
+            case AramBuffId.FlyingThunderGod:
+                if(!Live(state.OriginalQueen)||state.GetQueenTeleportUses()>=5)return "Expired";
+                return state.GetQueenTeleportCooldown()>0?"Cooldown: "+state.GetQueenTeleportCooldown()+" owner turns":"Ready · "+(5-state.GetQueenTeleportUses())+" uses";
+            case AramBuffId.Doppelganger:return doppelDisabled[side]?"Expired":HudCooldown(swapReady[side]-combinedPlies,"moves");
+            case AramBuffId.HidingKing:return HudCooldown(hidingReady[side]-combinedPlies,"moves");
+            case AramBuffId.OneManArmy:return HudCooldown(rifleReady[side]-completedTurns[side],"owner turns");
+            case AramBuffId.PeaceTShirt:return peaceFailed[side]||peaceUsed[side]?"Expired":HudCooldown(AramBalanceRules.PeaceGoal-combinedPlies,"moves");
+            case AramBuffId.SacUrQueen:return queenRefundUsed[side]?"Expired":HudCooldown(10-completedTurns[side],"owner turns");
+            case AramBuffId.SuicideBomber:return state.SuicideBomberUsed||!Live(state.OriginalQueen)?"Expired":"Armed";
+            case AramBuffId.SubstituteNinjutsu:return substituteUsed[side]?"Expired":"Ready";
+            case AramBuffId.GachaBanner:return tickets[side]+" tickets · "+(rollsThisTurn[side]>=1?"Next turn":"Ready");
+            case AramBuffId.GamblingLeadsToMisery:return extraUses[side]>=3?"Expired":(3-extraUses[side])+" uses left";
+            case AramBuffId.IFrameRoll:return escapeUses[side]>=3?"Expired":(3-escapeUses[side])+" escapes left";
+            default:return BuffProgress(team,id);
+        }
+    }
+    private static string HudCooldown(int remaining,string unit)=>remaining>0?"Cooldown: "+remaining+" "+unit:"Ready";
     /// <summary>Caller must apply the match's buff-visibility policy before exposing this text.</summary>
     public string BuffProgress(PieceTeam team,AramBuffId id)
     {

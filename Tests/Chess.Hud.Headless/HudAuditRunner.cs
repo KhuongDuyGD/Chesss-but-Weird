@@ -93,11 +93,11 @@ public static class HudAuditRunner
                 game.IsAramGame=aram;Set(view,"focus",false);Set(view,"expanded",true);Call(view,"Layout");Call(view,"Refresh");Canvas.ForceUpdateCanvases();
                 var root=Field<RectTransform>(view,"root");
                 foreach(string item in new[]{"top","statusRect","controls","journal"})Within(Field<RectTransform>(view,item),root,resolution+" "+item);
-                foreach(string item in new[]{"whiteName","blackName","status","elapsed","hint"})TextFits(Field<TextMeshProUGUI>(view,item),resolution+" "+item);
+                foreach(string item in new[]{"whiteName","blackName","elapsed","hint"})TextFits(Field<TextMeshProUGUI>(view,item),resolution+" "+item);
                 float fov=camera.fieldOfView;
                 Field<Button>(view,"focusButton").onClick.Invoke();
-                Check(!Field<RectTransform>(view,"top").gameObject.activeSelf,"Focus left player cards visible");
-                Check(Field<RectTransform>(view,"statusRect").gameObject.activeSelf,"Focus hid mandatory status");
+                Check(Field<RectTransform>(view,"top").gameObject.activeSelf,"Focus hid the turn indicators");
+                Check(!Field<RectTransform>(view,"statusRect").gameObject.activeSelf,"Ordinary turn still allocates the old status banner");
                 Check(Mathf.Approximately(fov,camera.fieldOfView),"Focus changed camera framing");
                 Field<Button>(view,"journalButton").onClick.Invoke();
                 Check(Mathf.Approximately(fov,camera.fieldOfView),"Journal changed camera framing");
@@ -110,8 +110,8 @@ public static class HudAuditRunner
                 Set(abilities,"nextRefresh",0f);Call(abilities,"Update");runtime.AbilityPanelHeight=abilities.PanelHeight;Call(buffs,"Update");Canvas.ForceUpdateCanvases();
                 var panel=Field<RectTransform>(abilities,"actionPanel");
                 Within(panel,Field<RectTransform>(abilities,"frame"),resolution+" actions "+count);
-                TextFits(Field<TextMeshProUGUI>(abilities,"status"),resolution+" action status "+count);
-                TextFits(Field<TextMeshProUGUI>(abilities,"summary"),resolution+" buff summary "+count);
+                if(Field<TextMeshProUGUI>(abilities,"status").gameObject.activeSelf)TextFits(Field<TextMeshProUGUI>(abilities,"status"),resolution+" action status "+count);
+                Check(!Field<TextMeshProUGUI>(abilities,"summary").gameObject.activeSelf,"Duplicate buff report remains visible");
                 Check(Field<GameObject>(abilities,"root").activeSelf&&abilities.PanelHeight>0,"Passive buff panel disappeared");
                 var actionScroll=Field<ScrollRect>(abilities,"actionScroll");
                 Within(actionScroll.viewport,panel,"Buff scroll viewport");
@@ -121,10 +121,12 @@ public static class HudAuditRunner
                 {Within((RectTransform)button.transform,actionScroll.content,"Ability button");TextFits(button.GetComponentInChildren<TextMeshProUGUI>(),"Ability label");}
                 Check(buffs.transform.Find("ARAM Buff HUD Canvas")==null,"Legacy bottom buff strip is still allocated");
                 game.IsAramGame=true;game.AramHudBottom=buffs.GameplayHudTop;Set(view,"focus",false);Set(view,"expanded",true);Call(view,"Layout");Call(view,"Refresh");
-                Check(Bounds(Field<RectTransform>(view,"journal")).xMin>=Bounds(panel).xMax+11,"ARAM journal overlaps left buff controls");
+                Check(Bounds(Field<RectTransform>(view,"journal")).xMax<=Bounds(panel).xMin-9,"ARAM journal overlaps right buff controls");
+                Check(Bounds(panel).yMax<=Bounds(Field<RectTransform>(view,"buffSummary")).yMin-5,"Buff actions overlap the right summary");
                 Check(scrollHeight(view)>26,"ARAM journal has no readable history viewport");
                 Within(Field<RectTransform>(view,"buffSummary"),Field<RectTransform>(view,"root"),"Compact buff summary");
                 TextFits(Field<TextMeshProUGUI>(view,"whiteMoves"),"White move count");TextFits(Field<TextMeshProUGUI>(view,"blackMoves"),"Black move count");
+                TextFits(Field<TextMeshProUGUI>(view,"combinedMoves"),"Combined move count");
             }
             buffs.ShowBuffToast(PieceTeam.White,"Rifle hit.",null);Call(buffs,"Update");
             Within(Field<RectTransform>(buffs,"toastPanel"),Field<RectTransform>(buffs,"gameplayFrame"),"Left buff notification");
@@ -224,7 +226,67 @@ public static class HudAuditRunner
         Call(view,"Layout");view.SetVisible(false);
         Check(Mathf.Approximately(replacement.fieldOfView,48)&&replacement.rect==new Rect(.1f,.1f,.8f,.8f),"Replacement camera restored another camera's settings");
         AuditSnapshots(game);
+        AuditQuitConfirmation();
+        AuditCompactHud(game,view);
         AuditDraft(buffs);
+    }
+    private static void AuditQuitConfirmation()
+    {
+        var menu=new GameObject("Quit menu fixture",typeof(RectTransform),typeof(Canvas),typeof(GraphicRaycaster));
+        var canvas=menu.GetComponent<Canvas>();canvas.renderMode=RenderMode.ScreenSpaceOverlay;
+        ((RectTransform)menu.transform).sizeDelta=new Vector2(1920,1080);
+        var quit=SketchbookUI.QuitButton(menu.transform,1920);
+        var ink=quit.GetComponentInChildren<MatchHudIconGraphic>().color;
+        Check(ink.r>.7f&&ink.g<.2f&&ink.b<.25f,"Quit icon is not visibly red");
+        UnityEngine.EventSystems.EventSystem.current.SetSelectedGameObject(quit.gameObject);
+        quit.onClick.Invoke();
+        var prompt=menu.GetComponentInChildren<SettingsPrompt>();
+        Check(prompt&&GameRuntimeSettings.QuitCalls==0,"Exit icon bypassed confirmation");
+        quit.onClick.Invoke();
+        Check(menu.GetComponentsInChildren<SettingsPrompt>().Length==1,"Repeated click stacked confirmations");
+        var buttons=prompt.GetComponentsInChildren<Button>();
+        var cancel=Array.Find(buttons,b=>b.name=="Cancel");
+        Check(UnityEngine.EventSystems.EventSystem.current.currentSelectedGameObject==cancel.gameObject,"Cancel is not the default selection");
+        Check(prompt.GetComponent<Canvas>().overrideSorting&&prompt.GetComponent<GraphicRaycaster>(),"Confirmation does not block the menu");
+        cancel.onClick.Invoke();
+        Check(!prompt.gameObject.activeSelf&&GameRuntimeSettings.QuitCalls==0,"Cancel quit the game");
+        Check(UnityEngine.EventSystems.EventSystem.current.currentSelectedGameObject==quit.gameObject,"Cancel did not restore keyboard focus");
+        quit.onClick.Invoke();prompt=menu.GetComponentInChildren<SettingsPrompt>();
+        var accept=Array.Find(prompt.GetComponentsInChildren<Button>(),b=>b.name=="Quit");
+        Check(accept.GetComponentInChildren<TextMeshProUGUI>().text=="Quit Game","Confirmation uses the wrong action label");
+        accept.onClick.Invoke();accept.onClick.Invoke();
+        Check(GameRuntimeSettings.QuitCalls==1,"Confirmation did not invoke quit exactly once");
+        UnityEngine.Object.DestroyImmediate(menu);
+        report.Add("PASS red quit icon, modal confirmation, default cancel, focus restoration and single accepted exit");
+    }
+    private static void AuditCompactHud(ChessGame game,AnalysisBoardView view)
+    {
+        var names=typeof(AnalysisBoardView).Assembly.GetType("MatchHudStyle").GetMethod("PlayerName",BindingFlags.Static|BindingFlags.NonPublic);
+        string full="satohtofudeptrainhatthegioi";
+        Check((string)names.Invoke(null,new object[]{full})=="satohtofudept...","Long player name did not use the documented 13-character prefix");
+        Check((string)names.Invoke(null,new object[]{"Short name"})=="Short name","Short player name was truncated");
+        Check(!((string)names.Invoke(null,new object[]{"Line\nbreak"})).Contains("\n"),"Player name can create another line");
+        CanvasSize(view.gameObject,new Vector2(1280,720));view.SetVisible(true);
+        Set(view,"focus",false);game.UsesDotNetOnline=true;Call(view,"Layout");Call(view,"Refresh");
+        Check(Field<TextMeshProUGUI>(view,"whiteState").gameObject.activeSelf,"Compact multiplayer HUD hid the clock");
+        TextFits(Field<TextMeshProUGUI>(view,"whiteState"),"Compact multiplayer clock");
+        game.PauseLocked=true;Call(view,"Refresh");Check(Field<RectTransform>(view,"statusRect").gameObject.activeSelf,"Pause status disappeared");
+        game.PauseLocked=false;game.UsesDotNetOnline=false;Call(view,"Layout");Call(view,"Refresh");
+        Check(!Field<RectTransform>(view,"statusRect").gameObject.activeSelf,"Ordinary turn banner reappeared");
+        var orbit=Camera.main.gameObject.AddComponent<ChessOrbitCamera>();
+        Call(view,"RefreshCameraHint");
+        var cameraHint=Field<RectTransform>(view,"cameraHint");
+        Check(cameraHint.rect.width<=80&&cameraHint.rect.height<=64,"Camera hint did not become compact");
+        cameraHint.GetComponent<Button>().onClick.Invoke();
+        Check(orbit.IsOrbitUnlocked,"Clicking camera control did not unlock orbit");
+        cameraHint.GetComponent<Button>().onClick.Invoke();
+        Check(!orbit.IsOrbitUnlocked,"Clicking camera control did not lock orbit");
+        foreach(var icon in view.GetComponentsInChildren<MatchHudIconGraphic>(true))
+            Check(icon.GetComponent<CanvasRenderer>(),"Vector icon is missing its CanvasRenderer");
+        Check(Field<TextMeshProUGUI>(view,"cameraHintState").text=="Y","Camera hint lost the key binding");
+        orbit.IsOrbitUnlocked=true;Call(view,"RefreshCameraHint");
+        Check(Field<TextMeshProUGUI>(view,"cameraHintState").color==new Color(.34f,.25f,.51f,1),"Unlocked camera has no state feedback");
+        report.Add("PASS compact turn indicators, clocks, exceptional notices, name truncation and camera binding/state");
     }
     private static void AuditDraft(AramBuffDraftView view)
     {

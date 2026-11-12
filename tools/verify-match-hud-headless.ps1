@@ -9,7 +9,8 @@ New-Item -ItemType Directory -Force -Path "$auditRoot/Assets/Editor", "$auditRoo
 # Keep every mutation in this new test project. No main-project startup hooks,
 # scene edits, MCP, account code, screenshots or graphics device are loaded.
 $uiFiles=@(
-    'Gameplay/UI/AnalysisBoardView.cs','Gameplay/UI/MatchHudStyle.cs',
+    'Gameplay/UI/AnalysisBoardView.cs','Gameplay/UI/MatchHudStyle.cs','Gameplay/UI/MatchHudIconGraphic.cs',
+    'Gameplay/UI/SketchbookUI.cs','Gameplay/UI/SettingsPrompt.cs','Gameplay/UI/SketchbookDoodle.cs','UI/AntialiasedMenuImage.cs',
     'Gameplay/UI/ResponsiveSafeArea.cs','Gameplay/UI/MenuDesignFrame.cs',
     'Gameplay/ARAM/AramBuffCardVisual.cs','Gameplay/ARAM/AramBuffCardMotion.cs',
     'Gameplay/ARAM/AramAbilityView.cs','Gameplay/ARAM/AramBuffDraftView.cs','Gameplay/ARAM/AramBuffDefinition.cs',

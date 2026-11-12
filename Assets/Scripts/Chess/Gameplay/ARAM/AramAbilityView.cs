@@ -4,7 +4,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-/// <summary>Persistent left-corner buff controls with optional details.</summary>
+/// <summary>Buff actions docked below the single right-side CHAOS summary.</summary>
 public sealed class AramAbilityView : MonoBehaviour
 {
     public readonly struct AbilityAction
@@ -85,12 +85,13 @@ public sealed class AramAbilityView : MonoBehaviour
         MatchHudStyle.Place(rifleHint.rectTransform,new Vector2(0,1),new Vector2(350,36),new Vector2(195,-112));
         actionPanel=MatchHudStyle.Rect(frame,"Action Panel",Vector2.zero,Vector2.zero,new Vector2(300,180),Vector2.zero);
         MatchHudStyle.Surface(actionPanel);
-        var title=Label(actionPanel,"Title",22);title.text="BUFFS";
+        var title=Label(actionPanel,"Title",22);title.text="USE BUFF";
         MatchHudStyle.Place(title.rectTransform,new Vector2(0,1),new Vector2(130,34),new Vector2(81,-25));
         expandButton=MatchHudStyle.Button(actionPanel,"Expand","Expand",()=>{expanded=!expanded;nextRefresh=0;});
         MatchHudStyle.Place((RectTransform)expandButton.transform,Vector2.one,new Vector2(108,34),new Vector2(-68,-25));
         expandButton.GetComponentInChildren<TextMeshProUGUI>().rectTransform.sizeDelta=new Vector2(-12,-4);
         summary=Label(actionPanel,"Buff summary",20);
+        summary.gameObject.SetActive(false);
         status=Label(actionPanel,"Status",19);
         var viewport=MatchHudStyle.Rect(actionPanel,"Actions viewport",Vector2.zero,Vector2.one,Vector2.zero,Vector2.zero);
         viewport.gameObject.AddComponent<Image>().color=Color.clear;
@@ -122,7 +123,7 @@ public sealed class AramAbilityView : MonoBehaviour
         displayedContext=context;
         actions.Clear(); actions.AddRange(presentation.Actions);
         summary.text=presentation.Summary;
-        status.text=presentation.Status;
+        status.text=presentation.InstructionRequired?presentation.Status:actions.Count==0?"Passive buff":"";
         details.text=expanded?TooltipPreferences.Description(presentation.Details):"";
         crosshair.gameObject.SetActive(presentation.RifleActive);
         rifleHint.gameObject.SetActive(presentation.RifleActive);
@@ -142,19 +143,21 @@ public sealed class AramAbilityView : MonoBehaviour
             button.GetComponentInChildren<TextMeshProUGUI>().rectTransform.sizeDelta=new Vector2(-16,-4);
             buttons.Add(button);
         }
-        float width=Mathf.Min(expanded?360:300,frame.rect.width-40);
-        float summaryHeight=Mathf.Clamp(summary.GetPreferredValues(summary.text,width-32,0).y+6,34,94);
-        float statusHeight=string.IsNullOrEmpty(status.text)?0:Mathf.Clamp(status.GetPreferredValues(status.text,width-32,0).y+6,32,presentation.InstructionRequired?150:62);
-        float header=52+summaryHeight+statusHeight+12;
+        float width=Mathf.Min(AnalysisBoardView.SidebarWidth,frame.rect.width-24);
+        float statusHeight=string.IsNullOrEmpty(status.text)?0:Mathf.Clamp(status.GetPreferredValues(status.text,width-32,0).y+6,28,presentation.InstructionRequired?110:36);
+        float header=48+statusHeight+8;
         // Long summaries are available without clipping inside the expanded scroll.
         if(expanded)details.text=presentation.Summary+"\n\n"+TooltipPreferences.Description(presentation.Details);
         float detailHeight=expanded?details.GetPreferredValues(details.text,width-48,0).y+16:0;
-        float cellHeight=expanded?64:38, gap=6;
+        float cellHeight=54, gap=6;
         float contentHeight=detailHeight+actions.Count*(cellHeight+gap);
-        float height=Mathf.Min(Mathf.Max(header+Mathf.Min(contentHeight,expanded?400:200)+16,150),Mathf.Max(180,frame.rect.height-244));
-        MatchHudStyle.Place(actionPanel,Vector2.zero,new Vector2(width,height),new Vector2(20+width/2,96+height/2));
-        MatchHudStyle.Place(summary.rectTransform,new Vector2(.5f,1),new Vector2(width-32,summaryHeight),new Vector2(0,-52-summaryHeight/2));
-        MatchHudStyle.Place(status.rectTransform,new Vector2(.5f,1),new Vector2(width-32,statusHeight),new Vector2(0,-52-summaryHeight-statusHeight/2));
+        var game=GetComponentInParent<ChessGame>();
+        float bottom=game&&game.IsBotGame?Mathf.Max(12,BotCompanionView.BottomInset(game)+12):game&&game.UsesDotNetOnline?120:12;
+        float start=AnalysisBoardView.BuffSummaryBottom+6;
+        float height=Mathf.Min(header+Mathf.Min(contentHeight,expanded?360:180)+12,Mathf.Max(header+76,frame.rect.height-start-bottom));
+        MatchHudStyle.Place(actionPanel,Vector2.one,new Vector2(width,height),new Vector2(-AnalysisBoardView.SidebarMargin-width/2,-start-height/2));
+        MatchHudStyle.Place(status.rectTransform,new Vector2(.5f,1),new Vector2(width-32,statusHeight),new Vector2(0,-48-statusHeight/2));
+        status.gameObject.SetActive(statusHeight>0);
         var viewportRect=actionScroll.viewport;
         viewportRect.gameObject.SetActive(contentHeight>0);
         viewportRect.offsetMin=new Vector2(12,12);viewportRect.offsetMax=new Vector2(-12,-header);
@@ -168,8 +171,9 @@ public sealed class AramAbilityView : MonoBehaviour
             MatchHudStyle.Place((RectTransform)buttons[i].transform,new Vector2(.5f,1),new Vector2(width-32,cellHeight),
                 new Vector2(0,-detailHeight-cellHeight/2-i*(cellHeight+gap)));
             buttons[i].interactable=actions[i].Enabled;
-            buttons[i].GetComponentInChildren<TextMeshProUGUI>().text=actions[i].Label+
-                (expanded&&!string.IsNullOrEmpty(actions[i].Detail)?"\n"+actions[i].Detail:"");
+            var label=buttons[i].GetComponentInChildren<TextMeshProUGUI>();
+            label.fontSize=17;
+            label.text=actions[i].Label+(!string.IsNullOrEmpty(actions[i].Detail)?"\n"+actions[i].Detail:"");
         }
         if(contextChanged)actionScroll.verticalNormalizedPosition=1;
     }

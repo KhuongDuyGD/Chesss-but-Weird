@@ -53,8 +53,8 @@ public sealed class MainMenuPresentation : MonoBehaviour
         startButton = MenuButton(controls, "Start", "START", new Rect(641, 663, 638, 119), new Color(1f, .82f, .30f), start, 65f, true);
         settingsButton = MenuButton(controls, "Settings", "SETTINGS", new Rect(641, 815, 306, 85), new Color(.80f, .87f, .69f), settings, 35f);
         creditsButton = MenuButton(controls, "Credits", "CREDITS", new Rect(975, 815, 304, 85), new Color(.85f, .80f, .93f), ShowCredits, 35f);
-        logoutButton = MenuButton(controls, "Logout", "LOG OUT", new Rect(1552, 57, 164, 47), new Color(.97f, .954f, .914f), logout, 23f);
-        UI.Button(controls, "Quit Game", "QUIT", new Rect(1736, 24, 156, 56), UI.Pink, GameRuntimeSettings.QuitGame, 24);
+        logoutButton = MenuButton(controls, "Logout", "LOG OUT", new Rect(1644, 57, 164, 47), new Color(.97f, .954f, .914f), logout, 23f);
+        UI.QuitButton(controls, 1920);
 
         // Four intentional side accents, kept outside the central reading corridor.
         UI.Doodle(page, "Yellow Margin Star", new Rect(400, 305, 33, 33), SketchbookDoodle.Shape.Star, new Color(.94f, .73f, .23f), -14);
