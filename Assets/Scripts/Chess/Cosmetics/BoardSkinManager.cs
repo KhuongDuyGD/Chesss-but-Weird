@@ -53,7 +53,7 @@ public sealed class BoardSkinManager
         if (Data) SetTransform(instance.transform, Data.localPosition, Data.localRotation, Data.localScale);
         ChessModelRendering.ApplySettings(instance);
         if (Data && Data.boardId != CosmeticSelection.KingdomRushDenasId && Data.boardId != CosmeticSelection.KingdomRushVeznanId && Data.boardId != CosmeticSelection.KingdomRushId)
-            instance.AddComponent<LegacyBoardPresentation>();
+            instance.AddComponent<LegacyBoardPresentation>().Configure(Data.boardId == "Boards/Celestial");
         if (Data && Data.loopAnimation)
             foreach (var animation in instance.GetComponentsInChildren<Animation>(true))
             {

@@ -7,6 +7,26 @@ using UnityEngine;
 
 internal sealed partial class OnlineAramPresenter
 {
+    internal static string BuffHudStatus(JToken chaos,JToken player)
+    {
+        int? buff=(int?)player?["buffId"];
+        int ply=(int?)chaos?["combinedPlies"]??0,turns=(int?)player?["completedTurns"]??0;
+        string Cooldown(int remaining,string unit)=>remaining>0?"Cooldown: "+remaining+" "+unit:"Ready";
+        switch(buff)
+        {
+            case 3:return (bool?)player["doppelDisabled"]==true?"Expired":Cooldown(((int?)player["swapReady"]??0)-ply,"moves");
+            case 5:return (int?)player["teleportUses"]>=5?"Expired":Cooldown(((int?)player["teleportReady"]??0)-turns,"owner turns");
+            case 10:return (bool?)player["peaceFailed"]==true||(bool?)player["peaceUsed"]==true?"Expired":Cooldown(14-ply,"moves");
+            case 13:return Cooldown(((int?)player["hidingReady"]??0)-ply,"moves");
+            case 14:return ((int?)player["tickets"]??0)+" tickets · "+(((int?)player["rollsThisTurn"]??0)>=1?"Next turn":"Ready");
+            case 15:return (bool?)player["substituteUsed"]==true?"Expired":"Ready";
+            case 25:return Cooldown(((int?)player["rifleReady"]??0)-turns,"owner turns");
+            case 27:return (bool?)player["queenRefundUsed"]==true?"Expired":Cooldown(10-turns,"owner turns");
+            case 31:return ((int?)player["credit"]??0)+" points · "+((bool?)player["boughtThisTurn"]==true?"Next turn":"Ready");
+            case 32:return Math.Max(0,25-turns)+" owner turns left";
+            default:return "";
+        }
+    }
     private string actionPieceKind;
     private void ResetPracticeDefinitions()
     {
@@ -42,7 +62,7 @@ internal sealed partial class OnlineAramPresenter
         view.Status = "CHAOS / " + a["phase"] + "\n" + ply + " combined moves / " + turns + " owner turns";
         if (!CanInteract) view.Status += "\nWaiting for server...";
         void Add(string label, Action callback, string id, bool ready = true, string detail = null) =>
-            view.Actions.Add(new AramAbilityView.AbilityAction(label, callback, CanInteract && ready, detail, id));
+            view.Actions.Add(new AramAbilityView.AbilityAction(label, callback, CanInteract && ready, detail??BuffHudStatus(a,side), id));
         void Target(string label, string kind, bool ready = true) => Add(label, () => { CancelTargeting(); action = kind; }, kind, ready);
         if ((string)a["phase"] == "Draft") view.Status += "\nWaiting for your opponent to choose...";
         if ((string)a["phase"] == "Setup")

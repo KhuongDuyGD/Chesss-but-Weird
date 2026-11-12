@@ -114,7 +114,7 @@ public sealed class MainMenuAuthUI : MonoBehaviour
         layout.SetParent(safeArea, false);
         layout.gameObject.AddComponent<InventoryContentRootFitter>().Configure(ReferenceWidth, ReferenceHeight, 1f);
         BuildPanels(layout);
-        CreateButton(layout, "Quit Game", "QUIT", new Rect(ReferenceWidth - 190, 24, 156, 56), Paper, GameRuntimeSettings.QuitGame);
+        SketchbookUI.QuitButton(layout, ReferenceWidth);
     }
 
     private void BuildPanels(RectTransform parent)

@@ -37,6 +37,14 @@ public sealed class ChessOrbitCamera : MonoBehaviour
     public bool IsOrbitUnlocked => orbitUnlocked;
     public bool IsBoardViewActive => isActiveAndEnabled && viewCamera && viewCamera.enabled;
 
+    public void ToggleOrbitLock()
+    {
+        if (!IsBoardViewActive || !chessGame || !chessGame.GameStarted || chessGame.PauseLocked) return;
+        orbitUnlocked = !orbitUnlocked;
+        orbitDragging = false;
+        if (!orbitUnlocked) orbitYaw = orbitPitch = 0f;
+    }
+
     public void Bind(ChessGame owner, Chessboard board)
     {
         chessGame = owner;
@@ -127,11 +135,7 @@ public sealed class ChessOrbitCamera : MonoBehaviour
              (selected.GetComponentInParent<InputField>() is InputField input && input.isFocused));
         if (typing) { orbitDragging = false; return; }
         if (UserSettings.KeyPressed("key_orbit"))
-        {
-            orbitUnlocked = !orbitUnlocked;
-            orbitDragging = false;
-            if (!orbitUnlocked) orbitYaw = orbitPitch = 0f;
-        }
+            ToggleOrbitLock();
         if (Mouse.current == null) return;
         // Let scrollable menus and the match journal handle their own wheel input.
         var mouse = Mouse.current;

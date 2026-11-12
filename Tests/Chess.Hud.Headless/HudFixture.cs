@@ -23,7 +23,7 @@ public static class PlayModeNames
 // No gameplay, account, transport, actual match scene or server is loaded here.
 public enum PieceTeam { White, Black }
 public enum PieceType { King, Queen, Rook, Bishop, Knight, Pawn }
-public sealed class ChessOrbitCamera : MonoBehaviour { public bool IsOrbitUnlocked; public bool IsBoardViewActive=>isActiveAndEnabled; }
+public sealed class ChessOrbitCamera : MonoBehaviour { public bool IsOrbitUnlocked; public bool IsBoardViewActive=>isActiveAndEnabled; public void ToggleOrbitLock()=>IsOrbitUnlocked=!IsOrbitUnlocked; }
 public sealed partial class ChessGame : MonoBehaviour
 {
     private sealed class FixtureOnlineSettings { public string mode = "Classic"; }
@@ -89,6 +89,7 @@ public sealed class AramBuffRuntime : MonoBehaviour
     public bool DisguisesBuff(PieceTeam team,PieceTeam viewer)=>Disguised&&team!=viewer;
     public string BuffProgressText="Tickets: 12 · Drop: 0/1";
     public string BuffProgress(PieceTeam team,AramBuffId id)=>BuffProgressText;
+    public string BuffHudStatus(PieceTeam team,AramBuffId id)=>BuffProgressText;
     public bool AbilityHudVisible=true,RifleActive;
     public string AbilityContext="turn-1",AbilityStatus="Choose an ability, or play your move.";
     public string AbilityBuffSummary="White · Battle Gacha\nTickets: 64 · Drop: 0/1",AbilityBuffDetails="Battle Gacha\nSpend tickets to deploy a piece.\nTickets: 64 · Drop: 0/1";
@@ -98,3 +99,5 @@ public sealed class AramBuffRuntime : MonoBehaviour
     public readonly List<AramAbilityView.AbilityAction> Actions=new List<AramAbilityView.AbilityAction>();
     public void GetAbilityActions(List<AramAbilityView.AbilityAction> destination) {destination.Clear();destination.AddRange(Actions);}
 }
+
+public static class GameRuntimeSettings { public static int QuitCalls; public static void QuitGame()=>QuitCalls++; }

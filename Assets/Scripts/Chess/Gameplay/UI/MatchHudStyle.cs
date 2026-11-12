@@ -2,6 +2,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Events;
+using System.Globalization;
 
 internal static class MatchHudStyle
 {
@@ -39,4 +40,10 @@ internal static class MatchHudStyle
     internal static void Place(RectTransform r,Vector2 anchor,Vector2 size,Vector2 position)
     {r.anchorMin=r.anchorMax=anchor;r.sizeDelta=size;r.anchoredPosition=position;}
     internal static string MoveCountLabel(int number) => number > 99 ? "99+" : Mathf.Max(0,number).ToString();
+    internal static string PlayerName(string value)
+    {
+        value=(value??"").Replace('\r',' ').Replace('\n',' ').Trim();
+        var elements=StringInfo.ParseCombiningCharacters(value);
+        return elements.Length<=16?value:value.Substring(0,elements[13])+"...";
+    }
 }

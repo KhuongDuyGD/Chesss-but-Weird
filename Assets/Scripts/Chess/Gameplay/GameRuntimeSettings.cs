@@ -161,21 +161,24 @@ public static class GameRuntimeSettings
 
     private static void ApplyShadows()
     {
-        int tier = (int)UserSettings.Get("shadows");
+        int tier=(int)UserSettings.Get("shadows");
         EnsureRuntimePipeline();
         bool enabled = tier > 0;
+        // Preserve orbit/zoom coverage while giving small pieces a denser shadow atlas.
         float distance = tier == 1 ? 25 : tier == 2 ? 50 : 80;
-        int atlas = tier == 1 ? 512 : tier == 2 ? 1024 : 2048;
+        int atlas = tier == 1 ? 1024 : tier == 2 ? 2048 : 4096;
         if (GraphicsSettings.currentRenderPipeline is UniversalRenderPipelineAsset pipeline)
         {
             pipeline.shadowDistance = enabled ? distance : 0;
             pipeline.mainLightShadowmapResolution = atlas;
-            pipeline.additionalLightsShadowmapResolution = atlas;
+            pipeline.additionalLightsShadowmapResolution = Mathf.Min(atlas,2048);
             pipeline.shadowCascadeCount = tier <= 1 ? 1 : tier == 2 ? 2 : 4;
+            pipeline.cascade2Split = .6f;
         }
         QualitySettings.shadowDistance = enabled ? distance : 0;
-        QualitySettings.shadowResolution = tier == 1 ? UnityEngine.ShadowResolution.Low : tier == 2 ? UnityEngine.ShadowResolution.Medium : UnityEngine.ShadowResolution.High;
+        QualitySettings.shadowResolution = tier == 1 ? UnityEngine.ShadowResolution.Medium : tier == 2 ? UnityEngine.ShadowResolution.High : UnityEngine.ShadowResolution.VeryHigh;
         QualitySettings.shadowCascades = tier <= 1 ? 0 : tier == 2 ? 2 : 4;
+        QualitySettings.shadowCascade2Split = .6f;
         QualitySettings.shadows = enabled ? UnityEngine.ShadowQuality.All : UnityEngine.ShadowQuality.Disable;
         // The original match scene stores a shadowless Sun. Renderer flags alone cannot cast shadows.
         var main = Camera.main;
@@ -187,7 +190,11 @@ public static class GameRuntimeSettings
         if (sun)
         {
             sun.shadows = !enabled ? LightShadows.None : tier == 1 ? LightShadows.Hard : LightShadows.Soft;
-            sun.shadowBias = .045f; sun.shadowNormalBias = .08f; sun.shadowStrength = .8f;
+            // Imported scene lights otherwise ignore these values and use the pipeline's normal bias.
+            var lightData=sun.GetUniversalAdditionalLightData();
+            lightData.usePipelineSettings=false;
+            lightData.softShadowQuality=tier>=3?SoftShadowQuality.High:SoftShadowQuality.Medium;
+            sun.shadowBias = .25f; sun.shadowNormalBias = .15f; sun.shadowStrength = .62f;
         }
         foreach (var camera in Object.FindObjectsByType<Camera>(FindObjectsInactive.Include))
         {

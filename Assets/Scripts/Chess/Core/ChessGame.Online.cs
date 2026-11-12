@@ -175,6 +175,11 @@ public partial class ChessGame
             details = (string)metadata["description"] ?? details;
         }
         if (id.HasValue) details += $"\nOwner turns: {(int?)side["completedTurns"] ?? 0}; combat tickets: {(int?)side["tickets"] ?? 0}.";
+        if((int?)dotNetState.chaos["rulesVersion"]==3)
+        {
+            string progress=OnlineAramPresenter.BuffHudStatus(dotNetState.chaos,side);
+            if(!string.IsNullOrEmpty(progress)){name+="\n"+progress;details+="\n"+progress;}
+        }
         return true;
     }
     public static Vector2Int ParseOnlineSquare(string square)

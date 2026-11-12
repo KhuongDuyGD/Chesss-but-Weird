@@ -78,7 +78,7 @@ public sealed partial class AramBuffRuntime
     public string AbilityPresentationContext => game ? $"{AbilityViewer}:{(rifleCamera?"rifle":customizing?"formation":targetAction!=null?"target":decisions.Count>0?"queued":"normal")}" : "";
     public float AbilityPanelHeight => abilityView ? abilityView.PanelHeight : 0;
     public bool AbilityInstructionRequired => HasPendingDecision || Live(forcedPawn) || rifleCamera;
-    // Buff controls occupy the left edge; the right journal keeps its full height.
+    // Buff controls now share the right sidebar with the match summary.
     public float StatisticsHudBottom => 0;
     public string RifleMouseHint => "ALT: " + (Cursor.lockState==CursorLockMode.Locked?"unlock mouse":"lock mouse");
     private PieceTeam AbilityViewer => game.IsBotGame ? game.PlayerTeam : game.CurrentTurn;
