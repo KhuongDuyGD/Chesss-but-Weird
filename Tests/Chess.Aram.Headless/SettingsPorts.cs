@@ -7,5 +7,6 @@ public static class UserSettings
     public static readonly ChessButWeird.Settings.PresentationPreferences Presentation=new ChessButWeird.Settings.PresentationPreferences(Manager);
     public static float Get(string id)=>Manager.Get(id);
     public static bool Enabled(string id)=>Manager.Enabled(id);
+    public static string LanguageCode=>ChessButWeird.Settings.SettingsLanguages.Code((int)Get("language"));
 }
 public static class PlayModeNames {public static string DisplayText(string value)=>value;}

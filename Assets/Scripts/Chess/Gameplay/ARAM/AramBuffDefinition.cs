@@ -41,11 +41,12 @@ public sealed class AramBuffDefinition : ScriptableObject
 
     public AramBuffId Id => id;
     public AramBuffTier Tier => tier;
-    public string DisplayName => PlayModeNames.DisplayText(string.IsNullOrWhiteSpace(displayName) ? id.ToString() : displayName);
-    public string ShortName => string.IsNullOrWhiteSpace(shortName) ? DisplayName : shortName;
-    public string Description => PlayModeNames.DisplayText(description);
+    public string DisplayName => PlayModeNames.DisplayText(Localized("name", string.IsNullOrWhiteSpace(displayName) ? id.ToString() : displayName));
+    public string ShortName => Localized("shortName", string.IsNullOrWhiteSpace(shortName) ? DisplayName : shortName);
+    public string Description => PlayModeNames.DisplayText(Localized("description", description));
     public Color AccentColor => accentColor;
-    public string Summary => string.IsNullOrWhiteSpace(summary) ? FirstSentence(Description) : PlayModeNames.DisplayText(summary);
+    public string Summary => string.IsNullOrWhiteSpace(summary) ? FirstSentence(Description) : PlayModeNames.DisplayText(Localized("summary", summary));
+    private string Localized(string field, string fallback) => SettingsLocalization.Text("buff." + id + "." + field, fallback);
     public static string FirstSentence(string text)
     {
         if (string.IsNullOrEmpty(text)) return string.Empty;
@@ -103,11 +104,11 @@ public static class AramBuffLibrary
                 "Capture an enemy non-Pawn for 1 ticket. Spend 1 ticket to drop a random ally at most once per turn: Pawn 70%, Knight 10%, Bishop 10%, Rook 9%, Queen 1%. The drop cannot check the opposing King."),
             Entry(AramBuffId.SubstituteNinjutsu, AramBuffTier.Diamond, "Substitute Ninjutsu", "Substitute",
                 "On your first check, teleport your King to a safe empty home square and leave a decoy. The decoy moves like a King and transforms into the first enemy type it captures."),
-            Entry(AramBuffId.HighTechEra, AramBuffTier.Diamond, "The High-tech Era", "Cannon Rooks",
+            Entry(AramBuffId.HighTechEra, AramBuffTier.Diamond, "High-Tech Era Cannon", "Cannon Rooks",
                 "Your two initial Rooks keep normal movement and can capture over exactly one piece. Each cannon expires after 10 combined moves without firing."),
             Entry(AramBuffId.QueensBetrayal, AramBuffTier.Diamond, "The Queen's Betrayal", "Betrayal",
                 "Gain an extra Queen on your third rank. After each combined move, her betrayal chance starts at 10% and rises by 5 percentage points. On betrayal, the opponent places her in their first three ranks."),
-            Entry(AramBuffId.DefinitionOfAram, AramBuffTier.Diamond, "The Definition of CHAOS", "Collapse",
+            Entry(AramBuffId.DefinitionOfAram, AramBuffTier.Diamond, "The Chessboard Has Fallen", "Collapse",
                 "After your 10th turn, the outermost files collapse and destroy their pieces without capture points. Five combined moves later the next pair collapses, leaving a 4x8 board."),
             Entry(AramBuffId.RngFiesta, AramBuffTier.Diamond, "RNG Fiesta", "RNG Fiesta",
                 "At the start, transform all your pieces except Kings and Queens randomly into Pawns, Knights, Bishops or Rooks."),

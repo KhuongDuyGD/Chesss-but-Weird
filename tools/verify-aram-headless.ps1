@@ -25,7 +25,7 @@ $uiFiles=@(
     'Gameplay/ARAM/AramBuffRuntime.StrategyVisuals.cs',
     'Gameplay/ARAM/AramBuffCardVisual.cs',
     'Gameplay/ARAM/AramBuffCardMotion.cs',
-    'Gameplay/Settings/SettingsModel.cs','Gameplay/Settings/SettingsRegistry.cs','Gameplay/Settings/SettingsLanguages.cs','Gameplay/Settings/TooltipPreferences.cs','Gameplay/Settings/SettingsUiScale.cs',
+    'Gameplay/Settings/SettingsModel.cs','Gameplay/Settings/SettingsRegistry.cs','Gameplay/Settings/SettingsLanguages.cs','Gameplay/Settings/SettingsLocalization.cs','Gameplay/Settings/TooltipPreferences.cs','Gameplay/Settings/SettingsUiScale.cs',
     'Gameplay/ARAM/AramBuffPieceMarker.cs',
     'Gameplay/ARAM/AramDecoyTag.cs',
     'Core/ChessGame.Aram.cs',
@@ -73,6 +73,7 @@ Copy-Item -LiteralPath "$sourceRoot/Logs/loading-compile/Chess.Domain.dll" -Dest
 Copy-Item -LiteralPath "$sourceRoot/Assets/TextMesh Pro" -Destination "$auditRoot/Assets" -Recurse
 Copy-Item -LiteralPath "$sourceRoot/Assets/Fonts" -Destination "$auditRoot/Assets" -Recurse
 New-Item -ItemType Directory -Force -Path "$auditRoot/Assets/Resources/Chess" | Out-Null
+Copy-Item -LiteralPath "$sourceRoot/Assets/Resources/Localization" -Destination "$auditRoot/Assets/Resources" -Recurse
 Copy-Item -LiteralPath "$sourceRoot/Assets/Resources/Chess/ChessFontCatalog.asset" -Destination "$auditRoot/Assets/Resources/Chess"
 New-Item -ItemType Directory -Force -Path "$auditRoot/Assets/Resources/UI" | Out-Null
 Copy-Item -LiteralPath "$sourceRoot/Assets/Resources/UI/MenuEdgeAntialiasing.shader" -Destination "$auditRoot/Assets/Resources/UI"

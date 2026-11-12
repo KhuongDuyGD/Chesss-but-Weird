@@ -10,5 +10,8 @@
     <Compile Include="../../Assets/Scripts/Chess/Gameplay/Settings/SettingsModel.cs" Link="SettingsModel.cs" />
     <Compile Include="../../Assets/Scripts/Chess/Gameplay/Settings/SettingsRegistry.cs" Link="SettingsRegistry.cs" />
     <Compile Include="../../Assets/Scripts/Chess/Gameplay/Settings/SettingsLanguages.cs" Link="SettingsLanguages.cs" />
+    <Compile Include="../../Assets/Scripts/Chess/Gameplay/Settings/SettingsLocalization.cs" Link="SettingsLocalization.cs" />
+    <Compile Include="../../Assets/Scripts/Chess/Gameplay/ARAM/AramBuffDefinition.cs" Link="AramBuffDefinition.cs" />
+    <Content Include="../../Assets/Resources/Localization/Settings_*.json" Link="Resources/Localization/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

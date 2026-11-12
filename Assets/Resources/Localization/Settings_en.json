@@ -1,0 +1,300 @@
+{
+  "entries": [
+    {
+      "key": "buff.AbsoluteSniper.name",
+      "text": "Absolute Sniper"
+    },
+    {
+      "key": "buff.AbsoluteSniper.shortName",
+      "text": "Sniper"
+    },
+    {
+      "key": "buff.AbsoluteSniper.description",
+      "text": "A Bishop that captures an enemy non-Pawn from at least 4 squares away charges its next diagonal capture: shoot automatically without moving or confirmation. The shot spends your move. The charge expires after the next 4 moves by either side.",
+      "source": "A Bishop capturing an enemy non-Pawn from 4 or more squares away empowers its next diagonal capture: it automatically shoots without moving or confirmation. The shot spends your move. The charge expires after the next 4 moves by either side."
+    },
+    {
+      "key": "buff.AbsoluteSniper.summary",
+      "text": "Long-range Bishop captures charge an automatic ranged capture without moving.",
+      "source": "Long Bishop captures charge an automatic ranged capture without moving."
+    },
+    {
+      "key": "buff.EveryManForHimself.name",
+      "text": "Every Man for Himself"
+    },
+    {
+      "key": "buff.EveryManForHimself.shortName",
+      "text": "Every Man"
+    },
+    {
+      "key": "buff.EveryManForHimself.description",
+      "text": "Use a Pawn, Knight, Bishop, Rook and Queen to capture one enemy of the matching type each, and promote a Pawn once. Then promote 2 surviving Pawns to Queens, or place 1 Queen anywhere if fewer than 2 remain. Any draw becomes a loss.",
+      "source": "Capture a matching enemy type with each of Pawn, Knight, Bishop, Rook and Queen, and promote a Pawn once. Then promote 2 surviving Pawns to Queens, or place 1 Queen anywhere if fewer than 2 remain. Any draw becomes a loss."
+    },
+    {
+      "key": "buff.EveryManForHimself.summary",
+      "text": "Complete the capture and promotion checklist for a Queen reward. A draw counts as a loss.",
+      "source": "Complete capture and promotion quests for a Queen reward. Any draw becomes a loss."
+    },
+    {
+      "key": "buff.BrokenLegKnight.name",
+      "text": "Knightmare on the Chessboard"
+    },
+    {
+      "key": "buff.BrokenLegKnight.shortName",
+      "text": "Knightmare"
+    },
+    {
+      "key": "buff.BrokenLegKnight.description",
+      "text": "Move the same Knight on 3 consecutive owner turns to arm an accident. Its next successful move ends with a random landing inside the surrounding 3×3 area, crushing an enemy if it lands on one. Friendly pieces cannot be crushed. The Knight then misses its next owner turn. After recovery, the streak resets; skipping an owner turn also breaks the streak."
+    },
+    {
+      "key": "buff.BrokenLegKnight.summary",
+      "text": "Move the same Knight three owner turns in a row to arm a crash on its next move."
+    },
+    {
+      "key": "buff.WeaponSupplyPackage.name",
+      "text": "Tactical Supply Drop"
+    },
+    {
+      "key": "buff.WeaponSupplyPackage.shortName",
+      "text": "Supply Drop"
+    },
+    {
+      "key": "buff.WeaponSupplyPackage.description",
+      "text": "Receive one random, single-use weapon from the match's supply pool. Flashbang grants a concealed legal bonus move during your turn; the board is revealed before the opponent acts. Molotov burns one square for 3 global plies, destroying its occupants. Sticky Bomb leaves a trap that restricts the next piece entering it to one legal forward step at its next owner-turn opportunity. Traps affect both sides. Molotov and Sticky Bomb cannot initially target a King or Queen. A global ply is one completed scheduled turn by either side; bonus actions do not advance it."
+    },
+    {
+      "key": "buff.WeaponSupplyPackage.summary",
+      "text": "Receive one random, single-use weapon from the match's supply pool. Friendly fire is a feature."
+    },
+    {
+      "key": "buff.NewYearFireworks.name",
+      "text": "New Year, New Boom!"
+    },
+    {
+      "key": "buff.NewYearFireworks.shortName",
+      "text": "New Year, New Boom!"
+    },
+    {
+      "key": "buff.NewYearFireworks.description",
+      "text": "Choose a friendly Rook, select a target square, and light the fuse. Both sides see the target. The armed Rook cannot move normally; destroying it cancels the blast. After 5 subsequent scheduled turns by either side, it launches at the target, destroys every destructible piece in the surrounding 3×3 area, and is consumed. Friendly fire includes Kings."
+    },
+    {
+      "key": "buff.NewYearFireworks.summary",
+      "text": "Arm a Rook, announce a target, and detonate a 3×3 blast after 5 global plies. Allies included."
+    },
+    {
+      "key": "buff.AssassinPawns.name",
+      "text": "Pawn Identity: Assassin"
+    },
+    {
+      "key": "buff.AssassinPawns.shortName",
+      "text": "Assassin Pawns"
+    },
+    {
+      "key": "buff.AssassinPawns.description",
+      "text": "Permanently sacrifice 1–2 friendly Pawns to target up to that many enemy Pawns per assassination. The action becomes ready after 6 scheduled turns by either side and recharges for 6 after each use. Maximum 3 normal uses per match. If an assassination kills the last living enemy Pawn, unlock one final execution against an enemy Knight, Bishop or Rook. Completing it permanently disables the buff. Sacrificed Pawns cannot respawn."
+    },
+    {
+      "key": "buff.AssassinPawns.summary",
+      "text": "Sacrifice Pawns to unlock recurring assassinations. Eliminate the last enemy Pawn for one final execution."
+    },
+    {
+      "key": "buff.MedicalStation.name",
+      "text": "Emergency Respawn Center"
+    },
+    {
+      "key": "buff.MedicalStation.shortName",
+      "text": "Respawn Center"
+    },
+    {
+      "key": "buff.MedicalStation.description",
+      "text": "Eligible allies captured by opponents return after a delay: Pawn 2, Knight or Bishop 4, Rook 6, Queen 10 scheduled turns by either side. Pawns can respawn twice per owner per match. Prefer empty squares on your two home ranks, then the rest of your half; if full, wait for space. Pieces retain their identities and captured types. Kings, constructs, clones, deliberate sacrifices and consumed pieces cannot respawn."
+    },
+    {
+      "key": "buff.MedicalStation.summary",
+      "text": "Captured allies return after a delay. Kings and deliberate sacrifices do not get a second opinion."
+    },
+    {
+      "key": "buff.WeddingNight.name",
+      "text": "Checkmate & Consummate"
+    },
+    {
+      "key": "buff.WeddingNight.shortName",
+      "text": "Checkmate & Consummate"
+    },
+    {
+      "key": "buff.WeddingNight.description",
+      "text": "While your King and original starting Queen occupy adjacent squares, produce one friendly piece after each scheduled turn by either side: Pawn → Knight → Bishop → Rook, then repeat. Place it on an empty square in your half. Separation pauses the cycle; reunion resumes it. A full half skips that interval without advancing the cycle. There is no fixed match-wide production limit. Replacement Queens do not qualify."
+    },
+    {
+      "key": "buff.WeddingNight.summary",
+      "text": "Keep your King beside your original Queen to produce a Pawn, Knight, Bishop and Rook on repeat."
+    },
+    {
+      "key": "buff.ProtectedPawn.name",
+      "text": "You Wouldn't Hurt a Cute Girl, Would You?"
+    },
+    {
+      "key": "buff.ProtectedPawn.shortName",
+      "text": "Cute Girl"
+    },
+    {
+      "key": "buff.ProtectedPawn.description",
+      "text": "Choose one living friendly Pawn. Enemies cannot capture it directly, but it can still move and capture normally. The protection ends immediately on promotion. Environmental damage, friendly fire, explosions and other effects that are not direct captures can still destroy it."
+    },
+    {
+      "key": "buff.ProtectedPawn.summary",
+      "text": "One chosen Pawn cannot be captured directly by enemies. Explosions remain unconvinced."
+    },
+    {
+      "key": "buff.Lullaby.name",
+      "text": "Deadly Lullaby"
+    },
+    {
+      "key": "buff.Lullaby.shortName",
+      "text": "Lullaby"
+    },
+    {
+      "key": "buff.Lullaby.description",
+      "text": "Choose a 3×3 region that fits on the board without overlapping either side's two home ranks. All pieces there except Kings and Queens fall asleep and cannot initiate movement; they can still be captured or destroyed. Both sides are affected. Relocate the region every 10 scheduled turns by either side. Pieces outside the new region lose this buff's sleep effect."
+    },
+    {
+      "key": "buff.Lullaby.summary",
+      "text": "Put both armies to sleep in a 3×3 region. Kings and Queens refuse to nap."
+    },
+    {
+      "key": "buff.GoldenExperienceRequiem.name",
+      "text": "Golden Experience Requiem"
+    },
+    {
+      "key": "buff.GoldenExperienceRequiem.shortName",
+      "text": "Golden Experience Requiem"
+    },
+    {
+      "key": "buff.GoldenExperienceRequiem.description",
+      "text": "After an ordinary friendly piece moves, create or relocate its linked clone to the nearest eligible square along its movement trail. Promoted pieces qualify. Each source can have one clone. Clones occupy and block squares, but cannot move, attack, give check, promote, make clones or respawn. Enemies may destroy them without earning ordinary capture rewards. If placement fails, remove the old clone and try again after a later move. Permanently removing a source also removes its clone."
+    },
+    {
+      "key": "buff.GoldenExperienceRequiem.summary",
+      "text": "Your moving pieces leave one linked clone each: a physical blocker with absolutely no initiative."
+    },
+    {
+      "key": "buff.QueenCastling.name",
+      "text": "Royal Family Drama"
+    },
+    {
+      "key": "buff.QueenCastling.shortName",
+      "text": "Family Drama"
+    },
+    {
+      "key": "buff.QueenCastling.description",
+      "text": "Your unmoved original Queen may castle with an unmoved original friendly Rook on the same rank. Move the Queen 2 squares toward the Rook; place the Rook immediately across her toward her previous position. Required paths and destinations must be empty, and your King must remain legal under the current mode. Promoted and spawned Queens or Rooks do not qualify. Moving either piece ends its unmoved eligibility."
+    },
+    {
+      "key": "buff.QueenCastling.summary",
+      "text": "Your original Queen can castle with an unmoved original Rook. The King still needs to be safe."
+    },
+    {
+      "key": "buff.QueenSubordinates.name",
+      "text": "Death by Queen"
+    },
+    {
+      "key": "buff.QueenSubordinates.shortName",
+      "text": "Death by Queen"
+    },
+    {
+      "key": "buff.QueenSubordinates.description",
+      "text": "Your original Queen can convert eligible enemies she captures into friendly subordinates. Enemy Queens cannot be converted. Keep up to 3 active subordinates, retaining their types and normal movement, on empty squares in your half. If placement is blocked, conversion waits within that capacity. Capturing the original Queen destroys her entire entourage, even if she is awaiting respawn. Promoted and summoned Queens cannot command subordinates."
+    },
+    {
+      "key": "buff.QueenSubordinates.summary",
+      "text": "Your original Queen recruits captured enemies into a royal entourage. Maximum 3. Loyalty ends with her."
+    },
+    {
+      "key": "buff.Snowman.name",
+      "text": "Do You Want to Build a Snowman?"
+    },
+    {
+      "key": "buff.Snowman.shortName",
+      "text": "Snowman"
+    },
+    {
+      "key": "buff.Snowman.description",
+      "text": "A friendly piece with no other ordinary piece in its 8 neighboring squares may create one Snowman in a random empty adjacent square. Each source can have one. Snowmen block squares, but cannot move, attack, give check or grant ordinary capture rewards. They do not count against their creator's isolation. A Snowman melts when its creator moves or dies. A destroyed Snowman needs a new isolation transition before another can appear."
+    },
+    {
+      "key": "buff.Snowman.summary",
+      "text": "An isolated ally builds one adjacent Snowman. Moving or losing its creator melts it."
+    },
+    {
+      "key": "buff.DrunkDriving.name",
+      "text": "Don't Drink and Rook!"
+    },
+    {
+      "key": "buff.DrunkDriving.shortName",
+      "text": "Drunk Rook"
+    },
+    {
+      "key": "buff.DrunkDriving.description",
+      "text": "Choose any Rook on either side. Its owner keeps control, but normal Rook move commands may veer off course. Each completed move increases the deviation chance, up to its configured cap. A swerving Rook can collide with multiple pieces on either side, including Kings. Board edges still apply. The status persists."
+    },
+    {
+      "key": "buff.DrunkDriving.summary",
+      "text": "Choose either side's Rook and let it drive. Repeated moves increase its chance to swerve."
+    },
+    {
+      "key": "buff.MagicCaster.name",
+      "text": "Magic Caster"
+    },
+    {
+      "key": "buff.MagicCaster.shortName",
+      "text": "Magic Caster"
+    },
+    {
+      "key": "buff.MagicCaster.description",
+      "text": "After 5 scheduled turns by either side, choose a living friendly Bishop to cast a fireball at any board square except one currently occupied by a King or Queen. The fire immediately destroys a vulnerable occupant and burns for 2 scheduled turns, affecting both sides. Recharge for another 5 turns after casting. All your Bishops share the charge and the limit of 4 casts per match; a charge stays ready while no Bishop is available."
+    },
+    {
+      "key": "buff.MagicCaster.summary",
+      "text": "Your Bishops share a fireball: a 5-ply recharge, a 2-ply fire hazard, and 4 casts per match."
+    },
+    {
+      "key": "buff.HighTechEra.name",
+      "text": "High-Tech Era Cannon"
+    },
+    {
+      "key": "buff.HighTechEra.shortName",
+      "text": "Cannon Rooks"
+    },
+    {
+      "key": "buff.HighTechEra.description",
+      "text": "Your two starting Rooks keep their normal moves and can capture over exactly one piece. Each cannon expires after 10 moves by either side without firing.",
+      "source": "Your two initial Rooks keep normal movement and can capture over exactly one piece. Each cannon expires after 10 combined moves without firing."
+    },
+    {
+      "key": "buff.HighTechEra.summary",
+      "text": "Your starting Rooks keep their normal moves and can capture over exactly one blocker.",
+      "source": "Your initial Rooks become cannons that can capture over one blocker."
+    },
+    {
+      "key": "buff.DefinitionOfAram.name",
+      "text": "The Chessboard Has Fallen"
+    },
+    {
+      "key": "buff.DefinitionOfAram.shortName",
+      "text": "Board Collapse"
+    },
+    {
+      "key": "buff.DefinitionOfAram.description",
+      "text": "After your 10th turn, the outermost files collapse and destroy their pieces without capture points. Five moves by either side later, the next pair collapses, leaving a 4×8 board.",
+      "source": "After your 10th turn, the outermost files collapse and destroy their pieces without capture points. Five combined moves later the next pair collapses, leaving a 4x8 board."
+    },
+    {
+      "key": "buff.DefinitionOfAram.summary",
+      "text": "The outer files collapse in two stages, destroying their occupants. Keep your army away from the edges.",
+      "source": "The board's outer files collapse in two stages. Keep your army away from the edges."
+    }
+  ]
+}

@@ -69,7 +69,8 @@ display.Begin(before,next,200);display.Keep();display.Tick(300);
 Check(!display.Pending&&saved.Count==1&&saved[0].Width==1280&&applied.Last().Width==1280,"Keep/timeout behavior");
 display.Begin(before,next,400);display.Revert();display.Revert();Check(applied.Last().Width==1920&&saved.Count==1,"Close/focus rollback must be idempotent");
 display.Begin(before,next,500);display.Begin(next,new DisplayConfiguration(1600,900,3),501);display.Revert();Check(applied.Last().Width==1920,"Nested display preview lost original rollback");
-Console.WriteLine($"PASS {checks} settings assertions: defaults, range validation, persistence, locale, resets, reversible overrides, binding conflicts and display rollback.");
+checks+=LocalizationAudit.Run();
+Console.WriteLine($"PASS {checks} settings and localization assertions: defaults, persistence, bindings, display rollback, approved buff names, Unicode, source guards and stable IDs.");
 
 sealed class MemoryStore : ISettingsStore
 {

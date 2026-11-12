@@ -16,7 +16,7 @@ $uiFiles=@(
     'Gameplay/ARAM/AramAbilityView.cs','Gameplay/ARAM/AramBuffDraftView.cs','Gameplay/ARAM/AramBuffDefinition.cs',
     'Profile/HandDrawnRoundedGraphic.cs','UI/AntialiasedUIGraphic.cs','UI/UIEdgeMesh.cs','Application/MatchStatistics.cs',
     'Core/ChessGame.Statistics.cs','Gameplay/UI/MatchHudTooltip.cs','UI/ChessFontCatalog.cs','Bot/StockfishDifficulty.cs',
-    'Gameplay/Settings/SettingsModel.cs','Gameplay/Settings/SettingsRegistry.cs','Gameplay/Settings/SettingsLanguages.cs','Gameplay/Settings/TooltipPreferences.cs','Gameplay/Settings/SettingsUiScale.cs'
+    'Gameplay/Settings/SettingsModel.cs','Gameplay/Settings/SettingsRegistry.cs','Gameplay/Settings/SettingsLanguages.cs','Gameplay/Settings/SettingsLocalization.cs','Gameplay/Settings/TooltipPreferences.cs','Gameplay/Settings/SettingsUiScale.cs'
 )
 if($Chaos35) {
     $uiFiles += 'Networking/OnlineAramPresenter.cs','Networking/OnlineAramPresenter.Chaos35.cs','Networking/OnlineAramPresenter.Visuals.cs','Backend/OnlineDtos.cs'
@@ -38,6 +38,7 @@ Copy-Item -LiteralPath "$sourceRoot/Logs/loading-compile/Chess.Domain.dll" -Dest
 Copy-Item -LiteralPath "$sourceRoot/Assets/TextMesh Pro" -Destination "$auditRoot/Assets" -Recurse
 Copy-Item -LiteralPath "$sourceRoot/Assets/Fonts" -Destination "$auditRoot/Assets" -Recurse
 New-Item -ItemType Directory -Force -Path "$auditRoot/Assets/Resources/Chess" | Out-Null
+Copy-Item -LiteralPath "$sourceRoot/Assets/Resources/Localization" -Destination "$auditRoot/Assets/Resources" -Recurse
 Copy-Item -LiteralPath "$sourceRoot/Assets/Resources/Chess/ChessFontCatalog.asset" -Destination "$auditRoot/Assets/Resources/Chess"
 New-Item -ItemType Directory -Force -Path "$auditRoot/Assets/Resources/UI" | Out-Null
 Copy-Item -LiteralPath "$sourceRoot/Assets/Resources/UI/MenuEdgeAntialiasing.shader" -Destination "$auditRoot/Assets/Resources/UI"
