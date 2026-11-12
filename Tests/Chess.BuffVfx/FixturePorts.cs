@@ -3,6 +3,7 @@ public enum PieceTeam { White, Black }
 public static class PlayModeNames { public static string DisplayText(string value)=>value; }
 public static class UserSettings
 {
+    public static string LanguageCode=>"en";
     public static class Presentation
     {
         public static bool ReducedMotion;

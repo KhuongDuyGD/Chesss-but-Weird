@@ -1,0 +1,148 @@
+{
+  "entries": [
+    {
+      "key": "buff.AbsoluteSniper.name",
+      "text": "Absolute Sniper"
+    },
+    {
+      "key": "buff.AbsoluteSniper.shortName",
+      "text": "Absolute Sniper"
+    },
+    {
+      "key": "buff.EveryManForHimself.name",
+      "text": "Người không vì mình, trời tru đất diệt"
+    },
+    {
+      "key": "buff.EveryManForHimself.shortName",
+      "text": "Người không vì mình, trời tru đất diệt"
+    },
+    {
+      "key": "buff.BrokenLegKnight.name",
+      "text": "Ngựa gãy chân"
+    },
+    {
+      "key": "buff.BrokenLegKnight.shortName",
+      "text": "Ngựa gãy chân"
+    },
+    {
+      "key": "buff.WeaponSupplyPackage.name",
+      "text": "Gói trang bị vũ khí"
+    },
+    {
+      "key": "buff.WeaponSupplyPackage.shortName",
+      "text": "Gói trang bị vũ khí"
+    },
+    {
+      "key": "buff.NewYearFireworks.name",
+      "text": "Pháo hoa chúc mừng năm mới"
+    },
+    {
+      "key": "buff.NewYearFireworks.shortName",
+      "text": "Pháo hoa chúc mừng năm mới"
+    },
+    {
+      "key": "buff.AssassinPawns.name",
+      "text": "Tốt sát thủ"
+    },
+    {
+      "key": "buff.AssassinPawns.shortName",
+      "text": "Tốt sát thủ"
+    },
+    {
+      "key": "buff.MedicalStation.name",
+      "text": "Trạm y tế"
+    },
+    {
+      "key": "buff.MedicalStation.shortName",
+      "text": "Trạm y tế"
+    },
+    {
+      "key": "buff.WeddingNight.name",
+      "text": "Động phòng đêm tân hôn"
+    },
+    {
+      "key": "buff.WeddingNight.shortName",
+      "text": "Động phòng đêm tân hôn"
+    },
+    {
+      "key": "buff.ProtectedPawn.name",
+      "text": "Bạn sẽ không dám đả thương em gái dễ thương này chứ?"
+    },
+    {
+      "key": "buff.ProtectedPawn.shortName",
+      "text": "Bạn sẽ không dám đả thương em gái dễ thương này chứ?"
+    },
+    {
+      "key": "buff.Lullaby.name",
+      "text": "Khúc ca ru ngủ"
+    },
+    {
+      "key": "buff.Lullaby.shortName",
+      "text": "Khúc ca ru ngủ"
+    },
+    {
+      "key": "buff.GoldenExperienceRequiem.name",
+      "text": "Golden Experience Requiem"
+    },
+    {
+      "key": "buff.GoldenExperienceRequiem.shortName",
+      "text": "Golden Experience Requiem"
+    },
+    {
+      "key": "buff.QueenCastling.name",
+      "text": "Oan gia ngõ hẹp"
+    },
+    {
+      "key": "buff.QueenCastling.shortName",
+      "text": "Oan gia ngõ hẹp"
+    },
+    {
+      "key": "buff.QueenSubordinates.name",
+      "text": "Chết vì gái là một cái chết tê tái"
+    },
+    {
+      "key": "buff.QueenSubordinates.shortName",
+      "text": "Chết vì gái là một cái chết tê tái"
+    },
+    {
+      "key": "buff.Snowman.name",
+      "text": "Do you want to build a snowman?"
+    },
+    {
+      "key": "buff.Snowman.shortName",
+      "text": "Do you want to build a snowman?"
+    },
+    {
+      "key": "buff.DrunkDriving.name",
+      "text": "Đã rượu bia thì đừng lái xe"
+    },
+    {
+      "key": "buff.DrunkDriving.shortName",
+      "text": "Đã rượu bia thì đừng lái xe"
+    },
+    {
+      "key": "buff.MagicCaster.name",
+      "text": "Magic Caster"
+    },
+    {
+      "key": "buff.MagicCaster.shortName",
+      "text": "Magic Caster"
+    },
+    {
+      "key": "buff.HighTechEra.name",
+      "text": "High-tech Era Cannon"
+    },
+    {
+      "key": "buff.HighTechEra.shortName",
+      "text": "High-tech Era Cannon"
+    },
+    {
+      "key": "buff.DefinitionOfAram.name",
+      "text": "Sự sụp đổ của hệ thống bàn cờ"
+    },
+    {
+      "key": "buff.DefinitionOfAram.shortName",
+      "text": "Sự sụp đổ của hệ thống bàn cờ"
+    }
+  ]
+}

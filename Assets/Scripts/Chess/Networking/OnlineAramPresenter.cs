@@ -55,9 +55,9 @@ internal sealed partial class OnlineAramPresenter : IDisposable
         "Hiding King: swap king with an allied home-rank piece; 10-turn cooldown.",
         "Gacha Banner: use combat tickets to roll pieces, at most twice per turn.",
         "Substitute Ninjutsu: first check teleports king to safety and leaves a decoy.",
-        "High-Tech Era: original rooks capture across exactly one blocker.",
+        "High-Tech Era Cannon: original rooks capture across exactly one blocker.",
         "Queen's Betrayal: extra queen; 10% chance to switch sides each owner turn.",
-        "Definition of CHAOS: outer file pairs collapse at rounds 10/15.",
+        "The Chessboard Has Fallen: outer file pairs collapse at rounds 10/15.",
         "RNG Fiesta: randomizes starting pieces except king/queen.",
         "I-Frame Roll: Escape a checkmate within the king's 5x5 region, at most 3 uses.",
         "Ghost Army: move through allies, but cannot use phasing to check the enemy king.",
@@ -243,7 +243,13 @@ internal sealed partial class OnlineAramPresenter : IDisposable
         }
         return view;
     }
-    internal static string BuffText(int id) => id >= 0 && id < Buffs.Length ? Buffs[id] : "Unknown buff " + id;
+    internal static string BuffText(int id)
+    {
+        if (id < 0 || id >= Buffs.Length) return "Unknown buff " + id;
+        string copy = Buffs[id];
+        int separator = copy.IndexOf(':');
+        return SettingsLocalization.Text("buff." + (AramBuffId)id + ".name", copy.Substring(0, separator)) + copy.Substring(separator);
+    }
     private void CancelTargeting() { action = null; actionPieceKind = null; targets.Clear(); formation.Clear(); formationPiece = null;buffVfx?.ClearPreview(); }
     private void Send(AbilityCommand command)
     { if (!CanInteract) return; CancelTargeting(); owner.SendAbility(command); }

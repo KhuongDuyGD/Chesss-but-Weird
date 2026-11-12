@@ -56,7 +56,9 @@ public static class Chaos35OnlineAudit
                 int? buff = (int?)own["buffId"];
                 Check(view.Visible, color + " missing abilities " + fixture["name"]);
                 Check(state.chaos["buffDefinitions"].Count() == 35, "Metadata lost on client decode");
-                Check(view.Summary.Contains((string)state.chaos["buffDefinitions"].First(d => (int)d["id"] == buff)["displayName"]), "Client ignored server buff name");
+                string serverName = (string)state.chaos["buffDefinitions"].First(d => (int)d["id"] == buff)["displayName"];
+                string expectedName = SettingsLocalization.Text("buff." + (AramBuffId)buff.Value + ".name", serverName);
+                Check(view.Summary.Contains(expectedName), "Client ignored localized buff name");
                 if ((string)state.chaos["phase"] == "Setup" && (bool?)own["setupComplete"] != true)
                 {
                     string expected = buff == 27 ? "ReplaceQueen-Rook" : buff == 13 ? "HideKing" : "SelectTargets";

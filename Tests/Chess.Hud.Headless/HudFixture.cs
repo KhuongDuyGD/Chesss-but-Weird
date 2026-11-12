@@ -9,6 +9,7 @@ public static class UserSettings
     public static readonly ChessButWeird.Settings.PresentationPreferences Presentation = new ChessButWeird.Settings.PresentationPreferences(Manager);
     public static bool Enabled(string id)=>Manager.Enabled(id);
     public static float Get(string id)=>Manager.Get(id);
+    public static string LanguageCode=>ChessButWeird.Settings.SettingsLanguages.Code((int)Get("language"));
     private sealed class HudSettingsStore : ChessButWeird.Settings.ISettingsStore
     {public string Read(string id)=>null;public void Write(string id,string value){}public void Flush(){}}
 }

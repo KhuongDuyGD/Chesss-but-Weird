@@ -5,6 +5,8 @@ $auditRoot=Join-Path $sourceRoot ('Logs/buff-vfx-qa/'+(Get-Date -Format 'yyyyMMd
 New-Item -ItemType Directory -Force -Path "$auditRoot/Assets/Editor","$auditRoot/Assets/Fixture","$auditRoot/Assets/Resources/Chess","$auditRoot/Assets/Pieces","$auditRoot/Packages","$auditRoot/ProjectSettings" | Out-Null
 Copy-Item -LiteralPath "$sourceRoot/Assets/Scripts/Chess/Presentation/BuffVfx" -Destination "$auditRoot/Assets/Fixture" -Recurse
 Copy-Item -LiteralPath "$sourceRoot/Assets/Scripts/Chess/Gameplay/ARAM/AramBuffDefinition.cs","$sourceRoot/Assets/Scripts/Chess/UI/ChessFontCatalog.cs","$sourceRoot/Tests/Chess.BuffVfx/FixturePorts.cs" -Destination "$auditRoot/Assets/Fixture"
+Copy-Item -LiteralPath "$sourceRoot/Assets/Scripts/Chess/Gameplay/Settings/SettingsLocalization.cs" -Destination "$auditRoot/Assets/Fixture"
+Copy-Item -LiteralPath "$sourceRoot/Assets/Resources/Localization" -Destination "$auditRoot/Assets/Resources" -Recurse
 Copy-Item -LiteralPath "$sourceRoot/Assets/Scripts/Chess/UI/ChessFontCatalog.cs.meta" -Destination "$auditRoot/Assets/Fixture"
 Copy-Item -LiteralPath "$sourceRoot/Tests/Chess.BuffVfx/BuffVfxAudit.cs" -Destination "$auditRoot/Assets/Editor"
 Copy-Item -LiteralPath "$sourceRoot/Tests/Chess.BuffVfx/BuffVfxLandscapeAudit.cs","$sourceRoot/Tests/Chess.BuffVfx/BuffVfxStrategyAudit.cs" -Destination "$auditRoot/Assets/Editor"
