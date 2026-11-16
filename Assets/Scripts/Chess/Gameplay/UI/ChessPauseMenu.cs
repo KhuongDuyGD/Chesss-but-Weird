@@ -282,7 +282,8 @@ public sealed class ChessPauseMenu : MonoBehaviour
 
     private void TryToggleFromEscape()
     {
-        if (!overlay || !CanOpen || quitting || lastEscapeFrame == Time.frameCount || SettingsMenuController.EscapeConsumedFrame == Time.frameCount) return;
+        if (!overlay || !CanOpen || quitting || lastEscapeFrame == Time.frameCount || SettingsMenuController.EscapeConsumedFrame == Time.frameCount ||
+            MatchShareExportView.IsAnyOpen || MatchShareExportView.EscapeConsumedFrame == Time.frameCount) return;
         lastEscapeFrame = Time.frameCount;
         if (settingsMenu && settingsMenu.IsOpen) return;
         if (pendingAction != PendingAction.None) { CancelConfirmation(); return; }

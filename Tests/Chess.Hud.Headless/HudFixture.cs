@@ -45,6 +45,7 @@ public sealed partial class ChessGame : MonoBehaviour
     public bool IsBotGame { get=>botMode; set=>botMode=value; }
     public bool IsBotPractice => false;
     public bool GameStarted => gameStarted;
+    public bool IsReviewingFinishedGame;
     public bool PauseLocked { get=>pauseLocked; set=>pauseLocked=value; }
     public PieceTeam CurrentTurn { get=>currentTurn;set=>currentTurn=value; }
     public PieceTeam PlayerTeam { get=>playerTeam;set=>playerTeam=value; }

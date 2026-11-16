@@ -51,6 +51,7 @@ public static class MultiplayerAudit
             menu.ReturnToMainMenuFromResult();
             Check(Get<object>(menu, "state").ToString() == "TransitionToTurnSelection", "Result exit returned to the primary title menu instead of the play hub");
             lines.Add("PASS result menu exit returns to the play hub (main menu 2)");
+            PostMatchAudit.CheckPostMatch(host, game, menu, controller, lines);
 
             move = AudioClip.Create("move", 32, 1, 8000, false);
             capture = AudioClip.Create("capture", 32, 1, 8000, false);

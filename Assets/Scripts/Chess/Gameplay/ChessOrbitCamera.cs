@@ -16,7 +16,7 @@ public sealed class ChessOrbitCamera : MonoBehaviour
     [SerializeField, Min(0f)] private float pieceHeadroomInTiles = 1.5f;
     [SerializeField, Min(.01f)] private float orbitSensitivity = .14f;
     private float orbitYaw, orbitPitch;
-    private bool orbitDragging, orbitUnlocked;
+    private bool orbitDragging, orbitUnlocked, wasReviewingFinishedGame;
 
     [Header("Mouse Wheel Zoom")]
     [SerializeField, Range(.25f, 1f)] private float minimumZoom = .55f;
@@ -39,7 +39,8 @@ public sealed class ChessOrbitCamera : MonoBehaviour
 
     public void ToggleOrbitLock()
     {
-        if (!IsBoardViewActive || !chessGame || !chessGame.GameStarted || chessGame.PauseLocked) return;
+        if (!IsBoardViewActive || !chessGame ||
+            !(chessGame.GameStarted || chessGame.IsReviewingFinishedGame) || chessGame.PauseLocked) return;
         orbitUnlocked = !orbitUnlocked;
         orbitDragging = false;
         if (!orbitUnlocked) orbitYaw = orbitPitch = 0f;
@@ -64,6 +65,7 @@ public sealed class ChessOrbitCamera : MonoBehaviour
     private void OnDisable()
     {
         orbitDragging = false;
+        wasReviewingFinishedGame = false;
         RenderPipelineManager.beginCameraRendering -= BeforeCameraRendering;
         // Release our explicit matrix so the separate rifle view can use perspective.
         if (viewCamera) viewCamera.ResetProjectionMatrix();
@@ -94,6 +96,13 @@ public sealed class ChessOrbitCamera : MonoBehaviour
     }
     private void LateUpdate()
     {
+        bool reviewing = chessGame && chessGame.IsReviewingFinishedGame;
+        if (reviewing && !wasReviewingFinishedGame)
+        {
+            orbitUnlocked = true;
+            orbitDragging = false;
+        }
+        wasReviewingFinishedGame = reviewing;
         HandleZoomInput();
         currentZoom = Mathf.SmoothDamp(currentZoom, targetZoom, ref zoomVelocity,
             Mathf.Max(.01f, zoomSmoothTime), Mathf.Infinity, Time.unscaledDeltaTime);
@@ -111,6 +120,7 @@ public sealed class ChessOrbitCamera : MonoBehaviour
         orbitYaw = orbitPitch = 0f;
         orbitDragging = false;
         orbitUnlocked = false;
+        wasReviewingFinishedGame = false;
         targetZoom = 1f;
         if (immediate) { currentZoom = 1f; zoomVelocity = 0f; }
         FrameBoard();
@@ -125,7 +135,7 @@ public sealed class ChessOrbitCamera : MonoBehaviour
 
     private void HandleZoomInput()
     {
-        if (!viewCamera || !viewCamera.enabled || !chessGame || !chessGame.GameStarted ||
+        if (!viewCamera || !viewCamera.enabled || !chessGame || !(chessGame.GameStarted || chessGame.IsReviewingFinishedGame) ||
             chessGame.PauseLocked || !Application.isFocused)
         { orbitDragging = false; return; }
         // Y toggles orbit; locking returns to the original assigned-side view.
@@ -222,7 +232,7 @@ public sealed class ChessOrbitCamera : MonoBehaviour
 
         // Leave space for the existing match HUD without letting its FOV changes
         // alter this orthographic view. Narrow screens fit the full board horizontally.
-        float hudFraction = chessGame && chessGame.GameStarted ? (chessGame.IsAramGame || chessGame.UsesDotNetOnline ? .76f : .88f) : .94f;
+        float hudFraction = chessGame && (chessGame.GameStarted || chessGame.IsReviewingFinishedGame) ? (chessGame.IsAramGame || chessGame.UsesDotNetOnline ? .76f : .88f) : .94f;
         float safeWidth = 1f, safeHeight = 1f;
         if (Screen.width > 0 && Screen.height > 0 && Screen.safeArea.width > 0 && Screen.safeArea.height > 0)
         {

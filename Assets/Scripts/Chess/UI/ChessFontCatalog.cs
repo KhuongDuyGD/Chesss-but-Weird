@@ -8,6 +8,7 @@ public sealed class ChessFontCatalog : ScriptableObject
 
     [SerializeField] private Font runtimeFont;
     [SerializeField] private TMP_FontAsset tmpFont;
+    [SerializeField] private Font resultFallbackFont;
 
     private static ChessFontCatalog cachedCatalog;
 
@@ -30,6 +31,16 @@ public sealed class ChessFontCatalog : ScriptableObject
             if (catalog != null && catalog.tmpFont != null)
                 return catalog.tmpFont;
             return TMP_Settings.defaultFontAsset;
+        }
+    }
+
+    public static Font ResultFallbackFont
+    {
+        get
+        {
+            ChessFontCatalog catalog = LoadCatalog();
+            return catalog != null && catalog.resultFallbackFont != null
+                ? catalog.resultFallbackFont : Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
         }
     }
 

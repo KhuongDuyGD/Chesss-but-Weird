@@ -25,6 +25,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
     private PieceTeam checkedTeam;
     private bool resultIsDraw;
     private bool logoutInFlight;
+    private bool resultExitInFlight;
     private string drawReason;
     private Action<PieceType> promotionCallback;
     private ScreenState state = ScreenState.MainMenu;
@@ -50,6 +51,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
     private string blackPlayerName;
     private float uiWidth = UiReferenceWidth;
     private float uiHeight = UiReferenceHeight;
+    public bool IsSpectatingFinishedGame => state == ScreenState.Spectating;
 
     public static ChessTurnSelectionUI Create(ChessGame chessGame)
     {
@@ -532,11 +534,46 @@ public class ChessTurnSelectionUI : MonoBehaviour
 
     public void SpectateFinishedGame()
     {
+        if (!chessGame || !chessGame.GameOver) return;
         state = ScreenState.Spectating;
-        resultMenu?.Hide();
+        resultMenu?.ShowBoardReview();
         analysisBoard?.SetVisible(true);
         analysisBoard?.SetInteractionEnabled(false);
         pauseMenu?.SetResultSpectating(true);
+    }
+
+    public async void LeaveFinishedGameToLobby()
+    {
+        if (resultExitInFlight || !chessGame || !chessGame.GameOver || !IsSpectatingFinishedGame) return;
+        resultExitInFlight = true;
+        resultMenu?.SetReviewExitPending(true, "Returning to lobby...");
+        try
+        {
+            var loading = chessGame.GetComponent<LoadingManager>();
+            if (loading && loading.IsBusy) throw new InvalidOperationException("Match content is busy. Please try again when it finishes.");
+            bool onlineMatch = chessGame.IsNetworkGame || chessGame.UsesDotNetOnline;
+            bool botMatch = chessGame.IsBotGame, chaosMatch = chessGame.IsAramGame;
+            if (onlineMatch)
+            {
+                if (!lanController) throw new InvalidOperationException("The online session controller is unavailable.");
+                await lanController.LeaveMatchFromPauseAsync();
+                if (!this) return;
+            }
+            chessGame.RestartToMainMenu(() => resultExitInFlight = false, () =>
+            {
+                if (!this) return;
+                if (onlineMatch) lanController.ShowLobbyAfterPauseExit();
+                else if (botMatch) ShowBotDifficultySelection();
+                else if (chaosMatch) ShowAramModeSelection();
+                else ShowLocalModeSelection();
+            });
+        }
+        catch (Exception error)
+        {
+            if (!this) return;
+            resultExitInFlight = false;
+            resultMenu?.SetReviewExitPending(false, "Could not leave: " + PlayerNotificationText.FromException(error));
+        }
     }
 
     public void StartNewGameFromResult()

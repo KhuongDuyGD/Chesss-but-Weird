@@ -13,6 +13,7 @@ public sealed class MenuMusicWidget : MonoBehaviour
     private TextMeshProUGUI packName;
     private TextMeshProUGUI[] optionLabels;
     private Button[] options;
+    private GameMusicPack[] packs;
     private Button trigger;
     private ModeSelectionPresentation owner;
     private GameMusicPack displayedPack;
@@ -41,7 +42,7 @@ public sealed class MenuMusicWidget : MonoBehaviour
         dismiss.targetGraphic = blocker;
         dismiss.transition = Selectable.Transition.None;
         dismiss.onClick.AddListener(Close);
-        var packs = (GameMusicPack[])Enum.GetValues(typeof(GameMusicPack));
+        packs = (GameMusicPack[])Enum.GetValues(typeof(GameMusicPack));
         float panelHeight = 106 + packs.Length * 98 + 40;
         var panel = UI.Card(popup, "Music Pack Picker", new Rect(1264, 112, 548, panelHeight), UI.White, 0, true, 8).rectTransform;
         panel.GetComponent<HandDrawnRoundedGraphic>().raycastTarget = true;
@@ -86,7 +87,8 @@ public sealed class MenuMusicWidget : MonoBehaviour
         owner.SetInputEnabled(false);
         popup.gameObject.SetActive(true);
         RefreshPack(GameMusicManager.ActivePack);
-        if (EventSystem.current) EventSystem.current.SetSelectedGameObject(options[(int)displayedPack].gameObject);
+        int selectedIndex = Array.IndexOf(packs, displayedPack);
+        if (EventSystem.current) EventSystem.current.SetSelectedGameObject(options[Math.Max(0, selectedIndex)].gameObject);
     }
 
     public void Close()
@@ -105,7 +107,7 @@ public sealed class MenuMusicWidget : MonoBehaviour
         packName.text = GameMusicManager.GetPackDisplayName(pack);
         for (int i = 0; i < options.Length; i++)
         {
-            var value = (GameMusicPack)i;
+            GameMusicPack value = packs[i];
             optionLabels[i].text = GameMusicManager.GetPackDisplayName(value) + (value == pack ? "  /  ON" : "");
             options[i].targetGraphic.color = value == pack ? UI.Green : UI.Paper;
         }

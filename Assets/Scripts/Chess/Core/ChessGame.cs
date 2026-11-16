@@ -116,6 +116,7 @@ public partial class ChessGame : MonoBehaviour
     public bool GameStarted => gameStarted && !contentLoading;
     public Chessboard Board => chessboard;
     public bool GameOver => gameOver;
+    public bool IsReviewingFinishedGame => !contentLoading && gameOver && turnSelectionUI && turnSelectionUI.IsSpectatingFinishedGame;
     public bool IsMatchEnding => matchEnding;
     public bool InputLocked => inputLocked || contentLoading;
     public bool PauseLocked => pauseLocked;
@@ -438,6 +439,8 @@ public partial class ChessGame : MonoBehaviour
         aramMode = false;
         botDifficulty = selectedDifficulty;
         botOptions = options ?? BotGameOptions.Challenge;
+        statisticsBotPlayerName = PlayerAuthService.CurrentProfile?.displayName?.Trim();
+        turnSelectionUI?.ClearMatchPlayers();
         GameMusicManager.PlayInGameMusic(true, selectedDifficulty);
         BeginGameInternal(PieceTeam.White, localPlayerTeam, true, PieceTeam.White);
     }
@@ -487,6 +490,7 @@ public partial class ChessGame : MonoBehaviour
         if (!pieceNames) pieceNames = gameObject.AddComponent<PieceHoverTooltip>();
         pieceNames.Initialize(this);
         matchResultRecorder.Begin(Guid.NewGuid().ToString("N"));
+        BeginExportRecord();
         currentTurn = firstTurn;
         moveHistoryFirstTurn = firstTurn;
         playerTeam = localPlayerTeam;
@@ -1740,11 +1744,13 @@ public partial class ChessGame : MonoBehaviour
 
     public string ExportFen()
     {
+        if (ExportRules == ChessButWeird.Application.MatchNotationRules.Chaos)
+            throw new InvalidOperationException("Chess notation export is unavailable in Chaos Mode.");
+        if (dotNetState != null && ExportRules == ChessButWeird.Application.MatchNotationRules.Standard)
+            return ChessButWeird.Domain.FenCodec.Write(ChessButWeird.Application.StandardChessNotation.ParsePosition(OnlineExportFen()));
         if (UsesClassicDomainSession && pendingPromotionPawn == null)
             return ChessButWeird.Domain.FenCodec.Write(localClassicCoordinator.Snapshot);
-
-        int fullMoveNumber = Mathf.Max(1, 1 + moveHistory.Count / 2);
-        return $"{BuildPositionKey()} {halfMoveClock} {fullMoveNumber}";
+        throw new InvalidOperationException("An authoritative standard chess position is unavailable.");
     }
 
     private IEnumerator AnimateMoveAndPromptPromotion(PawnPiece pawn, Vector2Int destination, PieceTeam opponentTeam)

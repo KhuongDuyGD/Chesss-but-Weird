@@ -349,6 +349,7 @@ public partial class ChessGame
             entries.Add(new ChessButWeird.Application.MatchStatistics.Entry(record.id, number, actor, text, move, false, captured));
         }
         statistics.Restore(entries, number, true, capturesKnown);
+        RestoreExportMoves(records, snapshot);
         // The contract does not expose startedAt in state. Do not invent a
         // recovered duration or infer ARAM captures from missing pieces.
         statisticsTimeKnown = false; SyncPresentationStatistics();

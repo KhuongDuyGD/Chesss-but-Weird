@@ -8,5 +8,9 @@ Read `audit-result.txt` for completion and `Editor.log` for errors.
 The audit loads freshly compiled production assemblies and checks return-to-menu after
 win/loss/draw with an unloaded board, return to main menu 2, online-session disposal, SFX clip selection, duplicate
 snapshot suppression, the check-pulse coroutine, and normal/ranked/custom request flags.
+`PostMatchAudit` also exercises finished-game review camera unlocking and pause/loading guards,
+sharing eligibility and result summaries, result/review action layout at four aspect ratios,
+retryable exit controls, bot lobby return, and Classic/Chaos session cleanup with lobby mode preservation.
+It checks summary generation without writing to the user's clipboard.
 It does not load user scenes, authenticate an account, contact the backend, render the game,
 or verify audible playback on a physical device.

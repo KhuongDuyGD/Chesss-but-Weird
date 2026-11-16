@@ -261,7 +261,7 @@ public sealed class AnalysisBoardView : MonoBehaviour
             var boardCamera=Camera.main;
             if(boardCamera)orbitCamera=boardCamera.GetComponent<ChessOrbitCamera>();
         }
-        bool show=game&&game.GameStarted&&!game.PauseLocked&&orbitCamera&&orbitCamera.IsBoardViewActive;
+        bool show=game&&(game.GameStarted||game.IsReviewingFinishedGame)&&!game.PauseLocked&&orbitCamera&&orbitCamera.IsBoardViewActive;
         cameraHint.gameObject.SetActive(show);
         if(!show)return;
         bool unlocked=orbitCamera.IsOrbitUnlocked;

@@ -14,3 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ChessFontCatalog
   runtimeFont: {fileID: 12800000, guid: 567fa8d9ce9c9794fa40053e36e236d6, type: 3}
   tmpFont: {fileID: 11400000, guid: 3370ef1ee621aea4fbbcd84d57c4452d, type: 2}
+  resultFallbackFont: {fileID: 12800000, guid: e3265ab4bf004d28a9537516768c1c75, type: 3}

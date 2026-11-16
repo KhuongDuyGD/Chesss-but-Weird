@@ -10,12 +10,10 @@ using UnityEditor;
 
 public enum GameMusicPack
 {
-    Default,
-    AngryBirdsEpic,
-    EpicSeven,
-    CounterStrikeGO,
-    EyeOfTheDragon,
-    KingdomRush
+    Default = 0,
+    // Preserve the original ID: removed packs must not become Kingdom Rush
+    // when an older saved selection contains its numeric enum value.
+    KingdomRush = 5
 }
 
 public enum GameMusicContext
@@ -38,9 +36,6 @@ public sealed class GameMusicManager : MonoBehaviour
     private const float EndFadeSeconds = 1.5f;
     private const string MusicRoot = "Assets/Audio/MusicPackage";
     private const string DefaultFolder = "DefaultMusic";
-    private const string AngryBirdsFolder = "AngryBirdsCollab";
-    private const string EpicSevenFolder = "EpicSevenCollab";
-    private const string CsgoFolder = "CSGOcollab";
     private const string KingdomRushFolder = "KingdomRushCollab";
 
     private static GameMusicManager instance;
@@ -84,35 +79,6 @@ public sealed class GameMusicManager : MonoBehaviour
             return true;
         }
 
-        if (string.Equals(packId, "angry_birds_epic", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(packId, "angrybirdsepic", StringComparison.OrdinalIgnoreCase))
-        {
-            pack = GameMusicPack.AngryBirdsEpic;
-            return true;
-        }
-
-        if (string.Equals(packId, "epic_seven", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(packId, "epicseven", StringComparison.OrdinalIgnoreCase))
-        {
-            pack = GameMusicPack.EpicSeven;
-            return true;
-        }
-
-        if (string.Equals(packId, "csgo", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(packId, "counter_strike_go", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(packId, "counterstrikego", StringComparison.OrdinalIgnoreCase))
-        {
-            pack = GameMusicPack.CounterStrikeGO;
-            return true;
-        }
-
-        if (string.Equals(packId, "eye_of_the_dragon", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(packId, "eyeofthedragon", StringComparison.OrdinalIgnoreCase))
-        {
-            pack = GameMusicPack.EyeOfTheDragon;
-            return true;
-        }
-
         if (string.Equals(packId, "kingdom_rush", StringComparison.OrdinalIgnoreCase) ||
             string.Equals(packId, "kingdomrush", StringComparison.OrdinalIgnoreCase) ||
             string.Equals(packId, "kingdomrushcollab", StringComparison.OrdinalIgnoreCase))
@@ -129,14 +95,6 @@ public sealed class GameMusicManager : MonoBehaviour
     {
         switch (pack)
         {
-            case GameMusicPack.AngryBirdsEpic:
-                return "Angry Birds Epic";
-            case GameMusicPack.EpicSeven:
-                return "Epic Seven";
-            case GameMusicPack.CounterStrikeGO:
-                return "CSGO Main Theme";
-            case GameMusicPack.EyeOfTheDragon:
-                return "Eye of the Dragon";
             case GameMusicPack.KingdomRush:
                 return "Kingdom Rush";
             default:
@@ -230,6 +188,8 @@ public sealed class GameMusicManager : MonoBehaviour
         string saved = PlayerPrefs.GetString(SaveKey, GameMusicPack.Default.ToString());
         if (Enum.TryParse(saved, true, out GameMusicPack pack) && Enum.IsDefined(typeof(GameMusicPack), pack))
             return pack;
+        PlayerPrefs.SetString(SaveKey, GameMusicPack.Default.ToString());
+        PlayerPrefs.Save();
         return GameMusicPack.Default;
     }
 
@@ -517,19 +477,11 @@ public sealed class GameMusicManager : MonoBehaviour
 
     private MusicTrack[] GetPlaylist(MusicRequest request)
     {
-        // Existing albums keep their original shop (hub menu) soundtrack.
+        // CBW keeps its original shop (hub menu) soundtrack.
         if (request.context == GameMusicContext.Shop && activePack != GameMusicPack.KingdomRush)
             request = MusicRequest.For(GameMusicContext.MainMenuHub);
         switch (activePack)
         {
-            case GameMusicPack.AngryBirdsEpic:
-                return GetAngryBirdsPlaylist(request);
-            case GameMusicPack.EpicSeven:
-                return GetEpicSevenPlaylist(request);
-            case GameMusicPack.CounterStrikeGO:
-                return GetCounterStrikePlaylist(request);
-            case GameMusicPack.EyeOfTheDragon:
-                return GetEyeOfTheDragonPlaylist(request);
             case GameMusicPack.KingdomRush:
                 return GetKingdomRushPlaylist(request);
             default:
@@ -573,133 +525,6 @@ public sealed class GameMusicManager : MonoBehaviour
 
         fallbackTrack = fallbackPlaylist[0];
         return true;
-    }
-
-    private MusicTrack[] GetAngryBirdsPlaylist(MusicRequest request)
-    {
-        switch (request.context)
-        {
-            case GameMusicContext.Auth:
-            case GameMusicContext.MainMenuPrimary:
-                return One(MusicTrack.AngryBirds("Angry Birds Epic music - Main theme.mp3"));
-            case GameMusicContext.MainMenuHub:
-                return One(MusicTrack.AngryBirds("Angry Birds Epic music extended - Map of Piggy Island Map 2.mp3"));
-            case GameMusicContext.Gacha:
-                return One(MusicTrack.AngryBirds("Angry Birds Epic music extended - Camp Ca- Caw.mp3"));
-            case GameMusicContext.InGame:
-                if (request.isBotGame && StockfishDifficultyProfiles.RewardTier(request.difficulty) == StockfishDifficulty.Expert)
-                    return One(MusicTrack.AngryBirds("Angry Birds Epic music extended - King Pig and His Manic Minions Boss battle.mp3"));
-                return new[]
-                {
-                    MusicTrack.AngryBirds("Angry Birds Epic music extended - Battle of Birds and Pigs Battle 2.mp3"),
-                    MusicTrack.AngryBirds("Angry Birds Epic music extended - You Call THAT a Stick Battle 1.mp3"),
-                    MusicTrack.AngryBirds("Angry Birds Epic music extended - Moar boars! Battle 3.mp3")
-                };
-            case GameMusicContext.Result:
-                if (request.resultKind == ResultMenuView.ResultKind.Win)
-                    return One(MusicTrack.AngryBirds("Angry Birds Epic music - win.mp3"));
-                if (request.resultKind == ResultMenuView.ResultKind.Lose)
-                    return One(MusicTrack.Default("CBW_LoseTheme.mp3"));
-                return One(MusicTrack.Default("CBW_DrawTheme.mp3"));
-            default:
-                return GetDefaultPlaylist(request);
-        }
-    }
-
-    private MusicTrack[] GetEpicSevenPlaylist(MusicRequest request)
-    {
-        switch (request.context)
-        {
-            case GameMusicContext.Auth:
-            case GameMusicContext.MainMenuPrimary:
-                return One(MusicTrack.EpicSeven("Epic Seven - First Step Towards an Epic History.mp3"));
-            case GameMusicContext.MainMenuHub:
-                return new[]
-                {
-                    MusicTrack.EpicSeven("Epic Seven - A Gift from the Heart.mp3"),
-                    MusicTrack.EpicSeven("Epic Seven - Love, Remembrance, Eternity.mp3"),
-                    MusicTrack.EpicSeven("Epic Seven - The Pub on a Sleepy Afternoon MP3.mp3")
-                };
-            case GameMusicContext.Gacha:
-                return One(MusicTrack.EpicSeven("Epic Seven OST Summon Theme 1 - Osvald.mp3"));
-            case GameMusicContext.InGame:
-                if (request.isBotGame && StockfishDifficultyProfiles.RewardTier(request.difficulty) == StockfishDifficulty.Expert)
-                    return One(MusicTrack.EpicSeven("Epic Seven OST Notos Theme - Osvald.mp3"));
-                if (request.isBotGame && StockfishDifficultyProfiles.RewardTier(request.difficulty) >= StockfishDifficulty.Hard)
-                {
-                    return new[]
-                    {
-                        MusicTrack.EpicSeven("Epic Seven OST World Arena RTA  Battle Theme 13.mp3"),
-                        MusicTrack.EpicSeven("Epic Seven OST World Arena RTA  Battle Theme 12.mp3")
-                    };
-                }
-                return new[]
-                {
-                    MusicTrack.EpicSeven("Epic Seven OST Salome Theme - Episode 6 Theme 2.mp3"),
-                    MusicTrack.EpicSeven("Epic Seven OST Rhianna and Luciella Theme - Episode 6 Theme 6.mp3")
-                };
-            case GameMusicContext.Result:
-                return One(MusicTrack.EpicSeven("Epic Seven OST Battle Results Theme - TheOrang.mp3"));
-            default:
-                return GetDefaultPlaylist(request);
-        }
-    }
-
-    private MusicTrack[] GetCounterStrikePlaylist(MusicRequest request)
-    {
-        switch (request.context)
-        {
-            case GameMusicContext.Auth:
-            case GameMusicContext.MainMenuPrimary:
-                return One(MusicTrack.Csgo("Counter-Strike- Global Offensive Main Menu.mp3"));
-            case GameMusicContext.MainMenuHub:
-                return One(MusicTrack.Csgo("Counter-Strike- Global Offensive main menu 2.mp3"));
-            case GameMusicContext.Gacha:
-                return new[]
-                {
-                    MusicTrack.Csgo("Counter-Strike- Global Offensive Gacha.mp3"),
-                    MusicTrack.Csgo("Counter-Strike- Global Offensive gacha 2.mp3")
-                };
-            case GameMusicContext.InGame:
-                return GetDefaultPlaylist(request);
-            case GameMusicContext.Result:
-                if (request.resultKind == ResultMenuView.ResultKind.Win)
-                {
-                    return new[]
-                    {
-                        MusicTrack.Csgo("Counter-Strike- Global Offensive Win.mp3"),
-                        MusicTrack.Csgo("Counter-Strike- Global Offensive win 2.mp3")
-                    };
-                }
-                if (request.resultKind == ResultMenuView.ResultKind.Lose)
-                {
-                    return new[]
-                    {
-                        MusicTrack.Csgo("Counter-Strike- Global Offensive Lose.mp3"),
-                        MusicTrack.Csgo("Counter-Strike- Global Offensive lose 2.mp3")
-                    };
-                }
-                return One(MusicTrack.Csgo("Counter-Strike- Global Offensive main menu 2.mp3"));
-            default:
-                return One(MusicTrack.Csgo("Counter-Strike- Global Offensive main menu 2.mp3"));
-        }
-    }
-
-    private MusicTrack[] GetEyeOfTheDragonPlaylist(MusicRequest request)
-    {
-        switch (request.context)
-        {
-            case GameMusicContext.InGame:
-                return GetDefaultPlaylist(request);
-            case GameMusicContext.Result:
-                if (request.resultKind == ResultMenuView.ResultKind.Win)
-                    return One(MusicTrack.Csgo("Eyes of the dragon win.mp3"));
-                if (request.resultKind == ResultMenuView.ResultKind.Lose)
-                    return One(MusicTrack.Csgo("Eyes of the dragon lose.mp3"));
-                return One(MusicTrack.Csgo("Eyes of the dragon main menu.mp3"));
-            default:
-                return One(MusicTrack.Csgo("Eyes of the dragon main menu.mp3"));
-        }
     }
 
     private static MusicTrack[] One(MusicTrack track)
@@ -854,21 +679,6 @@ public sealed class GameMusicManager : MonoBehaviour
         public static MusicTrack Default(string fileName)
         {
             return new MusicTrack(DefaultFolder, fileName);
-        }
-
-        public static MusicTrack AngryBirds(string fileName)
-        {
-            return new MusicTrack(AngryBirdsFolder, fileName);
-        }
-
-        public static MusicTrack EpicSeven(string fileName)
-        {
-            return new MusicTrack(EpicSevenFolder, fileName);
-        }
-
-        public static MusicTrack Csgo(string fileName)
-        {
-            return new MusicTrack(CsgoFolder, fileName);
         }
 
         public static MusicTrack KingdomRush(string fileName)

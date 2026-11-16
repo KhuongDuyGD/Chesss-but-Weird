@@ -1,0 +1,7 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.chessbutweird.share">
+    <application>
+        <provider android:name="com.chessbutweird.share.ResultImageProvider"
+            android:authorities="${applicationId}.cbw.resultshare"
+            android:exported="false" android:grantUriPermissions="true" />
+    </application>
+</manifest>

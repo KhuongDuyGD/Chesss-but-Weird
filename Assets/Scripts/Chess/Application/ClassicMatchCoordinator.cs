@@ -19,12 +19,15 @@ namespace ChessButWeird.Application
     public sealed class ClassicMatchCoordinator
     {
         private readonly MatchSession session;
+        private readonly MatchState initialSnapshot;
+        private readonly List<Move> acceptedMoves = new List<Move>();
         private Move pendingPromotion;
         private bool hasPendingPromotion;
 
         private ClassicMatchCoordinator(MatchSession ownedSession)
         {
             session = ownedSession ?? throw new ArgumentNullException(nameof(ownedSession));
+            initialSnapshot = session.Snapshot;
         }
 
         public static ClassicMatchCoordinator CreateClassic(Team firstTurn, BoardOrientation orientation)
@@ -41,6 +44,16 @@ namespace ChessButWeird.Application
         public Team Turn => session.Turn;
         public bool HasPendingPromotion => hasPendingPromotion;
         public MatchState Snapshot => session.Snapshot;
+        // Export journal only: accepted canonical commands, never presentation notation.
+        public MatchState InitialSnapshot => initialSnapshot.Clone();
+        public IReadOnlyList<Move> AcceptedMoves => acceptedMoves.AsReadOnly();
+
+        private bool Commit(Square from, Square to, PieceKind? promotion, out MatchSessionMoveResult result)
+        {
+            if (!session.TryApply(from, to, promotion, out result)) return false;
+            acceptedMoves.Add(new Move(Orientation.ToCanonical(from), Orientation.ToCanonical(to), promotion));
+            return true;
+        }
 
         public PieceState GetPiece(Square runtimeSquare) => session.GetPiece(runtimeSquare);
 
@@ -65,7 +78,7 @@ namespace ChessButWeird.Application
                 return false;
             }
 
-            return session.TryApply(runtimeFrom, runtimeTo, out result);
+            return Commit(runtimeFrom, runtimeTo, null, out result);
         }
 
         /// <summary>
@@ -98,7 +111,7 @@ namespace ChessButWeird.Application
                     : ClassicMoveStatus.Rejected;
             }
 
-            return session.TryApply(command.From, command.To, command.Promotion, out result)
+            return Commit(command.From, command.To, command.Promotion, out result)
                 ? ClassicMoveStatus.Applied
                 : ClassicMoveStatus.Rejected;
         }
@@ -123,7 +136,7 @@ namespace ChessButWeird.Application
                 !Enum.IsDefined(typeof(PieceKind), promotion))
                 return false;
 
-            if (!session.TryApply(pendingPromotion.From, pendingPromotion.To, promotion, out result))
+            if (!Commit(pendingPromotion.From, pendingPromotion.To, promotion, out result))
                 return false;
 
             ClearPendingCommand();

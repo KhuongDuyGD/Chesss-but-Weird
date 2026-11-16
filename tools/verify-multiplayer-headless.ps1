@@ -6,7 +6,11 @@ New-Item -ItemType Directory -Force -Path "$auditRoot/Assets/Editor", "$auditRoo
 # Inspect freshly compiled production code in a separate edit-mode project.
 # No user scenes, account config, resources, startup editor hooks or MCP are copied.
 Copy-Item -LiteralPath "$sourceRoot/Logs/loading-compile/runtime-player.dll", "$sourceRoot/Logs/loading-compile/Chess.Domain.dll" -Destination "$auditRoot/Assets/Plugins"
-Copy-Item -LiteralPath "$sourceRoot/Tests/Chess.Multiplayer.Headless/MultiplayerAudit.cs" -Destination "$auditRoot/Assets/Editor"
+Copy-Item -LiteralPath "$sourceRoot/Tests/Chess.Multiplayer.Headless/MultiplayerAudit.cs", "$sourceRoot/Tests/Chess.Multiplayer.Headless/PostMatchAudit.cs" -Destination "$auditRoot/Assets/Editor"
+Copy-Item -LiteralPath "$sourceRoot/Assets/TextMesh Pro", "$sourceRoot/Assets/Fonts" -Destination "$auditRoot/Assets" -Recurse
+New-Item -ItemType Directory -Force -Path "$auditRoot/Assets/Resources/Chess", "$auditRoot/Assets/Resources/UI" | Out-Null
+Copy-Item -LiteralPath "$sourceRoot/Assets/Resources/Chess/ChessFontCatalog.asset" -Destination "$auditRoot/Assets/Resources/Chess"
+Copy-Item -LiteralPath "$sourceRoot/Assets/Resources/UI/MenuEdgeAntialiasing.shader" -Destination "$auditRoot/Assets/Resources/UI"
 Copy-Item -LiteralPath "$sourceRoot/ProjectSettings/ProjectVersion.txt" -Destination "$auditRoot/ProjectSettings"
 $dependencies = [ordered]@{}
 foreach ($package in @('com.unity.ugui','com.unity.inputsystem','com.unity.nuget.newtonsoft-json','com.unity.addressables','com.unity.render-pipelines.universal')) {

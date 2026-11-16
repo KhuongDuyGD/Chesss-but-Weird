@@ -8,6 +8,7 @@ public partial class ChessGame
 {
     private readonly MatchStatistics statistics = new MatchStatistics();
     private bool statisticsTimeKnown = true;
+    private string statisticsBotPlayerName;
     public MatchStatistics Statistics => statistics;
     public bool IsNetworkGame => serverAuthoritativeMode;
     public string StatisticsConnectionState => turnSelectionUI ? turnSelectionUI.MatchConnectionState : "Disconnected";
@@ -26,13 +27,17 @@ public partial class ChessGame
     public string StatisticsBuffStatus(PieceTeam team,AramBuffId id) => StatisticsBuffsVisible(team) &&
         !aramCoordinator.Runtime.DisguisesBuff(team,StatisticsViewer)
         ? aramCoordinator.Runtime.BuffHudStatus(team,id) : string.Empty;
-    public string StatisticsMode => UsesDotNetOnline ? PlayModeNames.DisplayBackend(dotNetState.settings.mode) + (dotNetState.rated ? " / Ranked" : " / Normal") :
+    public string StatisticsMode => UsesDotNetOnline ? PlayModeNames.DisplayBackend(dotNetState.settings?.mode ?? "Unknown mode") + (dotNetState.rated ? " / Ranked" : " / Normal") :
         aramMode ? "CHAOS" : botMode ? (IsBotPractice ? "Practice" : "Challenge") : serverAuthoritativeMode ? "Multiplayer" : "Local";
     public string StatisticsPlayerName(PieceTeam team)
     {
+        // Bot participants belong to the current game, not the online menu's
+        // cached player labels, which may describe an earlier session.
+        if (botMode) return team == playerTeam
+            ? (string.IsNullOrWhiteSpace(statisticsBotPlayerName) ? "You" : statisticsBotPlayerName)
+            : StockfishDifficultyProfiles.Get(botDifficulty).BotName;
         string supplied = turnSelectionUI ? turnSelectionUI.GetMatchPlayerName(team) : null;
         if (!string.IsNullOrWhiteSpace(supplied)) return supplied;
-        if (botMode) return team == playerTeam ? "You" : StockfishDifficultyProfiles.Get(botDifficulty).BotName;
         if (serverAuthoritativeMode) return team == playerTeam ? "You" : "Opponent";
         return team == PieceTeam.White ? "White player" : "Black player";
     }

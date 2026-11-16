@@ -5,7 +5,7 @@ using UnityEngine.UI;
 [RequireComponent(typeof(RectTransform),typeof(CanvasRenderer))]
 public sealed class MatchHudIconGraphic : AntialiasedUIGraphic
 {
-    public enum Symbol { Power, Locked, Unlocked, Focus, Journal, Turn, Thinking, Played, Waiting, Camera }
+    public enum Symbol { Power, Locked, Unlocked, Focus, Journal, Turn, Thinking, Played, Waiting, Camera, ExitDoor, Share }
     private Symbol symbol;
     public void Configure(Symbol value, Color ink)
     {
@@ -17,6 +17,14 @@ public sealed class MatchHudIconGraphic : AntialiasedUIGraphic
         mesh.Clear();
         switch (symbol)
         {
+            case Symbol.ExitDoor:
+                Path(mesh,new Vector2(.52f,.87f),new Vector2(.16f,.87f),new Vector2(.16f,.13f),new Vector2(.52f,.13f));
+                Path(mesh,new Vector2(.16f,.87f),new Vector2(.40f,.75f),new Vector2(.40f,.02f),new Vector2(.16f,.13f));
+                Line(mesh,.50f,.50f,.94f,.50f);
+                Path(mesh,new Vector2(.74f,.70f),new Vector2(.94f,.50f),new Vector2(.74f,.30f)); break;
+            case Symbol.Share:
+                Line(mesh,.27f,.50f,.73f,.78f); Line(mesh,.27f,.50f,.73f,.22f);
+                Arc(mesh,.22f,.50f,.12f,0,360); Arc(mesh,.78f,.81f,.12f,0,360); Arc(mesh,.78f,.19f,.12f,0,360); break;
             case Symbol.Power:
                 Arc(mesh, .5f, .47f, .35f, 135, 405);
                 Line(mesh, .5f, .94f, .5f, .49f); break;
