@@ -30,7 +30,7 @@ public static class KingdomRushFactionSetup
         {
             string faction = Factions[f], id = Ids[f], label = f == 0 ? "Denas — Royal Guard" : "Vez'Nan — Dark Dominion";
             string group = "PieceSkin_KR_" + faction;
-            var pieces = KingdomRushGameSetup.LoadOrCreate<PieceSkinData>("Assets/Game/Data/PieceSkins/KingdomRush" + faction + ".asset");
+            var pieces = KingdomRushGameSetup.LoadOrCreate<PieceSkinData>("Assets/_Project/Game/Data/PieceSkins/KingdomRush" + faction + ".asset");
             pieces.skinId = id; pieces.displayName = "Kingdom Rush — " + label;
             pieces.applyTeamColor = false; pieces.useAuthoredBoardScale = true; pieces.faceOpponent = true; pieces.tuning.Clear();
             pieces.preview = KingdomRushGameSetup.Preview(settings, Root + "/Previews/06_Quan_vua_" + faction + ".png", faction + "Pieces");
@@ -59,7 +59,7 @@ public static class KingdomRushFactionSetup
             }
             KingdomRushGameSetup.Register(settings,pieces,group,"PieceSkin/" + id);
             KingdomRushGameSetup.Upsert(catalog.pieceSkins,pieces,id,pieces.displayName,pieces.preview,"LEGENDARY");
-            var board = KingdomRushGameSetup.LoadOrCreate<BoardSkinData>("Assets/Game/Data/Boards/KingdomRush" + faction + ".asset");
+            var board = KingdomRushGameSetup.LoadOrCreate<BoardSkinData>("Assets/_Project/Game/Data/Boards/KingdomRush" + faction + ".asset");
             board.boardId=id; board.displayName="Kingdom Rush — " + (f == 0 ? "Denas Royal Citadel" : "Vez'Nan Ruin Throne");
             board.boardPrefab=KingdomRushGameSetup.ModelPrefab(settings,"KR_"+faction+"_Board","Board_KR_"+faction,"Boards/"+id);
             KingdomRushLivingWorldSetup.ConfigureBoard(faction);
@@ -69,7 +69,7 @@ public static class KingdomRushFactionSetup
             board.cameraFramePadding=1.04f;
             KingdomRushGameSetup.Register(settings,board,"Board_KR_"+faction,"Board/"+id);
             KingdomRushGameSetup.Upsert(catalog.boards,board,id,board.displayName,board.preview,"LEGENDARY");
-            var env=KingdomRushGameSetup.LoadOrCreate<EnvironmentData>("Assets/Game/Data/Environments/KingdomRush"+faction+".asset");
+            var env=KingdomRushGameSetup.LoadOrCreate<EnvironmentData>("Assets/_Project/Game/Data/Environments/KingdomRush"+faction+".asset");
             env.environmentId=id;env.displayName="Kingdom Rush — "+(f==0?"Linirea Royal Heartlands":"Vez'Nan Scorched Dominion");
             env.environmentPrefab=KingdomRushGameSetup.ModelPrefab(settings,"KR_"+faction+"_Environment","Environment_KR_"+faction,"Environments/"+id);
             KingdomRushFactionPresentationSetup.Configure(faction);

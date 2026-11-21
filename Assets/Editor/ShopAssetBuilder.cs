@@ -19,7 +19,7 @@ public static class ShopAssetBuilder
             var cardAsset = PrefabUtility.SaveAsPrefabAsset(card, Folder + "/ShopProductCard.prefab");
             var catalog = AssetDatabase.LoadAssetAtPath<ShopPresentationCatalog>(Folder + "/ShopPresentation.asset");
             if (!catalog) { catalog = ScriptableObject.CreateInstance<ShopPresentationCatalog>(); AssetDatabase.CreateAsset(catalog, Folder + "/ShopPresentation.asset"); }
-            catalog.cosmetics = AssetDatabase.LoadAssetAtPath<CosmeticCatalog>("Assets/Game/Data/CosmeticCatalog.asset");
+            catalog.cosmetics = AssetDatabase.LoadAssetAtPath<CosmeticCatalog>("Assets/_Project/Game/Data/CosmeticCatalog.asset");
             catalog.productCard = cardAsset.GetComponent<ShopProductCard>(); EditorUtility.SetDirty(catalog);
             screen = new GameObject("Shop Screen", typeof(RectTransform));
             ((RectTransform)screen.transform).sizeDelta = new Vector2(1672, 941);

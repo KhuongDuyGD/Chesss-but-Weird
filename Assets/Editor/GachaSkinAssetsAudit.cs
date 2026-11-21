@@ -23,7 +23,7 @@ public static class GachaSkinAssetsAudit
         Directory.CreateDirectory(Output);
         var lines = new List<string>();
         foreach (string folder in new[] { "Tazji'sCrystalChessSet", "Tazji'sWoodlandChessSet", "Tazji'sForestGardenBoard", "Tazji'sMarbleBoard" })
-        foreach (string path in Directory.GetFiles("Assets/Skins/" + folder, "*.fbx"))
+        foreach (string path in Directory.GetFiles("Assets/_Project/Art/Skins/" + folder, "*.fbx"))
         {
             var model = AssetDatabase.LoadAssetAtPath<GameObject>(path);
             if (!model) throw new InvalidOperationException("Model did not import: " + path);
@@ -44,7 +44,7 @@ public static class GachaSkinAssetsAudit
         Directory.CreateDirectory(Output);
         foreach (string name in BoardAssets)
         {
-            var data = AssetDatabase.LoadAssetAtPath<BoardSkinData>("Assets/Game/Data/Boards/" + name + ".asset");
+            var data = AssetDatabase.LoadAssetAtPath<BoardSkinData>("Assets/_Project/Game/Data/Boards/" + name + ".asset");
             var model = AssetDatabase.LoadAssetAtPath<GameObject>(AssetDatabase.GUIDToAssetPath(data.boardPrefab.AssetGUID));
             var filter = model.GetComponentsInChildren<MeshFilter>(true).First(value => GachaSkinAssetsSetup.IsPrisonPadMesh(value.name));
             var mesh = filter.sharedMesh;
@@ -80,7 +80,7 @@ public static class GachaSkinAssetsAudit
     {
         Directory.CreateDirectory(Output);
         Checks.Clear();
-        var catalog = AssetDatabase.LoadAssetAtPath<CosmeticCatalog>("Assets/Game/Data/CosmeticCatalog.asset");
+        var catalog = AssetDatabase.LoadAssetAtPath<CosmeticCatalog>("Assets/_Project/Game/Data/CosmeticCatalog.asset");
         int pieceCount = catalog.pieceSkins.Count, boardCount = catalog.boards.Count;
         GachaSkinAssetsSetup.Setup();
         GachaSkinAssetsSetup.Setup();
@@ -160,7 +160,7 @@ public static class GachaSkinAssetsAudit
             Check(catalog, "Catalog loads through Addressables");
             foreach (string name in PieceAssets)
             {
-                var expected = AssetDatabase.LoadAssetAtPath<PieceSkinData>("Assets/Game/Data/PieceSkins/" + name + ".asset");
+                var expected = AssetDatabase.LoadAssetAtPath<PieceSkinData>("Assets/_Project/Game/Data/PieceSkins/" + name + ".asset");
                 var skins = new SkinManager(assets);
                 yield return skins.Load(catalog, expected.skinId, expected.skinId);
                 Check(skins.GetData(PieceTeam.White)?.skinId == expected.skinId &&
@@ -183,7 +183,7 @@ public static class GachaSkinAssetsAudit
             }
             foreach (string name in BoardAssets)
             {
-                var expected = AssetDatabase.LoadAssetAtPath<BoardSkinData>("Assets/Game/Data/Boards/" + name + ".asset");
+                var expected = AssetDatabase.LoadAssetAtPath<BoardSkinData>("Assets/_Project/Game/Data/Boards/" + name + ".asset");
                 var board = new BoardSkinManager(assets);
                 yield return board.Load(catalog, expected.boardId, "");
                 Check(board.Data && board.Data.boardId == expected.boardId && board.BoardPrefab,

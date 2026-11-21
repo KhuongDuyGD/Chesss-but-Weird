@@ -6,7 +6,7 @@
     <Nullable>disable</Nullable>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="../../Assets/Scripts/Network/PlayerNotificationText.cs" Link="PlayerNotificationText.cs" />
-    <Compile Include="../../Assets/Scripts/Network/ApiException.cs" Link="ApiException.cs" />
+    <Compile Include="../../Assets/_Project/Scripts/Network/PlayerNotificationText.cs" Link="PlayerNotificationText.cs" />
+    <Compile Include="../../Assets/_Project/Scripts/Network/ApiException.cs" Link="ApiException.cs" />
   </ItemGroup>
 </Project>

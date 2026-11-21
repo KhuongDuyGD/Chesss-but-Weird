@@ -39,10 +39,10 @@ public static partial class BuffVfxAudit
         try
         {
             Application.logMessageReceived+=(message,stack,type)=>{if((type==LogType.Error||type==LogType.Assert||type==LogType.Exception)&&!stack.Contains("UnityEditor.Search.SearchDatabase"))runtimeErrors.Add(message+"\n"+stack);};
-            var pipeline=AssetDatabase.LoadAssetAtPath<UniversalRenderPipelineAsset>("Assets/Config/New Universal Render Pipeline Asset.asset");
+            var pipeline=AssetDatabase.LoadAssetAtPath<UniversalRenderPipelineAsset>("Assets/_Project/Config/New Universal Render Pipeline Asset.asset");
             Check(pipeline,"Actual project URP asset loads");
             // Custom hover material is unrelated to this isolated scene; its layer is unused.
-            var renderer=AssetDatabase.LoadAssetAtPath<UniversalRendererData>("Assets/Config/New Universal Render Pipeline Asset_Renderer.asset");
+            var renderer=AssetDatabase.LoadAssetAtPath<UniversalRendererData>("Assets/_Project/Config/New Universal Render Pipeline Asset_Renderer.asset");
             foreach(var feature in renderer.rendererFeatures)if(feature)feature.SetActive(false);
             GraphicsSettings.defaultRenderPipeline=pipeline;QualitySettings.renderPipeline=pipeline;
             var host=new GameObject("Production presentation QA");var gallery=host.AddComponent<BuffVfxDebugGallery>();

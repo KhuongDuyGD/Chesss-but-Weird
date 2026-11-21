@@ -8,10 +8,10 @@ New-Item -ItemType Directory -Force -Path "$auditRoot/Assets/Editor", "$auditRoo
 $files=@('Gameplay/GameRuntimeSettings.cs','Gameplay/UI/SettingsMenuController.cs','Gameplay/UI/SettingsScrollFocus.cs','Gameplay/UI/SettingsPrompt.cs',
  'Gameplay/UI/SketchbookUI.cs','Gameplay/UI/SketchbookDoodle.cs','Gameplay/UI/MenuDesignFrame.cs','Gameplay/UI/ResponsiveSafeArea.cs',
  'Profile/HandDrawnRoundedGraphic.cs','UI/AntialiasedUIGraphic.cs','UI/AntialiasedMenuImage.cs','UI/UIEdgeMesh.cs','UI/ChessFontCatalog.cs','Gameplay/ARAM/AramBuffDefinition.cs')
-$files+=Get-ChildItem -LiteralPath "$sourceRoot/Assets/Scripts/Chess/Gameplay/Settings" -Filter '*.cs' | ForEach-Object {'Gameplay/Settings/'+$_.Name}
+$files+=Get-ChildItem -LiteralPath "$sourceRoot/Assets/_Project/Scripts/Chess/Gameplay/Settings" -Filter '*.cs' | ForEach-Object {'Gameplay/Settings/'+$_.Name}
 $hashes=@()
 foreach($relative in $files){
- $path=Join-Path $sourceRoot ('Assets/Scripts/Chess/'+$relative)
+ $path=Join-Path $sourceRoot ('Assets/_Project/Scripts/Chess/'+$relative)
  Copy-Item -LiteralPath $path -Destination "$auditRoot/Assets/Fixture"
  if(Test-Path -LiteralPath ($path+'.meta')){Copy-Item -LiteralPath ($path+'.meta') -Destination "$auditRoot/Assets/Fixture"}
  $hashes+=((Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash+' '+$relative)
@@ -19,7 +19,7 @@ foreach($relative in $files){
 $hashes | Set-Content -LiteralPath "$auditRoot/source-sha256.txt"
 Copy-Item -LiteralPath "$sourceRoot/Tests/Chess.Settings.Tests/SettingsRuntimeFixtures.cs" -Destination "$auditRoot/Assets/Fixture"
 Copy-Item -LiteralPath "$sourceRoot/Tests/Chess.Settings.Tests/SettingsUiAuditRunner.cs" -Destination "$auditRoot/Assets/Editor"
-Copy-Item -LiteralPath "$sourceRoot/Assets/TextMesh Pro", "$sourceRoot/Assets/Fonts" -Destination "$auditRoot/Assets" -Recurse -Force
+Copy-Item -LiteralPath "$sourceRoot/Assets/TextMesh Pro", "$sourceRoot/Assets/_Project/Art/Fonts" -Destination "$auditRoot/Assets" -Recurse -Force
 New-Item -ItemType Directory -Force -Path "$auditRoot/Assets/Resources/Chess", "$auditRoot/Assets/Resources/UI" | Out-Null
 Copy-Item -LiteralPath "$sourceRoot/Assets/Resources/Chess/ChessFontCatalog.asset" -Destination "$auditRoot/Assets/Resources/Chess"
 Copy-Item -LiteralPath "$sourceRoot/Assets/Resources/UI/MenuEdgeAntialiasing.shader" -Destination "$auditRoot/Assets/Resources/UI"

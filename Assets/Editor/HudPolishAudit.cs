@@ -40,7 +40,7 @@ public static class HudPolishAudit
             var settings=new SettingsManager(SettingsRegistry.Create(),new MemoryStore());
             managerField.SetValue(null,settings);preferencesField.SetValue(null,null);
             settings.Set("shadows",3);settings.Set("effects",0);
-            foreach(string scenePath in new[]{"Assets/Scenes/ChessClassic.unity","Assets/Game/Scenes/ChessMatch.unity"})
+            foreach(string scenePath in new[]{"Assets/_Project/Game/Scenes/ChessClassic.unity","Assets/_Project/Game/Scenes/ChessMatch.unity"})
             {
                 var scene=EditorSceneManager.OpenScene(scenePath);
                 var roots=scene.GetRootGameObjects();
@@ -49,7 +49,7 @@ public static class HudPolishAudit
                 var sun=roots.SelectMany(r=>r.GetComponentsInChildren<Light>(true)).First(l=>l.type==LightType.Directional);
                 RenderSettings.sun=sun;
                 typeof(Chessboard).GetMethod("Awake",Private).Invoke(board,null);
-                var data=AssetDatabase.LoadAssetAtPath<BoardSkinData>("Assets/Game/Data/Boards/TazjiCelestial.asset");
+                var data=AssetDatabase.LoadAssetAtPath<BoardSkinData>("Assets/_Project/Game/Data/Boards/TazjiCelestial.asset");
                 using(var assets=new AssetLoader())
                 {
                     var manager=new BoardSkinManager(assets);
@@ -141,7 +141,7 @@ public static class HudPolishAudit
     }
     private static GameObject CreatePieces(Chessboard board,string set,float tile)
     {
-        var data=AssetDatabase.LoadAssetAtPath<PieceSkinData>("Assets/Game/Data/PieceSkins/"+set+".asset");
+        var data=AssetDatabase.LoadAssetAtPath<PieceSkinData>("Assets/_Project/Game/Data/PieceSkins/"+set+".asset");
         var root=new GameObject(set+" shadow fixture");
         var order=new[]{PieceType.Rook,PieceType.Knight,PieceType.Bishop,PieceType.Queen,PieceType.King,PieceType.Bishop,PieceType.Knight,PieceType.Rook};
         foreach(var side in new[]{PieceTeam.White,PieceTeam.Black})for(int x=0;x<8;x++)for(int rank=0;rank<2;rank++)

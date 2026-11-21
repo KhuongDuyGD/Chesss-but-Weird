@@ -10,9 +10,9 @@ using UnityEngine.AddressableAssets;
 public static class DefaultLowPolyCosmeticsSetup
 {
     public const string CatalogId = CosmeticSelection.LowPolyId;
-    private const string Root = "Assets/Game/Data";
-    private const string SetFolder = "Assets/Skins/Tazji'sLowPoly/Chess_Set";
-    private const string ArenaPath = "Assets/Skins/Tazji'sLowPoly/Chess_Arena/Chess_Arena.fbx";
+    private const string Root = "Assets/_Project/Game/Data";
+    private const string SetFolder = "Assets/_Project/Art/Skins/Tazji'sLowPoly/Chess_Set";
+    private const string ArenaPath = "Assets/_Project/Art/Skins/Tazji'sLowPoly/Chess_Arena/Chess_Arena.fbx";
 
     [MenuItem("Chess/Setup Tazji Low Poly Default Cosmetics")]
     public static void Setup()

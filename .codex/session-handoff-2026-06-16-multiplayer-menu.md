@@ -1,4 +1,6 @@
-# Session Handoff: Multiplayer Mode Menu
+# Historical Session Handoff: Multiplayer Mode Menu
+
+> Snapshot from 2026-06-16. Unity MCP was later removed from the project; the connection steps below are historical.
 
 ## Project
 - Repo: `D:\Duy\UnityProjects\Chesss-but-Weird`

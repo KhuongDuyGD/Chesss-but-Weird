@@ -13,9 +13,9 @@ using UnityEngine.AddressableAssets;
 // a skin in the player's saved account. Shop item keys match the backend catalog.
 public static class KingdomRushGameSetup
 {
-    public const string Root = "Assets/Skins/KingdomRushCollab";
+    public const string Root = "Assets/_Project/Art/Skins/KingdomRushCollab";
     public const string Id = CosmeticSelection.KingdomRushId;
-    private const string Data = "Assets/Game/Data";
+    private const string Data = "Assets/_Project/Game/Data";
     public static readonly string[] Prefixes = { "01_Quan_tot", "02_Quan_xe", "03_Quan_ngua", "04_Quan_tuong", "05_Quan_hau", "06_Quan_vua" };
     public static readonly PieceType[] Types = { PieceType.Pawn, PieceType.Rook, PieceType.Knight, PieceType.Bishop, PieceType.Queen, PieceType.King };
 
@@ -77,10 +77,10 @@ public static class KingdomRushGameSetup
         // The default explicitly owns the galaxy sky, even in the standalone match scene.
         var basic = LoadOrCreate<EnvironmentData>(Data + "/Environments/Classic.asset");
         basic.environmentId = "classic"; basic.displayName = "Purple Galaxy";
-        basic.skybox = AssetDatabase.LoadAssetAtPath<Material>("Assets/Skyboxes/VoidPixFreePack/VoidPix_Blink_Skybox.mat");
+        basic.skybox = AssetDatabase.LoadAssetAtPath<Material>("Assets/_Project/Art/Skyboxes/VoidPixFreePack/VoidPix_Blink_Skybox.mat");
         basic.environmentPrefab = new AssetReferenceGameObject("");
         string classicPreview = Root + "/Previews/Classic_Background.png";
-        basic.preview = Preview(settings, File.Exists(classicPreview) ? classicPreview : "Assets/Skins/Tazji'sLowPoly/Chess_Arena/Chess_Arena_Preview.png", "ClassicBackground");
+        basic.preview = Preview(settings, File.Exists(classicPreview) ? classicPreview : "Assets/_Project/Art/Skins/Tazji'sLowPoly/Chess_Arena/Chess_Arena_Preview.png", "ClassicBackground");
         Register(settings, basic, "CoreCatalog", "Environment/classic");
         Upsert(catalog.environments, basic, "classic", basic.displayName, basic.preview, "COMMON");
         KingdomRushFactionSetup.Register(settings, catalog);

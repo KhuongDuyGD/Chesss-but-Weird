@@ -13,8 +13,8 @@ for meta in (source / 'Assets').rglob('*.meta'):
     match = re.search(r'^guid: ([0-9a-f]{32})$', meta.read_text(errors='ignore'), re.M)
     if match:
         guid_paths[match[1]] = Path(str(meta)[:-5])
-roots = [source / 'Assets/Game/Data/CosmeticCatalog.asset']
-roots.extend((source / 'Assets/Settings').glob('*.asset'))
+roots = [source / 'Assets/_Project/Game/Data/CosmeticCatalog.asset']
+roots.extend((source / 'Assets/_Project/Settings').glob('*.asset'))
 # Addressable references are GUID strings, so traverse them as well as YAML references.
 pending = list(roots)
 settings = ['ProjectVersion.txt', 'ProjectSettings.asset', 'QualitySettings.asset', 'GraphicsSettings.asset', 'TagManager.asset']
@@ -37,11 +37,11 @@ while pending:
         text += meta.read_text(errors='ignore')
     pending.extend(guid_paths[g] for g in guid_pattern.findall(text) if g in guid_paths)
 # Include custom shader include siblings; HLSL includes aren't serialized GUID dependencies.
-for folder in ['Assets/Shaders', 'Assets/Skins/KingdomRushCollab/Shaders']:
+for folder in ['Assets/_Project/Art/Shaders', 'Assets/_Project/Art/Skins/KingdomRushCollab/Shaders']:
     if (source / folder).exists():
         seen.update(p for p in (source / folder).rglob('*') if p.is_file() and p.suffix != '.meta')
 for name in ['CosmeticCatalog', 'PieceSkinData', 'BoardSkinData', 'EnvironmentData']:
-    seen.add(source / 'Assets/Scripts/Chess/Cosmetics' / (name + '.cs'))
+    seen.add(source / 'Assets/_Project/Scripts/Chess/Cosmetics' / (name + '.cs'))
 seen.add(source / 'Assets/Editor/CosmeticThumbnailCapture.cs')
 size = sum(p.stat().st_size for p in seen)
 for path in seen:

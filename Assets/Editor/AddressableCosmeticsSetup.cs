@@ -13,7 +13,7 @@ using UnityEngine.SceneManagement;
 // Migration is explicit and repeatable. Existing user-authored data/scenes are not overwritten.
 public static class AddressableCosmeticsSetup
 {
-    private const string Root = "Assets/Game";
+    private const string Root = "Assets/_Project/Game";
     private static AddressableAssetSettings settings;
 
     [MenuItem("Chess/Build Addressable Cosmetics")]
@@ -63,7 +63,7 @@ public static class AddressableCosmeticsSetup
         KingdomRushGameSetup.Setup();
         foreach (string folder in new[] { "Main_Menu", "Gacha_menu", "GameplayUI", "LANUI", "MultiplayerUI", "PlayerProfile", "Result_Menu", "SettingsMenu" })
         {
-            string path = "Assets/Materials/" + folder;
+            string path = "Assets/_Project/Art/UI/" + folder;
             if (!AssetDatabase.IsValidFolder(path)) continue;
             foreach (string guid in AssetDatabase.FindAssets("t:Texture2D", new[] { path }))
             {
@@ -72,7 +72,7 @@ public static class AddressableCosmeticsSetup
                 entry.SetLabel("CoreUI", true, true);
             }
         }
-        foreach (string guid in AssetDatabase.FindAssets("t:AudioClip", new[] { "Assets/Audio/SFX" }))
+        foreach (string guid in AssetDatabase.FindAssets("t:AudioClip", new[] { "Assets/_Project/Audio/SFX" }))
         {
             string path = AssetDatabase.GUIDToAssetPath(guid);
             Register(AssetDatabase.LoadAssetAtPath<AudioClip>(path), "CoreAudio", path);
@@ -81,7 +81,7 @@ public static class AddressableCosmeticsSetup
         EditorUtility.SetDirty(catalog);
         AssetDatabase.SaveAssets();
         SetupScenes();
-        Debug.Log("[Cosmetics] Ready. Open Assets/Game/Scenes/Boot.unity. Build Addressables before a player build. Configure Remote paths only for groups you want to host.");
+        Debug.Log("[Cosmetics] Ready. Open Assets/_Project/Game/Scenes/Boot.unity. Build Addressables before a player build. Configure Remote paths only for groups you want to host.");
     }
 
     private static void SetupScenes()

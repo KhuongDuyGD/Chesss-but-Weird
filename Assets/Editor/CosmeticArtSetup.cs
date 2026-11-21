@@ -6,7 +6,7 @@ using UnityEngine;
 
 public static class CosmeticArtSetup
 {
-    private const string Celestial = "Assets/Skins/Tazji'sCelestialBoard/Celestial_Legendary_Board_Animated.fbx";
+    private const string Celestial = "Assets/_Project/Art/Skins/Tazji'sCelestialBoard/Celestial_Legendary_Board_Animated.fbx";
 
     [MenuItem("Chess/Update Cosmetic Art and Animated Board")]
     public static void Setup()
@@ -23,7 +23,7 @@ public static class CosmeticArtSetup
         GachaSkinAssetsSetup.Setup();
         // Halloween has art but has no backend unityAssetKey yet. Import the
         // thumbnails now; register its models only when that contract exists.
-        foreach (string path in Directory.GetFiles("Assets/Skins/Tazji'sHalloween", "*.png", SearchOption.AllDirectories))
+        foreach (string path in Directory.GetFiles("Assets/_Project/Art/Skins/Tazji'sHalloween", "*.png", SearchOption.AllDirectories))
         {
             var texture = AssetImporter.GetAtPath(path) as TextureImporter;
             if (!texture) continue;
@@ -39,7 +39,7 @@ public static class CosmeticArtSetup
     {
         Directory.CreateDirectory("Logs/skin-update");
         using (var output = new StreamWriter("Logs/skin-update/import.txt"))
-        foreach (string path in new[] { "Assets/Skins/Tazji'sLowPoly/Chess_Arena/Chess_Arena.fbx", Celestial })
+        foreach (string path in new[] { "Assets/_Project/Art/Skins/Tazji'sLowPoly/Chess_Arena/Chess_Arena.fbx", Celestial })
         {
             var model = AssetDatabase.LoadAssetAtPath<GameObject>(path);
             if (!model) throw new InvalidOperationException("Model failed to import: " + path);

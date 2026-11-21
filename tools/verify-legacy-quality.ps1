@@ -3,8 +3,6 @@ $ErrorActionPreference = 'Stop'
 $sourceRoot = Split-Path $PSScriptRoot -Parent
 $qualityPath = Join-Path $sourceRoot 'ProjectSettings/QualitySettings.asset'
 $originalQuality = [IO.File]::ReadAllBytes($qualityPath)
-$mcpPath = Join-Path $sourceRoot 'ProjectSettings/McpUnitySettings.json'
-$originalMcp = if (Test-Path -LiteralPath $mcpPath) { [IO.File]::ReadAllBytes($mcpPath) } else { $null }
 try {
     $arguments = @('-batchmode', '-force-d3d11', '-projectPath', ('"' + $sourceRoot + '"'), '-executeMethod', 'LegacyQualityAudit.Verify', '-quit', '-logFile', ('"' + $sourceRoot + '/Logs/legacy-quality-verify.log"'))
     $process = Start-Process -FilePath $UnityPath -ArgumentList $arguments -WindowStyle Hidden -PassThru
@@ -14,5 +12,4 @@ try {
 } finally {
     # Unity serializes temporary native quality overrides on batch exit. Preserve the user's asset exactly.
     [IO.File]::WriteAllBytes($qualityPath, $originalQuality)
-    if ($null -ne $originalMcp) { [IO.File]::WriteAllBytes($mcpPath, $originalMcp) }
 }

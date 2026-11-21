@@ -23,7 +23,7 @@ namespace CBWRelease
             try
             {
                 need(Application.isBatchMode,"Explicit batch verification");
-                var catalog=AssetDatabase.LoadAssetAtPath<CosmeticCatalog>("Assets/Game/Data/CosmeticCatalog.asset");
+                var catalog=AssetDatabase.LoadAssetAtPath<CosmeticCatalog>("Assets/_Project/Game/Data/CosmeticCatalog.asset");
                 var settings=AddressableAssetSettingsDefaultObject.Settings;
                 need(catalog&&settings,"Catalog and Addressables settings import");
                 need(catalog.pieceSkins.Count>0&&catalog.boards.Count>0&&catalog.environments.Count>0,"All cosmetic categories are populated");

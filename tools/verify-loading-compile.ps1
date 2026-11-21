@@ -61,7 +61,7 @@ try {
 
         # Unity's existing rsp may predate newly authored scripts. Include only
         # the game's un-asmdefed directories, keeping editor code out of runtime.
-        $scanRoot = if ($editor) { 'Assets/Editor' } else { 'Assets/Scripts/Chess' }
+        $scanRoot = if ($editor) { 'Assets/Editor' } else { 'Assets/_Project/Scripts/Chess' }
         foreach ($file in (Get-ChildItem -LiteralPath $scanRoot -Recurse -Filter '*.cs')) {
             $directory = $file.Directory
             $hasAssemblyDefinition = $false
