@@ -35,10 +35,12 @@ Unity-recognized or runtime-sensitive folders remain where Unity and the project
 - `Editor/`, `Tests/`, and `Plugins/` — Unity special-purpose folders.
 - `Resources/` — only assets loaded by `Resources.Load` must remain under a Resources folder.
 - `StreamingAssets/` — includes the Stockfish engine files that must be copied without Unity asset processing.
-- `Mirror/` and `TextMesh Pro/` — third-party package assets were not reorganized.
-- `ScriptTemplates/` and `_Recovery/` — Unity/editor-specific content.
+- `TextMesh Pro/` — third-party assets remain in place.
+- `_Recovery/` — Unity/editor-specific local content.
 
 `legacy/` at the repository root remains a quarantine for historical or unused material. Unity does not import it.
+
+`Assets/Mirror/` and `Assets/ScriptTemplates/` were moved to `legacy/Unity/Assets/` after checking the project scripts, package manifest, scenes, prefabs, and serialized asset references. No Mirror API references or serialized Mirror component GUIDs were found. The templates in `ScriptTemplates/` were Mirror-specific custom templates, not Unity's built-in templates. The archived copies and `.meta` files are retained for restoration.
 
 ### Resources assets intentionally retained
 
@@ -59,4 +61,4 @@ The root `.gitignore` excludes Unity-generated caches and local outputs such as 
 - When adding project-owned runtime content, place it under the matching `Assets/_Project/` category. Keep assets that rely on `Resources.Load` under `Assets/Resources/`.
 - Preserve `.meta` files when moving Unity assets. Never regenerate a moved asset's `.meta` unless intentionally changing its GUID.
 - `Assets/_Project/Cinematics/` contains demo, integration, and proof content. Do not add demo scenes to the normal build settings unless the game explicitly requires them.
-- This refactor was a path/organization change. It did not delete the assets moved into `Assets/_Project/`.
+- This refactor did not delete moved assets. Mirror files were archived outside `Assets/` so Unity no longer imports the unused networking library and its templates.

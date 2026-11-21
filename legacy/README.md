@@ -9,5 +9,7 @@ This folder holds items moved out of active project paths after a reference chec
 - `Unity/Assets/Scenes.meta` and `Unity/Assets/Resources/MainMenu.meta` — metadata for old folders after active scenes/resources were consolidated under `Assets/_Project/Game/Scenes/` and `Assets/Resources/Main_Menu/`.
 - `References/Main_Menu_contact_sheet.png` — design contact sheet with no runtime or documentation link found.
 - `Notes/MirrorExamplesPipelineConverted.txt` — one-line conversion marker, not referenced by project files.
+- `Unity/Assets/Mirror/` — vendored Mirror networking library; no project API references or serialized component GUID references were found, and it is not a manifest dependency.
+- `Unity/Assets/ScriptTemplates/` — Mirror-specific custom script templates and their Editor folder mover; not Unity's built-in templates and not used by project code.
 
 Review this archive before deleting it. Restore a Unity asset by moving both the asset and its `.meta` file back to their original `Assets/` path.
