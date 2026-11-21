@@ -10,7 +10,6 @@ Project-owned Unity content is grouped under `Assets/_Project/`:
 Assets/_Project/
 ├── Art/
 │   ├── Fonts/
-│   ├── Shaders/
 │   ├── Skins/
 │   ├── Skyboxes/
 │   └── UI/                 # Former Assets/Materials
@@ -42,11 +41,22 @@ Unity-recognized or runtime-sensitive folders remain where Unity and the project
 
 `Assets/Mirror/` and `Assets/ScriptTemplates/` were moved to `legacy/Unity/Assets/` after checking the project scripts, package manifest, scenes, prefabs, and serialized asset references. No Mirror API references or serialized Mirror component GUIDs were found. The templates in `ScriptTemplates/` were Mirror-specific custom templates, not Unity's built-in templates. The archived copies and `.meta` files are retained for restoration.
 
+## UI image audit
+
+Unreferenced or obsolete UI art was moved to `legacy/Unity/Assets/` with its `.meta` file. `CoreUI.asset` no longer includes the ten archived `Main_Menu` images, so the CoreUI preload will not bundle them.
+
+- `Resources/Main_Menu/black_card.png`, `choose_side_title.png`, `early_access.png`, and `white_card.png` only supplied sprites that the current menu did not render. Their loader fields and the old readiness requirement were removed.
+- `Art/UI/Main_Menu/GameVersionFake.png`, `ChooseYourSide.png`, `WhiteSideButton.png`, and `BlackSideButton.png` were only loaded into those unused fields.
+- `Art/UI/Main_Menu/BeginnerButton.png`, `EasyButton.png`, `MediumButton.png`, `HardButton.png`, `ExpertButton.png`, and `ChooseBotDifficultUIBlank.png` belonged to `BotDifficultyAssets`. No project code called that catalog; the catalog, script, and images were archived together.
+- All six `Art/UI/GameplayUI/` images were archived with the old `AnalysisBoardAssets` resource catalog, its catalog script, the Editor rebuild menu, and the dedicated shader. The current `AnalysisBoardView` constructs its UI in code; no runtime code calls that asset catalog.
+
+The remaining `Resources/Main_Menu` logo and seven active crop fallbacks stay in Resources because runtime code loads them there. The multiplayer title/cards and decorative menu textures stay in `Art/UI/Main_Menu` because the current menu view uses them. Fifteen unused images were also removed from the `CoreUI` Addressables group to prevent its preload from loading archived UI art.
+
 ### Resources assets intentionally retained
 
 These image folders contain UI artwork, but their current runtime loaders depend on their Resources paths, so they were not moved during this folder-only refactor:
 
-- `Assets/Resources/Main_Menu/` — `MainMenuLogoOriginal` and the cropped menu artwork are loaded through `Resources.Load` by the menu presentation/asset loader; `MainMenuCredits.txt` is loaded by `MainMenuPresentation`.
+- `Assets/Resources/Main_Menu/` — `MainMenuLogoOriginal` and the seven remaining cropped fallback images are loaded by the menu asset loader; `MainMenuCredits.txt` is loaded by `MainMenuPresentation`.
 - `Assets/Resources/Chess/Bots/Avatars/` — bot profiles build paths such as `Chess/Bots/Avatars/pip`, and `BotAvatarCatalog` loads the matching texture with `Resources.Load` for bot roster/companion UI.
 
 Moving these files into `Assets/_Project/Art/` requires migrating those loaders to Addressables or explicit asset references first. Moving the PNGs alone would break the corresponding UI at runtime.

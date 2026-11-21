@@ -2151,7 +2151,7 @@ Nguồn [Assets/Resources/Community/news.en-US.json](<D:/Game_Project/Chesss-but
 | [Assets/_Project/Art/UI/Main_Menu/LANButton.png](<D:/Game_Project/Chesss-but-Weird/Assets/_Project/Art/UI/Main_Menu/LANButton.png>) | Chữ “LAN” dưới biểu tượng mạng máy tính; card LAN trong BuildMultiplayerModeScreen. |
 | [Assets/_Project/Art/UI/Main_Menu/MultiplayerButton.png](<D:/Game_Project/Chesss-but-Weird/Assets/_Project/Art/UI/Main_Menu/MultiplayerButton.png>) | Hai dòng “Multiplayer” / “Online”, dưới biểu tượng địa cầu; card online trong BuildMultiplayerModeScreen. |
 
-ChooseYourSide/WhiteSideButton/BlackSideButton/GameVersionFake được loader chuẩn bị, nhưng BuildSideScreen hiện tạo chữ bằng code và menu đầu có EARLY ACCESS bằng text. Không coi mỗi ảnh được load là một label đang hiện. Các ảnh nút độ khó bot cũ cũng không được gộp vào danh sách copy của roster 12 bot hiện tại.
+ChooseYourSide/WhiteSideButton/BlackSideButton/GameVersionFake và bốn ảnh crop fallback tương ứng đã được chuyển vào `legacy/Unity/Assets/` vì các field cũ không còn được vẽ; `BuildSideScreen` dựng chữ bằng code, và menu đầu hiển thị EARLY ACCESS bằng text. Các ảnh nút độ khó bot cũ cũng đã được lưu trữ cùng catalog không còn nơi gọi; roster hiện tại dựng giao diện bằng code.
 
 <a id="g-diem-ban-giao-cho-buoc-dich-thuat"></a>
 

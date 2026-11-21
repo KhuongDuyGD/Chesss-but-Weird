@@ -18,7 +18,6 @@ public class HandDrawnMenuAssets : MonoBehaviour
     public Sprite backgroundDecoration2;
     public Sprite backgroundDecoration3;
     public Sprite backgroundDecoration4;
-    public Sprite gameVersion;
     public Sprite backButton;
 
     [Header("Multiplayer Mode")]
@@ -27,12 +26,7 @@ public class HandDrawnMenuAssets : MonoBehaviour
     public Sprite multiplayerButton;
 
     [Header("Side Select")]
-    public Sprite chooseYourSide;
-    public Sprite whiteSideButton;
-    public Sprite blackSideButton;
-
-    public bool HasRequiredSprites =>
-        mainMenuLogoOriginal && backButton && chooseYourSide && whiteSideButton && blackSideButton;
+    public bool HasRequiredSprites => mainMenuLogoOriginal && backButton;
 
     public bool HasMultiplayerModeSprites =>
         chooseMultiplayerMode && lanButton && multiplayerButton;
@@ -55,14 +49,10 @@ public class HandDrawnMenuAssets : MonoBehaviour
             () => { backgroundDecoration2 = LoadRenamedSprite("BackgroundDecoration2.png", "hearts", new SpriteCrop(1254f, 1254f, 209f, 191f, 808f, 832f)); },
             () => { backgroundDecoration3 = LoadRenamedSprite("BackgroundDecoration3.png", "stars", new SpriteCrop(1254f, 1254f, 240f, 429f, 781f, 333f)); },
             () => { backgroundDecoration4 = LoadRenamedSprite("BackgroundDecoration4.png", "crown", new SpriteCrop(1254f, 1254f, 137f, 229f, 978f, 800f)); },
-            () => { gameVersion = LoadRenamedSprite("GameVersionFake.png", "early_access", new SpriteCrop(1448f, 1086f, 91f, 226f, 1265f, 568f)); },
             () => { backButton = LoadRenamedSprite("Back.png", "back_button", new SpriteCrop(2172f, 724f, 363f, 148f, 1448f, 418f)); },
             () => { chooseMultiplayerMode = LoadRenamedSprite("ChooseYour MultiplayerMode.png", "multiplayer_mode_title", new SpriteCrop(2172f, 724f, 20f, 220f, 2130f, 300f)); },
             () => { lanButton = LoadRenamedSprite("LANButton.png", "lan_card", new SpriteCrop(1086f, 1448f, 36f, 112f, 1010f, 1250f)); },
             () => { multiplayerButton = LoadRenamedSprite("MultiplayerButton.png", "multiplayer_online_card", new SpriteCrop(1086f, 1448f, 36f, 112f, 1010f, 1250f)); },
-            () => { chooseYourSide = LoadRenamedSprite("ChooseYourSide.png", "choose_side_title", new SpriteCrop(2172f, 724f, 216f, 218f, 1797f, 253f)); },
-            () => { whiteSideButton = LoadRenamedSprite("WhiteSideButton.png", "white_card", new SpriteCrop(1086f, 1448f, 109f, 167f, 876f, 1093f)); },
-            () => { blackSideButton = LoadRenamedSprite("BlackSideButton.png", "black_card", new SpriteCrop(1086f, 1448f, 151f, 176f, 811f, 1002f)); },
             () =>
             {
                 // The empty input frame is from a Blank, never from a reference Design.

@@ -93,32 +93,8 @@ MonoBehaviour:
     m_SerializedLabels:
     - CoreUI
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 27ac18d8e048c9a44a50d3f044a9d995
-    m_Address: Assets/_Project/Art/UI/GameplayUI/ShareButton.png
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - CoreUI
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 2a1eead5cc1b0cc428f66a8046d3d266
-    m_Address: Assets/_Project/Art/UI/GameplayUI/ReportButton.png
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - CoreUI
-    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 318b0a51cacfcf743bd4614e6dbceae9
     m_Address: Assets/_Project/Art/UI/Gacha_menu/GoldPR.png
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - CoreUI
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 3218ec303b6e2974aaf8e54f9fb354a7
-    m_Address: Assets/_Project/Art/UI/Main_Menu/WhiteSideButton.png
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - CoreUI
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 457cc593a362eca47927c53c66530264
-    m_Address: Assets/_Project/Art/UI/GameplayUI/MoveListUI.png
     m_ReadOnly: 0
     m_SerializedLabels:
     - CoreUI
@@ -153,20 +129,8 @@ MonoBehaviour:
     m_SerializedLabels:
     - CoreUI
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 5b5012298cb788b44b1faeb0db0edfc8
-    m_Address: Assets/_Project/Art/UI/Main_Menu/EasyButton.png
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - CoreUI
-    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 5bc501fbcf339084c97455b641b2db35
     m_Address: Assets/_Project/Art/UI/Result_Menu/StalemateUIBlank.png
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - CoreUI
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 5cb67219880c42ddb35ba1fe90a4ce70
-    m_Address: Assets/_Project/Art/UI/Main_Menu/ChooseBotDifficultUIBlank.png
     m_ReadOnly: 0
     m_SerializedLabels:
     - CoreUI
@@ -189,20 +153,8 @@ MonoBehaviour:
     m_SerializedLabels:
     - CoreUI
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 76af93227a840b84ab50b3d68f7114cd
-    m_Address: Assets/_Project/Art/UI/Main_Menu/HardButton.png
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - CoreUI
-    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 7b5fc11623df3f140952a4389d85fe54
     m_Address: Assets/_Project/Art/UI/SettingsMenu/SettingsButton.png
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - CoreUI
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 7f14656516fa7ef4a865379f8381a8f7
-    m_Address: Assets/_Project/Art/UI/Main_Menu/BeginnerButton.png
     m_ReadOnly: 0
     m_SerializedLabels:
     - CoreUI
@@ -227,18 +179,6 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 8d155024bd2e4ab08aeb26bcda267c92
     m_Address: Assets/_Project/Art/UI/Gacha_menu/GachaRevealRay.png
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - CoreUI
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 94fc3bd20fa0c914e96ea1288c436d8e
-    m_Address: Assets/_Project/Art/UI/Main_Menu/ExpertButton.png
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - CoreUI
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 988c53edf8cbce0458313cb8b3ccc02a
-    m_Address: Assets/_Project/Art/UI/GameplayUI/ReplyButton.png
     m_ReadOnly: 0
     m_SerializedLabels:
     - CoreUI
@@ -291,12 +231,6 @@ MonoBehaviour:
     m_SerializedLabels:
     - CoreUI
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: aed721ecd6960244e95249cc90b24469
-    m_Address: Assets/_Project/Art/UI/Main_Menu/BlackSideButton.png
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - CoreUI
-    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: b08f9e595f85ea7498d8e97c13158aea
     m_Address: Assets/_Project/Art/UI/SettingsMenu/ResumeGameButton.png
     m_ReadOnly: 0
@@ -305,12 +239,6 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: b4fa68976cb60844eadeaf5a0c14948e
     m_Address: Assets/_Project/Art/UI/Result_Menu/WinUIBlank.png
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - CoreUI
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: b6f4256db2fa0e245852182892bd2791
-    m_Address: Assets/_Project/Art/UI/Main_Menu/ChooseYourSide.png
     m_ReadOnly: 0
     m_SerializedLabels:
     - CoreUI
@@ -333,26 +261,8 @@ MonoBehaviour:
     m_SerializedLabels:
     - CoreUI
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: cc6634c825da7d544a07ddca4becc725
-    m_Address: Assets/_Project/Art/UI/Main_Menu/GameVersionFake.png
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - CoreUI
-    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: dbda7d420f5c3364ca90942c981b8b02
     m_Address: Assets/_Project/Art/UI/Result_Menu/LoseBroken.png
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - CoreUI
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: e01530401c18cda42946423961409724
-    m_Address: Assets/_Project/Art/UI/Main_Menu/MediumButton.png
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - CoreUI
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: e0e84d5de15070c40aa48406cf9f517b
-    m_Address: Assets/_Project/Art/UI/GameplayUI/AnalysisBoardBlank.png
     m_ReadOnly: 0
     m_SerializedLabels:
     - CoreUI

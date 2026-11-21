@@ -11,5 +11,8 @@ This folder holds items moved out of active project paths after a reference chec
 - `Notes/MirrorExamplesPipelineConverted.txt` — one-line conversion marker, not referenced by project files.
 - `Unity/Assets/Mirror/` — vendored Mirror networking library; no project API references or serialized component GUID references were found, and it is not a manifest dependency.
 - `Unity/Assets/ScriptTemplates/` — Mirror-specific custom script templates and their Editor folder mover; not Unity's built-in templates and not used by project code.
+- `Unity/Assets/Resources/Main_Menu/black_card.png`, `choose_side_title.png`, `early_access.png`, `white_card.png` — fallback art for menu fields that the current views no longer render; the obsolete loader fields were removed.
+- `Unity/Assets/_Project/Art/UI/Main_Menu/` — `GameVersionFake`, `ChooseYourSide`, `WhiteSideButton`, and `BlackSideButton` were only loaded into unused menu fields. `ChooseBotDifficultUIBlank` and the five difficulty buttons belonged to an uncalled bot-difficulty art catalog; its resource asset and catalog script are archived with them.
+- `Unity/Assets/_Project/Art/UI/GameplayUI/` — six old Analysis Board UI images, their Resources catalog, catalog script, Editor rebuild tool, shader, and folder metadata. The current `AnalysisBoardView` builds its UI in code and has no runtime caller for that catalog.
 
 Review this archive before deleting it. Restore a Unity asset by moving both the asset and its `.meta` file back to their original `Assets/` path.
