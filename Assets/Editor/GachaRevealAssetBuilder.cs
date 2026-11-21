@@ -4,7 +4,7 @@ using UnityEngine;
 
 public static class GachaRevealAssetBuilder
 {
-    private const string GachaAssetFolder = "Assets/Materials/Gacha_menu";
+    private const string GachaAssetFolder = "Assets/_Project/Art/UI/Gacha_menu";
 
     [MenuItem("Chess But Weird/Gacha/Generate Reveal Assets")]
     public static void GenerateRevealAssets()

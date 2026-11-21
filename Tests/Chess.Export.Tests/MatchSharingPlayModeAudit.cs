@@ -85,7 +85,7 @@ public static class MatchSharingPlayModeAudit
         try
         {
             catalog = ScriptableObject.CreateInstance<ChessFontCatalog>();
-            Set(catalog, "tmpFont", AssetDatabase.LoadAssetAtPath<TMP_FontAsset>("Assets/Fonts/Schoolbell/Schoolbell TMP.asset"));
+            Set(catalog, "tmpFont", AssetDatabase.LoadAssetAtPath<TMP_FontAsset>("Assets/_Project/Art/Fonts/Schoolbell/Schoolbell TMP.asset"));
             Set(catalog, "resultFallbackFont", AssetDatabase.LoadAssetAtPath<Font>("Assets/TextMesh Pro/Fonts/LiberationSans.ttf"));
             typeof(ChessFontCatalog).GetField("cachedCatalog", BindingFlags.Static | BindingFlags.NonPublic).SetValue(null, catalog);
             host = new GameObject("Sharing component regression");

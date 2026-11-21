@@ -144,7 +144,7 @@ public static class CommunityAudit
         Check(Text("UNCLAIMED GIFTS") && gateway.Enrolls > 0, "Authenticated welcome missing");
         Check(mailEntry.transform.Find("Unread Hint").gameObject.activeSelf && mailEntry.transform.Find("Gift Hint").gameObject.activeSelf, "Unread and gift icons not visible");
         var pendingHub = SketchbookUI.Node(canvas.transform, "Pending Hub", new Rect(0, 0, 1920, 1080));
-        var pendingMode = pendingHub.gameObject.AddComponent<ModeSelectionPresentation>(); pendingMode.Build(Resources.Load<Sprite>("MainMenu/MainMenuLogoOriginal"), new ModeSelectionPresentation.Actions());
+        var pendingMode = pendingHub.gameObject.AddComponent<ModeSelectionPresentation>(); pendingMode.Build(Resources.Load<Sprite>("Main_Menu/MainMenuLogoOriginal"), new ModeSelectionPresentation.Actions());
         controller.BindEntry(pendingMode.MailboxButton, true); controller.BindEntry(pendingMode.NewsButton, false);
         page.gameObject.SetActive(false); Capture("main-menu-2-pending.png"); pendingHub.gameObject.SetActive(false); page.gameObject.SetActive(true);
         Check(PlayerAuthService.CurrentApiUser.wallet.golds == 1000, "Opening hub granted gift");
@@ -188,12 +188,12 @@ public static class CommunityAudit
         var main = SketchbookUI.Node(canvas.transform, "Main", new Rect(0, 0, 1920, 1080));
         bool openedMail = false, openedNews = false;
         var presentation = main.gameObject.AddComponent<MainMenuPresentation>();
-        presentation.Build(Resources.Load<Sprite>("MainMenu/MainMenuLogoOriginal"), () => { }, () => { }, () => { });
+        presentation.Build(Resources.Load<Sprite>("Main_Menu/MainMenuLogoOriginal"), () => { }, () => { }, () => { });
         Check(!main.GetComponentsInChildren<Button>(true).Any(b => b.name == "Mailbox" || b.name == "News"), "Community entry leaked into Main Menu 1");
         Check(main.GetComponentsInChildren<TMP_Text>().Any(t => t.name == "Main Menu Version" && t.text == CommunityContent.VersionLabel), "Main version mismatch");
         Capture("main-menu-1.png"); main.gameObject.SetActive(false);
         var hub = SketchbookUI.Node(canvas.transform, "Hub", new Rect(0, 0, 1920, 1080));
-        var mode = hub.gameObject.AddComponent<ModeSelectionPresentation>(); mode.Build(Resources.Load<Sprite>("MainMenu/MainMenuLogoOriginal"),
+        var mode = hub.gameObject.AddComponent<ModeSelectionPresentation>(); mode.Build(Resources.Load<Sprite>("Main_Menu/MainMenuLogoOriginal"),
             new ModeSelectionPresentation.Actions { Mailbox = () => openedMail = true, News = () => openedNews = true });
         controller.BindEntry(mode.MailboxButton, true); controller.BindEntry(mode.NewsButton, false);
         mode.MailboxButton.onClick.Invoke(); mode.NewsButton.onClick.Invoke(); Check(openedMail && openedNews, "Main Menu 2 community callbacks disconnected");

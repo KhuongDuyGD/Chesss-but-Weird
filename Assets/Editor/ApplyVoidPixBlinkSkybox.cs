@@ -7,8 +7,8 @@ namespace ChessButWeird.Editor
 {
     public static class ApplyVoidPixBlinkSkybox
     {
-        private const string MaterialPath = "Assets/Skyboxes/VoidPixFreePack/VoidPix_Blink_Skybox.mat";
-        private const string ScenePath = "Assets/Scenes/ChessClassic.unity";
+        private const string MaterialPath = "Assets/_Project/Art/Skyboxes/VoidPixFreePack/VoidPix_Blink_Skybox.mat";
+        private const string ScenePath = "Assets/_Project/Game/Scenes/ChessClassic.unity";
 
         [MenuItem("Tools/Chess But Weird/Apply VoidPix Blink Skybox")]
         public static void ApplyFromMenu()
@@ -91,7 +91,7 @@ namespace ChessButWeird.Editor
 
         private static string TexturePath(string name)
         {
-            return $"Assets/Skyboxes/VoidPixFreePack/blink/{name}.png";
+            return $"Assets/_Project/Art/Skyboxes/VoidPixFreePack/blink/{name}.png";
         }
     }
 }

@@ -6,17 +6,17 @@ New-Item -ItemType Directory -Force -Path "$auditRoot/Assets/Editor","$auditRoot
 $ui=@('Gameplay/UI/SketchbookUI.cs','Gameplay/UI/SketchbookDoodle.cs','Gameplay/UI/ResponsiveSafeArea.cs','Gameplay/UI/MenuDesignFrame.cs','Gameplay/UI/MainMenuPresentation.cs','Gameplay/UI/ModeSelectionPresentation.cs','Gameplay/UI/MainMenuPaperGraphic.cs','Gameplay/UI/MainMenuInkGraphic.cs','Gameplay/UI/ModeMenuDoodleGraphic.cs','Gameplay/UI/MainMenuButtonMotion.cs','Gameplay/UI/HandDrawnIdleWiggle.cs','Gameplay/UI/MenuMusicWidget.cs','Gameplay/UI/MusicRecordGraphic.cs','Profile/HandDrawnRoundedGraphic.cs','UI/AntialiasedUIGraphic.cs','UI/UIEdgeMesh.cs','UI/AntialiasedMenuImage.cs','UI/ChessFontCatalog.cs')
 $hashes=@()
 foreach($relative in $ui) {
-    $path=Join-Path $sourceRoot ('Assets/Scripts/Chess/'+$relative)
+    $path=Join-Path $sourceRoot ('Assets/_Project/Scripts/Chess/'+$relative)
     Copy-Item -LiteralPath $path -Destination "$auditRoot/Assets/Fixture"
     if(Test-Path -LiteralPath ($path+'.meta')){Copy-Item -LiteralPath ($path+'.meta') -Destination "$auditRoot/Assets/Fixture"}
     $hashes+=((Get-FileHash -LiteralPath $path).Hash+' '+$relative)
 }
-Get-ChildItem -LiteralPath "$sourceRoot/Assets/Scripts/Chess/Community" -Filter '*.cs' | ForEach-Object { Copy-Item -LiteralPath $_.FullName -Destination "$auditRoot/Assets/Fixture"; $hashes+=((Get-FileHash -LiteralPath $_.FullName).Hash+' '+$_.Name) }
+Get-ChildItem -LiteralPath "$sourceRoot/Assets/_Project/Scripts/Chess/Community" -Filter '*.cs' | ForEach-Object { Copy-Item -LiteralPath $_.FullName -Destination "$auditRoot/Assets/Fixture"; $hashes+=((Get-FileHash -LiteralPath $_.FullName).Hash+' '+$_.Name) }
 $hashes | Set-Content "$auditRoot/source-sha256.txt"
 Copy-Item -LiteralPath "$sourceRoot/Tests/Chess.Community.Headless/CommunityPorts.cs" -Destination "$auditRoot/Assets/Fixture"
 Copy-Item -LiteralPath "$sourceRoot/Tests/Chess.Community.Headless/CommunityAudit.cs" -Destination "$auditRoot/Assets/Editor"
-Copy-Item -LiteralPath "$sourceRoot/Assets/TextMesh Pro","$sourceRoot/Assets/Fonts" -Destination "$auditRoot/Assets" -Recurse
-Copy-Item -LiteralPath "$sourceRoot/Assets/Resources/Community","$sourceRoot/Assets/Resources/MainMenu" -Destination "$auditRoot/Assets/Resources" -Recurse
+Copy-Item -LiteralPath "$sourceRoot/Assets/TextMesh Pro","$sourceRoot/Assets/_Project/Art/Fonts" -Destination "$auditRoot/Assets" -Recurse
+Copy-Item -LiteralPath "$sourceRoot/Assets/Resources/Community","$sourceRoot/Assets/Resources/Main_Menu" -Destination "$auditRoot/Assets/Resources" -Recurse
 Copy-Item -LiteralPath "$sourceRoot/Assets/Resources/Chess/ChessFontCatalog.asset" -Destination "$auditRoot/Assets/Resources/Chess"
 Copy-Item -LiteralPath "$sourceRoot/Assets/Resources/UI/MenuEdgeAntialiasing.shader" -Destination "$auditRoot/Assets/Resources/UI"
 Copy-Item -LiteralPath "$sourceRoot/ProjectSettings/ProjectVersion.txt" -Destination "$auditRoot/ProjectSettings"

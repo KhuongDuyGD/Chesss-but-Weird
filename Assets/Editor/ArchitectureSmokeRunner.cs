@@ -29,7 +29,7 @@ public static class ArchitectureSmokeRunner
     public static void Run()
     {
         SessionState.SetBool(Key, true);
-        EditorSceneManager.OpenScene("Assets/Scenes/ChessClassic.unity");
+        EditorSceneManager.OpenScene("Assets/_Project/Game/Scenes/ChessClassic.unity");
         EditorApplication.EnterPlaymode();
     }
 

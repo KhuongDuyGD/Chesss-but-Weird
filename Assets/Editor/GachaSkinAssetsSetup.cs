@@ -11,7 +11,7 @@ using UnityEngine.AddressableAssets;
 // Keys match the existing MongoDB items.unityAssetKey values.
 public static class GachaSkinAssetsSetup
 {
-    private const string Root = "Assets/Game/Data";
+    private const string Root = "Assets/_Project/Game/Data";
     public const string CrystalKey = "ChessSets/CrystalBlue";
     public const string WoodlandKey = "ChessSets/Woodland";
     public const string ForestKey = "Boards/ForestGarden";
@@ -28,8 +28,8 @@ public static class GachaSkinAssetsSetup
         if (!catalog) throw new InvalidOperationException("Cosmetic catalog is missing.");
         ValidateModels("Tazji'sCrystalChessSet", "CR_Glacier", "CR_Amethyst");
         ValidateModels("Tazji'sWoodlandChessSet", "WL_Oak", "WL_Nightgrove");
-        RequireModel("Assets/Skins/Tazji'sForestGardenBoard/Forest_Garden_Board.fbx");
-        RequireModel("Assets/Skins/Tazji'sMarbleBoard/Classic_Marble_Board.fbx");
+        RequireModel("Assets/_Project/Art/Skins/Tazji'sForestGardenBoard/Forest_Garden_Board.fbx");
+        RequireModel("Assets/_Project/Art/Skins/Tazji'sMarbleBoard/Classic_Marble_Board.fbx");
 
         var settings = AddressableAssetSettingsDefaultObject.GetSettings(true);
         Register(settings, catalog, "CoreCatalog", CosmeticCatalog.Address);
@@ -53,7 +53,7 @@ public static class GachaSkinAssetsSetup
     {
         foreach (string prefix in prefixes)
             foreach (string type in Types)
-                RequireModel("Assets/Skins/" + folder + "/" + prefix + "_" + type + ".fbx");
+                RequireModel("Assets/_Project/Art/Skins/" + folder + "/" + prefix + "_" + type + ".fbx");
     }
 
     private static GameObject RequireModel(string path)
@@ -100,7 +100,7 @@ public static class GachaSkinAssetsSetup
         data.localPosition = Vector3.zero;
         data.localScale = Vector3.one;
         data.loopAnimation = key == CelestialKey;
-        data.prisonLayoutYaw = DetectPrisonLayoutYaw(RequireModel("Assets/Skins/" + folder + "/" + modelName + ".fbx"));
+        data.prisonLayoutYaw = DetectPrisonLayoutYaw(RequireModel("Assets/_Project/Art/Skins/" + folder + "/" + modelName + ".fbx"));
         data.localRotation = data.prisonLayoutYaw == 0f ? new Vector3(0f, -90f, 0f) : Vector3.zero;
         EditorUtility.SetDirty(data);
         Register(settings, data, "Board_" + assetName, "Board/" + key);
@@ -141,14 +141,14 @@ public static class GachaSkinAssetsSetup
 
     private static string Model(AddressableAssetSettings settings, string folder, string name, string group)
     {
-        var model = RequireModel("Assets/Skins/" + folder + "/" + name + ".fbx");
+        var model = RequireModel("Assets/_Project/Art/Skins/" + folder + "/" + name + ".fbx");
         Register(settings, model, group, "Models/" + folder + "/" + name);
         return AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(model));
     }
 
     public static AssetReferenceSprite Preview(AddressableAssetSettings settings, string folder, string name, string group)
     {
-        string path = "Assets/Skins/" + folder + "/" + name;
+        string path = "Assets/_Project/Art/Skins/" + folder + "/" + name;
         var importer = AssetImporter.GetAtPath(path) as TextureImporter;
         if (!importer) throw new InvalidOperationException("Missing skin preview: " + path);
         if (importer.textureType != TextureImporterType.Sprite || importer.spriteImportMode != SpriteImportMode.Single)

@@ -35,7 +35,7 @@ public static class AnalysisBoardAssetBuilder
 
     private static Texture2D Load(string fileName)
     {
-        Texture2D texture = AssetDatabase.LoadAssetAtPath<Texture2D>($"Assets/Materials/GameplayUI/{fileName}");
+        Texture2D texture = AssetDatabase.LoadAssetAtPath<Texture2D>($"Assets/_Project/Art/UI/GameplayUI/{fileName}");
         if (!texture)
             Debug.LogError($"[AnalysisBoard] Missing texture: {fileName}");
         return texture;

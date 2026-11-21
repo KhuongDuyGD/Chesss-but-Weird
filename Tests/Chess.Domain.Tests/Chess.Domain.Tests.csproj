@@ -7,7 +7,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="../../Packages/com.chessbutweird.domain/Runtime/*.cs" />
-    <Compile Include="../../Assets/Scripts/Chess/Application/*.cs" Exclude="../../Assets/Scripts/Chess/Application/AramMatchCoordinator.cs" />
-    <Compile Include="../../Assets/Scripts/Chess/Bot/StockfishDifficulty.cs" />
+    <Compile Include="../../Assets/_Project/Scripts/Chess/Application/*.cs" Exclude="../../Assets/_Project/Scripts/Chess/Application/AramMatchCoordinator.cs" />
+    <Compile Include="../../Assets/_Project/Scripts/Chess/Bot/StockfishDifficulty.cs" />
   </ItemGroup>
 </Project>

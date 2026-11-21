@@ -26,7 +26,7 @@ if($Chaos35) {
 }
 $hashes=@()
 foreach($relative in $uiFiles) {
-    $path=Join-Path $sourceRoot ('Assets/Scripts/Chess/'+$relative)
+    $path=Join-Path $sourceRoot ('Assets/_Project/Scripts/Chess/'+$relative)
     Copy-Item -LiteralPath $path -Destination "$auditRoot/Assets/Fixture"
     if(Test-Path -LiteralPath ($path+'.meta')) {Copy-Item -LiteralPath ($path+'.meta') -Destination "$auditRoot/Assets/Fixture"}
     $hashes+=((Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash+' '+$relative)
@@ -36,7 +36,7 @@ Copy-Item -LiteralPath "$sourceRoot/Tests/Chess.Hud.Headless/HudFixture.cs" -Des
 Copy-Item -LiteralPath "$sourceRoot/Tests/Chess.Hud.Headless/HudAuditRunner.cs" -Destination "$auditRoot/Assets/Editor"
 Copy-Item -LiteralPath "$sourceRoot/Logs/loading-compile/Chess.Domain.dll" -Destination "$auditRoot/Assets/Fixture"
 Copy-Item -LiteralPath "$sourceRoot/Assets/TextMesh Pro" -Destination "$auditRoot/Assets" -Recurse
-Copy-Item -LiteralPath "$sourceRoot/Assets/Fonts" -Destination "$auditRoot/Assets" -Recurse
+Copy-Item -LiteralPath "$sourceRoot/Assets/_Project/Art/Fonts" -Destination "$auditRoot/Assets" -Recurse
 New-Item -ItemType Directory -Force -Path "$auditRoot/Assets/Resources/Chess" | Out-Null
 Copy-Item -LiteralPath "$sourceRoot/Assets/Resources/Localization" -Destination "$auditRoot/Assets/Resources" -Recurse
 Copy-Item -LiteralPath "$sourceRoot/Assets/Resources/Chess/ChessFontCatalog.asset" -Destination "$auditRoot/Assets/Resources/Chess"

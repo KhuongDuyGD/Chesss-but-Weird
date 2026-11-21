@@ -42,7 +42,7 @@ public static class KingdomRushFactionVerification
         var settings=AddressableAssetSettingsDefaultObject.Settings;
         SessionState.SetInt(Key+".Builder",settings.ActivePlayModeDataBuilderIndex);
         settings.ActivePlayModeDataBuilderIndex=settings.DataBuilders.FindIndex(b=>b.GetType().Name=="BuildScriptPackedPlayMode");
-        EditorSceneManager.OpenScene("Assets/Game/Scenes/ChessMatch.unity");
+        EditorSceneManager.OpenScene("Assets/_Project/Game/Scenes/ChessMatch.unity");
         SessionState.SetBool(Key,true);EditorApplication.EnterPlaymode();
     }
     public static void BuildAndStart(){KingdomRushGameSetup.BuildContent();Start();}

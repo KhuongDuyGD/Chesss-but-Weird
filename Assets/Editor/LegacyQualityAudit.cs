@@ -55,9 +55,9 @@ public static class LegacyQualityAudit
             settings.Set("shadows", 3); GameRuntimeSettings.RefreshMatchCameras();
             checks.Add("PASS High/Off shadows on the scene Sun and per-camera SMAA");
 
-            var catalog = AssetDatabase.LoadAssetAtPath<CosmeticCatalog>("Assets/Game/Data/CosmeticCatalog.asset");
+            var catalog = AssetDatabase.LoadAssetAtPath<CosmeticCatalog>("Assets/_Project/Game/Data/CosmeticCatalog.asset");
             Check(catalog.FindEnvironment("kingdom_rush") == null && catalog.FindEnvironment("kingdom_rush_denas") != null && catalog.FindEnvironment("kingdom_rush_veznan") != null, "Environment retirement affected the new maps");
-            var classic = AssetDatabase.LoadAssetAtPath<EnvironmentData>("Assets/Game/Data/Environments/Classic.asset");
+            var classic = AssetDatabase.LoadAssetAtPath<EnvironmentData>("Assets/_Project/Game/Data/Environments/Classic.asset");
             Check(classic.skybox && classic.skybox.name == "VoidPix_Blink_Skybox", "Classic is not the purple galaxy");
             using (var assets = new AssetLoader())
             {
@@ -152,7 +152,7 @@ public static class LegacyQualityAudit
         string[] folders = { "Tazji'sLowPoly", "Tazji'sCrystalChessSet", "Tazji'sWoodlandChessSet",
             "Tazji'sForestGardenBoard", "Tazji'sMarbleBoard", "Tazji'sCelestialBoard" };
         foreach (var folder in folders)
-        foreach (var guid in AssetDatabase.FindAssets("t:Model", new[] { "Assets/Skins/" + folder }))
+        foreach (var guid in AssetDatabase.FindAssets("t:Model", new[] { "Assets/_Project/Art/Skins/" + folder }))
         {
             string path = AssetDatabase.GUIDToAssetPath(guid);
             var model = AssetDatabase.LoadAssetAtPath<GameObject>(path);

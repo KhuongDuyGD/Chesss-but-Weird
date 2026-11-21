@@ -23,7 +23,7 @@ public static class CosmeticArtAudit
     public static void VerifyCameraProjection()
     {
         var results = new List<string>();
-        foreach (string path in new[] { "Assets/Game/Scenes/ChessMatch.unity", "Assets/Scenes/ChessClassic.unity" })
+        foreach (string path in new[] { "Assets/_Project/Game/Scenes/ChessMatch.unity", "Assets/_Project/Game/Scenes/ChessClassic.unity" })
         {
             var scene = EditorSceneManager.OpenPreviewScene(path);
             try
@@ -116,7 +116,7 @@ public static class CosmeticArtAudit
     public static void Verify()
     {
         checks.Clear();
-        var catalog = AssetDatabase.LoadAssetAtPath<CosmeticCatalog>("Assets/Game/Data/CosmeticCatalog.asset");
+        var catalog = AssetDatabase.LoadAssetAtPath<CosmeticCatalog>("Assets/_Project/Game/Data/CosmeticCatalog.asset");
         Require(catalog && catalog.pieceSkins.Count == 3 && catalog.boards.Count == 4, "Three mapped chess sets and four mapped boards");
         foreach (var entry in catalog.pieceSkins.Concat(catalog.boards))
         {
@@ -125,10 +125,10 @@ public static class CosmeticArtAudit
             Require(AddressableAssetSettingsDefaultObject.Settings.FindAssetEntry(guid)?.parentGroup.Name == "CosmeticThumbnails",
                 entry.id + " thumbnail is separated from model bundles");
         }
-        var defaultBoard = AssetDatabase.LoadAssetAtPath<BoardSkinData>("Assets/Game/Data/Boards/TazjiLowPoly.asset");
+        var defaultBoard = AssetDatabase.LoadAssetAtPath<BoardSkinData>("Assets/_Project/Game/Data/Boards/TazjiLowPoly.asset");
         Require(defaultBoard.localRotation == Vector3.zero && defaultBoard.prisonLayoutYaw == -90f, "Updated default keeps native orientation and front/back prisoner rails");
         VerifyPrisonPads(defaultBoard);
-        var celestial = AssetDatabase.LoadAssetAtPath<BoardSkinData>("Assets/Game/Data/Boards/TazjiCelestial.asset");
+        var celestial = AssetDatabase.LoadAssetAtPath<BoardSkinData>("Assets/_Project/Game/Data/Boards/TazjiCelestial.asset");
         Require(celestial.boardId == "Boards/Celestial" && celestial.loopAnimation, "Celestial key and autoplay configuration");
         VerifyPrisonPads(celestial);
         string modelPath = AssetDatabase.GUIDToAssetPath(celestial.boardPrefab.AssetGUID);
@@ -216,11 +216,11 @@ public static class CosmeticArtAudit
     public static void VerifyBoardProportions()
     {
         var results = new List<string>();
-        var data = AssetDatabase.LoadAssetAtPath<BoardSkinData>("Assets/Game/Data/Boards/TazjiCelestial.asset");
+        var data = AssetDatabase.LoadAssetAtPath<BoardSkinData>("Assets/_Project/Game/Data/Boards/TazjiCelestial.asset");
         string path = AssetDatabase.GUIDToAssetPath(data.boardPrefab.AssetGUID);
         var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
         var clip = AssetDatabase.LoadAllAssetsAtPath(path).OfType<AnimationClip>().First(c => !c.name.StartsWith("__preview__"));
-        foreach (string scenePath in new[] { "Assets/Scenes/ChessClassic.unity", "Assets/Game/Scenes/ChessMatch.unity" })
+        foreach (string scenePath in new[] { "Assets/_Project/Game/Scenes/ChessClassic.unity", "Assets/_Project/Game/Scenes/ChessMatch.unity" })
         {
             var scene = EditorSceneManager.OpenPreviewScene(scenePath);
             try

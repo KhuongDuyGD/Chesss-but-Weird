@@ -30,7 +30,7 @@ public static class CosmeticThumbnailCapture
             throw new InvalidOperationException("Use tools/capture-cosmetic-cinematics.ps1. Photography runs in its own disposable project.");
         Debug.Log("[CinematicPhotography] Beginning native photography.");
         Directory.CreateDirectory(Output);
-        catalog=AssetDatabase.LoadAssetAtPath<CosmeticCatalog>("Assets/Game/Data/CosmeticCatalog.asset");
+        catalog=AssetDatabase.LoadAssetAtPath<CosmeticCatalog>("Assets/_Project/Game/Data/CosmeticCatalog.asset");
         ConfigureQuality();
         var report=new CaptureReport();
         bool preview=File.Exists("preview-quality.txt");
@@ -128,7 +128,7 @@ public static class CosmeticThumbnailCapture
         if(!Application.isBatchMode||!File.Exists("capture-project.txt"))throw new InvalidOperationException("Isolated photography project only.");
         AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
         var report=JsonUtility.FromJson<CaptureReport>(File.ReadAllText(Output+"/captures.json"));
-        var sourceCatalog=AssetDatabase.LoadAssetAtPath<CosmeticCatalog>("Assets/Game/Data/CosmeticCatalog.asset");
+        var sourceCatalog=AssetDatabase.LoadAssetAtPath<CosmeticCatalog>("Assets/_Project/Game/Data/CosmeticCatalog.asset");
         var entries=sourceCatalog.pieceSkins.Concat(sourceCatalog.boards).Concat(sourceCatalog.environments).ToArray();
         if(report.images.Count!=entries.Length)throw new InvalidOperationException("The capture report is incomplete.");
         foreach(var entry in entries)
@@ -149,7 +149,7 @@ public static class CosmeticThumbnailCapture
     private static T Load<T>(CosmeticCatalogEntry entry) where T:Object => Load<T>(entry.data);
     private static void ConfigureQuality()
     {
-        var pipeline=AssetDatabase.LoadAssetAtPath<UniversalRenderPipelineAsset>("Assets/Settings/PC_RPAsset.asset");
+        var pipeline=AssetDatabase.LoadAssetAtPath<UniversalRenderPipelineAsset>("Assets/_Project/Settings/PC_RPAsset.asset");
         QualitySettings.renderPipeline=pipeline;
         pipeline.renderScale=1;pipeline.msaaSampleCount=8;pipeline.mainLightShadowmapResolution=4096;
         pipeline.shadowDistance=60;pipeline.shadowCascadeCount=4;pipeline.cascade4Split=new Vector3(.12f,.3f,.6f);

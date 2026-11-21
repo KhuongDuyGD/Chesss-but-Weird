@@ -11,7 +11,7 @@ using UnityEngine.Rendering;
 // Art preparation only. This does not edit the cosmetic catalog, shop, or gameplay scenes.
 public static class KingdomRushArtImport
 {
-    private const string Root = "Assets/Skins/KingdomRushCollab";
+    private const string Root = "Assets/_Project/Art/Skins/KingdomRushCollab";
     private static readonly string[] Prefixes = { "01_Quan_tot", "02_Quan_xe", "03_Quan_ngua", "04_Quan_tuong", "05_Quan_hau", "06_Quan_vua" };
     private static readonly string[] OriginalNames = { "Pawn", "Rook", "Knight", "Bishop", "Queen", "King" };
 
@@ -244,7 +244,7 @@ public static class KingdomRushArtImport
         var manifest = JsonUtility.FromJson<ModelManifest>(File.ReadAllText(Root + "/model_manifest.json"));
         for (int type = 0; type < Prefixes.Length; type++)
         {
-            string originalPath = "Assets/Skins/Tazji'sLowPoly/Chess_Set/Chess_" + OriginalNames[type] + ".fbx";
+            string originalPath = "Assets/_Project/Art/Skins/Tazji'sLowPoly/Chess_Set/Chess_" + OriginalNames[type] + ".fbx";
             var original = UnityEngine.Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>(originalPath));
             Bounds expected = BoundsOf(original);
             UnityEngine.Object.DestroyImmediate(original);

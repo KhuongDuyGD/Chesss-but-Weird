@@ -16,57 +16,57 @@ MonoBehaviour:
   m_GUID: eb60e2f16d119c3448b79160e174c4da
   m_SerializeEntries:
   - m_GUID: 2226bcda12c7846e38f10e70e7c8b903
-    m_Address: Assets/Audio/SFX/pick.mp3
+    m_Address: Assets/_Project/Audio/SFX/pick.mp3
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 28736cf9fed744e789b287cac52d6912
-    m_Address: Assets/Audio/SFX/chieu.mp3
+    m_Address: Assets/_Project/Audio/SFX/chieu.mp3
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 28f7eb0162c3b4c548fed497ebe2bd69
-    m_Address: Assets/Audio/SFX/hit.mp3
+    m_Address: Assets/_Project/Audio/SFX/hit.mp3
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 2bc6172b820e24c40b295dbfd9532893
-    m_Address: Assets/Audio/SFX/Checkmate.mp3
+    m_Address: Assets/_Project/Audio/SFX/Checkmate.mp3
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 35436e99152f939489de5b9660fa002f
-    m_Address: Assets/Audio/SFX/PieceSelection.mp3
+    m_Address: Assets/_Project/Audio/SFX/PieceSelection.mp3
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 5b0ccc351a7204429bdfd4ac27c9762a
-    m_Address: Assets/Audio/SFX/nhapthanh.mp3
+    m_Address: Assets/_Project/Audio/SFX/nhapthanh.mp3
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 627b89f5938979c408b82af5e00323bb
-    m_Address: Assets/Audio/SFX/CapturePiece.mp3
+    m_Address: Assets/_Project/Audio/SFX/CapturePiece.mp3
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 7b8fb2fa764a54320b2ea7fc6ae8a5de
-    m_Address: Assets/Audio/SFX/win.mp3
+    m_Address: Assets/_Project/Audio/SFX/win.mp3
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 8329137c995a54a3bbb302ee3e4583d2
-    m_Address: Assets/Audio/SFX/move.wav
+    m_Address: Assets/_Project/Audio/SFX/move.wav
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: aee87f369e08c483f9d31857d1391555
-    m_Address: Assets/Audio/SFX/phonghau.mp3
+    m_Address: Assets/_Project/Audio/SFX/phonghau.mp3
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: cfc74110c5b224ef4bfcc7f6ebdc5f04
-    m_Address: Assets/Audio/SFX/error.mp3
+    m_Address: Assets/_Project/Audio/SFX/error.mp3
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0

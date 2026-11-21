@@ -42,12 +42,12 @@ $uiFiles=@(
 )
 $hashes=@()
 foreach($relative in $uiFiles) {
-    $path=Join-Path $sourceRoot ('Assets/Scripts/Chess/'+$relative)
+    $path=Join-Path $sourceRoot ('Assets/_Project/Scripts/Chess/'+$relative)
     Copy-Item -LiteralPath $path -Destination "$auditRoot/Assets/Fixture"
     if(Test-Path -LiteralPath ($path+'.meta')) {Copy-Item -LiteralPath ($path+'.meta') -Destination "$auditRoot/Assets/Fixture"}
     $hashes+=((Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash+' '+$relative)
 }
-$coreText=Get-Content -LiteralPath "$sourceRoot/Assets/Scripts/Chess/Core/ChessGame.cs" -Raw -Encoding utf8
+$coreText=Get-Content -LiteralPath "$sourceRoot/Assets/_Project/Scripts/Chess/Core/ChessGame.cs" -Raw -Encoding utf8
 $methods=@('private bool DoesMoveKeepTeamKingSafe(', 'private bool IsTeamInCheck(', 'private bool IsSquareUnderAttack(', 'private ChessPiece FindKing(', 'private bool IsCastlingMove(', 'private bool TryGetCastlingRookMove(', 'private void AddSpecialCandidateMoves(', 'private void AddSpecialCandidateIfLegal(', 'private void RecordCurrentPosition(', 'private string BuildDrawPositionKey(', 'private bool HasThreefoldRepetition(')
 $extracted="using System.Collections.Generic; using UnityEngine; public partial class ChessGame {`n"
 foreach($signature in $methods){
@@ -63,7 +63,7 @@ foreach($signature in $methods){
 }
 $extracted+="}"
 $extracted | Set-Content -LiteralPath "$auditRoot/Assets/Fixture/ChessGame.Extracted.cs" -Encoding utf8
-$hashes+=((Get-FileHash -LiteralPath "$sourceRoot/Assets/Scripts/Chess/Core/ChessGame.cs" -Algorithm SHA256).Hash+' Core/ChessGame.cs (11 extracted rules)')
+$hashes+=((Get-FileHash -LiteralPath "$sourceRoot/Assets/_Project/Scripts/Chess/Core/ChessGame.cs" -Algorithm SHA256).Hash+' Core/ChessGame.cs (11 extracted rules)')
 $hashes | Set-Content -LiteralPath "$auditRoot/source-sha256.txt"
 Copy-Item -LiteralPath "$sourceRoot/Tests/Chess.Aram.Headless/AramFixture.cs" -Destination "$auditRoot/Assets/Fixture"
 Copy-Item -LiteralPath "$sourceRoot/Tests/Chess.Aram.Headless/SettingsPorts.cs" -Destination "$auditRoot/Assets/Fixture"
@@ -71,7 +71,7 @@ Copy-Item -LiteralPath "$sourceRoot/Tests/Chess.Aram.Headless/AramAuditRunner.cs
 Copy-Item -LiteralPath "$sourceRoot/Tests/Chess.Aram.Headless/AramLandscapeAudit.cs","$sourceRoot/Tests/Chess.Aram.Headless/AramStrategyAudit.cs" -Destination "$auditRoot/Assets/Editor"
 Copy-Item -LiteralPath "$sourceRoot/Logs/loading-compile/Chess.Domain.dll" -Destination "$auditRoot/Assets/Fixture"
 Copy-Item -LiteralPath "$sourceRoot/Assets/TextMesh Pro" -Destination "$auditRoot/Assets" -Recurse
-Copy-Item -LiteralPath "$sourceRoot/Assets/Fonts" -Destination "$auditRoot/Assets" -Recurse
+Copy-Item -LiteralPath "$sourceRoot/Assets/_Project/Art/Fonts" -Destination "$auditRoot/Assets" -Recurse
 New-Item -ItemType Directory -Force -Path "$auditRoot/Assets/Resources/Chess" | Out-Null
 Copy-Item -LiteralPath "$sourceRoot/Assets/Resources/Localization" -Destination "$auditRoot/Assets/Resources" -Recurse
 Copy-Item -LiteralPath "$sourceRoot/Assets/Resources/Chess/ChessFontCatalog.asset" -Destination "$auditRoot/Assets/Resources/Chess"

@@ -9,7 +9,7 @@ using UnityEngine.Rendering;
 // Render the actual imported Unity meshes and materials from several angles.
 public static class KingdomRushArtReviewCapture
 {
-    private const string Root = "Assets/Skins/KingdomRushCollab";
+    private const string Root = "Assets/_Project/Art/Skins/KingdomRushCollab";
     private const string Output = "Logs/KingdomRush/ArtReview";
 
     public static void PrepareAndCapture()
