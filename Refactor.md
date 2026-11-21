@@ -40,6 +40,15 @@ Unity-recognized or runtime-sensitive folders remain where Unity and the project
 
 `legacy/` at the repository root remains a quarantine for historical or unused material. Unity does not import it.
 
+### Resources assets intentionally retained
+
+These image folders contain UI artwork, but their current runtime loaders depend on their Resources paths, so they were not moved during this folder-only refactor:
+
+- `Assets/Resources/Main_Menu/` — `MainMenuLogoOriginal` and the cropped menu artwork are loaded through `Resources.Load` by the menu presentation/asset loader; `MainMenuCredits.txt` is loaded by `MainMenuPresentation`.
+- `Assets/Resources/Chess/Bots/Avatars/` — bot profiles build paths such as `Chess/Bots/Avatars/pip`, and `BotAvatarCatalog` loads the matching texture with `Resources.Load` for bot roster/companion UI.
+
+Moving these files into `Assets/_Project/Art/` requires migrating those loaders to Addressables or explicit asset references first. Moving the PNGs alone would break the corresponding UI at runtime.
+
 ## Git ignore updates
 
 The root `.gitignore` excludes Unity-generated caches and local outputs such as `Library/`, `Temp/`, `Logs/`, `UserSettings/`, build output, Addressables build data, crash reports, and `ExportedObj/`. These folders can be recreated locally and should not be committed. Project assets under `Assets/_Project/` remain tracked.
