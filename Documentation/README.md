@@ -1,26 +1,11 @@
 # Project documentation
 
-Use this index to find the current project notes. Historical validation results remain marked in their source documents.
+- [Online .NET integration](Guides/OnlineDotNetIntegration.md) — REST/SignalR flow, configuration and validation limits.
+- [Gacha skin assets](Cosmetics/GachaSkinAssets.md) — registered models, Addressables, loadout and verification.
+- [Custom piece loadouts](Cosmetics/CustomPieceLoadouts.md) — local and online piece selection.
+- [Cosmetic photography](Cosmetics/CosmeticPhotography.md) — generating catalog thumbnails.
+- [Chaos localization](Guides/Chaos-buff-localization-patch.md) — available translations and implementation limits.
 
-## Architecture
-
-- [Architecture plan](Architecture/ARCHITECTURE_PLAN.md) — project structure and migration roadmap.
-- [Loading plan](Architecture/LOADING_PLAN.md) — loading flow and implementation notes.
-
-## Audits
-
-Project and release audits live in `Audits/`. They record what was checked and what still needs runtime, device, or backend verification.
-
-## Guides
-
-Implementation and integration notes live in `Guides/`, including the current [.NET online integration](Guides/OnlineDotNetIntegration.md).
-
-## Cosmetics and art
-
-Cosmetic setup and photography notes live in `Cosmetics/`. `Cosmetics/RoyalAscension/` contains its source art and related authoring files.
-
-## Tests and tools
-
-- `../Tests/` contains standalone domain and isolated headless test projects.
-- `../Assets/Tests/` contains Unity Editor and Play Mode verification assets.
-- `../tools/` contains repeatable local command-line checks.
+Regression fixtures live in `Tests/` and `Assets/Tests/`; their runners live in `tools/`.
+Historical architecture/loading plans, dated audits and the standalone Royal Ascension
+demo/source work have been archived outside the Unity project.

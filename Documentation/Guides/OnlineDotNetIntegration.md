@@ -33,8 +33,8 @@ Deploy the updated API and distribute the updated Unity client together for new
 version 3 matches. Reconnecting uses the saved version, counters and pending
 deployment/quest/redeployment decisions; it does not reroll buffs or outcomes.
 
-Existing scenes keep the `ChessLanController` component and script GUID. Its
-network flow uses the .NET client. Removed script GUIDs were checked against
+`OnlineGameController` owns the .NET online room and match flow. Its scripts
+retain their original GUIDs after the LAN cleanup; no Online controller is deleted. Removed script GUIDs were checked against
 scene, prefab and asset references. Editor checks and standalone fixtures no
 longer depend on the removed contracts. Historical architecture/statistics
 notes are explicitly marked as historical.
@@ -66,7 +66,6 @@ is a source compilation check; live integration and gameplay remain manual.
 - After both Accept (or a private room starts), the client loads the board
   and sends **SetReady** automatically. Ready/setup has a separate 180-second
   window. ARAM players still finish draft/setup before the clock starts.
-- Legacy LAN entry points use this same backend room/menu flow.
 - Online HUD actions: offer/respond to a draw, Classic draw claim, resign,
   rematch, and recovery of an uncertain previous command. The result screen's
   **New Game** button requests a rematch; both players can press it to agree.
@@ -86,15 +85,15 @@ is a source compilation check; live integration and gameplay remain manual.
   suppression, buffered events, full snapshot recovery on sequence gaps,
   serialized commands and uncertain-command retries with the original
   command ID, arguments and expected version.
-- `ChessLanController.Online.cs`: lobby, readiness, connection recovery,
+- `OnlineGameController.Online.cs`: lobby, readiness, connection recovery,
   result/profile refresh and server command history. The original component
-  GUID remains in `ChessLanController.cs`.
-- `ChessLanController.Menu.cs`: full paper-style screens for Online choices,
+  GUID remains in `OnlineGameController.cs`.
+- `OnlineGameController.Menu.cs`: full paper-style screens for Online choices,
   room creation/list/code entry, room lobby, loadout, searching and Accept.
   It uses SketchbookUI and MenuDesignFrame for shared styling and safe-area fit.
-- `ChessLanController.Flow.cs`: navigation, paginated room data, inventory
+- `OnlineGameController.Flow.cs`: navigation, paginated room data, inventory
   selection, elapsed search time, acceptance countdown and automatic readiness.
-- `ChessLanController.Hud.cs`: paper-style match toolbar for Offer Draw, Claim
+- `OnlineGameController.Hud.cs`: paper-style match toolbar for Offer Draw, Claim
   Draw, Resign, draw replies, Ready, rematch and uncertain-command recovery.
   Only the toolbar rectangle intercepts UI clicks; its full-screen canvas has
   no blocking Graphic. The old default IMGUI match/debug box is removed.

@@ -7,8 +7,8 @@ public static class MenuTextureSampling
     private static readonly float[] LinearChannels = CreateLinearChannels();
     private static readonly string[] MenuFolders =
     {
-        "Assets/_Project/Art/UI/Main_Menu/", "Assets/_Project/Art/UI/Gacha_menu/", "Assets/_Project/Art/UI/LANUI/",
-        "Assets/_Project/Art/UI/MultiplayerUI/", "Assets/_Project/Art/UI/PlayerProfile/", "Assets/_Project/Art/UI/Result_Menu/",
+        "Assets/_Project/Art/UI/Main_Menu/", "Assets/_Project/Art/UI/Gacha_menu/",
+        "Assets/_Project/Art/UI/PlayerProfile/", "Assets/_Project/Art/UI/Result_Menu/",
         "Assets/_Project/Art/UI/SettingsMenu/", "Assets/Resources/Main_Menu/"
     };
 

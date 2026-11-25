@@ -3,7 +3,7 @@ using UnityEngine;
 
 // Inert transport/account ports for the isolated production-presenter audit.
 public static class PlayerAuthService { public static string UserId; }
-public sealed class ChessLanController
+public sealed class OnlineGameController
 {
     public bool CanSendOnlineCommand = true;
     public readonly List<ChessButWeird.Online.AbilityCommand> Sent = new List<ChessButWeird.Online.AbilityCommand>();

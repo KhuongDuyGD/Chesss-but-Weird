@@ -47,7 +47,7 @@ public static class Chaos35OnlineAudit
         {
             PlayerAuthService.UserId = color.ToLowerInvariant();
             var host = new GameObject("Chaos 35 " + color); var game = host.AddComponent<ChessGame>();
-            var owner = new ChessLanController(); var p = new OnlineAramPresenter(owner, game);
+            var owner = new OnlineGameController(); var p = new OnlineAramPresenter(owner, game);
             foreach (var fixture in fixtures)
             {
                 var state = fixture[color.ToLowerInvariant()].ToObject<MatchState>();
@@ -109,7 +109,7 @@ public static class Chaos35OnlineAudit
             p.Dispose(); UnityEngine.Object.DestroyImmediate(host); results.Add("PASS " + color + ": 35 buff snapshots, setups, draft IDs, purchases, recovery/pause and command guards");
         }
     }
-    private static void AuditStrategyInteraction(OnlineAramPresenter presenter,ChessLanController owner,ChessGame game)
+    private static void AuditStrategyInteraction(OnlineAramPresenter presenter,OnlineGameController owner,ChessGame game)
     {
         var fixtures=JArray.Parse(File.ReadAllText("strategy-fixtures.json"));game.Board=game.gameObject.AddComponent<FixtureOnlineBoard>();
         void Apply(JToken data,string match)

@@ -13,23 +13,13 @@ public class HandDrawnMenuAssets : MonoBehaviour
     // Main Menu 1/2 buttons and icons are now drawn by their presentation
     // components. These bitmap assets are still used by the other menu screens.
     [Header("Shared Submenu Artwork - Still In Use")]
-    public Sprite optionFrame;
     public Sprite backgroundDecoration1;
     public Sprite backgroundDecoration2;
     public Sprite backgroundDecoration3;
     public Sprite backgroundDecoration4;
     public Sprite backButton;
 
-    [Header("Multiplayer Mode")]
-    public Sprite chooseMultiplayerMode;
-    public Sprite lanButton;
-    public Sprite multiplayerButton;
-
-    [Header("Side Select")]
     public bool HasRequiredSprites => mainMenuLogoOriginal && backButton;
-
-    public bool HasMultiplayerModeSprites =>
-        chooseMultiplayerMode && lanButton && multiplayerButton;
 
     public bool IsPrepared { get; private set; }
     private readonly Dictionary<string, Sprite> spriteCache = new Dictionary<string, Sprite>();
@@ -50,20 +40,6 @@ public class HandDrawnMenuAssets : MonoBehaviour
             () => { backgroundDecoration3 = LoadRenamedSprite("BackgroundDecoration3.png", "stars", new SpriteCrop(1254f, 1254f, 240f, 429f, 781f, 333f)); },
             () => { backgroundDecoration4 = LoadRenamedSprite("BackgroundDecoration4.png", "crown", new SpriteCrop(1254f, 1254f, 137f, 229f, 978f, 800f)); },
             () => { backButton = LoadRenamedSprite("Back.png", "back_button", new SpriteCrop(2172f, 724f, 363f, 148f, 1448f, 418f)); },
-            () => { chooseMultiplayerMode = LoadRenamedSprite("ChooseYour MultiplayerMode.png", "multiplayer_mode_title", new SpriteCrop(2172f, 724f, 20f, 220f, 2130f, 300f)); },
-            () => { lanButton = LoadRenamedSprite("LANButton.png", "lan_card", new SpriteCrop(1086f, 1448f, 36f, 112f, 1010f, 1250f)); },
-            () => { multiplayerButton = LoadRenamedSprite("MultiplayerButton.png", "multiplayer_online_card", new SpriteCrop(1086f, 1448f, 36f, 112f, 1010f, 1250f)); },
-            () =>
-            {
-                // The empty input frame is from a Blank, never from a reference Design.
-                Texture2D blank = LoadTextureFromProjectFile("Assets/_Project/Art/UI/LANUI/LANUIBlank.png");
-                if (blank)
-                {
-                    float sx = blank.width / 1672f, sy = blank.height / 941f;
-                    optionFrame = Sprite.Create(blank, new Rect(643f * sx, (941f - 390f) * sy, 347f * sx, 73f * sy), new Vector2(.5f, .5f), 100f, 0, SpriteMeshType.FullRect, new Vector4(16f * sx, 16f * sy, 16f * sx, 16f * sy));
-                    spriteCache["Option Frame"] = optionFrame;
-                }
-            },
             () => IsPrepared = true
         };
     }
