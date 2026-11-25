@@ -30,7 +30,6 @@ public partial class HandDrawnMenuView : MonoBehaviour
     private RectTransform playScreen;
     private RectTransform localModeScreen;
     private RectTransform aramModeScreen;
-    private RectTransform multiplayerModeScreen;
     private RectTransform gachaScreen;
     private RectTransform inventoryScreen;
     private RectTransform shopScreen;
@@ -78,7 +77,6 @@ public partial class HandDrawnMenuView : MonoBehaviour
         BuildShopScreen();
         BuildLocalModeScreen();
         BuildAramModeScreen();
-        BuildMultiplayerModeScreen();
         BuildGachaScreen();
         BuildBotDifficultyScreen();
         BuildSideScreen();
@@ -161,21 +159,6 @@ public partial class HandDrawnMenuView : MonoBehaviour
         SetInputEnabled(true);
         TransitionToScreen(skinScreen, () => matchLoadoutController.Open(false, PieceTeam.White,
             start, ShowAramModeSelection));
-    }
-
-    public void ShowMultiplayerModeSelection()
-    {
-        if (!owner.RequireAccountAccess("Multiplayer")) return;
-        GameMusicManager.PlayMainMenuHubMusic();
-        if (!assets || !assets.HasMultiplayerModeSprites)
-        {
-            ShowSideSelection();
-            return;
-        }
-
-        SetVisible(true);
-        SetInputEnabled(true);
-        TransitionToScreen(multiplayerModeScreen, null);
     }
 
     public void ShowGachaMenu()
@@ -267,12 +250,10 @@ public partial class HandDrawnMenuView : MonoBehaviour
 
         AddSelectionDecorations(aramModeScreen);
         AddText(aramModeScreen, "CHAOS Mode Title", "CHAOS Mode", new Vector2(0f, 340f), new Vector2(760f, 125f), 76, TextAnchor.MiddleCenter, new Color(0.12f, 0.1f, 0.08f, 1f));
-        AddTextButton(aramModeScreen, "CHAOS Practice", "Practice", new Vector2(-540f, 35f), new Vector2(470f, 180f), owner.StartAramPracticeGame, new Color(0.98f, 0.78f, 0.3f, 1f));
-        AddTextButton(aramModeScreen, "CHAOS LAN", "LAN", new Vector2(0f, 35f), new Vector2(470f, 180f), owner.ShowAramLanSetup, new Color(0.56f, 0.82f, 0.94f, 1f));
-        AddTextButton(aramModeScreen, "CHAOS Multiplayer", "Multiplayer", new Vector2(540f, 35f), new Vector2(470f, 180f), owner.ShowAramOnlineSetup, new Color(0.74f, 0.66f, 0.96f, 1f));
-        AddText(aramModeScreen, "CHAOS Practice Caption", "Practice local", new Vector2(-540f, -105f), new Vector2(470f, 48f), 30, TextAnchor.MiddleCenter, new Color(0.14f, 0.11f, 0.08f, 1f));
-        AddText(aramModeScreen, "CHAOS LAN Caption", "Private LAN room", new Vector2(0f, -105f), new Vector2(430f, 48f), 28, TextAnchor.MiddleCenter, new Color(0.14f, 0.11f, 0.08f, 1f));
-        AddText(aramModeScreen, "CHAOS Online Caption", "Online matchmaking", new Vector2(540f, -105f), new Vector2(430f, 48f), 28, TextAnchor.MiddleCenter, new Color(0.14f, 0.11f, 0.08f, 1f));
+        AddTextButton(aramModeScreen, "CHAOS Practice", "Practice", new Vector2(-315f, 35f), new Vector2(470f, 180f), owner.StartAramPracticeGame, new Color(0.98f, 0.78f, 0.3f, 1f));
+        AddTextButton(aramModeScreen, "CHAOS Multiplayer", "Multiplayer", new Vector2(315f, 35f), new Vector2(470f, 180f), owner.ShowAramOnlineSetup, new Color(0.74f, 0.66f, 0.96f, 1f));
+        AddText(aramModeScreen, "CHAOS Practice Caption", "Practice local", new Vector2(-315f, -105f), new Vector2(470f, 48f), 30, TextAnchor.MiddleCenter, new Color(0.14f, 0.11f, 0.08f, 1f));
+        AddText(aramModeScreen, "CHAOS Online Caption", "Online matchmaking", new Vector2(315f, -105f), new Vector2(430f, 48f), 28, TextAnchor.MiddleCenter, new Color(0.14f, 0.11f, 0.08f, 1f));
         AddBackButton(aramModeScreen, new Vector2(-820f, -420f), () => ShowModeSelection());
     }
 
@@ -461,46 +442,6 @@ public partial class HandDrawnMenuView : MonoBehaviour
     {
         if (modeLogoutButton)
             modeLogoutButton.gameObject.SetActive(visible);
-    }
-
-    private void BuildMultiplayerModeScreen()
-    {
-        multiplayerModeScreen = CreateScreen("Multiplayer Mode");
-
-        if (!assets.HasMultiplayerModeSprites)
-            return;
-
-        AddImage(multiplayerModeScreen, "Mode Title", assets.chooseMultiplayerMode, new Vector2(0f, 380f), new Vector2(1700f, 220f), 0f, 0f);
-        AddInteractive(
-            multiplayerModeScreen,
-            "LAN Card",
-            assets.lanButton,
-            new Vector2(-365f, -105f),
-            new Vector2(590f, 785f),
-            () => SelectMultiplayerMode("LAN"),
-            true,
-            1.05f,
-            new Color(0.83f, 0.95f, 1f, 1f),
-            0.965f,
-            1.25f);
-        AddInteractive(
-            multiplayerModeScreen,
-            "Online Card",
-            assets.multiplayerButton,
-            new Vector2(365f, -105f),
-            new Vector2(590f, 785f),
-            () => SelectMultiplayerMode("Multiplayer Online"),
-            true,
-            1.05f,
-            new Color(1f, 0.96f, 0.72f, 1f),
-            0.965f,
-            1.25f);
-
-        AddImage(multiplayerModeScreen, "Stars Left", assets.backgroundDecoration3, new Vector2(-615f, 305f), new Vector2(92f, 62f), 0.2f, 0.08f);
-        AddImage(multiplayerModeScreen, "Stars Right", assets.backgroundDecoration3, new Vector2(625f, 292f), new Vector2(92f, 62f), 0.2f, 0.08f);
-        AddImage(multiplayerModeScreen, "Hearts Left", assets.backgroundDecoration2, new Vector2(-765f, -338f), new Vector2(92f, 80f), 0.2f, 0.08f);
-        AddImage(multiplayerModeScreen, "Hearts Right", assets.backgroundDecoration2, new Vector2(770f, -338f), new Vector2(92f, 80f), 0.2f, 0.08f);
-        AddBackButton(multiplayerModeScreen, new Vector2(-820f, -420f), () => ShowModeSelection());
     }
 
     private void BuildGachaScreen()
@@ -705,12 +646,6 @@ public partial class HandDrawnMenuView : MonoBehaviour
         Image image = buttonObject.GetComponent<Image>();
         image.color = backgroundColor;
         image.raycastTarget = true;
-        if (parent == aramModeScreen && assets.optionFrame)
-        {
-            image.sprite = assets.optionFrame;
-            image.type = Image.Type.Sliced;
-            buttonObject.GetComponent<Outline>().enabled = false;
-        }
 
         Button button = buttonObject.GetComponent<Button>();
         button.transition = Selectable.Transition.None;
@@ -847,7 +782,7 @@ public partial class HandDrawnMenuView : MonoBehaviour
 
     private void TransitionToScreen(RectTransform activeScreen, Action prepareAction)
     {
-        if (!mainScreen || !modeScreen || !inventoryScreen || !localModeScreen || !aramModeScreen || !multiplayerModeScreen || !gachaScreen || !botDifficultyScreen || !sideScreen || !skinScreen || !activeScreen)
+        if (!mainScreen || !modeScreen || !inventoryScreen || !localModeScreen || !aramModeScreen || !gachaScreen || !botDifficultyScreen || !sideScreen || !skinScreen || !activeScreen)
             return;
 
         if (activeScreen != modeScreen)
@@ -942,7 +877,7 @@ public partial class HandDrawnMenuView : MonoBehaviour
 
     private void SetScreenImmediate(RectTransform activeScreen)
     {
-        if (!mainScreen || !modeScreen || !inventoryScreen || !localModeScreen || !aramModeScreen || !multiplayerModeScreen || !gachaScreen || !botDifficultyScreen || !sideScreen || !skinScreen || !activeScreen)
+        if (!mainScreen || !modeScreen || !inventoryScreen || !localModeScreen || !aramModeScreen || !gachaScreen || !botDifficultyScreen || !sideScreen || !skinScreen || !activeScreen)
             return;
 
         RectTransform[] screens = GetMenuScreens();
@@ -979,8 +914,6 @@ public partial class HandDrawnMenuView : MonoBehaviour
             localModeScreen.gameObject.SetActive(active);
         if (aramModeScreen)
             aramModeScreen.gameObject.SetActive(active);
-        if (multiplayerModeScreen)
-            multiplayerModeScreen.gameObject.SetActive(active);
         if (gachaScreen)
             gachaScreen.gameObject.SetActive(active);
         if (botDifficultyScreen)
@@ -995,7 +928,7 @@ public partial class HandDrawnMenuView : MonoBehaviour
 
     private RectTransform[] GetMenuScreens()
     {
-        return new[] { mainScreen, modeScreen, playScreen, communityScreen, inventoryScreen, shopScreen, localModeScreen, aramModeScreen, multiplayerModeScreen, gachaScreen, botDifficultyScreen, sideScreen, skinScreen };
+        return new[] { mainScreen, modeScreen, playScreen, communityScreen, inventoryScreen, shopScreen, localModeScreen, aramModeScreen, gachaScreen, botDifficultyScreen, sideScreen, skinScreen };
     }
 
     private void ResetInactiveTransitionScreens(RectTransform previousScreen, RectTransform activeScreen)
@@ -1173,19 +1106,6 @@ public partial class HandDrawnMenuView : MonoBehaviour
 
             action?.Invoke();
         };
-    }
-
-    private void SelectMultiplayerMode(string modeLabel)
-    {
-        if (!owner.RequireAccountAccess(modeLabel)) return;
-
-        if (string.Equals(modeLabel, "LAN"))
-        {
-            owner.ShowLanSetup();
-            return;
-        }
-
-        owner.ShowOnlineSetup();
     }
 
     private static void Stretch(RectTransform rect)

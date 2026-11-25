@@ -14,9 +14,9 @@ public static class PostMatchAudit
     private static void Call(object target, string name) => target.GetType().GetMethod(name, Private).Invoke(target, null);
     private static void Check(bool value, string message) { if (!value) throw new Exception(message); }
 
-    public static void CheckPostMatch(GameObject host, ChessGame game, ChessTurnSelectionUI menu, ChessLanController controller, List<string> lines)
+    public static void CheckPostMatch(GameObject host, ChessGame game, ChessTurnSelectionUI menu, OnlineGameController controller, List<string> lines)
     {
-        Set(game, "turnSelectionUI", menu); Set(menu, "lanController", controller);
+        Set(game, "turnSelectionUI", menu); Set(menu, "onlineController", controller);
         Set(game, "botMode", false); Set(game, "gameStarted", false); Set(game, "gameOver", true);
         Set(game, "winningTeam", PieceTeam.White);
         Set(game, "frozenMatchDurationSeconds", 125f);

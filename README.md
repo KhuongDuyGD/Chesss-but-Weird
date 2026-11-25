@@ -1,25 +1,19 @@
 # Chess but Weird
 
-A Unity chess game with variant rules, online modes, and a shared C# domain package.
+A Unity chess game with Classic, Chaos, bot and online modes, and a shared C# domain package.
 
-## Open the project
+Open this folder in **Unity 6000.4.7f1** and let Unity resolve `Packages/manifest.json`.
+The enabled build scenes, in order, are `Boot`, `MainMenu`, `ChessMatch` and `ChessClassic`
+under `Assets/_Project/Game/Scenes/`.
 
-Open this folder in Unity Hub with **Unity 6000.4.7f1**. Let Unity resolve the dependencies in `Packages/manifest.json` before opening scenes or scripts. `Packages/packages-lock.json` records the resolved package versions.
+- `Assets/_Project/` contains the current game scripts, data, scenes, art, audio and settings.
+- `Assets/Resources/`, `Assets/StreamingAssets/`, `Assets/Plugins/` and `Assets/AddressableAssetsData/` contain runtime resources, Stockfish, plugins and content registrations.
+- `Packages/com.chessbutweird.domain/` contains the shared chess rules.
+- `Tests/`, `Assets/Tests/` and `tools/` contain regression checks and maintenance tools for current features.
+- [Documentation](Documentation/README.md) covers the current online integration, cosmetics and localization.
 
-## Repository layout
+Historical plans, retired LAN/Mirror assets, unregistered art and cinematic demo work
+are archived outside this repository. They are not required to open or run the game.
 
-- `Assets/_Project/` — project-owned scripts, game data/scenes, art, audio, settings, and cinematic work.
-- `Assets/` — Unity-managed folders, runtime `Resources`, tests, plugins, Addressables data, and third-party assets.
-- `Packages/` — Unity package manifest and the embedded `com.chessbutweird.domain` package.
-- `Tests/` — domain tests and isolated headless fixtures.
-- `Assets/Tests/` — Unity Editor verification scripts and Play Mode tests.
-- `tools/` — repeatable PowerShell and Python verification helpers.
-- `Documentation/` — project plans, audits, guides, and cosmetics documentation; start at its index.
-- `legacy/` — unused or historical items quarantined for later review; not imported by Unity.
-- `Refactor.md` — details of the asset-folder reorganization and path updates.
-
-## Local Unity data
-
-`Library/`, `Temp/`, `Logs/`, and `UserSettings/` are generated or machine-specific. They are ignored by Git and should not be committed. Unity recreates generated data as needed.
-
-Start with [the documentation index](Documentation/README.md) and [the architecture plan](Documentation/Architecture/ARCHITECTURE_PLAN.md) for project structure, implementation details, and validation limits.
+`Library/`, `Temp/`, `Logs/` and `UserSettings/` are generated or machine-specific and
+ignored by Git. Do not clear active Editor caches while Unity is open.

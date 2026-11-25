@@ -61,7 +61,7 @@ public static class AddressableCosmeticsSetup
         DefaultLowPolyCosmeticsSetup.Setup();
         GachaSkinAssetsSetup.Setup();
         KingdomRushGameSetup.Setup();
-        foreach (string folder in new[] { "Main_Menu", "Gacha_menu", "GameplayUI", "LANUI", "MultiplayerUI", "PlayerProfile", "Result_Menu", "SettingsMenu" })
+        foreach (string folder in new[] { "Main_Menu", "Gacha_menu", "PlayerProfile", "Result_Menu", "SettingsMenu" })
         {
             string path = "Assets/_Project/Art/UI/" + folder;
             if (!AssetDatabase.IsValidFolder(path)) continue;

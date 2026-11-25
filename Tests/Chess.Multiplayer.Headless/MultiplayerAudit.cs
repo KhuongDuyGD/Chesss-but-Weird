@@ -26,7 +26,7 @@ public static class MultiplayerAudit
             // Edit mode only: no Start/auth, network, bootstrap scene or account data.
             host = new GameObject("Multiplayer regression fixture");
             var game = host.AddComponent<ChessGame>();
-            var controller = host.AddComponent<ChessLanController>();
+            var controller = host.AddComponent<OnlineGameController>();
             controller.Initialize(game, null);
             foreach (string outcome in new[] { "WhiteWin", "BlackWin", "Draw" })
             {

@@ -12,7 +12,7 @@ public sealed class ChessPauseMenu : MonoBehaviour
 {
     private enum PendingAction { None, Restart, Leave, MainMenu, QuitDesktop }
     private ChessGame chessGame;
-    private ChessLanController lanController;
+    private OnlineGameController onlineController;
     private ChessTurnSelectionUI turnSelection;
     private GameObject canvasRoot, overlay, buttonGroup, settingsRoot;
     private RectTransform frame, confirmation, matchInfo;
@@ -30,12 +30,12 @@ public sealed class ChessPauseMenu : MonoBehaviour
 
     public bool IsOpen => localPaused && overlay && overlay.activeSelf;
     private bool IsMultiplayer => chessGame && (chessGame.IsNetworkGame || chessGame.UsesDotNetOnline) ||
-        lanController && lanController.IsNetworkGameActive;
+        onlineController && onlineController.IsNetworkGameActive;
     private bool CanOpen => chessGame && (chessGame.GameStarted || resultSpectating && chessGame.GameOver);
 
-    public void Initialize(ChessGame game, ChessLanController networkController)
+    public void Initialize(ChessGame game, OnlineGameController networkController)
     {
-        chessGame = game; lanController = networkController;
+        chessGame = game; onlineController = networkController;
         turnSelection = GetComponent<ChessTurnSelectionUI>();
         BuildUi(PauseMenuAssetCatalog.Load());
         if (chessGame) chessGame.ReturnedToMainMenu += ResetPauseState;
@@ -191,8 +191,8 @@ public sealed class ChessPauseMenu : MonoBehaviour
             {
                 try
                 {
-                    if (!lanController) throw new InvalidOperationException("The online session controller is unavailable.");
-                    Task exit = lanController.LeaveMatchFromPauseAsync();
+                    if (!onlineController) throw new InvalidOperationException("The online session controller is unavailable.");
+                    Task exit = onlineController.LeaveMatchFromPauseAsync();
                     // Desktop exit must remain available even when the server is unreachable.
                     if (action == PendingAction.QuitDesktop && await Task.WhenAny(exit, Task.Delay(5000)) != exit)
                     {
@@ -204,7 +204,7 @@ public sealed class ChessPauseMenu : MonoBehaviour
                 catch (Exception error) when (action == PendingAction.QuitDesktop)
                 {
                     Debug.LogWarning("[PauseMenu] Server exit could not be acknowledged: " + error.Message);
-                    if (lanController) lanController.CloseSessionFromPause();
+                    if (onlineController) onlineController.CloseSessionFromPause();
                 }
                 if (!this) return;
             }
@@ -223,7 +223,7 @@ public sealed class ChessPauseMenu : MonoBehaviour
             {
                 if (!this) return;
                 if (action == PendingAction.MainMenu) turnSelection?.ShowTurnSelection();
-                else if (onlineMatch) lanController.ShowLobbyAfterPauseExit();
+                else if (onlineMatch) onlineController.ShowLobbyAfterPauseExit();
                 else turnSelection?.ShowBotDifficultySelection();
             });
         }
@@ -270,7 +270,7 @@ public sealed class ChessPauseMenu : MonoBehaviour
     {
         infoText.text = chessGame.StatisticsPlayerName(PieceTeam.White) + "  /  WHITE\n" +
             chessGame.StatisticsPlayerName(PieceTeam.Black) + "  /  BLACK\n\n" +
-            chessGame.StatisticsMode + "  /  " + (lanController ? lanController.MatchConnectionState : chessGame.StatisticsConnectionState) + "\n" +
+            chessGame.StatisticsMode + "  /  " + (onlineController ? onlineController.MatchConnectionState : chessGame.StatisticsConnectionState) + "\n" +
             "White  " + chessGame.OnlineClockLabel(PieceTeam.White) + "     Black  " + chessGame.OnlineClockLabel(PieceTeam.Black) + "\n" +
             "Last move: " + chessGame.LastMoveSummary;
     }

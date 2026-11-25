@@ -38,7 +38,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
     private GUIStyle checkWarningStyle;
     private GUIStyle resultStyle;
     private HandDrawnMenuView handDrawnMenu;
-    private ChessLanController lanController;
+    private OnlineGameController onlineController;
     private ChessPauseMenu pauseMenu;
     private AnalysisBoardView analysisBoard;
     private ResultMenuView resultMenu;
@@ -132,7 +132,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
         resultIsDraw = false;
         drawReason = string.Empty;
         showCheckWarning = false;
-        lanController?.HideLanSetup();
+        onlineController?.HideOnlineMenu();
         resultMenu?.Hide();
         pauseMenu?.SetResultSpectating(false);
         analysisBoard?.SetVisible(false);
@@ -145,7 +145,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
         pendingPveLoadout = null;
         GameMusicManager.PlayMainMenuHubMusic();
         showCheckWarning = false;
-        lanController?.HideLanSetup();
+        onlineController?.HideOnlineMenu();
         if (handDrawnMenu && handDrawnMenu.IsReady)
         {
             state = ScreenState.TransitionToTurnSelection;
@@ -161,7 +161,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
     public void ShowPlaySelection()
     {
         showCheckWarning = false;
-        lanController?.HideLanSetup();
+        onlineController?.HideOnlineMenu();
         state = ScreenState.TurnSelection;
         analysisBoard?.SetVisible(false);
         handDrawnMenu?.ShowPlaySelection();
@@ -175,14 +175,14 @@ public class ChessTurnSelectionUI : MonoBehaviour
         state = ScreenState.TurnSelection;
         analysisBoard?.SetVisible(false);
         handDrawnMenu?.HideForPlaying();
-        if (PlayModeNames.IsCustom(mode)) lanController?.ShowCustomRooms(mode);
-        else lanController?.ShowModeMatchmaking(mode);
+        if (PlayModeNames.IsCustom(mode)) onlineController?.ShowCustomRooms(mode);
+        else onlineController?.ShowModeMatchmaking(mode);
     }
 
     public void ShowPveLoadout()
     {
         showCheckWarning = false;
-        lanController?.HideLanSetup();
+        onlineController?.HideOnlineMenu();
         state = ScreenState.TurnSelection;
         analysisBoard?.SetVisible(false);
         handDrawnMenu?.ShowPveLoadout(selection =>
@@ -218,7 +218,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
     {
         GameMusicManager.PlayMainMenuHubMusic();
         showCheckWarning = false;
-        lanController?.HideLanSetup();
+        onlineController?.HideOnlineMenu();
         state = ScreenState.TurnSelection;
         analysisBoard?.SetVisible(false);
         handDrawnMenu?.ShowSideSelection();
@@ -228,7 +228,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
     {
         GameMusicManager.PlayMainMenuHubMusic();
         showCheckWarning = false;
-        lanController?.HideLanSetup();
+        onlineController?.HideOnlineMenu();
         state = ScreenState.TurnSelection;
         analysisBoard?.SetVisible(false);
         handDrawnMenu?.ShowBotDifficultySelection();
@@ -237,7 +237,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
     public void ShowLocalModeSelection()
     {
         showCheckWarning = false;
-        lanController?.HideLanSetup();
+        onlineController?.HideOnlineMenu();
         state = ScreenState.TurnSelection;
         analysisBoard?.SetVisible(false);
         handDrawnMenu?.ShowLocalModeSelection();
@@ -247,7 +247,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
     {
         if (!RequireAccountAccess("CHAOS mode")) return;
         showCheckWarning = false;
-        lanController?.HideLanSetup();
+        onlineController?.HideOnlineMenu();
         state = ScreenState.TurnSelection;
         analysisBoard?.SetVisible(false);
         handDrawnMenu?.ShowAramModeSelection();
@@ -268,7 +268,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
     public void ShowBotSkinSelection(PieceTeam selectedPlayerTeam)
     {
         showCheckWarning = false;
-        lanController?.HideLanSetup();
+        onlineController?.HideOnlineMenu();
         state = ScreenState.TurnSelection;
         analysisBoard?.SetVisible(false);
         handDrawnMenu?.ShowPieceSkinSelection(true, selectedPlayerTeam);
@@ -278,7 +278,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
     {
         if (!RequireAccountAccess("Two-player mode")) return;
         showCheckWarning = false;
-        lanController?.HideLanSetup();
+        onlineController?.HideOnlineMenu();
         state = ScreenState.TurnSelection;
         analysisBoard?.SetVisible(false);
         handDrawnMenu?.ShowPieceSkinSelection(false, PieceTeam.White);
@@ -347,7 +347,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
     private void StartAramPracticeWithLoadout(CosmeticSelection selection)
     {
         showCheckWarning = false;
-        lanController?.HideLanSetup();
+        onlineController?.HideOnlineMenu();
         analysisBoard?.SetVisible(true);
         analysisBoard?.SetInteractionEnabled(true);
         selection.Save();
@@ -356,18 +356,6 @@ public class ChessTurnSelectionUI : MonoBehaviour
             chessGame.ConfigurePieceSkinsForLocalPlayers(selection.whiteSkinId, selection.blackSkinId);
             chessGame.BeginAramGame();
         });
-    }
-
-    public void ShowAramLanSetup()
-    {
-        if (!RequireOnlineAccess("CHAOS mode")) return;
-        if (PrepareNetworkContent(ShowAramLanSetup)) return;
-        GameMusicManager.PlayMainMenuHubMusic();
-        showCheckWarning = false;
-        state = ScreenState.TurnSelection;
-        handDrawnMenu?.HideForPlaying();
-        analysisBoard?.SetVisible(false);
-        lanController?.ShowAramLanSetup();
     }
 
     public void ShowAramOnlineSetup()
@@ -380,7 +368,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
         state = ScreenState.TurnSelection;
         handDrawnMenu?.HideForPlaying();
         analysisBoard?.SetVisible(false);
-        lanController?.ShowAramMultiplayerSetup();
+        onlineController?.ShowAramMultiplayerSetup();
     }
 
     private void StartBotGameWithConfiguredSkins(PieceTeam playerTeam)
@@ -396,18 +384,6 @@ public class ChessTurnSelectionUI : MonoBehaviour
         ShowOnlineSetup();
     }
 
-    public void ShowLanSetup()
-    {
-        if (!RequireOnlineAccess("LAN multiplayer")) return;
-        if (PrepareNetworkContent(ShowLanSetup)) return;
-        GameMusicManager.PlayMainMenuHubMusic();
-        showCheckWarning = false;
-        state = ScreenState.TurnSelection;
-        handDrawnMenu?.HideForPlaying();
-        analysisBoard?.SetVisible(false);
-        lanController?.ShowLanSetup();
-    }
-
     public void ShowOnlineSetup()
     {
         if (!RequireOnlineAccess("Online play")) return;
@@ -418,7 +394,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
         state = ScreenState.TurnSelection;
         handDrawnMenu?.HideForPlaying();
         analysisBoard?.SetVisible(false);
-        lanController?.ShowMultiplayerSetup();
+        onlineController?.ShowMultiplayerSetup();
     }
 
     public bool RequireAccountAccess(string featureLabel)
@@ -465,7 +441,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
         if (loading.IsBusy) return;
         if (loading.HasMatchContent) { loading.ReturnToMenu(LogoutToAuthentication); return; }
         logoutInFlight = true;
-        lanController?.ResetForAuthenticationChange();
+        onlineController?.ResetForAuthenticationChange();
         SessionLoadingController.For(chessGame).Cancel();
         AuthNotificationView.Show("Logging out...", "Please wait for the server.", AuthNotificationView.ResultKind.Info);
         try
@@ -478,7 +454,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
         }
         if (this == null || chessGame == null) return;
         logoutInFlight = false;
-        lanController?.HideLanSetup();
+        onlineController?.HideOnlineMenu();
         analysisBoard?.SetVisible(false);
         handDrawnMenu?.HideForPlaying();
         AuthController.Create(chessGame, chessGame.QueueAuthenticatedSession);
@@ -489,7 +465,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
     {
         // Rebuild the multiplayer state after the account identity changes so a
         // previous Guest socket/room can never leak into the new login session.
-        lanController?.ResetForAuthenticationChange(PlayerAuthService.CanUseOnlineFeatures);
+        onlineController?.ResetForAuthenticationChange(PlayerAuthService.CanUseOnlineFeatures);
         ShowMainMenu();
     }
 
@@ -502,7 +478,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
         drawReason = string.Empty;
         winningTeam = winner;
         playerTeam = selectedPlayerTeam;
-        lanController?.HideLanSetup();
+        onlineController?.HideOnlineMenu();
         state = ScreenState.GameOver;
         handDrawnMenu?.HideForPlaying();
         analysisBoard?.SetVisible(true);
@@ -520,7 +496,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
         resultIsDraw = true;
         drawReason = string.IsNullOrWhiteSpace(reason) ? "Draw" : reason;
         playerTeam = selectedPlayerTeam;
-        lanController?.HideLanSetup();
+        onlineController?.HideOnlineMenu();
         state = ScreenState.GameOver;
         handDrawnMenu?.HideForPlaying();
         analysisBoard?.SetVisible(true);
@@ -555,14 +531,14 @@ public class ChessTurnSelectionUI : MonoBehaviour
             bool botMatch = chessGame.IsBotGame, chaosMatch = chessGame.IsAramGame;
             if (onlineMatch)
             {
-                if (!lanController) throw new InvalidOperationException("The online session controller is unavailable.");
-                await lanController.LeaveMatchFromPauseAsync();
+                if (!onlineController) throw new InvalidOperationException("The online session controller is unavailable.");
+                await onlineController.LeaveMatchFromPauseAsync();
                 if (!this) return;
             }
             chessGame.RestartToMainMenu(() => resultExitInFlight = false, () =>
             {
                 if (!this) return;
-                if (onlineMatch) lanController.ShowLobbyAfterPauseExit();
+                if (onlineMatch) onlineController.ShowLobbyAfterPauseExit();
                 else if (botMatch) ShowBotDifficultySelection();
                 else if (chaosMatch) ShowAramModeSelection();
                 else ShowLocalModeSelection();
@@ -581,7 +557,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
         if (chessGame.UsesDotNetOnline)
         {
             SpectateFinishedGame();
-            lanController?.RequestRematch();
+            onlineController?.RequestRematch();
             return;
         }
         resultMenu?.Hide();
@@ -604,7 +580,7 @@ public class ChessTurnSelectionUI : MonoBehaviour
     }
 
     public string GetMatchPlayerName(PieceTeam team) => team == PieceTeam.White ? whitePlayerName : blackPlayerName;
-    public string MatchConnectionState => lanController ? lanController.MatchConnectionState : "Disconnected";
+    public string MatchConnectionState => onlineController ? onlineController.MatchConnectionState : "Disconnected";
 
     public void ClearMatchPlayers()
     {
@@ -863,14 +839,14 @@ public class ChessTurnSelectionUI : MonoBehaviour
 
     private void TryCreateLanController()
     {
-        lanController = gameObject.AddComponent<ChessLanController>();
-        lanController.Initialize(chessGame, this);
+        onlineController = gameObject.AddComponent<OnlineGameController>();
+        onlineController.Initialize(chessGame, this);
     }
 
     private void TryCreatePauseMenu()
     {
         pauseMenu = gameObject.AddComponent<ChessPauseMenu>();
-        pauseMenu.Initialize(chessGame, lanController);
+        pauseMenu.Initialize(chessGame, onlineController);
     }
 
     private void TryCreateAnalysisBoard()

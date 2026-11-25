@@ -99,12 +99,6 @@ MonoBehaviour:
     m_SerializedLabels:
     - CoreUI
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 4716ba080681e484eacaef8071069e82
-    m_Address: Assets/_Project/Art/UI/Main_Menu/ChooseYour MultiplayerMode.png
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - CoreUI
-    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 49126035b139f1d469ae82c43d01d0ac
     m_Address: Assets/_Project/Art/UI/Main_Menu/BackgroundDecoration4.png
     m_ReadOnly: 0
@@ -171,26 +165,8 @@ MonoBehaviour:
     m_SerializedLabels:
     - CoreUI
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 8b397c5f09a2763408bb02f49b66f4ba
-    m_Address: Assets/_Project/Art/UI/Main_Menu/MultiplayerButton.png
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - CoreUI
-    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 8d155024bd2e4ab08aeb26bcda267c92
     m_Address: Assets/_Project/Art/UI/Gacha_menu/GachaRevealRay.png
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - CoreUI
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 9aee01d5ea0b81f45a80a131bd963375
-    m_Address: Assets/_Project/Art/UI/LANUI/LANUIBlank.png
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - CoreUI
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 9b8695f48bb132a4f9359aa27de2c731
-    m_Address: Assets/_Project/Art/UI/Main_Menu/LANButton.png
     m_ReadOnly: 0
     m_SerializedLabels:
     - CoreUI

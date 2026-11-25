@@ -21,16 +21,6 @@ public static class CosmeticArtSetup
         importer.SaveAndReimport();
         DefaultLowPolyCosmeticsSetup.Setup();
         GachaSkinAssetsSetup.Setup();
-        // Halloween has art but has no backend unityAssetKey yet. Import the
-        // thumbnails now; register its models only when that contract exists.
-        foreach (string path in Directory.GetFiles("Assets/_Project/Art/Skins/Tazji'sHalloween", "*.png", SearchOption.AllDirectories))
-        {
-            var texture = AssetImporter.GetAtPath(path) as TextureImporter;
-            if (!texture) continue;
-            texture.textureType = TextureImporterType.Sprite;
-            texture.spriteImportMode = SpriteImportMode.Single;
-            texture.SaveAndReimport();
-        }
         AssetDatabase.SaveAssets();
         Inspect();
     }

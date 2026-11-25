@@ -10,7 +10,7 @@ using UnityEngine.InputSystem;
 // The local runtime must never adjudicate an online match or roll its outcomes.
 internal sealed partial class OnlineAramPresenter : IDisposable
 {
-    private readonly ChessLanController owner;
+    private readonly OnlineGameController owner;
     private readonly ChessGame game;
     private MatchState state;
     private JToken side;
@@ -66,7 +66,7 @@ internal sealed partial class OnlineAramPresenter : IDisposable
         "Pawns' Revolution: fill your half with pawns, keeping the king.",
         "One-Man Army: king only; two-square straight moves and a rifle." };
 
-    public OnlineAramPresenter(ChessLanController owner, ChessGame game)
+    public OnlineAramPresenter(OnlineGameController owner, ChessGame game)
     {
         this.owner = owner; this.game = game;
         uiHost = new GameObject("Online CHAOS UI");

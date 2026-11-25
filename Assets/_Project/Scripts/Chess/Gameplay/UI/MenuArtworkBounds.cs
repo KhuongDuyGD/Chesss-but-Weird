@@ -22,7 +22,6 @@ public static class MenuArtworkBounds
         { "Assets/_Project/Art/UI/Gacha_menu/SummonTicketPR.png", new Vector4(0.227272727f, 0.224880383f, 0.545454545f, 0.546251994f) },
         { "Assets/_Project/Art/UI/PlayerProfile/Avatar0.png", new Vector4(0.074218750f, 0.065843621f, 0.876953125f, 0.862139918f) },
         { "Assets/_Project/Art/UI/PlayerProfile/Back.png", new Vector4(0.167127072f, 0.218232044f, 0.666666667f, 0.577348066f) },
-        { "Assets/_Project/Art/UI/LANUI/LANUIBlank.png", new Vector4(0.000000000f, 0.000000000f, 1.000000000f, 1.000000000f) },
     };
 
     public static Rect GetRect(string path, Texture2D texture)

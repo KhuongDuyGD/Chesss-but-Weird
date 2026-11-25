@@ -1,0 +1,66 @@
+using System;
+using System.Threading.Tasks;
+
+public partial class OnlineGameController
+{
+    private Task pauseExitTask;
+
+    public Task LeaveMatchFromPauseAsync()
+    {
+        if (pauseExitTask != null && !pauseExitTask.IsCompleted) return pauseExitTask;
+        pauseExitTask = LeavePauseSessionAsync();
+        return pauseExitTask;
+    }
+
+    private async Task LeavePauseSessionAsync()
+    {
+        var current = online;
+        int epoch = lifecycle;
+        leaving = requestInFlight = true;
+        try
+        {
+            if (current != null)
+            {
+                // Recover an existing command ID before using the established leave/resign path.
+                if (current.HasPendingCommand) await current.RetryPendingAsync();
+                await current.LeaveAsync(requireAcknowledgement: true);
+            }
+            if (!this || epoch != lifecycle || current != online)
+                throw new OperationCanceledException("The online session changed during exit.");
+            CloseSessionFromPause();
+        }
+        finally
+        {
+            if (this && epoch == lifecycle) leaving = requestInFlight = false;
+        }
+    }
+
+    public void CloseSessionFromPause()
+    {
+        lifecycle++;
+        var closed = online;
+        online = null;
+        closed?.Dispose();
+        aramPresenter?.Dispose(); aramPresenter = null;
+        matchHud?.Hide();
+        presentedMatchId = refreshedResultId = preparedContentMatchId = preparedLoadoutFingerprint = trackedRoomId = null;
+        queueRequest = roomRequest = null;
+        historyLoading = historyDirty = false;
+        bool fromModeSelection = directMatchmaking;
+        var customEntry = customRoomEntry;
+        var previousMode = selectedOnlineMode;
+        ResetOnlineFlow();
+        directMatchmaking = fromModeSelection;
+        customRoomEntry = customEntry;
+        selectedOnlineMode = previousMode;
+        requestInFlight = reconnecting = commandBusy = leaving = lobbyReadInFlight = false;
+        HideOnlineMenu();
+    }
+
+    public void ShowLobbyAfterPauseExit()
+    {
+        if (customRoomEntry.HasValue) ShowCustomRooms(customRoomEntry.Value);
+        else if (directMatchmaking) ShowModeMatchmaking(selectedOnlineMode);
+        else ShowOnlineLobby(requestedGameMode);
+    }
+}
